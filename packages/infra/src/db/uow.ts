@@ -11,7 +11,7 @@ export class PgUnitOfWork implements UnitOfWork {
     const client: PoolClient = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      const result = await fn(buildRepos(drizzle(client), client));
+      const result = await fn(buildRepos(drizzle(client)));
       await client.query("COMMIT");
       return result;
     } catch (err) {

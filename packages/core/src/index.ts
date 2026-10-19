@@ -9,3 +9,7 @@ export type { RoleAssignment, Session, SessionStage, User, UserStatus } from "./
 export type { RoleAssignmentRepo, SessionRepo, UserRepo } from "./identity/repos";
 export { ROLES, ROLE_LABEL, SCOPE_OF_ROLE, SCOPE_TYPES, TOTP_OPTIONAL_ROLES, type Role, type ScopeType } from "./identity/roles";
 export { MIN_PASSWORD_LENGTH } from "./identity/password";
+export { CONSUMER_NAMES, CONSUMERS, consumersFor, type ConsumerName } from "./platform/consumers";
+export type { DomainEvent, EventType, Outbox, ProcessedEvents } from "./platform/events";
+export type { DeliveryStatus, EmailDeliveries, EmailDelivery, EmailMessage, Mailer } from "./platform/mail";
+export type { OneTimePurpose, OneTimeToken, OneTimeTokenRepo } from "./identity/tokens";

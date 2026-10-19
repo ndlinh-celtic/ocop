@@ -1,7 +1,7 @@
-import type { Role, RoleAssignment, RoleAssignmentRepo, ScopeType, Session, SessionRepo, User, UserRepo } from "@ocop/core";
+import type { OneTimeToken, OneTimeTokenRepo, Role, RoleAssignment, RoleAssignmentRepo, ScopeType, Session, SessionRepo, User, UserRepo } from "@ocop/core";
 import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { roleAssignment, session, userAccount } from "../db/schema";
+import { oneTimeToken, roleAssignment, session, userAccount } from "../db/schema";
 
 export function userRepo(db: Db): UserRepo {
   return {
@@ -19,6 +19,9 @@ export function userRepo(db: Db): UserRepo {
     },
     async update(id, patch) {
       await db.update(userAccount).set(patch).where(eq(userAccount.id, id));
+    },
+    async list() {
+      return (await db.select().from(userAccount).orderBy(userAccount.fullName)) as User[];
     },
   };
 }
@@ -73,6 +76,27 @@ export function sessionRepo(db: Db): SessionRepo {
     },
     async revoke(id, at) {
       await db.update(session).set({ revokedAt: at }).where(and(eq(session.id, id), isNull(session.revokedAt)));
+    },
+  };
+}
+
+export function oneTimeTokenRepo(db: Db): OneTimeTokenRepo {
+  return {
+    async insert(t) {
+      await db.insert(oneTimeToken).values(t);
+    },
+    async findByHash(hash) {
+      const [row] = await db.select().from(oneTimeToken).where(eq(oneTimeToken.tokenHash, hash));
+      return (row as OneTimeToken | undefined) ?? null;
+    },
+    async markUsed(id, at) {
+      await db.update(oneTimeToken).set({ usedAt: at }).where(eq(oneTimeToken.id, id));
+    },
+    async invalidateOpen(userId, purpose, at) {
+      await db
+        .update(oneTimeToken)
+        .set({ invalidatedAt: at })
+        .where(and(eq(oneTimeToken.userId, userId), eq(oneTimeToken.purpose, purpose), isNull(oneTimeToken.usedAt), isNull(oneTimeToken.invalidatedAt)));
     },
   };
 }

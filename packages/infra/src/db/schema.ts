@@ -57,3 +57,39 @@ export const auditLog = platform.table("audit_log", {
   requestId: text("request_id"),
   ip: text("ip"),
 });
+
+export const outbox = platform.table("outbox", {
+  id: uuid("id").primaryKey(),
+  type: text("type").notNull(),
+  payload: jsonb("payload").notNull(),
+  occurredAt: ts("occurred_at").notNull(),
+  dispatchedAt: ts("dispatched_at"),
+});
+
+export const processedEvent = platform.table("processed_event", {
+  eventId: uuid("event_id").notNull(),
+  consumer: text("consumer").notNull(),
+  processedAt: ts("processed_at").notNull(),
+});
+
+export const emailDelivery = platform.table("email_delivery", {
+  id: uuid("id").primaryKey(),
+  eventId: uuid("event_id"),
+  consumer: text("consumer").notNull(),
+  recipient: text("recipient").notNull(),
+  template: text("template").notNull(),
+  status: text("status").notNull(),
+  error: text("error"),
+  attemptedAt: ts("attempted_at").notNull(),
+});
+
+export const oneTimeToken = identity.table("one_time_token", {
+  id: uuid("id").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  purpose: text("purpose").$type<"activation" | "password_reset">().notNull(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: ts("created_at").notNull(),
+  expiresAt: ts("expires_at").notNull(),
+  usedAt: ts("used_at"),
+  invalidatedAt: ts("invalidated_at"),
+});

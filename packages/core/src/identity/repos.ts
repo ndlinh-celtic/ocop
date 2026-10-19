@@ -7,6 +7,7 @@ export interface UserRepo {
   /** Case-insensitive. */
   findByEmail(email: string): Promise<User | null>;
   update(id: string, patch: Partial<Omit<User, "id" | "createdAt">>): Promise<void>;
+  list(): Promise<User[]>;
 }
 
 export interface RoleAssignmentRepo {

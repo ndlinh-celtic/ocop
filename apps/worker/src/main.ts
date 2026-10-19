@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { checkDatabase, createApp, createBoss, createPool, loadConfig } from "@ocop/infra";
+import { checkDatabase, createApp, createBoss, createPool, loadConfig, startWorkers } from "@ocop/infra";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);
@@ -13,9 +13,11 @@ await boss.start();
 await boss.work("system.ping", async ([job]) => {
   console.log("system.ping", job?.data);
 });
+const stopWorkers = await startWorkers(core, pool, boss);
 console.log("worker started");
 
 const shutdown = async () => {
+  stopWorkers();
   await boss.stop({ graceful: true, timeout: 10_000 });
   await pool.end();
   process.exit(0);

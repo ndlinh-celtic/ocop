@@ -1,10 +1,15 @@
+import { CONSUMER_NAMES } from "@ocop/core";
+import pg from "pg";
 import { PgBoss } from "pg-boss";
 
 export const BOSS_SCHEMA = "pgboss";
 
-/** Every queue the worker consumes. Created by the migrator so the app role never needs DDL. */
-export const QUEUES = ["system.ping"] as const;
+/** Every queue the worker consumes: one per outbox consumer. Created by the migrator so the app role never needs DDL. */
+export const QUEUES = ["system.ping", ...CONSUMER_NAMES] as const;
 export type QueueName = (typeof QUEUES)[number];
+
+/** L23 step 4: failed jobs retry with backoff, up to about an hour in total. */
+const QUEUE_OPTIONS = { retryLimit: 6, retryDelay: 30, retryBackoff: true, retryDelayMax: 1800 };
 
 /**
  * Installs or upgrades the pg-boss schema and queues as the migrator, then grants the app role
@@ -15,12 +20,12 @@ export async function installJobQueue(migratorUrl: string): Promise<void> {
   boss.on("error", (err) => console.error("pg-boss install error", err));
   await boss.start();
   for (const name of QUEUES) {
-    if (!(await boss.getQueue(name))) await boss.createQueue(name);
+    if (await boss.getQueue(name)) await boss.updateQueue(name, QUEUE_OPTIONS);
+    else await boss.createQueue(name, QUEUE_OPTIONS);
   }
   await boss.stop({ graceful: false });
 
-  const { Client } = await import("pg");
-  const client = new Client({ connectionString: migratorUrl });
+  const client = new pg.Client({ connectionString: migratorUrl });
   await client.connect();
   try {
     await client.query(`
