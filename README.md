@@ -16,6 +16,8 @@ docker compose -f compose.yaml -f compose.dev.yaml up   # dev: hot reload, một
 
 Kiểm tra: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:int` (Postgres và S3 thật qua Testcontainers, cần Docker).
 
+E2E (Playwright, trên stack Compose sạch): `docker compose down -v && docker compose up -d --build`, rồi `pnpm --filter @ocop/e2e e2e`. Lần đầu: `pnpm --filter @ocop/e2e exec playwright install chromium`.
+
 Dữ liệu mẫu: `docker compose run --rm worker pnpm --filter @ocop/infra seed:wards [tệp.csv]` (CSV `ma,ten`), `docker compose run --rm -it worker pnpm --filter @ocop/infra admin:create` (Quản trị đầu tiên).
 
 Bộ test tương thích S3 với nhà cung cấp thật (ghi kết quả vào phụ lục A):

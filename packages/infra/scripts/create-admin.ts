@@ -10,13 +10,15 @@ import { createApp } from "../src/app";
 import { loadConfig } from "../src/config";
 import { createPool } from "../src/db/pool";
 
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-const ask = async (env: string, question: string) => process.env[env] || (await rl.question(question));
+// Prompt only for what the environment does not provide, so it also runs without a terminal.
+let rl: ReturnType<typeof createInterface> | undefined;
+const ask = async (env: string, question: string) =>
+  process.env[env] || (await (rl ??= createInterface({ input: process.stdin, output: process.stdout })).question(question));
 
 const email = await ask("OCOP_ADMIN_EMAIL", "Email: ");
 const fullName = await ask("OCOP_ADMIN_NAME", "Họ tên: ");
 const password = await ask("OCOP_ADMIN_PASSWORD", "Mật khẩu (ít nhất 12 ký tự): ");
-rl.close();
+rl?.close();
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL, 1);

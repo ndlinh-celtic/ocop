@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import { Link, Text } from "@react-email/components";
 import { EmailLayout } from "./layout";
 

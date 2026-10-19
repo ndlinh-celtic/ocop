@@ -34,3 +34,33 @@ jobs:
       - run: pnpm test
       # Testcontainers uses the runner's Docker daemon: real Postgres, MinIO.
       - run: pnpm test:int
+
+  e2e:
+    # The walking skeleton through the real stack: Caddy, web x2, worker, Postgres, S3, Mailpit, ClamAV.
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ocop/e2e exec playwright install --with-deps chromium
+      - run: docker compose up -d --build --wait --wait-timeout 600 web worker caddy
+      - run: pnpm --filter @ocop/e2e e2e
+        env:
+          CI: "true"
+      - if: failure()
+        run: docker compose logs --no-color > compose.log
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+            compose.log
+      - if: always()
+        run: docker compose down -v

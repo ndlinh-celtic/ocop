@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import type { EmailMessage } from "@ocop/core";
 import { render } from "@react-email/render";
 import { ActivationEmail } from "./templates/activation";
