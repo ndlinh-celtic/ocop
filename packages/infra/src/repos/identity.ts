@@ -74,6 +74,10 @@ export function sessionRepo(db: Db): SessionRepo {
       const [row] = await db.select().from(session).where(eq(session.tokenHash, hash));
       return (row as Session | undefined) ?? null;
     },
+    async findById(id) {
+      const [row] = await db.select().from(session).where(eq(session.id, id));
+      return (row as Session | undefined) ?? null;
+    },
     async update(id, patch) {
       await db.update(session).set(patch).where(eq(session.id, id));
     },

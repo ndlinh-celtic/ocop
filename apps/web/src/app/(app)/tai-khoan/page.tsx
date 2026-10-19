@@ -2,6 +2,7 @@ import Link from "next/link";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { ChangePasswordForm } from "./change-password-form";
+import { SensitiveSample } from "./sensitive-sample";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,10 @@ export default async function AccountPage() {
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <h2 className="mb-3 font-medium">Đổi mật khẩu</h2>
         <ChangePasswordForm />
+      </section>
+      <section className="rounded-lg border bg-surface p-4 shadow-card">
+        <h2 className="mb-3 font-medium">Xác thực lại</h2>
+        <SensitiveSample />
       </section>
     </div>
   );

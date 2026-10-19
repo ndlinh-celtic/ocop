@@ -97,6 +97,7 @@ export function signIn(deps: CoreDeps) {
         createdAt: now,
         lastSeenAt: now,
         authenticatedAt: now,
+        authMethod: "password",
         revokedAt: null,
       });
       const actor = { kind: "user" as const, userId: user.id, activeRole: assignment?.role ?? null, ctx };

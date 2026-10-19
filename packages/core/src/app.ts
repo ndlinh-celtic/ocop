@@ -2,6 +2,7 @@ import { searchAudit } from "./audit/search";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
 import { changePassword, requestPasswordReset, resetPassword } from "./identity/passwords";
+import { reauthenticate, sensitiveSample } from "./identity/reauth";
 import { bootstrapFirstAdmin } from "./identity/bootstrap";
 import { listNotifications, markAllRead, markRead, unreadCount } from "./notifications/inbox";
 import { listWards } from "./org/catalogue";
@@ -38,6 +39,8 @@ export function createCore(deps: CoreDeps) {
       requestPasswordReset: requestPasswordReset(deps),
       resetPassword: resetPassword(deps),
       changePassword: changePassword(deps),
+      reauthenticate: reauthenticate(deps),
+      sensitiveSample: sensitiveSample(deps),
     },
     org: {
       listWards: listWards(deps),

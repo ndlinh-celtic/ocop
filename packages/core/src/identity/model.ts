@@ -42,6 +42,9 @@ export interface RoleAssignment {
  */
 export type SessionStage = "totp_pending" | "totp_enrollment" | "full";
 
+/** How the session last proved who its user is. */
+export type AuthMethod = "password" | "password+totp" | "totp";
+
 export interface Session {
   id: string;
   stage: SessionStage;
@@ -50,8 +53,9 @@ export interface Session {
   activeAssignmentId: string | null;
   createdAt: Date;
   lastSeenAt: Date;
-  /** Last time the Người dùng proved who they are (sign-in or Xác thực lại). */
+  /** Last time the Người dùng proved who they are (sign-in or Xác thực lại), and how. */
   authenticatedAt: Date;
+  authMethod: AuthMethod;
   revokedAt: Date | null;
 }
 

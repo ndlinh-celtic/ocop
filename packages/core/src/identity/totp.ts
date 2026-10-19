@@ -30,7 +30,7 @@ export function verifySignInTotp(deps: CoreDeps) {
       }
       await tx.users.update(user.id, { totpLastStep: check.step });
       await clearFailures(tx, user);
-      await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, lastSeenAt: now });
+      await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, authMethod: "password+totp", lastSeenAt: now });
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
           action: "auth.sign_in.succeeded",
@@ -81,7 +81,7 @@ export function confirmTotpEnrollment(deps: CoreDeps) {
       }
       await tx.users.update(user.id, { totpSecretEnc: secretEnc, totpPendingSecretEnc: null, totpEnabledAt: now, totpLastStep: check.step });
       await clearFailures(tx, user);
-      if (session.stage !== "full") await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, lastSeenAt: now });
+      if (session.stage !== "full") await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, authMethod: "password+totp", lastSeenAt: now });
       await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "identity.totp.enrolled", targetType: "user", targetId: user.id }));
       if (session.stage !== "full") {
         await tx.audit.append(

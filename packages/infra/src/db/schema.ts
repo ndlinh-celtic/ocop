@@ -44,6 +44,7 @@ export const session = identity.table("session", {
   createdAt: ts("created_at").notNull(),
   lastSeenAt: ts("last_seen_at").notNull(),
   authenticatedAt: ts("authenticated_at").notNull(),
+  authMethod: text("auth_method").$type<"password" | "password+totp" | "totp">().notNull(),
   revokedAt: ts("revoked_at"),
 });
 

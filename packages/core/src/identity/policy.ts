@@ -18,7 +18,7 @@ const ROLE_ACTIONS = {
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
-const SELF_ACTIONS = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own"] as const;
+const SELF_ACTIONS = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own", "reauth.own"] as const;
 
 export type Action = keyof typeof ROLE_ACTIONS | (typeof SELF_ACTIONS)[number];
 
