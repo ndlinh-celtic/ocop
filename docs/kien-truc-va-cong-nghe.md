@@ -141,7 +141,7 @@ Phần lớn hệ thống là CRUD có phân quyền. Sáu chỗ dưới đây c
 
 ### 5.4 Phân quyền theo vai trò, phạm vi và trạng thái
 
-- `role_assignment(user_id, role, scope_type, scope_id, valid_from, valid_to)` với scope là xã, tỉnh, đợt, hội đồng hoặc hồ sơ. Một người nhiều vai trò; UI có bộ chuyển vai trò nhưng server luôn kiểm tra theo vai trò đang chọn.
+- `role_assignment(user_id, role, scope_type, scope_id, valid_from, valid_to)` với scope là chủ thể, xã, tỉnh, hội đồng hoặc hệ thống. Phân công theo từng hồ sơ là bảng `assignment` của module `council`, policy đọc cả hai. Một người nhiều vai trò; UI có bộ chuyển vai trò nhưng server luôn kiểm tra theo vai trò đang chọn.
 - Policy là hàm thuần trong domain, dùng cho cả kiểm tra thao tác lẫn lọc truy vấn (repository nhận `actor` và tự thêm điều kiện phạm vi). Không có đường đọc dữ liệu nào bỏ qua `actor`.
 - Các quy tắc phải có test ma trận (TM-12 ghi rõ "chính sách phân quyền có test"): Tổ tư vấn không chốt điểm và không quyết định công nhận; thành viên chỉ thấy hồ sơ được phân công; ẩn điểm người khác đến khi chốt; một người không vừa là Tổ tư vấn vừa chấm cùng hồ sơ; chủ thể không thấy điểm từng thành viên.
 - Xác thực lại (step-up) cho xác nhận phiếu và chốt điểm: yêu cầu mã TOTP mới trong vòng 5 phút, ghi `auth_at` vào audit của thao tác.
@@ -203,7 +203,7 @@ Cộng lại khoảng 5 đến 6 GB khi cao điểm, nên chọn **4 vCPU / 8 GB
 
 Làm nền và các điểm khó trước, rồi đi theo chiều của hồ sơ để luôn có một luồng chạy được từ đầu đến cuối.
 
-1. **Nền tảng:** monorepo, CI, Compose, `identity` (đăng nhập, TOTP, vai trò + phạm vi), audit, outbox + pg-boss, `FileStore` S3, khung UI theo vai trò. Chạy ngay bộ kiểm thử S3 của phụ lục A với nhà cung cấp dự kiến.
+1. **Nền tảng:** monorepo, CI, Compose, `identity` (đăng nhập, TOTP, vai trò + phạm vi), audit, outbox + pg-boss, `FileStore` S3, khung UI theo vai trò. Viết bộ kiểm thử tương thích S3 (endpoint qua biến môi trường; CI chạy với MinIO), chạy với GreenNode, FPT, Viettel khi có tài khoản dùng thử; không chặn hoàn thành bước 1.
 2. **Tiêu chí và đợt:** `criteria` có phiên bản + trình soạn (AD-03..05), `round` (SO-01, AD-06). Đây là điều kiện của mọi phiếu chấm.
 3. **Chủ thể và xã:** L01 đến L06 (hồ sơ, minh chứng, tự chấm, nộp, bổ sung, tiếp nhận, sinh biên bản xã). Có thể cho thí điểm sớm để thu hồ sơ thật.
 4. **Cấp tỉnh và chấm điểm:** L07 đến L15 (tiếp nhận tỉnh, hội đồng, Tổ tư vấn, sao chép, phiếu, xác nhận step-up, tổng hợp, chốt). Phần rủi ro nhất, nên có test ma trận phân quyền và test trigger khóa trước khi làm UI.

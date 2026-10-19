@@ -48,7 +48,7 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 - **Bộ tiêu chí có phiên bản**: `criteria_version` draft → published (bất biến sau publish) → section A/B/C → criterion. Phiếu chấm gắn FK tới criterion của phiên bản đã publish. Trigger chặn UPDATE/DELETE trên phiên bản đã publish.
 - **Sao chép dữ liệu Tổ tư vấn** sang phiếu thành viên (L12): phiếu `prefilled` thì cập nhật; `edited`/`confirmed`/`locked` thì bỏ qua và báo lại. Lưu `source`, `advisory_version_id`, `advisory_value_original`, `adjust_reason`. Điều chỉnh khác giá trị gốc mà thiếu lý do thì từ chối (TV-04).
 - **Khóa ba lớp**: domain từ chối + trigger DB chặn UPDATE khi `state in ('confirmed','locked')` + user DB của app không có quyền tắt trigger. Báo cáo Tổ tư vấn đã phát hành thì bất biến; sửa = tạo version N+1 có lý do.
-- **Xác thực lại (step-up)** bằng TOTP trong 5 phút trước khi xác nhận phiếu và chốt điểm.
+- **Xác thực lại (step-up)** bằng TOTP trong 5 phút trước khi xác nhận phiếu và chốt điểm; nếu cấu hình triển khai tắt bắt buộc TOTP thì dùng mật khẩu, audit ghi phương thức (ADR 0003).
 - Khi chốt (HD-08): lưu `aggregate_result` kèm snapshot JSONB toàn bộ phiếu và hash SHA-256.
 - Số hiệu giấy chứng nhận: bảng `cert_counter` + `UPDATE ... RETURNING` trong transaction, unique `(year, number)`; không dùng sequence.
 - Audit: `audit_log` append-only, partition theo tháng, có `prev_hash`; user app chỉ INSERT. Ghi cả truy cập dữ liệu cá nhân (NĐ 13/2023).

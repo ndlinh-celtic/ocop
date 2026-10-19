@@ -509,8 +509,8 @@ Bộ NN&MT không dùng hệ thống. Hệ thống chỉ cung cấp công cụ x
 
 **Luồng chính**
 1. Quản trị tạo tài khoản cho cán bộ (xã, Sở, hội đồng, Tổ tư vấn) hoặc nhận đề nghị từ đơn vị.
-2. Gán vai trò và phạm vi dữ liệu (xã, tỉnh, đợt, hồ sơ). Với vai trò Tổ tư vấn, cấu hình quyền sao chép dữ liệu và quy tắc không ghi đè phiếu đã chỉnh hoặc đã xác nhận (AD-02).
-3. Tài khoản hội đồng và quản trị bắt buộc bật TOTP; đăng nhập có bước nhập mã.
+2. Gán vai trò và phạm vi dữ liệu (chủ thể, xã, tỉnh, hội đồng, hệ thống); phân công theo từng hồ sơ thuộc hội đồng (L09), không phải phân vai. Với vai trò Tổ tư vấn, cấu hình quyền sao chép dữ liệu và quy tắc không ghi đè phiếu đã chỉnh hoặc đã xác nhận (AD-02).
+3. Mọi vai trò trừ Chủ thể và Cán bộ xã bắt buộc bật TOTP (hai vai trò này bật tùy chọn); đăng nhập có bước nhập mã. Đơn vị có thể tắt việc bắt buộc bằng cấu hình triển khai; khi đó xác thực lại dùng mật khẩu (ADR 0003).
 4. Hệ thống ghi lịch sử cấp quyền; người dùng nhận thông báo.
 
 **Quy tắc**
@@ -565,9 +565,9 @@ Bộ NN&MT không dùng hệ thống. Hệ thống chỉ cung cấp công cụ x
 **Luồng chính (tệp)**
 1. Người dùng tải tệp; hệ thống kiểm tra định dạng và dung lượng.
 2. Tệp lưu trên object storage S3-compatible (qua interface `FileStore`), kèm mã định danh, phiên bản, người tải, thời điểm; liên kết với hồ sơ hoặc tiêu chí.
-3. Tải lên qua pre-signed URL nếu nhà cung cấp hỗ trợ và cấu hình CORS được; nếu không, tải qua ứng dụng (stream thẳng sang bucket).
+3. Tải lên thẳng từ trình duyệt qua pre-signed URL (cần CORS); ứng dụng không proxy byte tệp. Nhà cung cấp S3 không đạt bộ test tương thích thì thay bằng MinIO tự host.
 4. Truy cập tệp kiểm tra quyền theo vai trò và phạm vi; tải xuống bằng URL có thời hạn ngắn.
-5. Quét virus (ClamAV) là tùy chọn, bật khi có điều kiện hạ tầng.
+5. Quét virus (ClamAV) bắt buộc: tệp nằm ở vùng cách ly cho đến khi quét sạch; chưa quét xong thì không ai tải xuống được.
 
 **Luồng chính (tìm kiếm)**
 1. Người dùng nhập từ khóa hoặc chọn bộ lọc: đợt, xã/phường, nhóm sản phẩm, trạng thái, hạng.
