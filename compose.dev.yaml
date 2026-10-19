@@ -1,0 +1,19 @@
+# Dev override: `docker compose -f compose.yaml -f compose.dev.yaml up`
+# One web replica with hot reload from the working tree.
+services:
+  web:
+    build: { context: ., dockerfile: infra/docker/Dockerfile, target: source }
+    command: ["pnpm", "--filter", "@ocop/web", "dev"]
+    deploy:
+      replicas: 1
+    volumes:
+      - ./apps:/repo/apps
+      - ./packages:/repo/packages
+      - /repo/apps/web/node_modules
+      - /repo/apps/web/.next
+  worker:
+    build: { context: ., dockerfile: infra/docker/Dockerfile, target: source }
+    command: ["pnpm", "--filter", "@ocop/worker", "dev"]
+    volumes:
+      - ./apps:/repo/apps
+      - ./packages:/repo/packages
