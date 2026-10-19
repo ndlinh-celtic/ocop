@@ -6,5 +6,3 @@ onlyBuiltDependencies:
   - '@node-rs/argon2'
   - esbuild
   - sharp
-  - cpu-features
-  - ssh2

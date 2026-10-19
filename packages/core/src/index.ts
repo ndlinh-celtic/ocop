@@ -1,1 +1,11 @@
-export type { Clock, IdGen } from "./shared/ports";
+export { createCore, type Core } from "./app";
+export type { Clock, IdGen, PasswordHasher } from "./shared/ports";
+export type { CoreDeps } from "./shared/deps";
+export type { Tx, UnitOfWork } from "./shared/uow";
+export type { Actor, AnonymousActor, RequestContext, SystemActor, UserActor } from "./shared/context";
+export { DomainError } from "./shared/errors";
+export type { AuditEntry, AuditFilter, AuditLog } from "./audit/audit";
+export type { RoleAssignment, Session, User, UserStatus } from "./identity/model";
+export type { RoleAssignmentRepo, SessionRepo, UserRepo } from "./identity/repos";
+export { ROLES, ROLE_LABEL, SCOPE_OF_ROLE, SCOPE_TYPES, type Role, type ScopeType } from "./identity/roles";
+export { MIN_PASSWORD_LENGTH } from "./identity/password";

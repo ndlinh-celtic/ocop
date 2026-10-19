@@ -8,3 +8,9 @@ export interface Clock {
 export interface IdGen {
   next(): string;
 }
+
+/** argon2id in production (ADR 0005). */
+export interface PasswordHasher {
+  hash(password: string): Promise<string>;
+  verify(hash: string, password: string): Promise<boolean>;
+}

@@ -12,6 +12,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@types/node": "^22.19.0",
     "vitest": "^4.0.0"
   }
 }

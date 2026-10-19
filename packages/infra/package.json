@@ -11,9 +11,11 @@
     "lint": "eslint src test scripts",
     "typecheck": "tsc -p tsconfig.json",
     "test:int": "vitest run --config vitest.int.config.ts",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "admin:create": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
     "@ocop/core": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1",
