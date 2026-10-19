@@ -12,9 +12,9 @@ export default async function TotpStepPage() {
   if (!pending || pending.stage !== "totp_pending") redirect("/dang-nhap");
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-lg border bg-surface p-6 shadow-sm">
         <h1 className="mb-1 text-xl font-semibold">Xác thực hai lớp</h1>
-        <p className="mb-6 text-sm text-gray-600">Mở ứng dụng xác thực và nhập mã cho {pending.email}.</p>
+        <p className="mb-6 text-sm text-text-2">Mở ứng dụng xác thực và nhập mã cho {pending.email}.</p>
         <CodeForm action={verifyCodeAction} submitLabel="Xác nhận" />
       </div>
     </main>

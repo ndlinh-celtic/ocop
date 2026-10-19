@@ -1,0 +1,123 @@
+/* Design tokens, copied from design/prototype/src/styles.css (the source of the palette).
+   Light by default, dark via prefers-color-scheme or data-theme="dark" on <html>. */
+:root {
+  --bg: #EAF2EC;
+  --bg-deco: #DCEBDF;
+  --surface: #FFFFFF;
+  --surface-2: #F4F9F5;
+  --surface-3: #EBF3ED;
+  --line: #DFE9E2;
+  --line-strong: #C9D9CE;
+  --text: #0F2A1B;
+  --text-2: #4A6354;
+  --text-3: #7D9485;
+  --brand: #1C8C4A;
+  --brand-hover: #167640;
+  --brand-ink: #FFFFFF;
+  --brand-soft: #E3F4E9;
+  --brand-deep: #1F5C3A;
+  --leaf: #7CC242;
+  --amber: #E0A526;
+  --amber-soft: #FCF1D6;
+  --side: #0D2A1B;
+  --side-2: #153A27;
+  --side-3: #1E4A33;
+  --side-text: #B9D0C0;
+  --side-strong: #FFFFFF;
+  --c-gray: #6B7C71;
+  --c-blue: #2C6BD6;
+  --c-orange: #DB741A;
+  --c-red: #D2423A;
+  --c-purple: #7656D6;
+  --c-green: #1C8C4A;
+  --c-amber: #C98E0E;
+  --c-teal: #13897F;
+  --shadow-1: 0 1px 2px rgba(16, 52, 32, .06), 0 2px 8px rgba(16, 52, 32, .05);
+  --shadow-2: 0 10px 30px rgba(12, 48, 28, .14), 0 2px 6px rgba(12, 48, 28, .06);
+  --overlay: rgba(9, 28, 18, .42);
+  --hero-a: #178046;
+  --hero-b: #2FAE63;
+  --hero-c: #8CCB3F;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
+  --font: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08130D; --bg-deco: #0D1D14; --surface: #102019; --surface-2: #142820; --surface-3: #1A3127;
+    --line: #213A2D; --line-strong: #2C4A3A; --text: #E3F0E7; --text-2: #A7BEAF; --text-3: #7C9686;
+    --brand: #35B96C; --brand-hover: #49C77D; --brand-ink: #062012; --brand-soft: #173B28; --brand-deep: #7FD6A1;
+    --leaf: #9AD65E; --amber: #F0BC45; --amber-soft: #3A2E10;
+    --side: #050E09; --side-2: #0E2218; --side-3: #163324; --side-text: #A3BCAB; --side-strong: #FFFFFF;
+    --c-gray: #9AAAA0; --c-blue: #6E9DF0; --c-orange: #F09A4E; --c-red: #F07A70; --c-purple: #A48BF0; --c-green: #4CC47F; --c-amber: #EBB940; --c-teal: #45C2B5;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 12px 30px rgba(0,0,0,.5); --overlay: rgba(0,0,0,.6);
+    --hero-a: #0F5E33; --hero-b: #1C8C4A; --hero-c: #5E9B25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #08130D; --bg-deco: #0D1D14; --surface: #102019; --surface-2: #142820; --surface-3: #1A3127;
+  --line: #213A2D; --line-strong: #2C4A3A; --text: #E3F0E7; --text-2: #A7BEAF; --text-3: #7C9686;
+  --brand: #35B96C; --brand-hover: #49C77D; --brand-ink: #062012; --brand-soft: #173B28; --brand-deep: #7FD6A1;
+  --leaf: #9AD65E; --amber: #F0BC45; --amber-soft: #3A2E10;
+  --side: #050E09; --side-2: #0E2218; --side-3: #163324; --side-text: #A3BCAB; --side-strong: #FFFFFF;
+  --c-gray: #9AAAA0; --c-blue: #6E9DF0; --c-orange: #F09A4E; --c-red: #F07A70; --c-purple: #A48BF0; --c-green: #4CC47F; --c-amber: #EBB940; --c-teal: #45C2B5;
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4); --shadow-2: 0 12px 30px rgba(0,0,0,.5); --overlay: rgba(0,0,0,.6);
+  --hero-a: #0F5E33; --hero-b: #1C8C4A; --hero-c: #5E9B25;
+  color-scheme: dark;
+}
+
+/* Tailwind v4 theme: utilities such as bg-surface, text-text-2, border-line, bg-brand map to the tokens. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-deco: var(--bg-deco);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-deep: var(--brand-deep);
+  --color-leaf: var(--leaf);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-side: var(--side);
+  --color-side-2: var(--side-2);
+  --color-side-3: var(--side-3);
+  --color-side-text: var(--side-text);
+  --color-side-strong: var(--side-strong);
+  --color-danger: var(--c-red);
+  --color-info: var(--c-blue);
+  --color-warning: var(--c-orange);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --shadow-card: var(--shadow-1);
+  --shadow-pop: var(--shadow-2);
+  --font-sans: var(--font);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.55 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
+  }
+}

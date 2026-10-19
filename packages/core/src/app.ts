@@ -1,4 +1,5 @@
 import { searchAudit } from "./audit/search";
+import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
 import { bootstrapFirstAdmin } from "./identity/bootstrap";
 import { listNotifications, markAllRead, markRead, unreadCount } from "./notifications/inbox";
@@ -30,6 +31,9 @@ export function createCore(deps: CoreDeps) {
       activateAccount: activateAccount(deps),
       grantRole: grantRole(deps),
       revokeRole: revokeRole(deps),
+      myAssignments: myAssignments(deps),
+      switchActiveRole: switchActiveRole(deps),
+      hasTotp: hasTotp(deps),
     },
     org: {
       listWards: listWards(deps),

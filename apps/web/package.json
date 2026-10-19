@@ -11,9 +11,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fontsource/be-vietnam-pro": "^5.3.0",
     "@ocop/core": "workspace:*",
     "@ocop/infra": "workspace:*",
     "@ocop/ui": "workspace:*",
+    "lucide-react": "^1.59.0",
     "next": "^16.4.2",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",

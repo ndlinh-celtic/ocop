@@ -23,9 +23,9 @@ export default async function TotpEnrollmentPage() {
   const qr = await QRCode.toDataURL(enrollment.otpauthUri, { margin: 1, width: 220 });
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-sm">
+      <div className="w-full max-w-md rounded-lg border bg-surface p-6 shadow-sm">
         <h1 className="mb-1 text-xl font-semibold">Bật xác thực hai lớp</h1>
-        <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-gray-700">
+        <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-text-2">
           <li>Cài ứng dụng xác thực (Google Authenticator, Microsoft Authenticator…).</li>
           <li>Quét mã QR dưới đây, hoặc nhập khóa thủ công.</li>
           <li>Nhập mã 6 số ứng dụng hiển thị.</li>

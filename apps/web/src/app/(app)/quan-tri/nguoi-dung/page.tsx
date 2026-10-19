@@ -15,13 +15,13 @@ export default async function UsersPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Người dùng</h1>
-      <section className="rounded-2xl border bg-white p-4">
+      <section className="rounded-lg border bg-surface p-4">
         <h2 className="mb-3 font-medium">Tạo tài khoản cán bộ</h2>
         <CreateUserForm />
       </section>
-      <section className="overflow-x-auto rounded-2xl border bg-white">
+      <section className="overflow-x-auto rounded-lg border bg-surface">
         <table className="w-full text-left text-sm">
-          <thead className="border-b bg-gray-50">
+          <thead className="border-b bg-surface-2">
             <tr>
               <th className="px-4 py-2">Họ tên</th>
               <th className="px-4 py-2">Email</th>
@@ -35,7 +35,7 @@ export default async function UsersPage() {
             {users.map((u) => (
               <tr key={u.id} className="border-b last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/quan-tri/nguoi-dung/${u.id}`} className="font-medium text-green-700 underline-offset-2 hover:underline">
+                  <Link href={`/quan-tri/nguoi-dung/${u.id}`} className="font-medium text-brand underline-offset-2 hover:underline">
                     {u.fullName}
                   </Link>
                 </td>

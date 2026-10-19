@@ -17,19 +17,19 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   if (!user) notFound();
   return (
     <div className="flex flex-col gap-6">
-      <nav className="text-sm text-gray-500">
+      <nav className="text-sm text-text-3">
         <Link href="/quan-tri/nguoi-dung">Người dùng</Link> / {user.fullName}
       </nav>
       <h1 className="text-xl font-semibold">{user.fullName}</h1>
-      <p className="text-sm text-gray-600">{user.email}</p>
-      <section className="rounded-2xl border bg-white p-4">
+      <p className="text-sm text-text-2">{user.email}</p>
+      <section className="rounded-lg border bg-surface p-4">
         <h2 className="mb-3 font-medium">Gán vai trò</h2>
         <GrantRoleForm userId={user.id} wards={wards} />
       </section>
-      <section className="rounded-2xl border bg-white">
+      <section className="rounded-lg border bg-surface">
         <h2 className="border-b px-4 py-3 font-medium">Phân vai</h2>
         {user.assignments.length === 0 ? (
-          <p className="p-4 text-sm text-gray-500">Chưa có phân vai nào.</p>
+          <p className="p-4 text-sm text-text-3">Chưa có phân vai nào.</p>
         ) : (
           <ul>
             {user.assignments.map((a) => (
@@ -38,13 +38,13 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                   <p className="font-medium">
                     {ROLE_LABEL[a.role]} · {a.scopeLabel}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-text-3">
                     {formatVnDate(a.validFrom)} – {a.validTo ? formatVnDate(a.validTo) : "không thời hạn"} · {a.active ? "Đang hiệu lực" : "Không hiệu lực"}
                   </p>
                 </div>
                 {(a.validTo === null || a.validTo > new Date()) && (
                   <form action={revokeRoleAction.bind(null, user.id, a.id)}>
-                    <button className="rounded-lg border border-red-600 px-3 py-1 text-sm text-red-700">Thu hồi</button>
+                    <button className="rounded-lg border border-danger px-3 py-1 text-sm text-danger">Thu hồi</button>
                   </form>
                 )}
               </li>

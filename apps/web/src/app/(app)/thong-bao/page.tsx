@@ -18,16 +18,16 @@ export default async function NotificationsPage() {
         )}
       </div>
       {items.length === 0 ? (
-        <p className="rounded-2xl border bg-white p-6 text-center text-gray-500">Chưa có thông báo nào.</p>
+        <p className="rounded-lg border bg-surface p-6 text-center text-text-3">Chưa có thông báo nào.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((n) => (
-            <li key={n.id} className={`rounded-2xl border bg-white p-4 ${n.readAt ? "opacity-70" : "border-green-600"}`}>
+            <li key={n.id} className={`rounded-lg border bg-surface p-4 ${n.readAt ? "opacity-70" : "border-brand"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{n.title}</p>
-                  <p className="text-sm text-gray-600">{n.body}</p>
-                  <p className="mt-1 text-xs text-gray-500">{formatVnDateTime(n.createdAt)}</p>
+                  <p className="text-sm text-text-2">{n.body}</p>
+                  <p className="mt-1 text-xs text-text-3">{formatVnDateTime(n.createdAt)}</p>
                 </div>
                 {!n.readAt && (
                   <form action={markReadAction.bind(null, n.id)}>

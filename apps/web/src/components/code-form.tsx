@@ -21,15 +21,15 @@ export function CodeForm({ action, submitLabel }: { action: (s: CodeFormState, f
           maxLength={6}
           required
           autoFocus
-          className="rounded-lg border px-3 py-2 text-center text-lg tracking-[0.4em]"
+          className="rounded-md border border-line-strong bg-surface px-3 py-2 text-center text-lg tracking-[0.4em]"
         />
       </label>
       {state.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {state.error}
         </p>
       )}
-      <button type="submit" disabled={pending} className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white disabled:opacity-60">
+      <button type="submit" disabled={pending} className="rounded-lg bg-brand text-brand-ink px-4 py-2 font-semibold disabled:opacity-60">
         {pending ? "Đang kiểm tra…" : submitLabel}
       </button>
     </form>
