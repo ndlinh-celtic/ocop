@@ -1,0 +1,11 @@
+{
+  "name": "ocop-prototype",
+  "private": true,
+  "description": "Prototype giao diện OCOP (HTML tĩnh). Build: npm install && npm run build",
+  "scripts": {
+    "build": "python3 build.py"
+  },
+  "devDependencies": {
+    "lucide-static": "^1.59.0"
+  }
+}
