@@ -82,3 +82,17 @@ Giữ chúng ở dạng cấu hình (trong `criteria_version` / `round_config`),
 
 - Màu chủ đạo xanh lá tươi (phong cách nông nghiệp), vàng lúa cho hạng sao; font Be Vietnam Pro; icon Lucide. Bố cục: sidebar tối thu gọn được, breadcrumb, thẻ bo tròn, panel bên. Có dark mode và khung di động 400px.
 - Dùng prototype làm tham chiếu bố cục, trạng thái màn hình (trống, đang tải, lỗi, đã khóa, chưa đủ phiếu) và hành trình; khi dựng ứng dụng thật, chuyển sang Tailwind + shadcn/ui, giữ token màu từ `design/prototype/src/styles.css`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues và spec nằm trên GitHub Issues của `ndlinh-celtic/ocop` (dùng `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Năm nhãn mặc định: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` ở gốc repo. See `docs/agents/domain.md`.
