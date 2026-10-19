@@ -4,7 +4,9 @@ export type DomainEventBody =
   | { type: "identity.activation.requested"; payload: { userId: string } }
   | { type: "identity.role.granted"; payload: { assignmentId: string } }
   | { type: "identity.user.locked"; payload: { userId: string; until: string } }
-  | { type: "identity.password_reset.requested"; payload: { userId: string } };
+  | { type: "identity.password_reset.requested"; payload: { userId: string } }
+  | { type: "files.uploaded"; payload: { fileId: string } }
+  | { type: "files.blocked"; payload: { fileId: string } };
 
 export type EventType = DomainEventBody["type"];
 

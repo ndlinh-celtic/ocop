@@ -23,6 +23,7 @@
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.1",
     "drizzle-orm": "^0.45.4",
+    "file-type": "^22.2.0",
     "nodemailer": "^8",
     "otplib": "^13.5.0",
     "pg": "^8.23.1",

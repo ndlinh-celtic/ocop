@@ -39,6 +39,7 @@ describe("L24 DC-03 direct upload and download", () => {
     expect(upload.kind).toBe("single");
     await browserUpload(upload, data);
     await t.app.files.completeUpload(admin, fileId);
+    await t.drainJobs();
 
     const { url, expiresAt } = await t.app.files.requestDownload(admin, fileId);
     // S3 signs with the real clock, so the link's lifetime is measured against it.
@@ -84,6 +85,6 @@ describe("L24 DC-03 direct upload and download", () => {
     ).rejects.toMatchObject({ code: "forbidden" });
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const actions = new Set((await t.app.audit.search(admin, { targetType: "file" })).map((e) => e.action));
-    expect([...actions].sort()).toEqual(["file.download_issued", "file.upload_requested", "file.uploaded"]);
+    expect([...actions].sort()).toEqual(["file.download_issued", "file.scanned_clean", "file.upload_requested", "file.uploaded"]);
   });
 });

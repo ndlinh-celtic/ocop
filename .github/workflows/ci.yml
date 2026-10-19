@@ -12,6 +12,15 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      # Real ClamAV for the scanner adapter test; signatures load in a few minutes.
+      clamd:
+        image: clamav/clamav-debian:1.4
+        ports: ["3310:3310"]
+        options: >-
+          --health-cmd "clamdcheck.sh" --health-interval 20s --health-start-period 300s --health-retries 20
+    env:
+      CLAMD_TEST_HOST: 127.0.0.1
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

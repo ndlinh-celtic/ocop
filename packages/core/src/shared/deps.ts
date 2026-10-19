@@ -1,4 +1,5 @@
 import type { FileStore } from "../files/file-store";
+import type { FileInspector } from "../files/inspection";
 import { DEFAULT_ALLOWED_TYPES } from "../files/model";
 import type { Mailer } from "../platform/mail";
 import type { Clock, IdGen, PasswordHasher, SecretBox, TotpService } from "./ports";
@@ -52,5 +53,6 @@ export interface CoreDeps {
   secretBox: SecretBox;
   mailer: Mailer;
   files: FileStore;
+  inspector: FileInspector;
   settings: CoreSettings;
 }

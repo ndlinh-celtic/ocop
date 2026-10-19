@@ -3,6 +3,7 @@ import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { DownloadButton } from "./download-button";
+import { RefreshWhileScanning } from "./refresh-while-scanning";
 import { Uploader } from "./uploader";
 
 export const dynamic = "force-dynamic";
@@ -24,8 +25,11 @@ export default async function TestUploadPage() {
   const files = await app().core.files.list(await requireActor());
   return (
     <div className="flex flex-col gap-6">
+      <RefreshWhileScanning active={files.some((f) => f.status === "scanning")} />
       <h1 className="text-xl font-semibold">Thử tải tệp</h1>
-      <p className="text-sm text-text-2">Kiểm tra đường tải tệp thẳng lên kho lưu trữ và tải xuống bằng liên kết có thời hạn.</p>
+      <p className="text-sm text-text-2">
+        Kiểm tra đường tải tệp thẳng lên kho lưu trữ, quét mã độc trong vùng cách ly, và tải xuống bằng liên kết có thời hạn.
+      </p>
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <Uploader accept={accept} />
       </section>

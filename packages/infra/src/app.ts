@@ -6,6 +6,8 @@ import { systemClock, uuidV7Gen } from "./adapters/system";
 import { otplibTotp } from "./adapters/totp";
 import type { Config } from "./config";
 import { PgUnitOfWork } from "./db/uow";
+import { clamdScanner, type VirusScanner } from "./files/clamd";
+import { createFileInspector } from "./files/inspector";
 import { createS3FileStore } from "./files/s3";
 import type { FileStore } from "@ocop/core";
 import { renderingMailer, smtpTransport } from "./mail/mailer";
@@ -16,6 +18,7 @@ export interface AppOverrides {
   hasher?: PasswordHasher;
   mailer?: Mailer;
   files?: FileStore;
+  scanner?: VirusScanner;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -30,6 +33,8 @@ export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "
       | "S3_FORCE_PATH_STYLE"
       | "S3_BUCKET_EVIDENCE"
       | "FILE_MAX_MB"
+      | "CLAMD_HOST"
+      | "CLAMD_PORT"
     >
   > &
   Partial<
@@ -110,6 +115,7 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     secretBox: aesGcmSecretBox(config.TOTP_ENCRYPTION_KEY),
     mailer,
     files,
+    inspector: createFileInspector(files, overrides.scanner ?? clamdScanner({ host: config.CLAMD_HOST ?? "clamd", port: config.CLAMD_PORT ?? 3310 })),
     settings,
   });
 }

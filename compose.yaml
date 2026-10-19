@@ -63,6 +63,13 @@ services:
 
   clamd:
     image: clamav/clamav-debian:1.4
+    environment:
+      # Files up to FILE_MAX_MB (100 MB) must be scanned whole, not truncated at clamd's 25 MB default.
+      CLAMD_CONF_StreamMaxLength: 110M
+      CLAMD_CONF_MaxScanSize: 110M
+      CLAMD_CONF_MaxFileSize: 110M
+    ports:
+      - "127.0.0.1:3310:3310"
     healthcheck:
       test: ["CMD", "clamdcheck.sh"]
       interval: 30s

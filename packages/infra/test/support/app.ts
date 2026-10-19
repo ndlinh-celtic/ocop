@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { CONSUMER_NAMES, type Clock, type Core, type RequestContext, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
+import type { ScanResult, VirusScanner } from "../../src/files/clamd";
 import { createS3FileStore } from "../../src/files/s3";
 import { createBoss, type PgBoss } from "../../src/jobs/boss";
 import { relayOutbox, type EventJob } from "../../src/jobs/relay";
@@ -28,6 +29,26 @@ export class Mailbox implements MailTransport {
   }
   failNext(n: number) {
     this.failures = n;
+  }
+}
+
+/** The standard antivirus test file: harmless, but every scanner reports it. */
+export const EICAR = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+
+/** Stands in for clamd at the use-case seam: flags EICAR; can be told to be unreachable. */
+export class FakeScanner implements VirusScanner {
+  private failures = 0;
+  failNext(n: number) {
+    this.failures = n;
+  }
+  async scan(stream: AsyncIterable<Uint8Array>): Promise<ScanResult> {
+    const chunks: Buffer[] = [];
+    for await (const c of stream) chunks.push(Buffer.from(c));
+    if (this.failures > 0) {
+      this.failures--;
+      throw new Error("clamd unreachable (simulated)");
+    }
+    return Buffer.concat(chunks).toString("latin1").includes(EICAR) ? { clean: false, signature: "Eicar-Test-Signature" } : { clean: true };
   }
 }
 
@@ -64,6 +85,7 @@ export interface TestApp {
   app: Core;
   clock: FakeClock;
   mailbox: Mailbox;
+  scanner: FakeScanner;
   /**
    * Runs the outbox relay and every consumer queue until nothing is left, like the worker would.
    * `includeRetries` also releases jobs waiting out their retry delay.
@@ -78,6 +100,7 @@ export interface TestApp {
 export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpRequired?: boolean } = {}): TestApp {
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
+  const scanner = new FakeScanner();
   const app = createApp(
     db.app,
     {
@@ -91,6 +114,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       clock,
       mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>"),
       files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
+      scanner,
     },
   );
   let boss: PgBoss | undefined;
@@ -105,6 +129,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
     app,
     clock,
     mailbox,
+    scanner,
     async drainJobs({ includeRetries = false } = {}) {
       const b = await ensureBoss();
       if (includeRetries) await db.admin.query("UPDATE pgboss.job SET start_after = now() WHERE state = 'retry'");

@@ -1,3 +1,4 @@
+import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
 import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
@@ -32,6 +33,14 @@ export const CONSUMERS = {
   "identity.password-reset-email": {
     events: ["identity.password_reset.requested"],
     handle: emailPasswordReset,
+  },
+  "files.scan": {
+    events: ["files.uploaded"],
+    handle: scanUploadedFile,
+  },
+  "notifications.file-blocked": {
+    events: ["files.blocked"],
+    handle: notifyFileBlocked,
   },
 } as const satisfies Record<string, Consumer>;
 

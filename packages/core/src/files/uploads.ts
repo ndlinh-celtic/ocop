@@ -3,6 +3,7 @@ import { authorize } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { emit } from "../platform/emit";
 import type { StoredFile } from "./model";
 
 export type UploadInstructions =
@@ -94,9 +95,10 @@ export function completeUpload(deps: CoreDeps) {
     if (head.size !== file.size) throw new DomainError("upload_size_mismatch", "Kích thước tệp không khớp");
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
-      // No scanner yet: the next step puts the file in quarantine ("scanning") until it is scanned.
-      await tx.files.update(file.id, { status: "clean", uploadedAt: now });
+      // Quarantine until the scan consumer decides; nobody can download it meanwhile.
+      await tx.files.update(file.id, { status: "scanning", uploadedAt: now });
       await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "file.uploaded", targetType: "file", targetId: file.id, metadata: { size: head.size } }));
+      await emit(deps, tx, { type: "files.uploaded", payload: { fileId: file.id } });
     });
   };
 }
