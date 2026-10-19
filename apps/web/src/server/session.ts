@@ -23,6 +23,10 @@ export async function currentActor(): Promise<UserActor | null> {
   return app().core.identity.authenticate(token, await requestContext());
 }
 
+export async function sessionToken(): Promise<string | undefined> {
+  return (await cookies()).get(SESSION_COOKIE)?.value;
+}
+
 export async function requireActor(): Promise<UserActor> {
   const actor = await currentActor();
   if (!actor) redirect("/dang-nhap");

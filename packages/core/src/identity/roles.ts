@@ -37,3 +37,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   advisory_member: "Thành viên Tổ tư vấn",
   admin: "Quản trị",
 };
+
+/** Vai trò for which TOTP is optional; every other Vai trò must use it unless the deployment opts out. */
+export const TOTP_OPTIONAL_ROLES: readonly Role[] = ["entity_owner", "ward_officer"];

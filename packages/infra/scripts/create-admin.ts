@@ -18,9 +18,10 @@ const fullName = await ask("OCOP_ADMIN_NAME", "Họ tên: ");
 const password = await ask("OCOP_ADMIN_PASSWORD", "Mật khẩu (ít nhất 12 ký tự): ");
 rl.close();
 
-const pool = createPool(loadConfig().DATABASE_URL, 1);
+const config = loadConfig();
+const pool = createPool(config.DATABASE_URL, 1);
 try {
-  const { userId } = await createApp(pool).identity.bootstrapFirstAdmin(
+  const { userId } = await createApp(pool, config).identity.bootstrapFirstAdmin(
     { email, fullName, password },
     { requestId: randomUUID(), userAgent: "cli:admin:create" },
   );

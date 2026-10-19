@@ -17,6 +17,9 @@ export function userRepo(db: Db): UserRepo {
       const [row] = await db.select().from(userAccount).where(sql`${userAccount.email} = ${email}::citext`);
       return (row as User | undefined) ?? null;
     },
+    async update(id, patch) {
+      await db.update(userAccount).set(patch).where(eq(userAccount.id, id));
+    },
   };
 }
 
@@ -64,6 +67,9 @@ export function sessionRepo(db: Db): SessionRepo {
     async findByTokenHash(hash) {
       const [row] = await db.select().from(session).where(eq(session.tokenHash, hash));
       return (row as Session | undefined) ?? null;
+    },
+    async update(id, patch) {
+      await db.update(session).set(patch).where(eq(session.id, id));
     },
     async revoke(id, at) {
       await db.update(session).set({ revokedAt: at }).where(and(eq(session.id, id), isNull(session.revokedAt)));

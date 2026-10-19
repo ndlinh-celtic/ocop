@@ -1,4 +1,4 @@
-import { jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -13,6 +13,10 @@ export const userAccount = identity.table("user_account", {
   passwordHash: text("password_hash"),
   status: text("status").$type<"pending_activation" | "active">().notNull(),
   createdAt: ts("created_at").notNull(),
+  totpSecretEnc: text("totp_secret_enc"),
+  totpEnabledAt: ts("totp_enabled_at"),
+  totpLastStep: bigint("totp_last_step", { mode: "number" }),
+  totpPendingSecretEnc: text("totp_pending_secret_enc"),
 });
 
 export const roleAssignment = identity.table("role_assignment", {
@@ -29,6 +33,7 @@ export const roleAssignment = identity.table("role_assignment", {
 
 export const session = identity.table("session", {
   id: uuid("id").primaryKey(),
+  stage: text("stage").$type<"totp_pending" | "totp_enrollment" | "full">().notNull(),
   userId: uuid("user_id").notNull(),
   tokenHash: text("token_hash").notNull(),
   activeAssignmentId: uuid("active_assignment_id"),

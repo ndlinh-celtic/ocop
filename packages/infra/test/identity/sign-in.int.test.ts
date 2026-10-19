@@ -6,7 +6,8 @@ let t: TestApp;
 
 beforeAll(async () => {
   db = await createTestDatabase();
-  t = createTestApp(db);
+  // Password step only; TOTP has its own tests.
+  t = createTestApp(db, { totpRequired: false });
 });
 afterAll(() => db.drop());
 

@@ -1,8 +1,11 @@
-import { checkDatabase, createBoss, createPool, loadConfig } from "@ocop/infra";
+import { randomUUID } from "node:crypto";
+import { checkDatabase, createApp, createBoss, createPool, loadConfig } from "@ocop/infra";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);
 await checkDatabase(pool);
+const core = createApp(pool, config);
+await core.system.recordStartup("worker", { requestId: randomUUID(), userAgent: "process:worker" });
 
 const boss = createBoss(config.DATABASE_URL);
 boss.on("error", (err) => console.error("pg-boss error", err));

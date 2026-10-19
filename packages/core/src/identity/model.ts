@@ -10,6 +10,13 @@ export interface User {
   passwordHash: string | null;
   status: UserStatus;
   createdAt: Date;
+  /** Sealed with SecretBox; null until enrolment is confirmed. */
+  totpSecretEnc: string | null;
+  totpEnabledAt: Date | null;
+  /** Last accepted TOTP time step; codes at or before it are replays. */
+  totpLastStep: number | null;
+  /** Sealed secret shown during enrolment, not yet confirmed. */
+  totpPendingSecretEnc: string | null;
 }
 
 /** Phân vai: a Vai trò on a Phạm vi for a Người dùng, valid over [validFrom, validTo). */
@@ -25,8 +32,15 @@ export interface RoleAssignment {
   createdAt: Date;
 }
 
+/**
+ * A session is usable only at `full`. The earlier stages exist between the password step and
+ * the TOTP step, or until a Người dùng who must use TOTP has enrolled.
+ */
+export type SessionStage = "totp_pending" | "totp_enrollment" | "full";
+
 export interface Session {
   id: string;
+  stage: SessionStage;
   userId: string;
   tokenHash: string;
   activeAssignmentId: string | null;

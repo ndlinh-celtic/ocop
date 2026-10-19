@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Clock, Core, RequestContext, UserActor } from "@ocop/core";
+import { generate } from "otplib";
 import { createApp } from "../../src/app";
 import type { TestDatabase } from "./database";
 
@@ -27,21 +28,34 @@ export const requestContext = (over: Partial<RequestContext> = {}): RequestConte
   ...over,
 });
 
+/** The code an authenticator app would show for `secret` at `at`. */
+export const totpCode = (secret: string, at: Date) => generate({ secret, epoch: Math.floor(at.getTime() / 1000) });
+
+export const TEST_TOTP_KEY = Buffer.alloc(32, 7).toString("base64");
+
 export interface TestApp {
   app: Core;
   clock: FakeClock;
-  signInAs(email: string, password: string): Promise<UserActor>;
+  /** Signs in through every step; pass the TOTP secret for accounts that have TOTP. */
+  signInAs(email: string, password: string, totpSecret?: string): Promise<UserActor>;
 }
 
-export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock } = {}): TestApp {
+export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpRequired?: boolean } = {}): TestApp {
   const clock = opts.clock ?? new FakeClock();
-  const app = createApp(db.app, { clock });
+  const app = createApp(db.app, { TOTP_REQUIRED: opts.totpRequired ?? true, TOTP_ENCRYPTION_KEY: TEST_TOTP_KEY }, { clock });
   return {
     app,
     clock,
-    async signInAs(email, password) {
+    async signInAs(email, password, totpSecret) {
       const result = await app.identity.signIn({ email, password }, requestContext());
       if (!result.ok) throw new Error(`sign-in failed for ${email}: ${result.reason}`);
+      if (result.stage === "totp_pending") {
+        if (!totpSecret) throw new Error(`${email} has TOTP; pass its secret`);
+        const step = await app.identity.verifySignInTotp(result.sessionToken, await totpCode(totpSecret, clock.now()), requestContext());
+        if (!step.ok) throw new Error(`TOTP step failed for ${email}: ${step.reason}`);
+      } else if (result.stage === "totp_enrollment") {
+        throw new Error(`${email} must enrol TOTP first`);
+      }
       const actor = await app.identity.authenticate(result.sessionToken, requestContext());
       if (!actor) throw new Error("fresh session did not authenticate");
       return actor;

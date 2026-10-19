@@ -3,19 +3,38 @@ import type { RequestContext, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { hashToken, newToken } from "../shared/tokens";
 import type { Tx } from "../shared/uow";
-import { isAssignmentActive, type RoleAssignment } from "./model";
+import { isAssignmentActive, type RoleAssignment, type Session, type SessionStage, type User } from "./model";
+import { TOTP_OPTIONAL_ROLES } from "./roles";
+
+/** How long the TOTP step of a sign-in, or a forced enrolment, may take. */
+export const PENDING_STAGE_TTL_MS: Record<Exclude<SessionStage, "full">, number> = {
+  totp_pending: 5 * 60_000,
+  totp_enrollment: 15 * 60_000,
+};
 
 export interface SignInInput {
   email: string;
   password: string;
 }
 
-export type SignInResult = { ok: true; sessionToken: string; userId: string } | { ok: false; reason: "invalid_credentials" };
+export type SignInResult =
+  | { ok: true; sessionToken: string; userId: string; stage: SessionStage }
+  | { ok: false; reason: "invalid_credentials" };
 
 /** The Vai trò đang dùng a new session starts with: the only active Phân vai, if there is just one. */
 function defaultAssignment(assignments: RoleAssignment[], at: Date): RoleAssignment | null {
   const active = assignments.filter((a) => isAssignmentActive(a, at));
   return active.length === 1 ? active[0]! : null;
+}
+
+/** ADR 0003: TOTP is mandatory for anyone holding a Phân vai outside TOTP_OPTIONAL_ROLES. */
+export function mustUseTotp(assignments: RoleAssignment[], at: Date, totpRequired: boolean): boolean {
+  return totpRequired && assignments.some((a) => isAssignmentActive(a, at) && !TOTP_OPTIONAL_ROLES.includes(a.role));
+}
+
+export function stageAfterPassword(user: User, assignments: RoleAssignment[], at: Date, totpRequired: boolean): SessionStage {
+  if (user.totpEnabledAt) return "totp_pending";
+  return mustUseTotp(assignments, at, totpRequired) ? "totp_enrollment" : "full";
 }
 
 export function signIn(deps: CoreDeps) {
@@ -46,11 +65,14 @@ export function signIn(deps: CoreDeps) {
         return { ok: false, reason: "invalid_credentials" };
       }
 
-      const assignment = defaultAssignment(await tx.roleAssignments.listForUser(user.id), now);
+      const assignments = await tx.roleAssignments.listForUser(user.id);
+      const assignment = defaultAssignment(assignments, now);
+      const stage = stageAfterPassword(user, assignments, now, deps.settings.totpRequired);
       const token = newToken();
       const sessionId = deps.ids.next();
       await tx.sessions.insert({
         id: sessionId,
+        stage,
         userId: user.id,
         tokenHash: hashToken(token),
         activeAssignmentId: assignment?.id ?? null,
@@ -62,23 +84,37 @@ export function signIn(deps: CoreDeps) {
       const actor = { kind: "user" as const, userId: user.id, activeRole: assignment?.role ?? null, ctx };
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
-          action: "auth.sign_in.succeeded",
+          action: stage === "full" ? "auth.sign_in.succeeded" : "auth.password.verified",
           targetType: "session",
           targetId: sessionId,
-          metadata: { method: "password" },
+          metadata: stage === "full" ? { method: "password" } : { next: stage },
         }),
       );
-      return { ok: true, sessionToken: token, userId: user.id };
+      return { ok: true, sessionToken: token, userId: user.id, stage };
     });
   };
 }
 
-/** Loads the actor behind a session token, or null when the token is unknown, revoked or stale. */
-export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestContext): Promise<UserActor | null> {
+/** A session still in a pending stage, if it exists, is not revoked and has not timed out. */
+export async function loadPendingSession(
+  tx: Tx,
+  token: string,
+  at: Date,
+  stages: readonly SessionStage[],
+): Promise<{ session: Session; user: User } | "expired" | null> {
   const session = await tx.sessions.findByTokenHash(hashToken(token));
-  if (!session || session.revokedAt) return null;
+  if (!session || session.revokedAt || !stages.includes(session.stage)) return null;
+  if (session.stage !== "full" && at.getTime() - session.createdAt.getTime() > PENDING_STAGE_TTL_MS[session.stage]) return "expired";
   const user = await tx.users.findById(session.userId);
   if (!user || user.status !== "active") return null;
+  return { session, user };
+}
+
+/** Loads the actor behind a session token, or null when the token is unknown, revoked, unfinished or stale. */
+export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestContext): Promise<UserActor | null> {
+  const loaded = await loadPendingSession(tx, token, at, ["full"]);
+  if (!loaded || loaded === "expired") return null;
+  const { session, user } = loaded;
   const assignment = session.activeAssignmentId ? await tx.roleAssignments.findById(session.activeAssignmentId) : null;
   const active = assignment && isAssignmentActive(assignment, at) ? assignment : null;
   return {

@@ -6,6 +6,7 @@ export interface UserRepo {
   findById(id: string): Promise<User | null>;
   /** Case-insensitive. */
   findByEmail(email: string): Promise<User | null>;
+  update(id: string, patch: Partial<Omit<User, "id" | "createdAt">>): Promise<void>;
 }
 
 export interface RoleAssignmentRepo {
@@ -18,5 +19,6 @@ export interface RoleAssignmentRepo {
 export interface SessionRepo {
   insert(s: Session): Promise<void>;
   findByTokenHash(hash: string): Promise<Session | null>;
+  update(id: string, patch: Partial<Pick<Session, "stage" | "authenticatedAt" | "lastSeenAt" | "activeAssignmentId">>): Promise<void>;
   revoke(id: string, at: Date): Promise<void>;
 }

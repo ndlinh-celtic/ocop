@@ -18,5 +18,5 @@ export async function signInAction(_prev: SignInState, form: FormData): Promise<
   const result = await app().core.identity.signIn(parsed.data, await requestContext());
   if (!result.ok) return { error: "Email hoặc mật khẩu không đúng" };
   await setSessionCookie(result.sessionToken);
-  redirect("/");
+  redirect(result.stage === "full" ? "/" : result.stage === "totp_pending" ? "/dang-nhap/ma-xac-thuc" : "/dang-ky-totp");
 }

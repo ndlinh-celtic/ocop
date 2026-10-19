@@ -16,7 +16,7 @@ export function app(): WebApp {
   if (!holder.ocopWebApp) {
     const config = loadConfig();
     const pool = createPool(config.DATABASE_URL);
-    holder.ocopWebApp = { config, pool, core: createApp(pool) };
+    holder.ocopWebApp = { config, pool, core: createApp(pool, config) };
   }
   return holder.ocopWebApp;
 }
