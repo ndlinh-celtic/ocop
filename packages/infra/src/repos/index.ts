@@ -1,6 +1,7 @@
 import type { Tx } from "@ocop/core";
 import type { Db } from "../db/types";
 import { auditRepo } from "./audit";
+import { auditChainRepo } from "./audit-chain";
 import { fileRepo } from "./files";
 import { oneTimeTokenRepo, roleAssignmentRepo, sessionRepo, userRepo } from "./identity";
 import { notificationRepo } from "./notifications";
@@ -16,6 +17,7 @@ export function buildRepos(db: Db): Tx {
     wards: wardRepo(db),
     notifications: notificationRepo(db),
     audit: auditRepo(db),
+    auditChain: auditChainRepo(db),
     outbox: outboxRepo(db),
     processedEvents: processedEventsRepo(db),
     emailDeliveries: emailDeliveriesRepo(db),

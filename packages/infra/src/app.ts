@@ -18,6 +18,7 @@ export interface AppOverrides {
   hasher?: PasswordHasher;
   mailer?: Mailer;
   files?: FileStore;
+  anchorStore?: FileStore;
   scanner?: VirusScanner;
 }
 
@@ -32,6 +33,7 @@ export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "
       | "S3_SECRET_ACCESS_KEY"
       | "S3_FORCE_PATH_STYLE"
       | "S3_BUCKET_EVIDENCE"
+      | "S3_BUCKET_AUDIT_ANCHOR"
       | "FILE_MAX_MB"
       | "CLAMD_HOST"
       | "CLAMD_PORT"
@@ -115,6 +117,7 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     secretBox: aesGcmSecretBox(config.TOTP_ENCRYPTION_KEY),
     mailer,
     files,
+    anchorStore: overrides.anchorStore ?? (s3 ? createS3FileStore(s3, config.S3_BUCKET_AUDIT_ANCHOR ?? "ocop-audit-anchor") : unconfigured),
     inspector: createFileInspector(files, overrides.scanner ?? clamdScanner({ host: config.CLAMD_HOST ?? "clamd", port: config.CLAMD_PORT ?? 3310 })),
     settings,
   });

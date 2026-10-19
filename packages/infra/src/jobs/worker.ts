@@ -16,6 +16,22 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
       if (job) await core.platform.handleEvent(consumer, job.data.eventId);
     });
   }
+  // ADR 0002: seal every minute, verify nightly, anchor the day's last hash before midnight (Vietnam time).
+  const tz = "Asia/Ho_Chi_Minh";
+  await boss.schedule("audit.seal", "* * * * *", null, { tz });
+  await boss.schedule("audit.verify", "0 2 * * *", null, { tz });
+  await boss.schedule("audit.anchor", "55 23 * * *", null, { tz });
+  await boss.work("audit.seal", async () => {
+    // Drain the backlog in batches; each call seals at most one batch.
+    while ((await core.audit.seal()).sealed > 0);
+  });
+  await boss.work("audit.verify", async () => {
+    await core.audit.verify();
+  });
+  await boss.work("audit.anchor", async () => {
+    await core.audit.anchor();
+  });
+
   let running = true;
   let timer: NodeJS.Timeout | undefined;
   const loop = async () => {

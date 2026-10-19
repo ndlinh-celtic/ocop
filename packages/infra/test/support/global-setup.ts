@@ -9,6 +9,7 @@ import { bootstrapRoles, ROLE_PASSWORDS } from "./bootstrap";
 
 export const TEMPLATE_DB = "ocop_template";
 export const TEST_BUCKET = "ocop-evidence-test";
+export const TEST_ANCHOR_BUCKET = "ocop-audit-anchor-test";
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -60,6 +61,7 @@ export default async function setup(project: TestProject) {
   if (s3) {
     const settings = { endpoint, region: "us-east-1", accessKeyId: S3_KEY, secretAccessKey: S3_SECRET, forcePathStyle: true };
     await ensureBucket(settings, TEST_BUCKET, { corsOrigins: ["http://localhost:8080"] });
+    await ensureBucket(settings, TEST_ANCHOR_BUCKET, { corsOrigins: [] });
   }
   project.provide("s3", { endpoint, accessKeyId: S3_KEY, secretAccessKey: S3_SECRET });
   return async () => {

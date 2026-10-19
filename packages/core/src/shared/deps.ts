@@ -53,6 +53,8 @@ export interface CoreDeps {
   secretBox: SecretBox;
   mailer: Mailer;
   files: FileStore;
+  /** The bucket that receives daily audit anchors (ADR 0002); ideally with Object Lock. */
+  anchorStore: FileStore;
   inspector: FileInspector;
   settings: CoreSettings;
 }

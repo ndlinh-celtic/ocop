@@ -109,6 +109,7 @@ export async function ensureBucket(s: S3Settings, bucket: string, opts: { corsOr
   } catch {
     await c.send(new CreateBucketCommand({ Bucket: bucket }));
   }
+  if (opts.corsOrigins.length === 0) return;
   await c.send(
     new PutBucketCorsCommand({
       Bucket: bucket,

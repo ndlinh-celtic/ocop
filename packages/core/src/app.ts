@@ -1,3 +1,4 @@
+import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
 import { completeUpload, listFiles, requestDownload, requestUpload } from "./files/uploads";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
@@ -58,6 +59,10 @@ export function createCore(deps: CoreDeps) {
     },
     audit: {
       search: searchAudit(deps),
+      seal: sealAuditBatch(deps),
+      verify: verifyAuditChain(deps),
+      anchor: anchorAuditChain(deps),
+      verifyAsAdmin: verifyAuditChainAsAdmin(deps),
     },
     files: {
       requestUpload: requestUpload(deps),

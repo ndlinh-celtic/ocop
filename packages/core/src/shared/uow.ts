@@ -1,4 +1,5 @@
 import type { AuditLog } from "../audit/audit";
+import type { AuditChainRepo } from "../audit/chain-repo";
 import type { FileRepo } from "../files/model";
 import type { RoleAssignmentRepo, SessionRepo, UserRepo } from "../identity/repos";
 import type { OneTimeTokenRepo } from "../identity/tokens";
@@ -16,6 +17,7 @@ export interface Tx {
   wards: WardRepo;
   notifications: NotificationRepo;
   audit: AuditLog;
+  auditChain: AuditChainRepo;
   outbox: Outbox;
   processedEvents: ProcessedEvents;
   emailDeliveries: EmailDeliveries;

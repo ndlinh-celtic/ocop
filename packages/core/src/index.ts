@@ -22,3 +22,5 @@ export type { FileStore, PresignedRequest } from "./files/file-store";
 export { DEFAULT_ALLOWED_TYPES, type FileRepo, type FileStatus, type StoredFile } from "./files/model";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
+export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
+export type { AuditChainRepo, AuditSeal } from "./audit/chain-repo";

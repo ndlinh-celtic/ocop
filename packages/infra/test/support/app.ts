@@ -86,6 +86,8 @@ export interface TestApp {
   clock: FakeClock;
   mailbox: Mailbox;
   scanner: FakeScanner;
+  /** Reads an object from the audit anchor bucket. */
+  readAnchor(key: string): Promise<string>;
   /**
    * Runs the outbox relay and every consumer queue until nothing is left, like the worker would.
    * `includeRetries` also releases jobs waiting out their retry delay.
@@ -101,6 +103,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
   const scanner = new FakeScanner();
+  const anchorStore = createS3FileStore(s3TestSettings(), "ocop-audit-anchor-test");
   const app = createApp(
     db.app,
     {
@@ -114,6 +117,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       clock,
       mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>"),
       files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
+      anchorStore,
       scanner,
     },
   );
@@ -130,6 +134,11 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
     clock,
     mailbox,
     scanner,
+    async readAnchor(key) {
+      const chunks: Buffer[] = [];
+      for await (const c of await anchorStore.read(key)) chunks.push(Buffer.from(c));
+      return Buffer.concat(chunks).toString("utf8");
+    },
     async drainJobs({ includeRetries = false } = {}) {
       const b = await ensureBoss();
       if (includeRetries) await db.admin.query("UPDATE pgboss.job SET start_after = now() WHERE state = 'retry'");

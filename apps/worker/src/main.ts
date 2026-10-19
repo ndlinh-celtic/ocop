@@ -10,7 +10,9 @@ const core = createApp(pool, config);
 const s3 = s3SettingsFrom(config);
 if (process.env.S3_AUTO_CREATE_BUCKETS === "true" && s3) {
   const origins = config.S3_CORS_ORIGINS.split(",").map((o) => o.trim());
-  for (const bucket of [config.S3_BUCKET_EVIDENCE, config.S3_BUCKET_AUDIT_ANCHOR]) await ensureBucket(s3, bucket, { corsOrigins: origins });
+  await ensureBucket(s3, config.S3_BUCKET_EVIDENCE, { corsOrigins: origins });
+  // Browsers never touch the anchor bucket: no CORS.
+  await ensureBucket(s3, config.S3_BUCKET_AUDIT_ANCHOR, { corsOrigins: [] });
 }
 await core.system.recordStartup("worker", { requestId: randomUUID(), userAgent: "process:worker" });
 
