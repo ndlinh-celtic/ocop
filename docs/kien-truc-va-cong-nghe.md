@@ -178,7 +178,7 @@ Cộng lại khoảng 5 đến 6 GB khi cao điểm, nên chọn **4 vCPU / 8 GB
 
 ### 6.2 Môi trường và quy trình phát hành
 
-1. Ba môi trường: `dev` (local, Postgres + MinIO trong Compose), `staging` (VM nhỏ, dữ liệu giả), `prod`. Staging dùng cùng nhà cung cấp S3 với prod để bắt lỗi tương thích sớm.
+1. Ba môi trường: `dev` (local, Postgres + S3 RustFS trong Compose; MinIO đã ngừng phát hành image cộng đồng), `staging` (VM nhỏ, dữ liệu giả), `prod`. Staging dùng cùng nhà cung cấp S3 với prod để bắt lỗi tương thích sớm.
 2. Pipeline: lint, typecheck, unit test, integration test (Testcontainers), build image có tag theo commit, quét Trivy, đẩy lên registry, deploy staging tự động, E2E Playwright trên staging, deploy prod bằng thao tác duyệt tay.
 3. Migration kiểu expand/contract để rollback ứng dụng mà không rollback schema.
 4. Secret (khóa DB, S3, SMTP, HMAC QR, khóa mã hóa TOTP) nằm trong file env chỉ root đọc được hoặc secret manager của nhà cung cấp nếu có; không commit.

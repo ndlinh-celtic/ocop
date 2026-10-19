@@ -14,7 +14,17 @@ open http://localhost:8025          # Mailpit: xem email gửi đi
 docker compose -f compose.yaml -f compose.dev.yaml up   # dev: hot reload, một replica web
 ```
 
-Kiểm tra: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:int` (Postgres thật qua Testcontainers, cần Docker).
+Kiểm tra: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:int` (Postgres và S3 thật qua Testcontainers, cần Docker).
+
+Dữ liệu mẫu: `docker compose run --rm worker pnpm --filter @ocop/infra seed:wards [tệp.csv]` (CSV `ma,ten`), `docker compose run --rm -it worker pnpm --filter @ocop/infra admin:create` (Quản trị đầu tiên).
+
+Bộ test tương thích S3 với nhà cung cấp thật (ghi kết quả vào phụ lục A):
+
+```bash
+S3_COMPAT_ENDPOINT=https://... S3_COMPAT_ACCESS_KEY=... S3_COMPAT_SECRET_KEY=... \
+S3_COMPAT_REGION=... S3_COMPAT_BUCKET=bucket-co-san \
+pnpm --filter @ocop/infra exec vitest run --config vitest.int.config.ts test/files/s3-compat
+```
 
 ## Cấu trúc
 

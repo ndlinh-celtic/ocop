@@ -115,3 +115,21 @@ export const notification = platform.table("notification", {
   createdAt: ts("created_at").notNull(),
   readAt: ts("read_at"),
 });
+
+export const file = platform.table("file", {
+  id: uuid("id").primaryKey(),
+  ownerUserId: uuid("owner_user_id").notNull(),
+  purpose: text("purpose").$type<"test_upload">().notNull(),
+  storageKey: text("storage_key").notNull(),
+  fileName: text("file_name").notNull(),
+  declaredType: text("declared_type").notNull(),
+  size: bigint("size", { mode: "number" }).notNull(),
+  multipartUploadId: text("multipart_upload_id"),
+  status: text("status").$type<"awaiting_upload" | "scanning" | "clean" | "blocked">().notNull(),
+  detectedType: text("detected_type"),
+  sha256: text("sha256"),
+  blockReason: text("block_reason"),
+  createdAt: ts("created_at").notNull(),
+  uploadedAt: ts("uploaded_at"),
+  scannedAt: ts("scanned_at"),
+});

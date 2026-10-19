@@ -2,10 +2,12 @@ import { randomUUID } from "node:crypto";
 import { CONSUMER_NAMES, type Clock, type Core, type RequestContext, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
+import { createS3FileStore } from "../../src/files/s3";
 import { createBoss, type PgBoss } from "../../src/jobs/boss";
 import { relayOutbox, type EventJob } from "../../src/jobs/relay";
 import { renderingMailer, type MailTransport, type OutgoingEmail } from "../../src/mail/mailer";
 import type { TestDatabase } from "./database";
+import { s3TestSettings } from "./s3";
 
 /** Captures rendered emails instead of sending them; can be told to fail the next N deliveries. */
 export class Mailbox implements MailTransport {
@@ -85,7 +87,11 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       SMTP_URL: undefined,
       MAIL_FROM: "OCOP <no-reply@ocop.test>",
     },
-    { clock, mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>") },
+    {
+      clock,
+      mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>"),
+      files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
+    },
   );
   let boss: PgBoss | undefined;
   const ensureBoss = async () => {

@@ -16,6 +16,8 @@
     "seed:wards": "tsx scripts/seed-wards.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
     "@node-rs/argon2": "^2.2.2",
     "@ocop/core": "workspace:*",
     "@react-email/components": "^1.0.12",

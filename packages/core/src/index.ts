@@ -18,3 +18,6 @@ export type { GrantRoleInput } from "./identity/assignments";
 export type { Ward, WardRepo } from "./org/ward";
 export type { Notification, NotificationRepo } from "./notifications/notification";
 export { REAUTH_WINDOW_MS, requireRecentAuth, type ReauthProof, type ReauthResult } from "./identity/reauth";
+export type { FileStore, PresignedRequest } from "./files/file-store";
+export { DEFAULT_ALLOWED_TYPES, type FileRepo, type FileStatus, type StoredFile } from "./files/model";
+export type { UploadInstructions } from "./files/uploads";

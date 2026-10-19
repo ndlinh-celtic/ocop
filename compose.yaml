@@ -14,6 +14,7 @@ x-app-env: &app-env
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-ocop}
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-ocop-dev-secret}
   S3_FORCE_PATH_STYLE: "true"
+  S3_CORS_ORIGINS: ${APP_BASE_URL:-http://localhost:8080}
   CLAMD_HOST: clamd
   CLAMD_PORT: "3310"
 
@@ -86,7 +87,9 @@ services:
 
   worker:
     build: { context: ., dockerfile: infra/docker/Dockerfile, target: worker }
-    environment: *app-env
+    environment:
+      <<: *app-env
+      S3_AUTO_CREATE_BUCKETS: "true"
     depends_on:
       migrate: { condition: service_completed_successfully }
       s3: { condition: service_healthy }

@@ -1,4 +1,5 @@
 import { searchAudit } from "./audit/search";
+import { completeUpload, listFiles, requestDownload, requestUpload } from "./files/uploads";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
 import { changePassword, requestPasswordReset, resetPassword } from "./identity/passwords";
@@ -57,6 +58,12 @@ export function createCore(deps: CoreDeps) {
     },
     audit: {
       search: searchAudit(deps),
+    },
+    files: {
+      requestUpload: requestUpload(deps),
+      completeUpload: completeUpload(deps),
+      requestDownload: requestDownload(deps),
+      list: listFiles(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

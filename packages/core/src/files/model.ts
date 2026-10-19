@@ -1,0 +1,41 @@
+/**
+ * An uploaded file (DC-03). Bytes live in object storage under `storageKey`; only the database
+ * status decides who may download it (no object copies between "folders", see L24).
+ */
+export type FileStatus = "awaiting_upload" | "scanning" | "clean" | "blocked";
+
+export interface StoredFile {
+  id: string;
+  ownerUserId: string;
+  purpose: "test_upload";
+  storageKey: string;
+  fileName: string;
+  declaredType: string;
+  size: number;
+  multipartUploadId: string | null;
+  status: FileStatus;
+  detectedType: string | null;
+  sha256: string | null;
+  blockReason: string | null;
+  createdAt: Date;
+  uploadedAt: Date | null;
+  scannedAt: Date | null;
+}
+
+export interface FileRepo {
+  insert(f: StoredFile): Promise<void>;
+  findById(id: string): Promise<StoredFile | null>;
+  update(id: string, patch: Partial<Omit<StoredFile, "id" | "ownerUserId" | "createdAt">>): Promise<void>;
+  listByOwner(userId: string, limit: number): Promise<StoredFile[]>;
+}
+
+/** Allowed types: MIME → accepted extensions. Mirrors what minh chứng needs (PDF, images, Office, short video). */
+export const DEFAULT_ALLOWED_TYPES: Record<string, string[]> = {
+  "application/pdf": ["pdf"],
+  "image/jpeg": ["jpg", "jpeg"],
+  "image/png": ["png"],
+  "image/webp": ["webp"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"],
+  "video/mp4": ["mp4"],
+};

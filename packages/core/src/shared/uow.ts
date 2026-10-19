@@ -1,4 +1,5 @@
 import type { AuditLog } from "../audit/audit";
+import type { FileRepo } from "../files/model";
 import type { RoleAssignmentRepo, SessionRepo, UserRepo } from "../identity/repos";
 import type { OneTimeTokenRepo } from "../identity/tokens";
 import type { NotificationRepo } from "../notifications/notification";
@@ -18,6 +19,7 @@ export interface Tx {
   outbox: Outbox;
   processedEvents: ProcessedEvents;
   emailDeliveries: EmailDeliveries;
+  files: FileRepo;
 }
 
 export interface UnitOfWork {

@@ -34,6 +34,9 @@ const schema = z.object({
   SESSION_IDLE_RELAXED_MINUTES: z.coerce.number().positive().default(480),
   SESSION_MAX_HOURS: z.coerce.number().positive().default(12),
   PASSWORD_RESET_MINUTES: z.coerce.number().positive().default(60),
+  FILE_MAX_MB: z.coerce.number().positive().default(100),
+  /** Browser origins allowed to upload directly to the bucket (local bucket setup only). */
+  S3_CORS_ORIGINS: z.string().default("http://localhost:8080"),
 });
 
 export type Config = z.infer<typeof schema>;
