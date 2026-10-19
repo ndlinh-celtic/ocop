@@ -1,6 +1,7 @@
 import { searchAudit } from "./audit/search";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
+import { changePassword, requestPasswordReset, resetPassword } from "./identity/passwords";
 import { bootstrapFirstAdmin } from "./identity/bootstrap";
 import { listNotifications, markAllRead, markRead, unreadCount } from "./notifications/inbox";
 import { listWards } from "./org/catalogue";
@@ -34,6 +35,9 @@ export function createCore(deps: CoreDeps) {
       myAssignments: myAssignments(deps),
       switchActiveRole: switchActiveRole(deps),
       hasTotp: hasTotp(deps),
+      requestPasswordReset: requestPasswordReset(deps),
+      resetPassword: resetPassword(deps),
+      changePassword: changePassword(deps),
     },
     org: {
       listWards: listWards(deps),

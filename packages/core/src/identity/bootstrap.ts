@@ -35,6 +35,9 @@ export function bootstrapFirstAdmin(deps: CoreDeps) {
         totpEnabledAt: null,
         totpLastStep: null,
         totpPendingSecretEnc: null,
+        failedCount: 0,
+        failedWindowStart: null,
+        lockedUntil: null,
       });
       const assignmentId = deps.ids.next();
       await tx.roleAssignments.insert({

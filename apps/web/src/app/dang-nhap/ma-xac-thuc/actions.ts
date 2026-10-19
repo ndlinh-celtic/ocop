@@ -12,5 +12,6 @@ export async function verifyCodeAction(_prev: CodeFormState, form: FormData): Pr
   const result = await app().core.identity.verifySignInTotp(token, String(form.get("code") ?? ""), await requestContext());
   if (result.ok) redirect("/");
   if (result.reason === "expired") redirect("/dang-nhap?het-han=1");
+  if (result.reason === "locked") redirect("/dang-nhap?tam-khoa=1");
   return { error: "Mã không đúng hoặc đã dùng. Nhập mã mới trên ứng dụng xác thực." };
 }

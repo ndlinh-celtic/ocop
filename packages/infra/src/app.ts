@@ -1,4 +1,4 @@
-import { createCore, type Clock, type Core, type CoreSettings, type IdGen, type Mailer, type PasswordHasher } from "@ocop/core";
+import { createCore, DEFAULT_SETTINGS, type Clock, type Core, type CoreSettings, type IdGen, type Mailer, type PasswordHasher } from "@ocop/core";
 import type { Pool } from "pg";
 import { argon2Hasher } from "./adapters/argon2";
 import { aesGcmSecretBox } from "./adapters/secret-box";
@@ -15,12 +15,45 @@ export interface AppOverrides {
   mailer?: Mailer;
 }
 
-export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM">;
+export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
+  Partial<
+    Pick<
+      Config,
+      | "LOCKOUT_MAX_FAILURES"
+      | "LOCKOUT_WINDOW_MINUTES"
+      | "LOCKOUT_MINUTES"
+      | "SESSION_IDLE_STRICT_MINUTES"
+      | "SESSION_IDLE_RELAXED_MINUTES"
+      | "SESSION_MAX_HOURS"
+      | "PASSWORD_RESET_MINUTES"
+    >
+  >;
+
+const MIN = 60_000;
+
+export function settingsFrom(config: AppConfig): CoreSettings {
+  const d = DEFAULT_SETTINGS;
+  return {
+    totpRequired: config.TOTP_REQUIRED,
+    appBaseUrl: config.APP_BASE_URL,
+    lockout: {
+      maxFailures: config.LOCKOUT_MAX_FAILURES ?? d.lockout.maxFailures,
+      windowMs: config.LOCKOUT_WINDOW_MINUTES ? config.LOCKOUT_WINDOW_MINUTES * MIN : d.lockout.windowMs,
+      lockMs: config.LOCKOUT_MINUTES ? config.LOCKOUT_MINUTES * MIN : d.lockout.lockMs,
+    },
+    session: {
+      idleStrictMs: config.SESSION_IDLE_STRICT_MINUTES ? config.SESSION_IDLE_STRICT_MINUTES * MIN : d.session.idleStrictMs,
+      idleRelaxedMs: config.SESSION_IDLE_RELAXED_MINUTES ? config.SESSION_IDLE_RELAXED_MINUTES * MIN : d.session.idleRelaxedMs,
+      maxLifetimeMs: config.SESSION_MAX_HOURS ? config.SESSION_MAX_HOURS * 60 * MIN : d.session.maxLifetimeMs,
+    },
+    passwordResetTtlMs: config.PASSWORD_RESET_MINUTES ? config.PASSWORD_RESET_MINUTES * MIN : d.passwordResetTtlMs,
+  };
+}
 
 /** Composition root: the real adapters behind the core's ports. */
 export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides = {}): Core {
   if (!config.TOTP_ENCRYPTION_KEY) throw new Error("TOTP_ENCRYPTION_KEY is required");
-  const settings: CoreSettings = { totpRequired: config.TOTP_REQUIRED, appBaseUrl: config.APP_BASE_URL };
+  const settings = settingsFrom(config);
   const mailer =
     overrides.mailer ??
     (config.SMTP_URL

@@ -1,4 +1,4 @@
-import { bigint, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, integer, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -18,6 +18,9 @@ export const userAccount = identity.table("user_account", {
   totpEnabledAt: ts("totp_enabled_at"),
   totpLastStep: bigint("totp_last_step", { mode: "number" }),
   totpPendingSecretEnc: text("totp_pending_secret_enc"),
+  failedCount: integer("failed_count").notNull(),
+  failedWindowStart: ts("failed_window_start"),
+  lockedUntil: ts("locked_until"),
 });
 
 export const roleAssignment = identity.table("role_assignment", {

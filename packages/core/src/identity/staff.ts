@@ -40,6 +40,9 @@ export function createStaffUser(deps: CoreDeps) {
         totpEnabledAt: null,
         totpLastStep: null,
         totpPendingSecretEnc: null,
+        failedCount: 0,
+        failedWindowStart: null,
+        lockedUntil: null,
       });
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, { action: "identity.user.created", targetType: "user", targetId: userId, after: { email, fullName } }),
@@ -79,6 +82,7 @@ export function listUsers(deps: CoreDeps) {
           fullName: u.fullName,
           status: u.status,
           totpEnabled: u.totpEnabledAt !== null,
+          lockedUntil: u.lockedUntil && u.lockedUntil > now ? u.lockedUntil : null,
           createdAt: u.createdAt,
           assignments: await Promise.all(
             (await tx.roleAssignments.listForUser(u.id)).map(async (a) => ({

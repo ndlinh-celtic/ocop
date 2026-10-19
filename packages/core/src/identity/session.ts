@@ -3,6 +3,7 @@ import type { RequestContext, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { hashToken, newToken } from "../shared/tokens";
 import type { Tx } from "../shared/uow";
+import { clearFailures, isLocked, registerFailure } from "./lockout";
 import { isAssignmentActive, type RoleAssignment, type Session, type SessionStage, type User } from "./model";
 import { TOTP_OPTIONAL_ROLES } from "./roles";
 
@@ -19,7 +20,8 @@ export interface SignInInput {
 
 export type SignInResult =
   | { ok: true; sessionToken: string; userId: string; stage: SessionStage }
-  | { ok: false; reason: "invalid_credentials" };
+  | { ok: false; reason: "invalid_credentials" }
+  | { ok: false; reason: "locked"; until: Date };
 
 /** The Vai trò đang dùng a new session starts with: the only active Phân vai, if there is just one. */
 function defaultAssignment(assignments: RoleAssignment[], at: Date): RoleAssignment | null {
@@ -48,6 +50,17 @@ export function signIn(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const user = await tx.users.findByEmail(email);
+      if (user && isLocked(user, now)) {
+        await tx.audit.append(
+          auditEntry(anonymous, deps.ids.next(), now, {
+            action: "auth.sign_in.failed",
+            targetType: "user",
+            targetId: user.id,
+            metadata: { email: email.toLowerCase(), reason: "locked" },
+          }),
+        );
+        return { ok: false, reason: "locked", until: user.lockedUntil! };
+      }
       const passwordOk =
         user?.passwordHash != null
           ? await deps.hasher.verify(user.passwordHash, input.password)
@@ -62,12 +75,17 @@ export function signIn(deps: CoreDeps) {
             metadata: { email: email.toLowerCase(), reason: !user ? "unknown_email" : !passwordOk ? "wrong_password" : "inactive" },
           }),
         );
+        if (user && !passwordOk && (await registerFailure(deps, tx, user, anonymous, now))) {
+          return { ok: false, reason: "locked", until: new Date(now.getTime() + deps.settings.lockout.lockMs) };
+        }
         return { ok: false, reason: "invalid_credentials" };
       }
 
       const assignments = await tx.roleAssignments.listForUser(user.id);
       const assignment = defaultAssignment(assignments, now);
       const stage = stageAfterPassword(user, assignments, now, deps.settings.totpRequired);
+      // Only a completed sign-in resets the count, so the password step cannot clear TOTP failures.
+      if (stage === "full") await clearFailures(tx, user);
       const token = newToken();
       const sessionId = deps.ids.next();
       await tx.sessions.insert({
@@ -110,12 +128,32 @@ export async function loadPendingSession(
   return { session, user };
 }
 
-/** Loads the actor behind a session token, or null when the token is unknown, revoked, unfinished or stale. */
-export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestContext): Promise<UserActor | null> {
+/** Idle limit for this Người dùng: strict as soon as they hold any Vai trò outside TOTP_OPTIONAL_ROLES. */
+export function idleLimitMs(assignments: RoleAssignment[], at: Date, settings: CoreDeps["settings"]): number {
+  const strict = assignments.some((a) => isAssignmentActive(a, at) && !TOTP_OPTIONAL_ROLES.includes(a.role));
+  return strict ? settings.session.idleStrictMs : settings.session.idleRelaxedMs;
+}
+
+/** Recording activity at most once a minute keeps authentication cheap. */
+const TOUCH_EVERY_MS = 60_000;
+
+/**
+ * Loads the actor behind a session token, or null when the token is unknown, revoked, unfinished,
+ * idle for too long or past its maximum lifetime.
+ */
+export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestContext, settings: CoreDeps["settings"]): Promise<UserActor | null> {
   const loaded = await loadPendingSession(tx, token, at, ["full"]);
   if (!loaded || loaded === "expired") return null;
   const { session, user } = loaded;
-  const assignment = session.activeAssignmentId ? await tx.roleAssignments.findById(session.activeAssignmentId) : null;
+  const assignments = await tx.roleAssignments.listForUser(user.id);
+  const idle = at.getTime() - session.lastSeenAt.getTime();
+  const age = at.getTime() - session.createdAt.getTime();
+  if (idle > idleLimitMs(assignments, at, settings) || age > settings.session.maxLifetimeMs) {
+    await tx.sessions.revoke(session.id, at);
+    return null;
+  }
+  if (idle > TOUCH_EVERY_MS) await tx.sessions.update(session.id, { lastSeenAt: at });
+  const assignment = session.activeAssignmentId ? (assignments.find((a) => a.id === session.activeAssignmentId) ?? null) : null;
   const active = assignment && isAssignmentActive(assignment, at) ? assignment : null;
   return {
     kind: "user",
@@ -131,7 +169,7 @@ export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestCon
 }
 
 export function authenticate(deps: CoreDeps) {
-  return (token: string, ctx: RequestContext) => deps.uow.run((tx) => loadActor(tx, token, deps.clock.now(), ctx));
+  return (token: string, ctx: RequestContext) => deps.uow.run((tx) => loadActor(tx, token, deps.clock.now(), ctx, deps.settings));
 }
 
 export function signOut(deps: CoreDeps) {

@@ -2,7 +2,9 @@
 export type DomainEventBody =
   | { type: "identity.user.created"; payload: { userId: string } }
   | { type: "identity.activation.requested"; payload: { userId: string } }
-  | { type: "identity.role.granted"; payload: { assignmentId: string } };
+  | { type: "identity.role.granted"; payload: { assignmentId: string } }
+  | { type: "identity.user.locked"; payload: { userId: string; until: string } }
+  | { type: "identity.password_reset.requested"; payload: { userId: string } };
 
 export type EventType = DomainEventBody["type"];
 

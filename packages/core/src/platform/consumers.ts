@@ -1,4 +1,5 @@
 import { issueActivationLink } from "../identity/activation-email";
+import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
 import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
@@ -23,6 +24,14 @@ export const CONSUMERS = {
   "notifications.role-granted": {
     events: ["identity.role.granted"],
     handle: notifyRoleGranted,
+  },
+  "identity.lockout-email": {
+    events: ["identity.user.locked"],
+    handle: emailAccountLocked,
+  },
+  "identity.password-reset-email": {
+    events: ["identity.password_reset.requested"],
+    handle: emailPasswordReset,
   },
 } as const satisfies Record<string, Consumer>;
 

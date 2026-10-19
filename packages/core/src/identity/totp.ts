@@ -2,9 +2,10 @@ import { auditEntry } from "../audit/audit";
 import type { RequestContext } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { clearFailures, isLocked, registerFailure } from "./lockout";
 import { loadPendingSession } from "./session";
 
-export type TotpStepResult = { ok: true } | { ok: false; reason: "invalid_code" | "expired" };
+export type TotpStepResult = { ok: true } | { ok: false; reason: "invalid_code" | "expired" | "locked" };
 
 const ISSUER_LABEL = "OCOP";
 
@@ -19,13 +20,16 @@ export function verifySignInTotp(deps: CoreDeps) {
       const { session, user } = loaded;
       const secretEnc = loaded.user.totpSecretEnc;
       const actor = { kind: "user" as const, userId: user.id, activeRole: null, ctx };
+      if (isLocked(user, now)) return { ok: false, reason: "locked" };
 
       const check = await deps.totp.verify(deps.secretBox.open(secretEnc), code.trim(), now, user.totpLastStep);
       if (!check.valid) {
         await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.totp.failed", targetType: "session", targetId: session.id }));
+        if (await registerFailure(deps, tx, user, actor, now)) return { ok: false, reason: "locked" };
         return { ok: false, reason: "invalid_code" };
       }
       await tx.users.update(user.id, { totpLastStep: check.step });
+      await clearFailures(tx, user);
       await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, lastSeenAt: now });
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
@@ -67,13 +71,16 @@ export function confirmTotpEnrollment(deps: CoreDeps) {
       const { session, user } = loaded;
       const actor = { kind: "user" as const, userId: user.id, activeRole: null, ctx };
       const secretEnc = loaded.user.totpPendingSecretEnc;
+      if (isLocked(user, now)) return { ok: false, reason: "locked" };
 
       const check = await deps.totp.verify(deps.secretBox.open(secretEnc), code.trim(), now, null);
       if (!check.valid) {
         await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.totp.failed", targetType: "user", targetId: user.id, metadata: { during: "enrollment" } }));
+        if (await registerFailure(deps, tx, user, actor, now)) return { ok: false, reason: "locked" };
         return { ok: false, reason: "invalid_code" };
       }
       await tx.users.update(user.id, { totpSecretEnc: secretEnc, totpPendingSecretEnc: null, totpEnabledAt: now, totpLastStep: check.step });
+      await clearFailures(tx, user);
       if (session.stage !== "full") await tx.sessions.update(session.id, { stage: "full", authenticatedAt: now, lastSeenAt: now });
       await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "identity.totp.enrolled", targetType: "user", targetId: user.id }));
       if (session.stage !== "full") {

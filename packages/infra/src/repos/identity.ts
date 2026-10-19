@@ -1,5 +1,5 @@
 import type { OneTimeToken, OneTimeTokenRepo, Role, RoleAssignment, RoleAssignmentRepo, ScopeType, Session, SessionRepo, User, UserRepo } from "@ocop/core";
-import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { oneTimeToken, roleAssignment, session, userAccount } from "../db/schema";
 
@@ -76,6 +76,12 @@ export function sessionRepo(db: Db): SessionRepo {
     },
     async update(id, patch) {
       await db.update(session).set(patch).where(eq(session.id, id));
+    },
+    async revokeAllForUserExcept(userId, keepSessionId, at) {
+      await db
+        .update(session)
+        .set({ revokedAt: at })
+        .where(and(eq(session.userId, userId), isNull(session.revokedAt), ne(session.id, keepSessionId)));
     },
     async revokeAllForUser(userId, at) {
       await db.update(session).set({ revokedAt: at }).where(and(eq(session.userId, userId), isNull(session.revokedAt)));

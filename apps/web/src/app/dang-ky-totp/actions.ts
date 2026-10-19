@@ -12,5 +12,6 @@ export async function confirmEnrollmentAction(_prev: CodeFormState, form: FormDa
   const result = await app().core.identity.confirmTotpEnrollment(token, String(form.get("code") ?? ""), await requestContext());
   if (result.ok) redirect("/");
   if (result.reason === "expired") redirect("/dang-nhap?het-han=1");
+  if (result.reason === "locked") redirect("/dang-nhap?tam-khoa=1");
   return { error: "Mã không đúng. Kiểm tra giờ trên điện thoại rồi nhập mã mới." };
 }

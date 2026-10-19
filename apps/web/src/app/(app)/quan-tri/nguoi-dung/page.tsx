@@ -1,5 +1,6 @@
 import { ROLE_LABEL } from "@ocop/core";
 import Link from "next/link";
+import { formatVnTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { resendActivationAction } from "./actions";
@@ -46,7 +47,7 @@ export default async function UsersPage() {
                     .map((a) => `${ROLE_LABEL[a.role]} (${a.scopeLabel})`)
                     .join(", ") || "—"}
                 </td>
-                <td className="px-4 py-2">{STATUS_LABEL[u.status]}</td>
+                <td className="px-4 py-2">{u.lockedUntil ? `Tạm khóa đến ${formatVnTime(u.lockedUntil)}` : STATUS_LABEL[u.status]}</td>
                 <td className="px-4 py-2">{u.totpEnabled ? "Đã bật" : "Chưa"}</td>
                 <td className="px-4 py-2 text-right">
                   {u.status === "pending_activation" && (

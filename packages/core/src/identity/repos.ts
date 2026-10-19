@@ -25,4 +25,5 @@ export interface SessionRepo {
   update(id: string, patch: Partial<Pick<Session, "stage" | "authenticatedAt" | "lastSeenAt" | "activeAssignmentId">>): Promise<void>;
   revoke(id: string, at: Date): Promise<void>;
   revokeAllForUser(userId: string, at: Date): Promise<void>;
+  revokeAllForUserExcept(userId: string, keepSessionId: string, at: Date): Promise<void>;
 }

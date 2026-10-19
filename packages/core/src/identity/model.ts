@@ -17,6 +17,10 @@ export interface User {
   totpLastStep: number | null;
   /** Sealed secret shown during enrolment, not yet confirmed. */
   totpPendingSecretEnc: string | null;
+  /** Failed password or TOTP attempts counted from `failedWindowStart`. */
+  failedCount: number;
+  failedWindowStart: Date | null;
+  lockedUntil: Date | null;
 }
 
 /** Phân vai: a Vai trò on a Phạm vi for a Người dùng, valid over [validFrom, validTo). */

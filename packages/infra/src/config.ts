@@ -26,6 +26,14 @@ const schema = z.object({
   S3_PUBLIC_ENDPOINT: z.string().url().optional(),
   CLAMD_HOST: z.string().default("clamd"),
   CLAMD_PORT: z.coerce.number().default(3310),
+  // L20 defaults from spec #1; minutes unless noted.
+  LOCKOUT_MAX_FAILURES: z.coerce.number().int().positive().default(5),
+  LOCKOUT_WINDOW_MINUTES: z.coerce.number().positive().default(15),
+  LOCKOUT_MINUTES: z.coerce.number().positive().default(15),
+  SESSION_IDLE_STRICT_MINUTES: z.coerce.number().positive().default(30),
+  SESSION_IDLE_RELAXED_MINUTES: z.coerce.number().positive().default(480),
+  SESSION_MAX_HOURS: z.coerce.number().positive().default(12),
+  PASSWORD_RESET_MINUTES: z.coerce.number().positive().default(60),
 });
 
 export type Config = z.infer<typeof schema>;
