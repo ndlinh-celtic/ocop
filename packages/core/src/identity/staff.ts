@@ -4,7 +4,9 @@ import type { Actor, RequestContext } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { hashToken } from "../shared/tokens";
-import { requireAdmin } from "./guards";
+import { scopeLabel } from "./assignments";
+import { isAssignmentActive } from "./model";
+import { authorize } from "./policy";
 import { assertPasswordAcceptable } from "./password";
 import { isUsable } from "./tokens";
 
@@ -18,7 +20,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Quản trị creates an account for an officer; it stays pending until the officer sets a password. */
 export function createStaffUser(deps: CoreDeps) {
   return async (actor: Actor, input: CreateStaffInput) => {
-    requireAdmin(actor);
+    authorize(actor, "user.create");
     const email = input.email.trim();
     const fullName = input.fullName.trim();
     if (!EMAIL.test(email)) throw new DomainError("email_invalid", "Email không hợp lệ");
@@ -51,7 +53,7 @@ export function createStaffUser(deps: CoreDeps) {
 /** Sends a fresh activation link; the consumer voids the previous one. */
 export function resendActivation(deps: CoreDeps) {
   return async (actor: Actor, userId: string) => {
-    requireAdmin(actor);
+    authorize(actor, "user.resend_activation");
     return deps.uow.run(async (tx) => {
       const user = await tx.users.findById(userId);
       if (!user) throw new DomainError("user_not_found", "Không tìm thấy người dùng");
@@ -66,17 +68,33 @@ export function resendActivation(deps: CoreDeps) {
 
 export function listUsers(deps: CoreDeps) {
   return async (actor: Actor) => {
-    requireAdmin(actor);
-    return deps.uow.run(async (tx) =>
-      (await tx.users.list()).map((u) => ({
-        id: u.id,
-        email: u.email,
-        fullName: u.fullName,
-        status: u.status,
-        totpEnabled: u.totpEnabledAt !== null,
-        createdAt: u.createdAt,
-      })),
-    );
+    authorize(actor, "user.list");
+    return deps.uow.run(async (tx) => {
+      const now = deps.clock.now();
+      const users = await tx.users.list();
+      return Promise.all(
+        users.map(async (u) => ({
+          id: u.id,
+          email: u.email,
+          fullName: u.fullName,
+          status: u.status,
+          totpEnabled: u.totpEnabledAt !== null,
+          createdAt: u.createdAt,
+          assignments: await Promise.all(
+            (await tx.roleAssignments.listForUser(u.id)).map(async (a) => ({
+              id: a.id,
+              role: a.role,
+              scopeType: a.scopeType,
+              scopeId: a.scopeId,
+              scopeLabel: await scopeLabel(tx, a),
+              validFrom: a.validFrom,
+              validTo: a.validTo,
+              active: isAssignmentActive(a, now),
+            })),
+          ),
+        })),
+      );
+    });
   };
 }
 

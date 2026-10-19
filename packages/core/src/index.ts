@@ -13,3 +13,7 @@ export { CONSUMER_NAMES, CONSUMERS, consumersFor, type ConsumerName } from "./pl
 export type { DomainEvent, EventType, Outbox, ProcessedEvents } from "./platform/events";
 export type { DeliveryStatus, EmailDeliveries, EmailDelivery, EmailMessage, Mailer } from "./platform/mail";
 export type { OneTimePurpose, OneTimeToken, OneTimeTokenRepo } from "./identity/tokens";
+export { can, authorize, type Action } from "./identity/policy";
+export type { GrantRoleInput } from "./identity/assignments";
+export type { Ward, WardRepo } from "./org/ward";
+export type { Notification, NotificationRepo } from "./notifications/notification";

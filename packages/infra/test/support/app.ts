@@ -70,6 +70,7 @@ export interface TestApp {
   stop(): Promise<void>;
   /** Signs in through every step; pass the TOTP secret for accounts that have TOTP. */
   signInAs(email: string, password: string, totpSecret?: string): Promise<UserActor>;
+  signInWithToken(email: string, password: string, totpSecret?: string): Promise<{ actor: UserActor; token: string }>;
 }
 
 export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpRequired?: boolean } = {}): TestApp {
@@ -123,6 +124,9 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       await boss?.stop({ graceful: false });
     },
     async signInAs(email, password, totpSecret) {
+      return (await this.signInWithToken(email, password, totpSecret)).actor;
+    },
+    async signInWithToken(email, password, totpSecret) {
       const result = await app.identity.signIn({ email, password }, requestContext());
       if (!result.ok) throw new Error(`sign-in failed for ${email}: ${result.reason}`);
       if (result.stage === "totp_pending") {
@@ -134,7 +138,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       }
       const actor = await app.identity.authenticate(result.sessionToken, requestContext());
       if (!actor) throw new Error("fresh session did not authenticate");
-      return actor;
+      return { actor, token: result.sessionToken };
     },
   };
 }

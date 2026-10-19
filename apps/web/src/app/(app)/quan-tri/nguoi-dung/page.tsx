@@ -1,3 +1,5 @@
+import { ROLE_LABEL } from "@ocop/core";
+import Link from "next/link";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { resendActivationAction } from "./actions";
@@ -23,6 +25,7 @@ export default async function UsersPage() {
             <tr>
               <th className="px-4 py-2">Họ tên</th>
               <th className="px-4 py-2">Email</th>
+              <th className="px-4 py-2">Vai trò</th>
               <th className="px-4 py-2">Trạng thái</th>
               <th className="px-4 py-2">2FA</th>
               <th className="px-4 py-2" />
@@ -31,8 +34,18 @@ export default async function UsersPage() {
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-b last:border-0">
-                <td className="px-4 py-2">{u.fullName}</td>
+                <td className="px-4 py-2">
+                  <Link href={`/quan-tri/nguoi-dung/${u.id}`} className="font-medium text-green-700 underline-offset-2 hover:underline">
+                    {u.fullName}
+                  </Link>
+                </td>
                 <td className="px-4 py-2">{u.email}</td>
+                <td className="px-4 py-2">
+                  {u.assignments
+                    .filter((a) => a.active)
+                    .map((a) => `${ROLE_LABEL[a.role]} (${a.scopeLabel})`)
+                    .join(", ") || "—"}
+                </td>
                 <td className="px-4 py-2">{STATUS_LABEL[u.status]}</td>
                 <td className="px-4 py-2">{u.totpEnabled ? "Đã bật" : "Chưa"}</td>
                 <td className="px-4 py-2 text-right">

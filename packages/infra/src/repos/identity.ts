@@ -45,6 +45,9 @@ export function roleAssignmentRepo(db: Db): RoleAssignmentRepo {
       const rows = await db.select().from(roleAssignment).where(eq(roleAssignment.userId, userId)).orderBy(roleAssignment.createdAt);
       return rows.map(toAssignment);
     },
+    async end(id, validTo) {
+      await db.update(roleAssignment).set({ validTo }).where(eq(roleAssignment.id, id));
+    },
     async existsActiveWithRole(role, at) {
       const [row] = await db
         .select({ id: roleAssignment.id })
@@ -73,6 +76,9 @@ export function sessionRepo(db: Db): SessionRepo {
     },
     async update(id, patch) {
       await db.update(session).set(patch).where(eq(session.id, id));
+    },
+    async revokeAllForUser(userId, at) {
+      await db.update(session).set({ revokedAt: at }).where(and(eq(session.userId, userId), isNull(session.revokedAt)));
     },
     async revoke(id, at) {
       await db.update(session).set({ revokedAt: at }).where(and(eq(session.id, id), isNull(session.revokedAt)));

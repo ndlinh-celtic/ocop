@@ -5,6 +5,7 @@ const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" 
 
 export const identity = pgSchema("identity");
 export const platform = pgSchema("platform");
+export const org = pgSchema("org");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -92,4 +93,21 @@ export const oneTimeToken = identity.table("one_time_token", {
   expiresAt: ts("expires_at").notNull(),
   usedAt: ts("used_at"),
   invalidatedAt: ts("invalidated_at"),
+});
+
+export const ward = org.table("ward", {
+  id: uuid("id").primaryKey(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+});
+
+export const notification = platform.table("notification", {
+  id: uuid("id").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  link: text("link"),
+  createdAt: ts("created_at").notNull(),
+  readAt: ts("read_at"),
 });

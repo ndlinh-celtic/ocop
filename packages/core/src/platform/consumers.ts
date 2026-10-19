@@ -1,4 +1,5 @@
 import { issueActivationLink } from "../identity/activation-email";
+import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import type { ConsumerContext } from "./consumer-context";
@@ -14,6 +15,14 @@ export const CONSUMERS = {
   "identity.activation-email": {
     events: ["identity.user.created", "identity.activation.requested"],
     handle: issueActivationLink,
+  },
+  "identity.role-granted-email": {
+    events: ["identity.role.granted"],
+    handle: emailRoleGranted,
+  },
+  "notifications.role-granted": {
+    events: ["identity.role.granted"],
+    handle: notifyRoleGranted,
   },
 } as const satisfies Record<string, Consumer>;
 

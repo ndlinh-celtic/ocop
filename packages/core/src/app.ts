@@ -1,5 +1,8 @@
 import { searchAudit } from "./audit/search";
+import { grantRole, revokeRole } from "./identity/assignments";
 import { bootstrapFirstAdmin } from "./identity/bootstrap";
+import { listNotifications, markAllRead, markRead, unreadCount } from "./notifications/inbox";
+import { listWards } from "./org/catalogue";
 import { authenticate, signIn, signOut } from "./identity/session";
 import { activateAccount, createStaffUser, describeActivation, listUsers, resendActivation } from "./identity/staff";
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
@@ -25,8 +28,17 @@ export function createCore(deps: CoreDeps) {
       listUsers: listUsers(deps),
       describeActivation: describeActivation(deps),
       activateAccount: activateAccount(deps),
+      grantRole: grantRole(deps),
+      revokeRole: revokeRole(deps),
+    },
+    org: {
+      listWards: listWards(deps),
     },
     notifications: {
+      list: listNotifications(deps),
+      unreadCount: unreadCount(deps),
+      markRead: markRead(deps),
+      markAllRead: markAllRead(deps),
       listDeliveries: listDeliveries(deps),
     },
     platform: {

@@ -6,3 +6,4 @@ export { createApp, type AppConfig, type AppOverrides } from "./app";
 export { relayOutbox } from "./jobs/relay";
 export { startWorkers } from "./jobs/worker";
 export { renderingMailer, smtpTransport, type MailTransport, type OutgoingEmail } from "./mail/mailer";
+export { seedWards } from "./seed/wards";

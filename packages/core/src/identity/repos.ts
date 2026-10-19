@@ -15,6 +15,8 @@ export interface RoleAssignmentRepo {
   findById(id: string): Promise<RoleAssignment | null>;
   listForUser(userId: string): Promise<RoleAssignment[]>;
   existsActiveWithRole(role: Role, at: Date): Promise<boolean>;
+  /** Closes the validity window; Phân vai rows are never deleted. */
+  end(id: string, validTo: Date): Promise<void>;
 }
 
 export interface SessionRepo {
@@ -22,4 +24,5 @@ export interface SessionRepo {
   findByTokenHash(hash: string): Promise<Session | null>;
   update(id: string, patch: Partial<Pick<Session, "stage" | "authenticatedAt" | "lastSeenAt" | "activeAssignmentId">>): Promise<void>;
   revoke(id: string, at: Date): Promise<void>;
+  revokeAllForUser(userId: string, at: Date): Promise<void>;
 }

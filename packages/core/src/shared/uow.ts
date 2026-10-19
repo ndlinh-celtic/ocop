@@ -1,6 +1,8 @@
 import type { AuditLog } from "../audit/audit";
 import type { RoleAssignmentRepo, SessionRepo, UserRepo } from "../identity/repos";
 import type { OneTimeTokenRepo } from "../identity/tokens";
+import type { NotificationRepo } from "../notifications/notification";
+import type { WardRepo } from "../org/ward";
 import type { Outbox, ProcessedEvents } from "../platform/events";
 import type { EmailDeliveries } from "../platform/mail";
 
@@ -10,6 +12,8 @@ export interface Tx {
   roleAssignments: RoleAssignmentRepo;
   sessions: SessionRepo;
   oneTimeTokens: OneTimeTokenRepo;
+  wards: WardRepo;
+  notifications: NotificationRepo;
   audit: AuditLog;
   outbox: Outbox;
   processedEvents: ProcessedEvents;

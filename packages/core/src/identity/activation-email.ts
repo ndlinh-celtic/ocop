@@ -10,6 +10,7 @@ import { ACTIVATION_TTL_MS } from "./tokens";
  */
 export async function issueActivationLink(c: ConsumerContext): Promise<void> {
   const { deps, tx, event } = c;
+  if (event.type !== "identity.user.created" && event.type !== "identity.activation.requested") return;
   const user = await tx.users.findById(event.payload.userId);
   if (!user || user.status !== "pending_activation") return;
   const now = deps.clock.now();
