@@ -18,19 +18,26 @@ const TABS = [
   { key: "", label: "Tất cả" },
   { key: "cho-tiep-nhan", label: "Chờ tiếp nhận" },
   { key: "cua-toi", label: "Tôi phụ trách" },
+  { key: "cho-dot-sau", label: "Chờ đợt sau" },
 ] as const;
 
 function inputOf(loc: string | undefined, state: string | undefined): DossierListInput {
   const valid = WARD_STATES.find((s) => s === state);
   return {
-    ...(loc === "cho-tiep-nhan" ? { filter: "awaiting_receipt" as const } : loc === "cua-toi" ? { filter: "mine" as const } : {}),
+    ...(loc === "cho-tiep-nhan"
+      ? { filter: "awaiting_receipt" as const }
+      : loc === "cua-toi"
+        ? { filter: "mine" as const }
+        : loc === "cho-dot-sau"
+          ? { filter: "awaiting_next_round" as const }
+          : {}),
     ...(valid ? { state: valid } : {}),
   };
 }
 
 /**
- * S20 Hồ sơ tại xã (L05 XA-01, stories 39, 43): every hồ sơ whose xã is the Cán bộ xã's, whoever is its
- * Cán bộ phụ trách, filtered to Chờ tiếp nhận, của tôi, or one state.
+ * S20 Hồ sơ tại xã (L05 XA-01, stories 39, 43, 68): every hồ sơ whose xã is the Cán bộ xã's, whoever is
+ * its Cán bộ phụ trách, filtered to Chờ tiếp nhận, của tôi, Chờ đợt sau, or one state.
  */
 export default async function WardDossiersPage({ searchParams }: { searchParams: Promise<{ loc?: string; "trang-thai"?: string }> }) {
   const actor = await requireActor();
@@ -87,7 +94,11 @@ export default async function WardDossiersPage({ searchParams }: { searchParams:
 
       {dossiers.length === 0 ? (
         <EmptyState icon={FolderOpen} title="Không có hồ sơ nào">
-          {input.filter === "awaiting_receipt" ? "Không còn hồ sơ nào chờ tiếp nhận." : "Hồ sơ Chủ thể nộp về xã sẽ hiện ở đây."}
+          {input.filter === "awaiting_receipt"
+            ? "Không còn hồ sơ nào chờ tiếp nhận."
+            : input.filter === "awaiting_next_round"
+              ? "Không có hồ sơ nào quá Hạn gửi tỉnh của đợt."
+              : "Hồ sơ Chủ thể nộp về xã sẽ hiện ở đây."}
         </EmptyState>
       ) : (
         <section className="overflow-x-auto rounded-lg border bg-surface shadow-card">
@@ -118,6 +129,9 @@ export default async function WardDossiersPage({ searchParams }: { searchParams:
                       <DossierStateTag state={d.state} />
                       {d.state === "submitted_to_ward" && !d.receivedAt && (
                         <span className="rounded-full bg-amber-soft px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber">Chờ tiếp nhận</span>
+                      )}
+                      {d.awaitingNextRound && (
+                        <span className="rounded-full bg-amber-soft px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber">Chờ đợt sau</span>
                       )}
                     </span>
                   </td>

@@ -45,6 +45,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.supplement.close",
   "dossier.reject",
   "dossier.ward_transfer",
+  "dossier.round_transfer",
   "dossier.checklist.assess",
   "dossier.ward_report.attach",
   "dossier.forward",
@@ -70,6 +71,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.closed_unsupplemented",
   "dossier.rejected_preliminary",
   "dossier.ward_transferred",
+  "dossier.round_transferred",
   "dossier.checklist_assessed",
   "dossier.ward_report_attached",
   "dossier.forwarded",
@@ -172,6 +174,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   { action: "dossier.reject", from: "submitted_to_ward", to: "rejected_preliminary", roles: ["ward_officer"], event: "dossier.rejected_preliminary", timeline: true },
   // L05 (story 47): Chuyển xã moves a hồ sơ Đã nộp xã to the right xã, which Tiếp nhận it afresh.
   { action: "dossier.ward_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.ward_transferred", timeline: true },
+  // L06 XA-08 (story 69): chuyển đợt moves a hồ sơ Đã nộp xã into a later đợt of the same Phiên bản tiêu
+  // chí; which đợt may take it is checked by transferRound, which knows the đợt.
+  { action: "dossier.round_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.round_transferred", timeline: true },
   // L06 XA-04 (story 61): the Checklist sơ bộ of a received hồ sơ, editable until it is gửi tỉnh. Nhận xét
   // are the xã's working notes, so this is not a row of the timeline the Chủ thể reads.
   ...(["submitted_to_ward", "supplement_requested"] as const).map(

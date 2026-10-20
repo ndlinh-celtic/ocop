@@ -1,7 +1,7 @@
 import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNull, max, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, max, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { checklistResult, criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile, wardReport } from "../db/schema";
+import { checklistResult, criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, round, submission, submissionFile, wardReport } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -60,6 +60,12 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.state ? eq(dossier.state, filter.state) : undefined,
         filter.awaitingReceipt ? and(eq(dossier.state, "submitted_to_ward"), isNull(dossier.receivedAt)) : undefined,
         filter.handlerUserId ? eq(dossier.handlerUserId, filter.handlerUserId) : undefined,
+        filter.awaitingNextRoundAt
+          ? and(
+              eq(dossier.state, "submitted_to_ward"),
+              inArray(dossier.roundId, db.select({ id: round.id }).from(round).where(lt(round.forwardingDeadline, filter.awaitingNextRoundAt))),
+            )
+          : undefined,
       );
       return (await db.select().from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
     },
