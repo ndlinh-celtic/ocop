@@ -126,6 +126,23 @@ describe("L19 AD-04 kiểm tra Phiên bản tiêu chí", () => {
     });
   });
 
+  it("reports a version with no Bộ tiêu chí, so it cannot be published empty", () => {
+    const rows: VersionRows = { thresholds: { 2: 30, 3: 50, 4: 70, 5: 90 }, productGroups: [], subgroups: [], sets: [] };
+    expect(findVersionIssues(rows)).toEqual([
+      { code: "empty_version", setId: null, setCode: null, criterionCode: null, message: "Phiên bản tiêu chí chưa có Bộ tiêu chí nào" },
+    ]);
+  });
+
+  it("reports a Nhóm sản phẩm with no Phân nhóm and a Phân nhóm with no Bộ tiêu chí", () => {
+    const rows = qd26Rows();
+    rows.productGroups.push({ ...rows.productGroups[0]!, id: "empty-group", name: "Nhóm trống", position: 99 });
+    rows.subgroups.push({ ...rows.subgroups[0]!, id: "empty-subgroup", name: "Phân nhóm trống", position: 99 });
+    expect(findVersionIssues(rows).map((i) => [i.code, i.setCode, i.message])).toEqual([
+      ["empty_group", null, 'Nhóm sản phẩm "Nhóm trống" chưa có Phân nhóm nào'],
+      ["empty_group", null, `Phân nhóm "Phân nhóm trống" chưa có Bộ tiêu chí nào`],
+    ]);
+  });
+
   it("reports every problem at once", () => {
     const rows = qd26Rows();
     criterionOf(rows, "1", "1.5").maxPoints = 4;
