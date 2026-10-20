@@ -9,7 +9,12 @@ import type { Actor } from "../shared/context";
  * has reached the province) in step 3, `council` and `assigned` in step 4. Adding one is a new member here,
  * a new case in `dataScopeOf`, and a new case in each repository's exhaustive switch: nothing is restructured.
  */
-export type DataScope = { kind: "entity"; entityId: string } | { kind: "ward"; wardId: string } | { kind: "none" };
+export type DataScope =
+  | { kind: "entity"; entityId: string }
+  | { kind: "ward"; wardId: string }
+  /** Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75). */
+  | { kind: "on_behalf"; entityId: string; wardId: string }
+  | { kind: "none" };
 
 const NONE: DataScope = { kind: "none" };
 
@@ -21,6 +26,11 @@ const NONE: DataScope = { kind: "none" };
 export function dataScopeOf(actor: Actor): DataScope {
   if (actor.kind !== "user" || !actor.activeRole || !actor.activeScope) return NONE;
   const { type, id } = actor.activeScope;
+  if (actor.onBehalfOf !== undefined) {
+    // Only a Cán bộ xã acts for a Chủ thể, and only for one đăng ký ở their xã: the repositories check
+    // the xã đăng ký in SQL, so a Chủ thể of another xã, even with a hồ sơ moved here, is not found.
+    return actor.activeRole === "ward_officer" && type === "ward" && id ? { kind: "on_behalf", entityId: actor.onBehalfOf, wardId: id } : NONE;
+  }
   switch (actor.activeRole) {
     case "entity_owner":
       return type === "entity" && id ? { kind: "entity", entityId: id } : NONE;

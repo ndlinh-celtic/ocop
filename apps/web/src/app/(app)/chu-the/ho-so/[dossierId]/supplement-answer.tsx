@@ -4,8 +4,21 @@ import { useActionState } from "react";
 import { respondSupplementAction, type AnswerFormState } from "../actions";
 
 /** L04 CT-11 (story 51): the Chủ thể's answer to one nội dung of the open yêu cầu bổ sung. */
-export function SupplementAnswerForm({ dossierId, version, itemId, response }: { dossierId: string; version: number; itemId: string; response: string }) {
-  const [state, action, pending] = useActionState<AnswerFormState, FormData>(respondSupplementAction.bind(null, dossierId, version, itemId), {});
+export function SupplementAnswerForm({
+  dossierId,
+  version,
+  itemId,
+  response,
+  onBehalf,
+}: {
+  dossierId: string;
+  version: number;
+  itemId: string;
+  response: string;
+  /** Nhập hộ (L01): the Chủ thể the Cán bộ xã answers for. */
+  onBehalf?: string;
+}) {
+  const [state, action, pending] = useActionState<AnswerFormState, FormData>(respondSupplementAction.bind(null, dossierId, version, itemId, onBehalf), {});
   return (
     <form action={action} className="mt-2 flex flex-col gap-2">
       <label className="flex flex-col gap-1 text-sm">

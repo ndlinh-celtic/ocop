@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { UserActor } from "@ocop/core";
+import { onBehalfOf, type UserActor } from "@ocop/core";
 import { seedWards } from "../../src/seed/wards";
 import { anonymous, createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
-import { ADMIN, fixtures, PRODUCT } from "./fixtures";
+import { ADMIN, entityIdOf, fixtures, PRODUCT } from "./fixtures";
 
 /*
  * #14 permission matrix for step 3 (spec #30, stories 76, 77, 80 to 82), as data: each row is a Vai trò
@@ -18,7 +18,16 @@ let wardY: string;
 let f: ReturnType<typeof fixtures>;
 let criteriaSetId: string;
 
-type Who = "Chủ thể A" | "Chủ thể B" | "Cán bộ xã X" | "Cán bộ xã Y" | "Người dùng hai Phân vai, đang là Chủ thể C" | "Người dùng hai Phân vai, đang là Cán bộ xã X";
+type Who =
+  | "Chủ thể A"
+  | "Chủ thể B"
+  | "Cán bộ xã X"
+  | "Cán bộ xã Y"
+  | "Người dùng hai Phân vai, đang là Chủ thể C"
+  | "Người dùng hai Phân vai, đang là Cán bộ xã X"
+  | "Cán bộ xã X Nhập hộ A"
+  | "Cán bộ xã Y Nhập hộ A"
+  | "Chủ thể B Nhập hộ A";
 type State = "Nháp" | "Đã nộp xã" | "Đã nộp xã, đã Tiếp nhận" | "Đã chuyển từ xã X sang xã Y";
 type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A" | "loại" | "Chuyển xã" | "đánh giá Checklist sơ bộ";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "already_received" | "not_received";
@@ -95,6 +104,20 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã Y", "Tiếp nhận", "Đã chuyển từ xã X sang xã Y", "allowed"],
   ["Cán bộ xã Y", "đọc hồ sơ pháp lý của A", "Đã chuyển từ xã X sang xã Y", "allowed"],
   ["Chủ thể A", "đọc hồ sơ", "Đã chuyển từ xã X sang xã Y", "allowed"],
+  // L01 Nhập hộ: only the Cán bộ xã of the xã đăng ký of A, only the Chủ thể's own steps (stories 72, 75).
+  ["Cán bộ xã X Nhập hộ A", "đọc hồ sơ", "Nháp", "allowed"],
+  ["Cán bộ xã X Nhập hộ A", "thấy trong danh sách", "Nháp", "allowed"],
+  ["Cán bộ xã X Nhập hộ A", "sửa thông tin", "Nháp", "allowed"],
+  ["Cán bộ xã X Nhập hộ A", "sửa thông tin", "Đã nộp xã", "invalid_state"],
+  ["Cán bộ xã X Nhập hộ A", "rút", "Đã nộp xã", "forbidden"],
+  ["Cán bộ xã X Nhập hộ A", "Tiếp nhận", "Đã nộp xã", "forbidden"],
+  ["Cán bộ xã X Nhập hộ A", "loại", "Đã nộp xã", "forbidden"],
+  ["Cán bộ xã X Nhập hộ A", "đọc Chủ thể A", "Nháp", "forbidden"],
+  ["Cán bộ xã Y Nhập hộ A", "đọc hồ sơ", "Nháp", "not_found"],
+  ["Cán bộ xã Y Nhập hộ A", "sửa thông tin", "Nháp", "not_found"],
+  ["Cán bộ xã Y Nhập hộ A", "đọc hồ sơ", "Đã chuyển từ xã X sang xã Y", "not_found"],
+  ["Cán bộ xã Y Nhập hộ A", "thấy trong danh sách", "Đã chuyển từ xã X sang xã Y", "not_found"],
+  ["Chủ thể B Nhập hộ A", "sửa thông tin", "Nháp", "forbidden"],
 ];
 
 /** A fresh hồ sơ of Chủ thể A in the given state; returns its id and current version. */
@@ -176,13 +199,16 @@ beforeAll(async () => {
   };
   actors["Người dùng hai Phân vai, đang là Chủ thể C"] = await asRole("entity_owner");
   actors["Người dùng hai Phân vai, đang là Cán bộ xã X"] = await asRole("ward_officer");
+  actors["Cán bộ xã X Nhập hộ A"] = onBehalfOf(actors["Cán bộ xã X"], entityIdOf(ownerA));
+  actors["Cán bộ xã Y Nhập hộ A"] = onBehalfOf(actors["Cán bộ xã Y"], entityIdOf(ownerA));
+  actors["Chủ thể B Nhập hộ A"] = onBehalfOf(actors["Chủ thể B"], entityIdOf(ownerA));
 });
 afterAll(async () => {
   await t.stop();
   await db.drop();
 });
 
-describe("Permission matrix: Chủ thể and Cán bộ xã on hồ sơ (#14, L03, L05, stories 76, 77, 80 to 82)", () => {
+describe("Permission matrix: Chủ thể and Cán bộ xã on hồ sơ (#14, L01, L03, L05, stories 72, 75, 76, 77, 80 to 82)", () => {
   it.each(MATRIX)("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const result = attempt(actors[who], action, d);
