@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
+import { RejectForm, TransferWardForm } from "./reject-transfer-forms";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,13 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   const names = new Map(officers.map((o) => [o.userId, o.fullName]));
   // Officers who left the xã still appear by name on the timeline when they were the Cán bộ phụ trách.
   if (dossier.handler) names.set(dossier.handler.userId, dossier.handler.fullName);
+  // L05 XA-06 and Chuyển xã (stories 47, 63): what loại may cite, and where the hồ sơ may go.
+  const rejectable = can(actor, "dossier.reject", dossier);
+  const transferable = can(actor, "dossier.ward_transfer", dossier);
+  const [exclusions, wards] = await Promise.all([
+    rejectable ? app().core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id }).then((v) => v.set.exclusionConditions) : [],
+    transferable ? app().core.org.listWards().then((all) => all.filter((w) => w.id !== dossier.wardId)) : [],
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,6 +81,8 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
         )}
         <DossierFlags flags={dossier.flags} />
       </section>
+
+      {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
 
       {can(actor, "dossier.receive", dossier) && !dossier.receivedAt && (
         <ReceiveForm dossierId={dossier.id} version={dossier.version} officers={officers} me={actor.userId} />
@@ -200,6 +211,9 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           </section>
         </>
       )}
+
+      {rejectable && <RejectForm dossierId={dossier.id} version={dossier.version} exclusions={exclusions} />}
+      {transferable && <TransferWardForm dossierId={dossier.id} version={dossier.version} wards={wards} />}
 
       <DossierTimeline events={timeline} names={names} />
     </div>

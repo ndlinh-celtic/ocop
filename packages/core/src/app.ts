@@ -37,6 +37,7 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
+import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
@@ -157,6 +158,8 @@ export function createCore(deps: CoreDeps) {
       withdraw: withdrawDossier(deps),
       submissions: listSubmissions(deps),
       receive: receiveDossier(deps),
+      reject: rejectDossier(deps),
+      transferWard: transferWard(deps),
       changeHandler: changeHandler(deps),
       handlers: listHandlers(deps),
       downloadSubmissionDocument: downloadSubmissionDocument(deps),

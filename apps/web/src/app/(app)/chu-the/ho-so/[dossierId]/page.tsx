@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
@@ -76,6 +77,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
           <DossierFlags flags={dossier.flags} />
         </section>
       )}
+      {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
 
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <h2 className="mb-3 font-semibold">Thông tin sản phẩm</h2>

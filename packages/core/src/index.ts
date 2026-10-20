@@ -192,3 +192,12 @@ export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSum
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
 export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";
+export {
+  PRELIMINARY_REJECTION_REASON_LABEL,
+  PRELIMINARY_REJECTION_REASONS,
+  rejectionOf,
+  type DossierRejection,
+  type PreliminaryRejectionReason,
+  type RejectionGround,
+} from "./dossiers/model";
+export type { RejectInput } from "./dossiers/reject-transfer";
