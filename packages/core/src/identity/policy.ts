@@ -21,6 +21,8 @@ const ROLE_ACTIONS = {
   "criteria.publish": ["admin"],
   "criteria.preview": ["admin"],
   "criteria.edit": ["admin"],
+  "criteria.copy": ["admin"],
+  "criteria.delete": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

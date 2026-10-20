@@ -161,6 +161,8 @@ export interface CriteriaVersionRepo {
   loadRows(versionId: string): Promise<VersionRows>;
   /** draft → published; the DB refuses any later change to the version (#19). */
   markPublished(id: string, at: Date, by: string): Promise<void>;
+  /** Deletes a draft with its whole tree (cascade); the DB refuses a published one. */
+  delete(id: string): Promise<void>;
 
   /* Draft editing (L19 AD-03). The triggers of #19 refuse all of these on a published version. */
   /** One node of the tree with the version it belongs to. */
