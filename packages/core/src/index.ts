@@ -24,3 +24,17 @@ export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
 export type { AuditChainRepo, AuditSeal } from "./audit/chain-repo";
+export {
+  criteriaOf,
+  STARS,
+  type CriteriaSet,
+  type Criterion,
+  type CriterionGroup,
+  type CriterionScores,
+  type Part,
+  type RankThresholds,
+  type ScoreLevel,
+  type Section,
+  type Star,
+} from "./criteria/model";
+export { averageScores, rankStars, type PartTotal, type StarRank, type StarRankInput, type UnmetMinimumStar } from "./criteria/star-rank";
