@@ -1,6 +1,6 @@
 import type { Role } from "../identity/roles";
 import type { DataScope } from "../identity/scope";
-import type { DomainError } from "../shared/errors";
+import { DomainError } from "../shared/errors";
 import type { Dossier, DossierState } from "./model";
 
 /**
@@ -35,6 +35,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.self_score",
   "dossier.explain",
   "dossier.delete",
+  "dossier.submit",
+  "dossier.withdraw",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -47,6 +49,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.self_scored",
   "dossier.explained",
   "dossier.deleted",
+  "dossier.submitted",
+  "dossier.withdrawn",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -61,6 +65,18 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   { action: "dossier.explain", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.explained", timeline: false },
   // Story 26: a Nháp, which by this table has never been submitted, may be deleted.
   { action: "dossier.delete", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.deleted", timeline: true },
+  // L03 CT-09: nộp into the đợt Đang nhận nộp; the conditions of story 29 are checked by submitDossier.
+  { action: "dossier.submit", from: "draft", to: "submitted_to_ward", roles: ["entity_owner"], event: "dossier.submitted", timeline: true },
+  // Story 33: rút, only while the xã has not Tiếp nhận the hồ sơ.
+  {
+    action: "dossier.withdraw",
+    from: "submitted_to_ward",
+    to: "withdrawn",
+    roles: ["entity_owner"],
+    event: "dossier.withdrawn",
+    timeline: true,
+    guard: (d) => (d.receivedAt === null ? null : new DomainError("already_received", "Xã đã tiếp nhận hồ sơ nên không rút được nữa")),
+  },
 ];
 
 /** The rule for `action` from the hồ sơ's current state, if the table has one. */

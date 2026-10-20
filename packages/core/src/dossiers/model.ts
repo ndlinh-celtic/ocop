@@ -1,3 +1,4 @@
+import type { EntityKind } from "../entities/model";
 import type { FileStatus } from "../files/model";
 import type { DataScope } from "../identity/scope";
 import { DomainError } from "../shared/errors";
@@ -128,6 +129,97 @@ export interface DossierRepo {
   criterionEntries(dossierId: string): Promise<CriterionEntry[]>;
   /** Inserts or replaces the entry of one Tiêu chí. */
   saveCriterionEntry(e: CriterionEntry): Promise<void>;
+  /** Appends a Phiên bản nộp with the files it refers to; the DB refuses any later change to either. */
+  insertSubmission(s: Submission, files: readonly SubmissionFileRef[]): Promise<void>;
+  /** Every Phiên bản nộp of a hồ sơ already loaded within scope, oldest first. */
+  submissions(dossierId: string): Promise<Submission[]>;
+  /** The newest Phiên bản nộp of a hồ sơ already loaded within scope. */
+  latestSubmission(dossierId: string): Promise<Submission | null>;
+}
+
+/** Thông tin sản phẩm a hồ sơ must carry to be submitted (story 29); the others may stay blank. */
+export const REQUIRED_PRODUCT_FIELDS: readonly ProductField[] = ["productName"];
+
+export const PRODUCT_FIELD_LABEL: Record<ProductField, string> = {
+  productName: "Tên sản phẩm",
+  description: "Mô tả sản phẩm",
+  ingredients: "Nguyên liệu và nguồn gốc",
+  process: "Quy trình sản xuất",
+  packaging: "Bao bì và nhãn mác",
+  qualityDeclaration: "Công bố chất lượng",
+};
+
+/**
+ * What a Phiên bản nộp holds (story 31): the bản làm việc and the Chủ thể as they were at that nộp or
+ * nộp lại. Files are referred to by id, never copied. Written once, never changed (the DB refuses it).
+ */
+export interface SubmissionSnapshot {
+  product: ProductInfo;
+  criteriaSet: { id: string; code: string; name: string };
+  criteriaVersion: { id: string; legalBasis: string };
+  /** Thông tin định danh of the Chủ thể; a hộ sản xuất's số định danh only by its last four digits. */
+  entity: {
+    id: string;
+    kind: EntityKind;
+    name: string;
+    taxCode: string | null;
+    personalIdLast4: string | null;
+    address: string;
+    representativeName: string;
+    phone: string;
+    wardId: string;
+  };
+  /** The current giấy tờ pháp lý, with their dates of validity. */
+  legalDocuments: {
+    id: string;
+    typeCode: string;
+    typeName: string;
+    documentNumber: string | null;
+    issuedOn: string;
+    validUntil: string | null;
+    fileId: string;
+    fileName: string;
+  }[];
+  /** The kho minh chứng. */
+  evidence: { fileId: string; fileName: string }[];
+  /** Every Tiêu chí in sheet order with its tự chấm (a Mức điểm, by id), giải trình and minh chứng. */
+  criteria: {
+    criterionId: string;
+    code: string;
+    name: string;
+    partCode: string;
+    levelId: string;
+    points: number;
+    explanation: string;
+    evidenceFileIds: string[];
+  }[];
+  /** Tổng điểm and Hạng sao of the tự chấm, for reference only. */
+  selfScore: { total: number; star: number };
+  /**
+   * The Phiếu đăng ký and Báo cáo tự đánh giá generated for this nộp (#37), as file ids; null until the
+   * generation is in place.
+   */
+  documents: { registrationForm: string | null; selfAssessmentReport: string | null };
+}
+
+/** Phiên bản nộp (GLOSSARY.md): one per nộp or nộp lại, numbered from 1 within the hồ sơ. */
+export interface Submission {
+  id: string;
+  dossierId: string;
+  number: number;
+  roundId: string;
+  /** The xã it was submitted to. */
+  wardId: string;
+  submittedAt: Date;
+  submittedBy: string;
+  snapshot: SubmissionSnapshot;
+}
+
+export type SubmissionFileRole = "evidence" | "legal_document" | "registration_form" | "self_assessment_report";
+
+export interface SubmissionFileRef {
+  fileId: string;
+  role: SubmissionFileRole;
 }
 
 /** Gắn minh chứng – tiêu chí (story 20): one file of the kho tied to one Tiêu chí. */

@@ -13,6 +13,8 @@ let criterion: Record<"1.1" | "2.1" | "3.1", string>;
 let level: (code: "1.1" | "2.1" | "3.1", points: number) => string;
 /** A Bộ tiêu chí of an older published version, none of whose Tiêu chí belong to `setId`. */
 let foreignSetId: string;
+/** The published version of `setId`. */
+let scoredVersionId: string;
 const START = new Date("2026-10-19T02:00:00Z");
 
 /**
@@ -68,6 +70,7 @@ async function publishScoredVersion() {
   const a = await f.admin();
   const { versionId } = await t.app.criteria.importVersion(a, { fileName: "tieu-chi.json", content });
   await t.app.criteria.publishVersion(a, { versionId });
+  scoredVersionId = versionId;
   const version = await t.app.criteria.getVersion(a, { versionId });
   setId = version.productGroups[0]!.subgroups[0]!.sets[0]!.id;
   const { set } = await t.app.criteria.getCriteriaSet(a, { setId });
@@ -326,9 +329,11 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
     let version = await versionOf(a, dossierId);
     ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId, criterionIds: [criterion["1.1"]] }));
     ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], levelId: level("1.1", 40) }));
-    // Stands in for submission (#36), which will move the Nháp to Đã nộp xã through transition().
-    await db.admin.query("UPDATE dossier.dossier SET state = 'submitted_to_ward', version = version + 1 WHERE id = $1", [dossierId]);
-    version += 1;
+    ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["2.1"], levelId: level("2.1", 0) }));
+    ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["3.1"], levelId: level("3.1", 15) }));
+    ({ version } = await t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: version, productName: "Bưởi" }));
+    await f.openRound(scoredVersionId);
+    ({ version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: version }));
 
     const invalid = { code: "invalid_state" };
     await expect(t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId, criterionIds: [] })).rejects.toMatchObject(invalid);
