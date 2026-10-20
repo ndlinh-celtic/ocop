@@ -1,4 +1,4 @@
-import type { DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type { ChecklistItem, ChecklistResultValue, DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -275,6 +275,7 @@ export const round = roundSchema.table("round", {
   aggregationMethod: text("aggregation_method").$type<"mean">().notNull(),
   minGraders: smallint("min_graders").notNull(),
   deviationFlagPoints: pts("deviation_flag_points").notNull(),
+  checklist: jsonb("checklist").$type<ChecklistItem[]>().notNull(),
   createdAt: ts("created_at").notNull(),
   createdBy: uuid("created_by").notNull(),
   updatedAt: ts("updated_at").notNull(),
@@ -403,6 +404,20 @@ export const evidenceLink = dossierSchema.table(
     criterionId: uuid("criterion_id").notNull(),
   },
   (t) => [primaryKey({ columns: [t.dossierId, t.fileId, t.criterionId] })],
+);
+
+// L06 XA-04 Checklist sơ bộ results (0023_preliminary_checklist.sql).
+export const checklistResult = dossierSchema.table(
+  "checklist_result",
+  {
+    dossierId: uuid("dossier_id").notNull(),
+    itemCode: text("item_code").notNull(),
+    result: text("result").$type<ChecklistResultValue>().notNull(),
+    comment: text("comment").notNull(),
+    assessedAt: ts("assessed_at").notNull(),
+    assessedBy: uuid("assessed_by").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.dossierId, t.itemCode] })],
 );
 
 export const criterionEntry = dossierSchema.table(

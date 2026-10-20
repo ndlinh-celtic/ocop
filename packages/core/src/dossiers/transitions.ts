@@ -43,6 +43,9 @@ export const DOSSIER_ACTIONS = [
   "dossier.supplement.respond",
   "dossier.resubmit",
   "dossier.supplement.close",
+  "dossier.reject",
+  "dossier.ward_transfer",
+  "dossier.checklist.assess",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -63,6 +66,9 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.supplement_answered",
   "dossier.resubmitted",
   "dossier.closed_unsupplemented",
+  "dossier.rejected_preliminary",
+  "dossier.ward_transferred",
+  "dossier.checklist_assessed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -158,6 +164,23 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     guard: (d, now) =>
       isPastSupplementDeadline(d, now) ? null : new DomainError("supplement_deadline_not_passed", "Chưa quá hạn bổ sung nên chưa đóng được hồ sơ"),
   },
+  // L05 XA-06 (story 63): the xã loại a hồ sơ Đã nộp xã, citing an Điều kiện loại or a Lý do loại sơ bộ.
+  { action: "dossier.reject", from: "submitted_to_ward", to: "rejected_preliminary", roles: ["ward_officer"], event: "dossier.rejected_preliminary", timeline: true },
+  // L05 (story 47): Chuyển xã moves a hồ sơ Đã nộp xã to the right xã, which Tiếp nhận it afresh.
+  { action: "dossier.ward_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.ward_transferred", timeline: true },
+  // L06 XA-04 (story 61): the Checklist sơ bộ of a received hồ sơ, editable until it is gửi tỉnh. Nhận xét
+  // are the xã's working notes, so this is not a row of the timeline the Chủ thể reads.
+  ...(["submitted_to_ward", "supplement_requested"] as const).map(
+    (from): TransitionRule => ({
+      action: "dossier.checklist.assess",
+      from,
+      to: from,
+      roles: ["ward_officer"],
+      event: "dossier.checklist_assessed",
+      timeline: false,
+      guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+    }),
+  ),
 ];
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */

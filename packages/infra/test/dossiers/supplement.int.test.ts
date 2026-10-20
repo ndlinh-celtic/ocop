@@ -276,6 +276,7 @@ describe("L04 XA-05 đóng hồ sơ không bổ sung (story 56)", () => {
       actorUserId: officerX.userId,
       reason: "Không bổ sung",
     });
+    expect((await t.app.dossiers.get(a, { dossierId })).rejection).toMatchObject({ kind: "preliminary_reason", reasonCode: "no_supplement", text: "Không bổ sung" });
     expect(await t.app.dossiers.supplementRequests(a, { dossierId })).toMatchObject([{ closedAt: new Date("2026-11-01T02:00:00Z"), outcome: "closed_unsupplemented" }]);
     expect(await t.app.audit.search(await f.admin(), { action: ["dossier.supplement.close"], targetId: dossierId })).toHaveLength(1);
     await expect(t.app.dossiers.submit(a, { dossierId, expectedVersion: after.version })).rejects.toMatchObject({ code: "invalid_state" });
@@ -303,8 +304,8 @@ describe("L04 thông báo yêu cầu bổ sung và nộp lại (stories 42, 51, 
     await t.app.dossiers.closeUnsupplemented(officerX, { dossierId, expectedVersion: version });
     await t.drainJobs();
 
-    expect(await noticeOf(a, dossierId, "dossier_rejected")).toMatchObject([{ body: expect.stringContaining("Không bổ sung") }]);
-    expect(t.mailbox.to(a.email).some((m) => m.subject.includes("không đạt sơ bộ"))).toBe(true);
+    expect(await noticeOf(a, dossierId, "dossier_rejected_preliminary")).toMatchObject([{ body: expect.stringContaining("Không bổ sung") }]);
+    expect(t.mailbox.to(a.email).some((m) => m.subject.includes("Không đạt sơ bộ"))).toBe(true);
   });
 
   it("tells who asked and the Cán bộ phụ trách, once each, that the Chủ thể nộp lại; other Cán bộ xã hear nothing", async () => {

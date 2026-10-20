@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { SupplementRequests } from "@/components/dossiers/supplement-requests";
 import { formatVnDateTime } from "@/lib/format";
@@ -82,6 +83,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
           <DossierFlags flags={dossier.flags} />
         </section>
       )}
+      {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
 
       <SupplementRequests
         requests={supplements}

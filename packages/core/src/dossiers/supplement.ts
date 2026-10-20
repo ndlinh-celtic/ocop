@@ -6,7 +6,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape, isUuid } from "../shared/ids";
 import { lockDossier } from "./edit";
-import { dossierNotFound } from "./model";
+import { dossierNotFound, PRELIMINARY_REJECTION_REASON_LABEL, type RejectionGround } from "./model";
 import type { SupplementItem, SupplementRequest } from "./supplement-model";
 import { transition } from "./transition";
 
@@ -131,9 +131,6 @@ export function respondSupplementItem(deps: CoreDeps) {
   };
 }
 
-/** The Lý do loại sơ bộ of a hồ sơ closed for not answering a yêu cầu bổ sung (story 56, 63). */
-export const NO_SUPPLEMENT_REASON = "Không bổ sung";
-
 /**
  * L04 XA-05 (story 56): once the hạn bổ sung has passed without a nộp lại, the xã closes the hồ sơ as
  * Không đạt sơ bộ with lý do "Không bổ sung", which also closes the yêu cầu bổ sung.
@@ -143,12 +140,14 @@ export function closeUnsupplemented(deps: CoreDeps) {
     authorize(actor, "dossier.read");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
+      // The Lý do loại sơ bộ "Không bổ sung" (story 63), in the shape rejectionOf() reads.
+      const ground: RejectionGround = { kind: "preliminary_reason", reasonCode: "no_supplement", text: PRELIMINARY_REJECTION_REASON_LABEL.no_supplement, explanation: "" };
       const after = await transition(deps, tx, actor, before, {
         action: "dossier.supplement.close",
         expectedVersion: input.expectedVersion,
         patch: { supplementDeadline: null },
-        reason: NO_SUPPLEMENT_REASON,
-        metadata: { rejectionReason: "no_supplement", supplementDeadline: before.supplementDeadline?.toISOString() ?? null },
+        reason: ground.text,
+        metadata: { ...ground, supplementDeadline: before.supplementDeadline?.toISOString() ?? null },
       });
       const open = await tx.supplements.findOpen(before.id);
       if (open) await tx.supplements.close(open.id, after.updatedAt, "closed_unsupplemented");

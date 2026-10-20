@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { SupplementRequests } from "@/components/dossiers/supplement-requests";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { ChecklistForm } from "./checklist-form";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
+import { RejectForm, TransferWardForm } from "./reject-transfer-forms";
 import { CloseUnsupplementedForm, RequestSupplementForm } from "./supplement-forms";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +27,12 @@ export const dynamic = "force-dynamic";
 export default async function WardDossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, submissions, officers, supplements] = await Promise.all([
+  const [dossier, timeline, submissions, officers, checklist, supplements] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.handlers(actor),
+    app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !timeline || !submissions || !supplements) notFound();
@@ -40,6 +44,13 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   const names = new Map(officers.map((o) => [o.userId, o.fullName]));
   // Officers who left the xã still appear by name on the timeline when they were the Cán bộ phụ trách.
   if (dossier.handler) names.set(dossier.handler.userId, dossier.handler.fullName);
+  // L05 XA-06 and Chuyển xã (stories 47, 63): what loại may cite, and where the hồ sơ may go.
+  const rejectable = can(actor, "dossier.reject", dossier);
+  const transferable = can(actor, "dossier.ward_transfer", dossier);
+  const [exclusions, wards] = await Promise.all([
+    rejectable ? app().core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id }).then((v) => v.set.exclusionConditions) : [],
+    transferable ? app().core.org.listWards().then((all) => all.filter((w) => w.id !== dossier.wardId)) : [],
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -80,6 +91,8 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
         <DossierFlags flags={dossier.flags} />
       </section>
 
+      {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
+
       {can(actor, "dossier.receive", dossier) && !dossier.receivedAt && (
         <ReceiveForm dossierId={dossier.id} version={dossier.version} officers={officers} me={actor.userId} />
       )}
@@ -88,6 +101,10 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           <h2 className="mb-3 font-semibold">Cán bộ phụ trách</h2>
           <ChangeHandlerForm dossierId={dossier.id} version={dossier.version} officers={officers} current={dossier.handlerUserId} />
         </section>
+      )}
+      {/* L06 XA-04: assessed once Tiếp nhận, editable until gửi tỉnh; read-only afterwards. */}
+      {checklist && dossier.receivedAt && checklist.items.length > 0 && (
+        <ChecklistForm dossierId={dossier.id} version={dossier.version} checklist={checklist} editable={can(actor, "dossier.checklist.assess", dossier)} />
       )}
 
       {dossier.state === "supplement_requested" && dossier.supplementDeadline && !isPastSupplementDeadline(dossier, now) && (
@@ -226,6 +243,9 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           </section>
         </>
       )}
+
+      {rejectable && <RejectForm dossierId={dossier.id} version={dossier.version} exclusions={exclusions} />}
+      {transferable && <TransferWardForm dossierId={dossier.id} version={dossier.version} wards={wards} />}
 
       <DossierTimeline events={timeline} names={names} />
     </div>

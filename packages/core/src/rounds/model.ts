@@ -38,6 +38,21 @@ export interface AggregationRule {
   deviationFlagPoints: number;
 }
 
+/** One item of the Checklist sơ bộ of a round; `code` keys the results of each hồ sơ. */
+export interface ChecklistItem {
+  code: string;
+  label: string;
+}
+
+/** Story 60: the items a new round starts with. */
+export const DEFAULT_CHECKLIST: readonly ChecklistItem[] = [
+  { code: "legal", label: "Tính pháp lý (giấy tờ kinh doanh, an toàn thực phẩm, môi trường)" },
+  { code: "registration_documents", label: "Tính hợp lệ của Phiếu đăng ký và Báo cáo tự đánh giá" },
+  { code: "local_materials", label: "Nguồn gốc nguyên liệu địa phương và quy mô sản xuất" },
+  { code: "local_labor", label: "Lao động địa phương" },
+  { code: "cultural_identity", label: "Bản sắc văn hóa và trí tuệ bản địa" },
+];
+
 export interface RoundDeadlines {
   /** Hạn nộp xã: past it, submission closes (#25). */
   submissionDeadline: Date;
@@ -56,6 +71,8 @@ export interface Round extends RoundDeadlines {
   criteriaVersionId: string;
   gradingMode: GradingMode;
   aggregation: AggregationRule;
+  /** Checklist sơ bộ the xã assesses each hồ sơ of the round against (L06 XA-04); fixed once the round leaves Nháp. */
+  checklist: ChecklistItem[];
   createdAt: Date;
   createdBy: string;
   updatedAt: Date;

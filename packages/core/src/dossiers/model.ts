@@ -147,6 +147,31 @@ export interface DossierRepo {
   lastSubmittedAt(dossierIds: readonly string[]): Promise<Map<string, Date>>;
   /** The newest Phiên bản nộp of a hồ sơ already loaded within scope. */
   latestSubmission(dossierId: string): Promise<Submission | null>;
+  /** Every Checklist sơ bộ result recorded on a hồ sơ already loaded within scope. */
+  checklistResults(dossierId: string): Promise<ChecklistResult[]>;
+  /** Inserts or replaces the result of one item. */
+  saveChecklistResult(r: ChecklistResult): Promise<void>;
+}
+
+/** Story 61: how the xã found one item of the Checklist sơ bộ. */
+export const CHECKLIST_RESULTS = ["pass", "fail", "needs_verification"] as const;
+export type ChecklistResultValue = (typeof CHECKLIST_RESULTS)[number];
+
+export const CHECKLIST_RESULT_LABEL: Record<ChecklistResultValue, string> = {
+  pass: "Đạt",
+  fail: "Không đạt",
+  needs_verification: "Cần xác minh",
+};
+
+/** The result of one item of the đợt's Checklist sơ bộ on a hồ sơ, keyed by the item's code. */
+export interface ChecklistResult {
+  dossierId: string;
+  itemCode: string;
+  result: ChecklistResultValue;
+  /** Nhận xét: a working note of the xã, never shown to the Chủ thể (story 35). */
+  comment: string;
+  assessedAt: Date;
+  assessedBy: string;
 }
 
 /** Thông tin sản phẩm a hồ sơ must carry to be submitted (story 29); the others may stay blank. */
@@ -253,3 +278,41 @@ export interface CriterionEntry {
 export const dossierNotFound = () => new DomainError("not_found", "Không tìm thấy hồ sơ");
 
 export const versionConflict = () => new DomainError("version_conflict", "Hồ sơ đã thay đổi, hãy tải lại trang trước khi thao tác tiếp");
+
+/** Lý do loại sơ bộ (GLOSSARY.md, story 63): the fixed list a xã picks from instead of citing an Điều kiện loại. */
+export const PRELIMINARY_REJECTION_REASONS = ["not_eligible", "wrong_ward", "no_supplement", "checklist_failed", "other"] as const;
+export type PreliminaryRejectionReason = (typeof PRELIMINARY_REJECTION_REASONS)[number];
+
+export const PRELIMINARY_REJECTION_REASON_LABEL: Record<PreliminaryRejectionReason, string> = {
+  not_eligible: "Không đúng đối tượng",
+  wrong_ward: "Không đúng địa bàn",
+  no_supplement: "Không bổ sung",
+  checklist_failed: "Chưa đạt Checklist sơ bộ",
+  other: "Khác",
+};
+
+/**
+ * Why a hồ sơ is Không đạt sơ bộ, as written in the metadata of the timeline row that put it there
+ * (stories 35, 56, 63): an Điều kiện loại of its Bộ tiêu chí, or a Lý do loại sơ bộ, with a diễn giải.
+ * `text` is the Điều kiện loại, or the label of the Lý do, as it read at that moment.
+ */
+export type RejectionGround =
+  | { kind: "exclusion_condition"; exclusionConditionId: string; text: string; explanation: string }
+  | { kind: "preliminary_reason"; reasonCode: PreliminaryRejectionReason; text: string; explanation: string };
+
+/** What the Chủ thể and the xã see of a loại (story 35). */
+export type DossierRejection = RejectionGround & { rejectedAt: Date };
+
+/** The ground of the newest move into Không đạt sơ bộ among `events` (oldest first), if any. */
+export function rejectionOf(events: readonly DossierEvent[]): DossierRejection | null {
+  const e = events.findLast((x) => x.toState === "rejected_preliminary" && x.fromState !== "rejected_preliminary");
+  if (!e) return null;
+  const m = e.metadata;
+  const text = typeof m.text === "string" ? m.text : "";
+  const explanation = typeof m.explanation === "string" ? m.explanation : (e.reason ?? "");
+  if (m.kind === "exclusion_condition" && typeof m.exclusionConditionId === "string") {
+    return { kind: "exclusion_condition", exclusionConditionId: m.exclusionConditionId, text, explanation, rejectedAt: e.occurredAt };
+  }
+  const reasonCode = (PRELIMINARY_REJECTION_REASONS as readonly unknown[]).includes(m.reasonCode) ? (m.reasonCode as PreliminaryRejectionReason) : "other";
+  return { kind: "preliminary_reason", reasonCode, text: text || PRELIMINARY_REJECTION_REASON_LABEL[reasonCode], explanation, rejectedAt: e.occurredAt };
+}

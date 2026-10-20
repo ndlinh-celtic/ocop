@@ -19,8 +19,8 @@ let f: ReturnType<typeof fixtures>;
 let criteriaSetId: string;
 
 type Who = "Chủ thể A" | "Chủ thể B" | "Cán bộ xã X" | "Cán bộ xã Y" | "Người dùng hai Phân vai, đang là Chủ thể C" | "Người dùng hai Phân vai, đang là Cán bộ xã X";
-type State = "Nháp" | "Đã nộp xã" | "Đã nộp xã, đã Tiếp nhận";
-type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A";
+type State = "Nháp" | "Đã nộp xã" | "Đã nộp xã, đã Tiếp nhận" | "Đã chuyển từ xã X sang xã Y";
+type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A" | "loại" | "Chuyển xã" | "đánh giá Checklist sơ bộ";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "already_received" | "not_received";
 
 const actors = {} as Record<Who, UserActor>;
@@ -38,6 +38,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Chủ thể A", "rút", "Đã nộp xã, đã Tiếp nhận", "already_received"],
   ["Chủ thể A", "Tiếp nhận", "Đã nộp xã", "forbidden"],
   ["Chủ thể A", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "forbidden"],
+  ["Chủ thể A", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "forbidden"],
   ["Chủ thể B", "đọc hồ sơ", "Đã nộp xã", "not_found"],
   ["Chủ thể B", "thấy trong danh sách", "Đã nộp xã", "not_found"],
   ["Chủ thể B", "rút", "Đã nộp xã", "not_found"],
@@ -52,6 +53,8 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã X", "Tiếp nhận", "Đã nộp xã, đã Tiếp nhận", "already_received"],
   ["Cán bộ xã X", "đổi Cán bộ phụ trách", "Đã nộp xã", "not_received"],
   ["Cán bộ xã X", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "allowed"],
+  ["Cán bộ xã X", "đánh giá Checklist sơ bộ", "Đã nộp xã", "not_received"],
+  ["Cán bộ xã X", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "allowed"],
   ["Cán bộ xã X", "sửa thông tin", "Đã nộp xã", "forbidden"],
   ["Cán bộ xã X", "rút", "Đã nộp xã", "forbidden"],
   ["Cán bộ xã X", "đọc Chủ thể A", "Đã nộp xã", "allowed"],
@@ -61,6 +64,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã Y", "dòng thời gian", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "Tiếp nhận", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "not_found"],
+  ["Cán bộ xã Y", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "not_found"],
   ["Cán bộ xã Y", "đọc Chủ thể A", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "đọc hồ sơ pháp lý của A", "Đã nộp xã", "not_found"],
   // The Phạm vi follows the Vai trò đang dùng, never another Phân vai of the same person (story 82).
@@ -72,6 +76,25 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Người dùng hai Phân vai, đang là Cán bộ xã X", "thấy trong danh sách", "Đã nộp xã", "allowed"],
   ["Người dùng hai Phân vai, đang là Cán bộ xã X", "Tiếp nhận", "Đã nộp xã", "allowed"],
   ["Người dùng hai Phân vai, đang là Cán bộ xã X", "rút", "Đã nộp xã", "forbidden"],
+  // L05 XA-06 loại and Chuyển xã: the Cán bộ xã of the hồ sơ's xã only (stories 47 to 49, 63).
+  ["Chủ thể A", "loại", "Đã nộp xã", "forbidden"],
+  ["Chủ thể A", "Chuyển xã", "Đã nộp xã", "forbidden"],
+  ["Cán bộ xã X", "loại", "Nháp", "not_found"],
+  ["Cán bộ xã X", "loại", "Đã nộp xã", "allowed"],
+  ["Cán bộ xã X", "loại", "Đã nộp xã, đã Tiếp nhận", "allowed"],
+  ["Cán bộ xã X", "Chuyển xã", "Đã nộp xã", "allowed"],
+  ["Cán bộ xã X", "Chuyển xã", "Đã nộp xã, đã Tiếp nhận", "allowed"],
+  ["Cán bộ xã Y", "loại", "Đã nộp xã", "not_found"],
+  ["Cán bộ xã Y", "Chuyển xã", "Đã nộp xã", "not_found"],
+  // After Chuyển xã the xã it left loses it and the xã it went to has it (story 49).
+  ["Cán bộ xã X", "đọc hồ sơ", "Đã chuyển từ xã X sang xã Y", "not_found"],
+  ["Cán bộ xã X", "thấy trong danh sách", "Đã chuyển từ xã X sang xã Y", "not_found"],
+  ["Cán bộ xã X", "Tiếp nhận", "Đã chuyển từ xã X sang xã Y", "not_found"],
+  ["Cán bộ xã Y", "đọc hồ sơ", "Đã chuyển từ xã X sang xã Y", "allowed"],
+  ["Cán bộ xã Y", "thấy trong danh sách", "Đã chuyển từ xã X sang xã Y", "allowed"],
+  ["Cán bộ xã Y", "Tiếp nhận", "Đã chuyển từ xã X sang xã Y", "allowed"],
+  ["Cán bộ xã Y", "đọc hồ sơ pháp lý của A", "Đã chuyển từ xã X sang xã Y", "allowed"],
+  ["Chủ thể A", "đọc hồ sơ", "Đã chuyển từ xã X sang xã Y", "allowed"],
 ];
 
 /** A fresh hồ sơ of Chủ thể A in the given state; returns its id and current version. */
@@ -81,6 +104,10 @@ async function dossierIn(state: State): Promise<{ dossierId: string; version: nu
   const ready = await f.completeDraft(ownerA, dossierId);
   const { version } = await t.app.dossiers.submit(ownerA, { dossierId, expectedVersion: ready });
   if (state === "Đã nộp xã") return { dossierId, version };
+  if (state === "Đã chuyển từ xã X sang xã Y") {
+    const moved = await t.app.dossiers.transferWard(actors["Cán bộ xã X"], { dossierId, expectedVersion: version, wardId: wardY, reason: "Sai địa bàn" });
+    return { dossierId, version: moved.version };
+  }
   return { dossierId, version: (await t.app.dossiers.receive(actors["Cán bộ xã X"], { dossierId, expectedVersion: version })).version };
 }
 
@@ -107,6 +134,14 @@ async function attempt(actor: UserActor, action: Action, d: { dossierId: string;
       return void (await t.app.entities.getEntity(actor, { entityId }));
     case "đọc hồ sơ pháp lý của A":
       return void (await t.app.entities.getLegalStanding(actor, { entityId }));
+    case "loại":
+      return void (await t.app.dossiers.reject(actor, { dossierId, expectedVersion, reasonCode: "other", explanation: "Thử quyền" }));
+    case "Chuyển xã":
+      return void (await t.app.dossiers.transferWard(actor, { dossierId, expectedVersion, wardId: wardY, reason: "Thử quyền" }));
+    case "đánh giá Checklist sơ bộ": {
+      const [item] = (await t.app.dossiers.checklist(ownerA, { dossierId })).items;
+      return void (await t.app.dossiers.assessChecklist(actor, { dossierId, expectedVersion, results: [{ itemCode: item!.code, result: "pass" }] }));
+    }
   }
 }
 

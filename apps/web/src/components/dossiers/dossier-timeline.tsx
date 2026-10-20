@@ -11,6 +11,8 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.supplement.request": "Xã yêu cầu bổ sung",
   "dossier.resubmit": "Nộp lại hồ sơ",
   "dossier.supplement.close": "Đóng hồ sơ quá hạn bổ sung",
+  "dossier.reject": "Xã loại hồ sơ",
+  "dossier.ward_transfer": "Chuyển xã",
 };
 
 function describe(e: DossierEvent, names: ReadonlyMap<string, string>) {

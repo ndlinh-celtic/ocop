@@ -44,7 +44,7 @@ export const CONSUMERS = {
     events: ["files.blocked"],
     handle: notifyFileBlocked,
   },
-  // Story 86: who hears of what happens to a hồ sơ (dossiers/notices.ts NOTICE_EVENTS).
+  // Story 86: who hears of what happens to a hồ sơ (dossiers/notices.ts).
   "notifications.dossier": {
     events: NOTICE_EVENTS,
     handle: notifyDossierEvent,

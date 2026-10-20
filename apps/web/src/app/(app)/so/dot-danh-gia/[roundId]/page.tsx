@@ -10,6 +10,8 @@ import { changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction
 import { RoundActionButton } from "../round-buttons";
 import { RoundConfigForms } from "../round-config-form";
 import { RoundForm } from "../round-form";
+import { configureChecklistAction } from "./checklist-actions";
+import { ChecklistEditor } from "./checklist-editor";
 import { ExtendDeadlineForm } from "./extend-deadline-form";
 import { extendDeadlineAction } from "./extension-actions";
 import { ExtensionHistory } from "./extension-history";
@@ -128,6 +130,22 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           />
         </section>
       )}
+      <section className="rounded-lg border bg-surface p-4">
+        <h2 className="font-medium">Checklist sơ bộ</h2>
+        {editable ? (
+          <>
+            <p className="mb-3 text-sm text-text-2">Cán bộ xã đánh giá từng mục trước khi gửi hồ sơ lên tỉnh. Sửa được khi đợt còn Nháp.</p>
+            {/* Remount after a save so new items pick up the codes the server gave them. */}
+            <ChecklistEditor key={round.checklist.map((i) => i.code).join()} items={round.checklist} action={configureChecklistAction.bind(null, round.id)} />
+          </>
+        ) : (
+          <ol className="mt-2 list-decimal pl-6 text-sm">
+            {round.checklist.map((i) => (
+              <li key={i.code}>{i.label}</li>
+            ))}
+          </ol>
+        )}
+      </section>
       {extendable && (
         <section className="rounded-lg border bg-surface p-4">
           <h2 className="mb-3 font-medium">Gia hạn đợt</h2>
