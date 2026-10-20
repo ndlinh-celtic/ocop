@@ -284,4 +284,27 @@ describe("L07 SO-01 kết thúc đợt", () => {
     const roundId = await closedRound(await staff());
     await expect(t.app.rounds.endRound(await admin(), { roundId })).rejects.toMatchObject({ code: "forbidden" });
   });
+
+  describe("the database keeps a round Đã kết thúc final", () => {
+    it("refuses to update or delete it, as the app user and even as the owner", async () => {
+      const roundId = await endedRound(await staff());
+      for (const pool of [db.app, db.admin]) {
+        await expect(pool.query("UPDATE round.round SET name = 'Đổi tên' WHERE id = $1", [roundId])).rejects.toThrow(/has ended/);
+        await expect(pool.query("UPDATE round.round SET status = 'submission_closed', ended_at = NULL, ended_by = NULL WHERE id = $1", [roundId])).rejects.toThrow(
+          /has ended/,
+        );
+        await expect(pool.query("DELETE FROM round.round WHERE id = $1", [roundId])).rejects.toThrow(/cannot be deleted|has ended/);
+      }
+      expect(await t.app.rounds.getRound(await staff(), { roundId })).toMatchObject({ status: "ended", name: expect.not.stringMatching("Đổi tên") });
+    });
+
+    it("still lets the app user update a round that has not ended", async () => {
+      const roundId = await closedRound(await staff());
+      await expect(db.app.query("UPDATE round.round SET name = 'Đổi tên' WHERE id = $1", [roundId])).resolves.toMatchObject({ rowCount: 1 });
+    });
+
+    it("does not let the app user disable the trigger", async () => {
+      await expect(db.app.query("ALTER TABLE round.round DISABLE TRIGGER round_ended_final")).rejects.toThrow(/must be owner/);
+    });
+  });
 });

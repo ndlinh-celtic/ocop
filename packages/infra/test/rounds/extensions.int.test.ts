@@ -233,14 +233,16 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
   });
 
   it("refuses an Đã kết thúc round", async () => {
-    await db.admin.query("UPDATE round.round SET status = 'ended', ended_at = now(), ended_by = $2 WHERE id = $1", [roundId, officer.userId]);
-    try {
-      await expect(
-        t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
-      ).rejects.toMatchObject({ code: "round_ended" });
-    } finally {
-      await db.admin.query("UPDATE round.round SET status = 'open_for_submission', ended_at = NULL, ended_by = NULL WHERE id = $1", [roundId]);
-    }
+    // A round Đã kết thúc is final in the database (0015), so this one goes straight there from Nháp by SQL;
+    // the round open in this describe keeps another from being opened and ended through the use cases.
+    const { roundId: ended } = await t.app.rounds.createRound(officer, roundInput({ name: "Đợt đã kết thúc" }));
+    await db.admin.query(
+      "UPDATE round.round SET status = 'ended', opened_at = now(), opened_by = $2, submission_closed_at = now(), ended_at = now(), ended_by = $2 WHERE id = $1",
+      [ended, officer.userId],
+    );
+    await expect(
+      t.app.rounds.extendDeadline(officer, { roundId: ended, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
+    ).rejects.toMatchObject({ code: "round_ended" });
   });
 });
 
