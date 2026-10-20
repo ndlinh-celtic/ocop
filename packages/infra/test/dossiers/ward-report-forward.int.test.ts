@@ -250,6 +250,26 @@ describe("L06 XA-07 gửi tỉnh (stories 66, 67)", () => {
     await expect(t.app.dossiers.generateWardReport(officer, { dossierId })).rejects.toMatchObject({ code: "invalid_state" });
   });
 
+  it("after a nộp lại, the report signed for the earlier Phiên bản nộp no longer counts", async () => {
+    const officer = await f.staff("ward_officer", wardId);
+    const { a, dossierId, version } = await assessed(officer);
+    const { version: signed } = await signAndAttach(officer, dossierId, version);
+    const { version: requested } = await t.app.dossiers.requestSupplement(officer, {
+      dossierId,
+      expectedVersion: signed,
+      deadline: "2026-10-31",
+      items: [{ content: "Bổ sung phiếu kiểm nghiệm" }],
+    });
+    const { version: resubmitted } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: requested });
+
+    expect((await t.app.dossiers.wardReport(officer, { dossierId })).signed).toMatchObject({ submissionNumber: 1, current: false });
+    await expect(t.app.dossiers.forwardToProvince(officer, { dossierId, expectedVersion: resubmitted })).rejects.toMatchObject({ code: "ward_report_missing" });
+    expect(docxText((await t.app.dossiers.generateWardReport(officer, { dossierId })).bytes)).toContain("Phiên bản nộp số 2");
+
+    const { version: resigned } = await signAndAttach(officer, dossierId, resubmitted, "BC lần 2.pdf");
+    await expect(t.app.dossiers.forwardToProvince(officer, { dossierId, expectedVersion: resigned })).resolves.toEqual({ version: resigned + 1 });
+  });
+
   it("keeps a signed report once attached: the DB refuses to change or delete it", async () => {
     const officer = await f.staff("ward_officer", wardId);
     const { dossierId, version } = await assessed(officer);

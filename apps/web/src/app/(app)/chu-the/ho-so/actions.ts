@@ -76,7 +76,10 @@ export async function deleteDossierAction(dossierId: string, expectedVersion: nu
   redirect(LIST);
 }
 
-/** L03 CT-09: submits the hồ sơ into the đợt Đang nhận nộp; every blocker comes back in the message. */
+/**
+ * L03 CT-09: submits the hồ sơ into the đợt Đang nhận nộp, or (L04 CT-11) nộp lại a hồ sơ Yêu cầu bổ
+ * sung; every blocker comes back in the message.
+ */
 export async function submitDossierAction(dossierId: string, expectedVersion: number, _prev: DossierFormState): Promise<DossierFormState> {
   const actor = await requireActor();
   try {
@@ -102,6 +105,24 @@ export async function withdrawDossierAction(dossierId: string, expectedVersion: 
   }
   revalidatePath(LIST);
   redirect(`${LIST}/${dossierId}`);
+}
+
+const answerInput = z.object({ response: z.string().max(2_000) });
+
+export type AnswerFormState = DossierFormState & { saved?: boolean };
+
+/** L04 CT-11 (story 51): the Chủ thể's answer to one nội dung of the open yêu cầu bổ sung. */
+export async function respondSupplementAction(dossierId: string, expectedVersion: number, itemId: string, _prev: AnswerFormState, form: FormData): Promise<AnswerFormState> {
+  const actor = await requireActor();
+  const parsed = answerInput.safeParse({ response: form.get("response") ?? "" });
+  if (!parsed.success) return { error: "Câu trả lời quá dài" };
+  try {
+    await app().core.dossiers.respondSupplementItem(actor, { dossierId, expectedVersion, itemId, response: parsed.data.response });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath(`${LIST}/${dossierId}`);
+  return { saved: true };
 }
 
 const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });

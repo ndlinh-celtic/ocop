@@ -8,13 +8,15 @@ import { submitDossierAction, withdrawDossierAction, type DossierFormState } fro
 
 /**
  * S16 Nộp hồ sơ (L03 CT-09, story 29): every reason the hồ sơ cannot be submitted yet, or the button that
- * submits it into the đợt Đang nhận nộp after confirmation.
+ * submits it into the đợt Đang nhận nộp after confirmation. With `resubmission` (L04 CT-11) it nộp lại a
+ * hồ sơ Yêu cầu bổ sung as the next Phiên bản nộp.
  */
-export function SubmitPanel({ dossierId, version, blockers }: { dossierId: string; version: number; blockers: SubmissionBlocker[] }) {
+export function SubmitPanel({ dossierId, version, blockers, resubmission = false }: { dossierId: string; version: number; blockers: SubmissionBlocker[]; resubmission?: boolean }) {
+  const verb = resubmission ? "Nộp lại hồ sơ" : "Nộp hồ sơ";
   const [state, action, pending] = useActionState<DossierFormState, FormData>(submitDossierAction.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
-      <h2 className="mb-2 font-semibold">Nộp hồ sơ</h2>
+      <h2 className="mb-2 font-semibold">{verb}</h2>
       {blockers.length > 0 ? (
         <>
           <p className="mb-2 text-sm text-text-2">Chưa nộp được hồ sơ. Cần xử lý:</p>
@@ -42,7 +44,7 @@ export function SubmitPanel({ dossierId, version, blockers }: { dossierId: strin
       <form
         action={action}
         onSubmit={(e) => {
-          if (!window.confirm("Nộp hồ sơ về UBND xã/phường? Sau khi nộp, hồ sơ không sửa trực tiếp được.")) e.preventDefault();
+          if (!window.confirm(`${verb} về UBND xã/phường? Sau khi nộp, hồ sơ không sửa trực tiếp được.`)) e.preventDefault();
         }}
       >
         <button
@@ -50,7 +52,7 @@ export function SubmitPanel({ dossierId, version, blockers }: { dossierId: strin
           disabled={pending || blockers.length > 0}
           className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-ink disabled:opacity-60"
         >
-          <Send className="size-4" aria-hidden /> Nộp hồ sơ
+          <Send className="size-4" aria-hidden /> {verb}
         </button>
         {state.error && (
           <p role="alert" className="mt-2 text-sm text-danger">
