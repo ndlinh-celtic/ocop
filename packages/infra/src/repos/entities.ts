@@ -11,6 +11,9 @@ function inScope(scope: DataScope): SQL {
   switch (scope.kind) {
     case "entity":
       return eq(entity.id, scope.entityId);
+    case "ward":
+      // Story 77: the Chủ thể đăng ký ở xã mình. Those with a hồ sơ now in the xã join with the hồ sơ module.
+      return eq(entity.wardId, scope.wardId);
     case "none":
       return sql`false`;
     default: {
