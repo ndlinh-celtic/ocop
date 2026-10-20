@@ -12,6 +12,7 @@ import { FILE_PURPOSES, type FilePurpose, type StoredFile } from "./model";
 const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   test_upload: "file.test_upload",
   legal_document: "entity.legal_document.manage",
+  evidence: "dossier.evidence.upload",
 };
 
 export type UploadInstructions =

@@ -31,6 +31,9 @@ import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
 import { addLegalDocument, getLegalStanding } from "./entities/legal-documents";
 import { revealPersonalId, updateEntity } from "./entities/profile";
+import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
+import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
+import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -125,6 +128,17 @@ export function createCore(deps: CoreDeps) {
       addLegalDocument: addLegalDocument(deps),
       updateEntity: updateEntity(deps),
       revealPersonalId: revealPersonalId(deps),
+    },
+    dossiers: {
+      creationOptions: creationOptions(deps),
+      create: createDossier(deps),
+      copy: copyDossier(deps),
+      get: getDossier(deps),
+      list: listDossiers(deps),
+      timeline: dossierTimeline(deps),
+      updateProduct: updateProduct(deps),
+      addEvidenceFile: addEvidenceFile(deps),
+      delete: deleteDossier(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

@@ -1,4 +1,6 @@
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
+import type { DossierState } from "../dossiers/model";
+import type { DossierEventType } from "../dossiers/transitions";
 import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
@@ -30,7 +32,8 @@ export type DomainEventBody =
   | { type: "entity.registered"; payload: { entityId: string; userId: string } }
   | { type: "entity.updated"; payload: { entityId: string } }
   | { type: "entity.ward_changed"; payload: { entityId: string; fromWardId: string; toWardId: string } }
-  | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } };
+  | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
+  | { type: DossierEventType; payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState } };
 
 export type EventType = DomainEventBody["type"];
 
