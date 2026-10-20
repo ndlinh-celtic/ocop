@@ -49,7 +49,7 @@ export function roleAssignmentRepo(db: Db): RoleAssignmentRepo {
       const rows = await db
         .select()
         .from(roleAssignment)
-        .where(and(eq(roleAssignment.role, role), eq(roleAssignment.scopeType, scopeType), eq(roleAssignment.scopeId, scopeId)))
+        .where(and(eq(roleAssignment.role, role), eq(roleAssignment.scopeType, scopeType), scopeId === null ? isNull(roleAssignment.scopeId) : eq(roleAssignment.scopeId, scopeId)))
         .orderBy(roleAssignment.createdAt);
       return rows.map(toAssignment);
     },

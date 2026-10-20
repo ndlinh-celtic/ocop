@@ -27,6 +27,7 @@ export {
   type DocumentTemplates,
   type RegistrationFormData,
   type SelfAssessmentReportData,
+  type WardReportData,
 } from "./documents/renderer";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
@@ -191,7 +192,9 @@ export {
   type SubmissionFileRef,
   type SubmissionFileRole,
   type SubmissionSnapshot,
+  type WardReport,
 } from "./dossiers/model";
+export type { WardReportStatus } from "./dossiers/ward-report";
 export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType, type DossierRef, type TransitionRule } from "./dossiers/transitions";
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";

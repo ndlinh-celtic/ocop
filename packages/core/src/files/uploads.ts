@@ -13,6 +13,12 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   test_upload: "file.test_upload",
   legal_document: "entity.legal_document.manage",
   evidence: "dossier.evidence.upload",
+  signed_ward_report: "dossier.ward_report.upload",
+};
+
+/** Purposes that accept fewer types than the deployment allows: a signed Báo cáo đánh giá cấp xã is a PDF (story 65). */
+const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
+  signed_ward_report: ["application/pdf"],
 };
 
 export type UploadInstructions =
@@ -54,6 +60,8 @@ export function requestUpload(deps: CoreDeps) {
     const purpose = input.purpose ?? "test_upload";
     if (!FILE_PURPOSES.includes(purpose)) throw new DomainError("file_purpose_invalid", "Loại tệp không hợp lệ");
     authorize(actor, UPLOAD_ACTION[purpose]);
+    const only = PURPOSE_TYPES[purpose];
+    if (only && !only.includes(input.contentType)) throw new DomainError("file_type_not_allowed", "Định dạng tệp không được chấp nhận");
     const fileName = input.fileName.trim().slice(0, 255);
     assertAcceptable(deps, { ...input, fileName });
     const s = deps.settings.files;

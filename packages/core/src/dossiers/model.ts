@@ -149,6 +149,23 @@ export interface DossierRepo {
   checklistResults(dossierId: string): Promise<ChecklistResult[]>;
   /** Inserts or replaces the result of one item. */
   saveChecklistResult(r: ChecklistResult): Promise<void>;
+  /** Appends a signed Báo cáo đánh giá cấp xã; the DB refuses any later change. */
+  insertWardReport(r: WardReport): Promise<void>;
+  /** The newest signed Báo cáo đánh giá cấp xã of a hồ sơ already loaded within scope, with its file name. */
+  latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string }) | null>;
+}
+
+/**
+ * A signed Báo cáo đánh giá cấp xã (L06 XA-07): the PDF the Cán bộ xã uploaded after it was signed, tied
+ * to the Phiên bản nộp it reports on. A later upload adds another; the newest one counts.
+ */
+export interface WardReport {
+  id: string;
+  dossierId: string;
+  submissionNumber: number;
+  fileId: string;
+  uploadedBy: string;
+  uploadedAt: Date;
 }
 
 /** Story 61: how the xã found one item of the Checklist sơ bộ. */

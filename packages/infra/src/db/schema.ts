@@ -419,6 +419,16 @@ export const checklistResult = dossierSchema.table(
   (t) => [primaryKey({ columns: [t.dossierId, t.itemCode] })],
 );
 
+// L06 XA-07 signed Báo cáo đánh giá cấp xã, append-only (0024_ward_report.sql).
+export const wardReport = dossierSchema.table("ward_report", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  submissionNumber: integer("submission_number").notNull(),
+  fileId: uuid("file_id").notNull(),
+  uploadedBy: uuid("uploaded_by").notNull(),
+  uploadedAt: ts("uploaded_at").notNull(),
+});
+
 export const criterionEntry = dossierSchema.table(
   "criterion_entry",
   {

@@ -63,10 +63,55 @@ async function noticeOf({ deps, tx, event }: ConsumerContext): Promise<Notice | 
   };
 }
 
+/** The Người dùng holding an active Phân vai Cán bộ Sở (Phạm vi tỉnh). */
+async function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
+  const assignments = (await tx.roleAssignments.listForScope("province_officer", "province", null)).filter((a) => isAssignmentActive(a, now));
+  const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
+  return users.filter((u): u is User => u !== null && u.status === "active");
+}
+
+/** L06 XA-07 (story 67): gửi tỉnh tells the Sở, which now receives it, and the Chủ thể, each with its own link. */
+async function forwardedNotices({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
+  if (event.type !== "dossier.forwarded") return [];
+  const now = deps.clock.now();
+  const scope = { kind: "entity", entityId: event.payload.entityId } as const;
+  const dossier = await tx.dossiers.findById(scope, event.payload.dossierId);
+  if (!dossier) return [];
+  const product = dossier.productName || "chưa đặt tên";
+  const entity = await tx.entities.findById(scope, dossier.entityId);
+  return [
+    {
+      recipients: await provinceOfficers(tx, now),
+      kind: "dossier_forwarded",
+      title: `Hồ sơ gửi tỉnh: ${product}`,
+      body: `UBND xã/phường đã gửi tỉnh hồ sơ của ${entity?.name ?? "một Chủ thể"}.`,
+      emailSubject: "Có hồ sơ OCOP mới gửi tỉnh",
+      emailLine: "UBND xã/phường vừa gửi tỉnh một hồ sơ OCOP.",
+      link: `/so/ho-so/${dossier.id}`,
+    },
+    {
+      recipients: await entityUsers(tx, dossier.entityId, now),
+      kind: "dossier_forwarded",
+      title: `Hồ sơ ${product} đã được gửi tỉnh`,
+      body: "UBND xã/phường đã đánh giá sơ bộ và gửi hồ sơ lên Sở Nông nghiệp và Môi trường.",
+      emailSubject: "Hồ sơ OCOP đã được gửi tỉnh",
+      emailLine: "UBND xã/phường đã gửi hồ sơ OCOP của anh/chị lên tỉnh.",
+      link: `/chu-the/ho-so/${dossier.id}`,
+    },
+  ];
+}
+
+async function noticesOf(c: ConsumerContext): Promise<Notice[]> {
+  const notice = await noticeOf(c);
+  return [...(notice ? [notice] : []), ...(await forwardedNotices(c))];
+}
+
 /** In-app side of the notices on a hồ sơ. */
 export async function notifyDossierEvent(c: ConsumerContext): Promise<void> {
-  const notice = await noticeOf(c);
-  if (!notice) return;
+  for (const notice of await noticesOf(c)) await notifyOne(c, notice);
+}
+
+async function notifyOne(c: ConsumerContext, notice: Notice): Promise<void> {
   for (const user of notice.recipients) {
     await c.tx.notifications.insert({
       id: c.deps.ids.next(),
@@ -83,13 +128,13 @@ export async function notifyDossierEvent(c: ConsumerContext): Promise<void> {
 
 /** Email side of the notices on a hồ sơ. */
 export async function emailDossierEvent(c: ConsumerContext): Promise<void> {
-  const notice = await noticeOf(c);
-  if (!notice) return;
-  for (const user of notice.recipients) {
-    await sendEmail(c, {
-      to: user.email,
-      template: "dossier_notice",
-      data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },
-    });
+  for (const notice of await noticesOf(c)) {
+    for (const user of notice.recipients) {
+      await sendEmail(c, {
+        to: user.email,
+        template: "dossier_notice",
+        data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },
+      });
+    }
   }
 }

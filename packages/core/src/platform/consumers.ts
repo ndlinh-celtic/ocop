@@ -46,11 +46,11 @@ export const CONSUMERS = {
   },
   // Story 86: Cán bộ xã hear of a new hồ sơ, the Chủ thể of its Tiếp nhận.
   "notifications.dossier": {
-    events: ["dossier.submitted", "dossier.received"],
+    events: ["dossier.submitted", "dossier.received", "dossier.forwarded"],
     handle: notifyDossierEvent,
   },
   "dossiers.notice-email": {
-    events: ["dossier.submitted", "dossier.received"],
+    events: ["dossier.submitted", "dossier.received", "dossier.forwarded"],
     handle: emailDossierEvent,
   },
 } as const satisfies Record<string, Consumer>;
