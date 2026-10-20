@@ -9,6 +9,7 @@ import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { DeleteDossierButton } from "./delete-button";
 import { ProductForm } from "./product-form";
+import { Workbench } from "./workbench";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +23,19 @@ function describe(e: DossierEvent) {
   return e.fromState && e.fromState !== e.toState ? `${label}: ${DOSSIER_STATE_LABEL[e.fromState]} → ${DOSSIER_STATE_LABEL[e.toState]}` : label;
 }
 
-/** S14 Trình soạn hồ sơ (L02 CT-03): thông tin sản phẩm, kho minh chứng and dòng thời gian of one hồ sơ. */
+/**
+ * S14 Trình soạn hồ sơ (L02 CT-03, CT-05, CT-06): thông tin sản phẩm, kho minh chứng gắn theo tiêu chí,
+ * giải trình, tự chấm thử and dòng thời gian of one hồ sơ.
+ */
 export default async function DossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline] = await Promise.all([
+  const [dossier, timeline, assessment] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.selfAssessment(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !timeline) notFound();
+  if (!dossier || !timeline || !assessment) notFound();
   const editable = can(actor, "dossier.edit", dossier);
 
   return (
@@ -82,20 +87,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
         />
       </section>
 
-      <section className="rounded-lg border bg-surface shadow-card">
-        <h2 className="border-b p-4 font-semibold">Kho minh chứng</h2>
-        {dossier.evidence.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-text-3">Chưa có tệp minh chứng.</p>
-        ) : (
-          <ul className="divide-y">
-            {dossier.evidence.map((file) => (
-              <li key={file.fileId} className="px-4 py-2 text-sm">
-                {file.fileName}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <Workbench assessment={assessment} editable={editable} />
 
       <section className="rounded-lg border bg-surface shadow-card">
         <h2 className="border-b p-4 font-semibold">Dòng thời gian</h2>

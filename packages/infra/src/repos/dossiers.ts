@@ -1,7 +1,7 @@
 import type { DataScope, Dossier, DossierEvent, DossierRepo } from "@ocop/core";
 import { and, asc, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { dossier, dossierEvent, evidenceFile, file } from "../db/schema";
+import { criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -80,6 +80,36 @@ export function dossierRepo(db: Db): DossierRepo {
         .innerJoin(file, eq(file.id, evidenceFile.fileId))
         .where(eq(evidenceFile.dossierId, dossierId))
         .orderBy(asc(evidenceFile.addedAt), asc(file.fileName));
+    },
+    async removeEvidence(dossierId, fileId) {
+      // The ties to Tiêu chí go with it (ON DELETE CASCADE).
+      const removed = await db
+        .delete(evidenceFile)
+        .where(and(eq(evidenceFile.dossierId, dossierId), eq(evidenceFile.fileId, fileId)))
+        .returning({ fileId: evidenceFile.fileId });
+      return removed.length === 1;
+    },
+    async setEvidenceLinks(dossierId, fileId, criterionIds) {
+      await db.delete(evidenceLink).where(and(eq(evidenceLink.dossierId, dossierId), eq(evidenceLink.fileId, fileId)));
+      if (criterionIds.length > 0) await db.insert(evidenceLink).values(criterionIds.map((criterionId) => ({ dossierId, fileId, criterionId })));
+    },
+    async evidenceLinks(dossierId) {
+      return db
+        .select({ fileId: evidenceLink.fileId, criterionId: evidenceLink.criterionId })
+        .from(evidenceLink)
+        .where(eq(evidenceLink.dossierId, dossierId));
+    },
+    async criterionEntries(dossierId) {
+      return db.select().from(criterionEntry).where(eq(criterionEntry.dossierId, dossierId));
+    },
+    async saveCriterionEntry(e) {
+      await db
+        .insert(criterionEntry)
+        .values(e)
+        .onConflictDoUpdate({
+          target: [criterionEntry.dossierId, criterionEntry.criterionId],
+          set: { scoreLevelId: e.scoreLevelId, explanation: e.explanation, updatedAt: e.updatedAt },
+        });
     },
   };
 }
