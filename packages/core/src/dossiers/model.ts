@@ -145,6 +145,31 @@ export interface DossierRepo {
   lastSubmittedAt(dossierIds: readonly string[]): Promise<Map<string, Date>>;
   /** The newest Phiên bản nộp of a hồ sơ already loaded within scope. */
   latestSubmission(dossierId: string): Promise<Submission | null>;
+  /** Every Checklist sơ bộ result recorded on a hồ sơ already loaded within scope. */
+  checklistResults(dossierId: string): Promise<ChecklistResult[]>;
+  /** Inserts or replaces the result of one item. */
+  saveChecklistResult(r: ChecklistResult): Promise<void>;
+}
+
+/** Story 61: how the xã found one item of the Checklist sơ bộ. */
+export const CHECKLIST_RESULTS = ["pass", "fail", "needs_verification"] as const;
+export type ChecklistResultValue = (typeof CHECKLIST_RESULTS)[number];
+
+export const CHECKLIST_RESULT_LABEL: Record<ChecklistResultValue, string> = {
+  pass: "Đạt",
+  fail: "Không đạt",
+  needs_verification: "Cần xác minh",
+};
+
+/** The result of one item of the đợt's Checklist sơ bộ on a hồ sơ, keyed by the item's code. */
+export interface ChecklistResult {
+  dossierId: string;
+  itemCode: string;
+  result: ChecklistResultValue;
+  /** Nhận xét: a working note of the xã, never shown to the Chủ thể (story 35). */
+  comment: string;
+  assessedAt: Date;
+  assessedBy: string;
 }
 
 /** Thông tin sản phẩm a hồ sơ must carry to be submitted (story 29); the others may stay blank. */
