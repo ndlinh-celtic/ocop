@@ -3,7 +3,8 @@
 **/dist
 **/.turbo
 .git
-docs
+docs/**
+!docs/tieu-chi/ocop_tieu_chi_qd26_2026.json
 design
 playwright-report
 test-results

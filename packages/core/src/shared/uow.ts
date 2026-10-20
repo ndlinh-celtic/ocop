@@ -1,5 +1,6 @@
 import type { AuditLog } from "../audit/audit";
 import type { AuditChainRepo } from "../audit/chain-repo";
+import type { CriteriaVersionRepo } from "../criteria/version";
 import type { FileRepo } from "../files/model";
 import type { RoleAssignmentRepo, SessionRepo, UserRepo } from "../identity/repos";
 import type { OneTimeTokenRepo } from "../identity/tokens";
@@ -22,6 +23,7 @@ export interface Tx {
   processedEvents: ProcessedEvents;
   emailDeliveries: EmailDeliveries;
   files: FileRepo;
+  criteriaVersions: CriteriaVersionRepo;
 }
 
 export interface UnitOfWork {
