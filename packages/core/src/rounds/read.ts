@@ -1,6 +1,7 @@
 import { authorize, can } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
+import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { roundNotFound } from "./manage";
 import { isPastSubmissionDeadline, type Round } from "./model";
@@ -40,6 +41,7 @@ export function getRound(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<RoundDetail> => {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const round = await tx.rounds.findById(input.roundId);
       if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       const [view] = await withVersions(tx, [round]);

@@ -4,6 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { checkedAggregation, roundNotFound } from "./manage";
 import { GRADING_MODES, type AggregationRule, type GradingMode, type Round } from "./model";
@@ -13,6 +14,7 @@ import { GRADING_MODES, type AggregationRule, type GradingMode, type Round } fro
  * Đã đóng nộp, and only until its first phiếu chấm (spec #16 stories 49-50). A Nháp round is edited as a whole.
  */
 async function lockConfigurable(deps: CoreDeps, tx: Tx, roundId: string): Promise<Round> {
+  assertIdShape(roundId, roundNotFound);
   const round = await tx.rounds.lock(roundId);
   if (!round) throw roundNotFound();
   if (round.status !== "open_for_submission" && round.status !== "submission_closed") {
@@ -86,6 +88,7 @@ export function endRound(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<void> => {
     authorize(actor, "round.manage");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const before = await tx.rounds.lock(input.roundId);
       if (!before) throw roundNotFound();
       if (before.status !== "submission_closed") {

@@ -5,6 +5,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import { versionNotFound } from "./helpers";
 import { findVersionIssues, type ValidationIssue } from "./validation";
 import { assertDraft } from "./version";
@@ -23,6 +24,7 @@ export function validateVersion(deps: CoreDeps) {
   return async (actor: Actor, input: { versionId: string }): Promise<{ issues: ValidationIssue[] }> => {
     authorize(actor, "criteria.read_draft");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.versionId, versionNotFound);
       if (!(await tx.criteriaVersions.findById(input.versionId))) throw versionNotFound();
       return { issues: findVersionIssues(await tx.criteriaVersions.loadRows(input.versionId)) };
     });
@@ -38,6 +40,7 @@ export function publishVersion(deps: CoreDeps) {
     authorize(actor, "criteria.publish");
     return deps.uow.run(async (tx) => {
       const proof = await requireRecentAuth(deps, tx, actor);
+      assertIdShape(input.versionId, versionNotFound);
       const version = await tx.criteriaVersions.lock(input.versionId);
       if (!version) throw versionNotFound();
       assertDraft(version);

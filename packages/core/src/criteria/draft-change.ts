@@ -3,6 +3,7 @@ import { emit } from "../platform/emit";
 import type { UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import type { DraftChangeAction, DraftNodeKind, DraftTarget } from "./draft-events";
 import { versionNotFound } from "./helpers";
@@ -46,6 +47,7 @@ export function changeDraft(
   apply: (tx: Tx, version: CriteriaVersion, rows: () => Promise<VersionRows>) => Promise<DraftChange | null>,
 ): Promise<DraftChangeResult> {
   return deps.uow.run(async (tx) => {
+    assertIdShape(versionId, versionNotFound);
     const version = await tx.criteriaVersions.lock(versionId);
     if (!version) throw versionNotFound();
     assertDraft(version);
@@ -74,7 +76,9 @@ export function changeDraft(
 
 /** A node of the given draft, or `not_found` when it does not exist or belongs to another version. */
 export async function findDraftNode<K extends DraftNodeKind>(tx: Tx, version: CriteriaVersion, kind: K, id: string): Promise<DraftNodeRows[K]> {
+  const nodeNotFound = () => new DomainError("not_found", "Không tìm thấy mục cần sửa trong bản nháp");
+  assertIdShape(id, nodeNotFound);
   const found = await tx.criteriaVersions.findNode(kind, id);
-  if (!found || found.versionId !== version.id) throw new DomainError("not_found", "Không tìm thấy mục cần sửa trong bản nháp");
+  if (!found || found.versionId !== version.id) throw nodeNotFound();
   return found.row;
 }

@@ -4,6 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import { versionNotFound } from "./helpers";
 import type { CriteriaVersion, VersionRows } from "./version";
 
@@ -55,6 +56,7 @@ export function copyVersion(deps: CoreDeps) {
     authorize(actor, "criteria.copy");
     return deps.uow.run(async (tx) => {
       // The lock gives a consistent snapshot of a draft that someone may be editing.
+      assertIdShape(input.versionId, versionNotFound);
       const source = await tx.criteriaVersions.lock(input.versionId);
       if (!source) throw versionNotFound();
       const rows = copyRows(await tx.criteriaVersions.loadRows(source.id), () => deps.ids.next());
@@ -101,6 +103,7 @@ export function deleteVersion(deps: CoreDeps) {
   return async (actor: Actor, input: { versionId: string }): Promise<void> => {
     authorize(actor, "criteria.delete");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.versionId, versionNotFound);
       const version = await tx.criteriaVersions.lock(input.versionId);
       if (!version) throw versionNotFound();
       if (version.status !== "draft") throw new DomainError("version_published", "Phiên bản tiêu chí đã phát hành, không xóa được");

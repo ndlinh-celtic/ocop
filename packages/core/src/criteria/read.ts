@@ -1,9 +1,9 @@
 import { authorize, can } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
-import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import { assembleSet, type CriteriaSetDetail } from "./detail";
-import { byPosition, versionNotFound } from "./helpers";
+import { byPosition, setNotFound, versionNotFound } from "./helpers";
 import type { RankThresholds } from "./model";
 import type { CriteriaVersion, VersionSummary } from "./version";
 
@@ -61,6 +61,7 @@ export function getVersion(deps: CoreDeps) {
   return async (actor: Actor, input: { versionId: string }): Promise<VersionDetail> => {
     authorize(actor, "criteria.read_published");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.versionId, versionNotFound);
       const version = await tx.criteriaVersions.findById(input.versionId);
       if (!version || !visible(actor, version)) throw versionNotFound();
       const t = await tx.criteriaVersions.taxonomy(version.id);
@@ -91,9 +92,10 @@ export function getCriteriaSet(deps: CoreDeps) {
   return async (actor: Actor, input: { setId: string }): Promise<CriteriaSetView> => {
     authorize(actor, "criteria.read_published");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.setId, setNotFound);
       const found = await tx.criteriaVersions.findSet(input.setId);
       const version = found && (await tx.criteriaVersions.findById(found.versionId));
-      if (!found || !version || !visible(actor, version)) throw new DomainError("not_found", "Không tìm thấy bộ tiêu chí");
+      if (!found || !version || !visible(actor, version)) throw setNotFound();
       const t = await tx.criteriaVersions.taxonomy(version.id);
       const subgroup = t.subgroups.find((s) => s.id === found.rows.set.subgroupId);
       const group = t.productGroups.find((g) => g.id === subgroup?.productGroupId);

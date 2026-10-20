@@ -4,6 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import { roundNotFound } from "./manage";
 import { roundVisibleTo } from "./read";
 import {
@@ -49,6 +50,7 @@ export function extendDeadline(deps: CoreDeps) {
     const field = FIELD[input.deadline];
 
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const before = await tx.rounds.lock(input.roundId);
       if (!before) throw roundNotFound();
       if (before.status === "draft") throw new DomainError("round_is_draft", "Đợt đang ở trạng thái Nháp: sửa trực tiếp các mốc hạn, không cần gia hạn");
@@ -101,6 +103,7 @@ export function listDeadlineExtensions(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<DeadlineExtensionView[]> => {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const round = await tx.rounds.findById(input.roundId);
       if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       return tx.rounds.listExtensions(input.roundId);

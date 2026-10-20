@@ -4,6 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { closeDueActorFor, closeDueInTx } from "./close-due";
 import {
@@ -58,10 +59,10 @@ async function checkedFields(tx: Tx, input: RoundInput) {
   assertDeadlineOrder(deadlines);
   if (!GRADING_MODES.includes(input.gradingMode)) throw new DomainError("invalid_grading_mode", "Chế độ chấm không hợp lệ");
   const aggregation = checkedAggregation(input.aggregation);
+  const notPublished = () => new DomainError("version_not_published", "Chọn một Phiên bản tiêu chí đã phát hành");
+  assertIdShape(input.criteriaVersionId, notPublished);
   const version = await tx.criteriaVersions.findById(input.criteriaVersionId);
-  if (!version || version.status !== "published") {
-    throw new DomainError("version_not_published", "Chọn một Phiên bản tiêu chí đã phát hành");
-  }
+  if (!version || version.status !== "published") throw notPublished();
   return {
     name,
     year: input.year,
@@ -120,6 +121,7 @@ export function updateRound(deps: CoreDeps) {
   return async (actor: Actor, input: RoundInput & { roundId: string }): Promise<void> => {
     authorize(actor, "round.manage");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const before = await tx.rounds.lock(input.roundId);
       if (!before) throw roundNotFound();
       assertDraftRound(before);
@@ -145,6 +147,7 @@ export function deleteRound(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<void> => {
     authorize(actor, "round.manage");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const round = await tx.rounds.lock(input.roundId);
       if (!round) throw roundNotFound();
       assertDraftRound(round);
@@ -166,6 +169,7 @@ export function openRound(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<void> => {
     authorize(actor, "round.manage");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const before = await tx.rounds.lock(input.roundId);
       if (!before) throw roundNotFound();
       if (before.status !== "draft") throw new DomainError("round_not_draft", "Chỉ mở được đợt đang ở trạng thái Nháp");
