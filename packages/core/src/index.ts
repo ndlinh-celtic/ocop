@@ -70,4 +70,5 @@ export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue
 export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
 export { CriteriaValidationError } from "./criteria/publish";
 export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
+export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
