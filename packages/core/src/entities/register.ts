@@ -6,7 +6,7 @@ import type { AnonymousActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { isUuid } from "../shared/ids";
-import { assertIdentifierShape, ENTITY_KINDS, normalizeIdentifier, type Entity, type EntityKind } from "./model";
+import { assertIdentifierShape, ENTITY_KINDS, normalizeIdentifier, parseDetails, type Entity, type EntityKind } from "./model";
 
 export interface RegisterEntityInput {
   kind: EntityKind;
@@ -22,7 +22,6 @@ export interface RegisterEntityInput {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE = /^\+?[0-9]{9,12}$/;
 
 /**
  * One message for a taken identifier and a taken email (story 4): it must not tell a visitor which one
@@ -34,29 +33,13 @@ const registrationConflict = () =>
     "Không thể đăng ký với mã số thuế, số định danh hoặc email này vì đã được dùng. Nếu cơ sở của bạn đã có tài khoản, hãy liên hệ Cán bộ xã để được hỗ trợ khôi phục.",
   );
 
-function required(value: string, code: string, message: string) {
-  const v = value.trim();
-  if (!v) throw new DomainError(code, message);
-  return v;
-}
-
 function parse(input: RegisterEntityInput) {
   if (!ENTITY_KINDS.includes(input.kind)) throw new DomainError("kind_invalid", "Chọn loại tổ chức");
   const identifier = normalizeIdentifier(input.identifier);
   assertIdentifierShape(input.kind, identifier);
   const email = input.email.trim();
   if (!EMAIL.test(email)) throw new DomainError("email_invalid", "Email không hợp lệ");
-  const phone = input.phone.replace(/[\s.-]/g, "");
-  if (!PHONE.test(phone)) throw new DomainError("phone_invalid", "Số điện thoại không hợp lệ");
-  return {
-    kind: input.kind,
-    identifier,
-    email,
-    phone,
-    name: required(input.name, "name_required", "Nhập tên tổ chức hoặc họ tên chủ hộ"),
-    address: required(input.address, "address_required", "Nhập địa chỉ"),
-    representativeName: required(input.representativeName, "representative_required", "Nhập họ tên người đại diện"),
-  };
+  return { kind: input.kind, identifier, email, ...parseDetails(input) };
 }
 
 /**

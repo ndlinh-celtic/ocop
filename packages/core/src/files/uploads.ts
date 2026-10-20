@@ -1,10 +1,18 @@
 import { auditEntry } from "../audit/audit";
-import { authorize } from "../identity/policy";
+import { authorize, type Action } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
-import { DomainError } from "../shared/errors";
+import { DomainError, forbidden } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
+import type { Tx } from "../shared/uow";
 import { emit } from "../platform/emit";
-import type { StoredFile } from "./model";
+import { FILE_PURPOSES, type FilePurpose, type StoredFile } from "./model";
+
+/** Who may upload a file of each purpose; the uploader alone handles it until a module takes it over. */
+const UPLOAD_ACTION: Record<FilePurpose, Action> = {
+  test_upload: "file.test_upload",
+  legal_document: "entity.legal_document.manage",
+};
 
 export type UploadInstructions =
   | { kind: "single"; url: string; headers: Record<string, string>; expiresAt: Date }
@@ -23,13 +31,27 @@ function assertAcceptable(deps: CoreDeps, input: { fileName: string; contentType
   if (input.size > maxBytes) throw new DomainError("file_too_large", `Tệp vượt quá ${Math.round(maxBytes / MB)} MB`);
 }
 
+const fileNotFound = () => new DomainError("not_found", "Không tìm thấy tệp");
+
+/** A file of the actor's own, while the Vai trò đang dùng may still handle files of its purpose. */
+async function ownFile(tx: Tx, actor: Actor, fileId: string): Promise<StoredFile> {
+  if (actor.kind !== "user") throw forbidden();
+  assertIdShape(fileId, fileNotFound);
+  const file = await tx.files.findById(fileId);
+  if (!file || file.ownerUserId !== actor.userId) throw fileNotFound();
+  authorize(actor, UPLOAD_ACTION[file.purpose]);
+  return file;
+}
+
 /**
  * Registers a file and returns how the browser uploads it: one presigned PUT, or presigned parts
  * above the multipart threshold. Type and size are checked before any URL is issued.
  */
 export function requestUpload(deps: CoreDeps) {
-  return async (actor: Actor, input: { fileName: string; contentType: string; size: number }) => {
-    authorize(actor, "file.test_upload");
+  return async (actor: Actor, input: { fileName: string; contentType: string; size: number; purpose?: FilePurpose }) => {
+    const purpose = input.purpose ?? "test_upload";
+    if (!FILE_PURPOSES.includes(purpose)) throw new DomainError("file_purpose_invalid", "Loại tệp không hợp lệ");
+    authorize(actor, UPLOAD_ACTION[purpose]);
     const fileName = input.fileName.trim().slice(0, 255);
     assertAcceptable(deps, { ...input, fileName });
     const s = deps.settings.files;
@@ -51,7 +73,7 @@ export function requestUpload(deps: CoreDeps) {
       const file: StoredFile = {
         id,
         ownerUserId: actor.userId,
-        purpose: "test_upload",
+        purpose,
         storageKey,
         fileName,
         declaredType: input.contentType,
@@ -71,7 +93,7 @@ export function requestUpload(deps: CoreDeps) {
           action: "file.upload_requested",
           targetType: "file",
           targetId: id,
-          after: { fileName, declaredType: input.contentType, size: input.size },
+          after: { fileName, declaredType: input.contentType, size: input.size, purpose },
         }),
       );
     });
@@ -82,10 +104,8 @@ export function requestUpload(deps: CoreDeps) {
 /** The browser reports the upload finished; storage must hold exactly the declared size. */
 export function completeUpload(deps: CoreDeps) {
   return async (actor: Actor, input: { fileId: string; parts?: { partNumber: number; etag: string }[] }) => {
-    authorize(actor, "file.test_upload");
     const { fileId, parts } = input;
-    const file = await deps.uow.run((tx) => tx.files.findById(fileId));
-    if (!file || file.ownerUserId !== actor.userId) throw new DomainError("not_found", "Không tìm thấy tệp");
+    const file = await deps.uow.run((tx) => ownFile(tx, actor, fileId));
     if (file.status !== "awaiting_upload") throw new DomainError("already_uploaded", "Tệp đã được tải lên");
     if (file.multipartUploadId) {
       if (!parts?.length) throw new DomainError("upload_missing", "Chưa nhận được nội dung tệp");
@@ -108,11 +128,9 @@ export function completeUpload(deps: CoreDeps) {
 /** A short-lived download link, only for a file that is clean and that the actor may see. */
 export function requestDownload(deps: CoreDeps) {
   return async (actor: Actor, input: { fileId: string }) => {
-    authorize(actor, "file.test_upload");
     const { fileId } = input;
     return deps.uow.run(async (tx) => {
-      const file = await tx.files.findById(fileId);
-      if (!file || file.ownerUserId !== actor.userId) throw new DomainError("not_found", "Không tìm thấy tệp");
+      const file = await ownFile(tx, actor, fileId);
       if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
       const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
       await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "file.download_issued", targetType: "file", targetId: file.id }));

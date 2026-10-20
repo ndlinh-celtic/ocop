@@ -10,6 +10,7 @@ import type { Outbox, ProcessedEvents } from "../platform/events";
 import type { RoundRepo } from "../rounds/model";
 import type { EmailDeliveries } from "../platform/mail";
 import type { EntityRepo } from "../entities/model";
+import type { LegalDocumentRepo } from "../entities/legal";
 import type { RateLimitRepo } from "../platform/rate-limit";
 
 /** Everything a use case can touch inside one database transaction. */
@@ -29,6 +30,7 @@ export interface Tx {
   criteriaVersions: CriteriaVersionRepo;
   rounds: RoundRepo;
   entities: EntityRepo;
+  legalDocuments: LegalDocumentRepo;
   rateLimits: RateLimitRepo;
 }
 

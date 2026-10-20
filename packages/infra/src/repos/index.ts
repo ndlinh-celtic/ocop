@@ -9,7 +9,7 @@ import { notificationRepo } from "./notifications";
 import { wardRepo } from "./org";
 import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform";
 import { roundRepo } from "./rounds";
-import { entityRepo } from "./entities";
+import { entityRepo, legalDocumentRepo } from "./entities";
 import { rateLimitRepo } from "./rate-limits";
 
 export function buildRepos(db: Db): Tx {
@@ -29,6 +29,7 @@ export function buildRepos(db: Db): Tx {
     criteriaVersions: criteriaVersionRepo(db),
     rounds: roundRepo(db),
     entities: entityRepo(db),
+    legalDocuments: legalDocumentRepo(db),
     rateLimits: rateLimitRepo(db),
   };
 }

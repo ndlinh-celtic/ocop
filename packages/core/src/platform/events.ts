@@ -27,7 +27,10 @@ export type DomainEventBody =
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
   | { type: "round.ended"; payload: { roundId: string } }
-  | { type: "entity.registered"; payload: { entityId: string; userId: string } };
+  | { type: "entity.registered"; payload: { entityId: string; userId: string } }
+  | { type: "entity.updated"; payload: { entityId: string } }
+  | { type: "entity.ward_changed"; payload: { entityId: string; fromWardId: string; toWardId: string } }
+  | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } };
 
 export type EventType = DomainEventBody["type"];
 

@@ -1,17 +1,20 @@
 import { authorize } from "../identity/policy";
-import { dataScopeOf, type DataScope } from "../identity/scope";
+import { dataScopeOf } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { entityNotFound, maskPersonalId, type Entity, type EntityKind } from "./model";
 
-/** A Chủ thể as its reader may see it: the số định danh cá nhân in full only for the Chủ thể itself. */
+/**
+ * A Chủ thể as its reader may see it. The số định danh cá nhân is always masked here, even for the Chủ thể
+ * itself (story 13); the full number is `revealPersonalId`, an audited personal data access.
+ */
 export interface EntityView {
   id: string;
   kind: EntityKind;
   name: string;
-  /** Mã số thuế, or the số định danh cá nhân (masked unless the reader is the Chủ thể). */
+  /** Mã số thuế, or the masked số định danh cá nhân. */
   identifier: string;
   address: string;
   representativeName: string;
@@ -21,9 +24,8 @@ export interface EntityView {
   updatedAt: Date;
 }
 
-async function view(deps: CoreDeps, tx: Tx, scope: DataScope, e: Entity): Promise<EntityView> {
-  const own = scope.kind === "entity" && scope.entityId === e.id;
-  const identifier = e.taxCode ?? (own ? deps.secretBox.open(e.personalIdSealed!) : maskPersonalId(e.personalIdLast4!));
+async function view(tx: Tx, e: Entity): Promise<EntityView> {
+  const identifier = e.taxCode ?? maskPersonalId(e.personalIdLast4!);
   const ward = await tx.wards.findById(e.wardId);
   return {
     id: e.id,
@@ -48,7 +50,7 @@ export function getEntity(deps: CoreDeps) {
       assertIdShape(input.entityId, entityNotFound);
       const entity = await tx.entities.findById(scope, input.entityId);
       if (!entity) throw entityNotFound();
-      return view(deps, tx, scope, entity);
+      return view(tx, entity);
     });
   };
 }
@@ -58,6 +60,6 @@ export function listEntities(deps: CoreDeps) {
   return async (actor: Actor): Promise<EntityView[]> => {
     authorize(actor, "entity.read");
     const scope = dataScopeOf(actor);
-    return deps.uow.run(async (tx) => Promise.all((await tx.entities.list(scope)).map((e) => view(deps, tx, scope, e))));
+    return deps.uow.run(async (tx) => Promise.all((await tx.entities.list(scope)).map((e) => view(tx, e))));
   };
 }
