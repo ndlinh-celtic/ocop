@@ -46,6 +46,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.reject",
   "dossier.ward_transfer",
   "dossier.checklist.assess",
+  "dossier.ward_report.attach",
+  "dossier.forward",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -69,6 +71,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.rejected_preliminary",
   "dossier.ward_transferred",
   "dossier.checklist_assessed",
+  "dossier.ward_report_attached",
+  "dossier.forwarded",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -181,6 +185,27 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
     }),
   ),
+  // L06 XA-07 (story 65): the signed Báo cáo đánh giá cấp xã of a received hồ sơ, uploaded before gửi tỉnh.
+  {
+    action: "dossier.ward_report.attach",
+    from: "submitted_to_ward",
+    to: "submitted_to_ward",
+    roles: ["ward_officer"],
+    event: "dossier.ward_report_attached",
+    timeline: false,
+    guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+  },
+  // L06 XA-07 (stories 66, 67): gửi tỉnh; the signed report, the Checklist sơ bộ and Hạn gửi tỉnh are
+  // checked by forwardToProvince, which knows the đợt.
+  {
+    action: "dossier.forward",
+    from: "submitted_to_ward",
+    to: "forwarded_to_province",
+    roles: ["ward_officer"],
+    event: "dossier.forwarded",
+    timeline: true,
+    guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+  },
 ];
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */

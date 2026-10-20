@@ -15,7 +15,8 @@ export interface RoleAssignmentRepo {
   findById(id: string): Promise<RoleAssignment | null>;
   listForUser(userId: string): Promise<RoleAssignment[]>;
   /** Every Phân vai, past and current, of a Vai trò on one Phạm vi, oldest first. */
-  listForScope(role: Role, scopeType: ScopeType, scopeId: string): Promise<RoleAssignment[]>;
+  /** Assignments of `role` on one scope; `scopeId` null for a scope without id (the province). */
+  listForScope(role: Role, scopeType: ScopeType, scopeId: string | null): Promise<RoleAssignment[]>;
   existsActiveWithRole(role: Role, at: Date): Promise<boolean>;
   /** Closes the validity window; Phân vai rows are never deleted. */
   end(id: string, validTo: Date): Promise<void>;

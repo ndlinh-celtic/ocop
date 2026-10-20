@@ -19,3 +19,14 @@ export async function downloadSubmissionDocumentAction(dossierId: string, submis
     return { error: domainMessage(err) };
   }
 }
+
+/** L06 XA-07 (story 35): a short-lived link to the signed Báo cáo đánh giá cấp xã, for the xã and the Chủ thể. */
+export async function downloadSignedWardReportAction(dossierId: string): Promise<{ url?: string; error?: string }> {
+  const actor = await requireActor();
+  try {
+    const { url } = await app().core.dossiers.downloadSignedWardReport(actor, { dossierId });
+    return { url };
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+}
