@@ -1,12 +1,16 @@
 import { ENTITY_KIND_LABEL, type EntityView } from "@ocop/core";
+import type { ReactNode } from "react";
 import { formatVnDate } from "@/lib/format";
 
-/** "Thông tin tổ chức" of a Chủ thể (L01 CT-01): what it registered with. */
-export function EntityProfile({ entity, email }: { entity: EntityView; email?: string }) {
+/**
+ * "Thông tin tổ chức" of a Chủ thể (L01 CT-01): what it registered with. `identifier` replaces the plain
+ * (masked) identifier, e.g. with a control that reveals the full số định danh to the Chủ thể itself.
+ */
+export function EntityProfile({ entity, email, identifier, children }: { entity: EntityView; email?: string; identifier?: ReactNode; children?: ReactNode }) {
   const household = entity.kind === "household";
-  const facts: [string, string][] = [
+  const facts: [string, ReactNode][] = [
     ["Loại tổ chức", ENTITY_KIND_LABEL[entity.kind]],
-    [household ? "Số định danh cá nhân của chủ hộ" : "Mã số thuế", entity.identifier],
+    [household ? "Số định danh cá nhân của chủ hộ" : "Mã số thuế", identifier ?? entity.identifier],
     ["Xã/phường đăng ký", entity.ward.name],
     ["Địa chỉ", entity.address],
     ["Người đại diện", entity.representativeName],
@@ -25,6 +29,7 @@ export function EntityProfile({ entity, email }: { entity: EntityView; email?: s
           </div>
         ))}
       </dl>
+      {children}
     </section>
   );
 }

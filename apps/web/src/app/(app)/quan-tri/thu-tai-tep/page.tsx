@@ -2,8 +2,9 @@ import { DEFAULT_ALLOWED_TYPES, type FileStatus } from "@ocop/core";
 import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { DownloadButton } from "./download-button";
-import { RefreshWhileScanning } from "./refresh-while-scanning";
+import { DownloadButton } from "@/components/download-button";
+import { RefreshWhileScanning } from "@/components/refresh-while-scanning";
+import { downloadAction } from "./actions";
 import { Uploader } from "./uploader";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,7 @@ export default async function TestUploadPage() {
                   {f.blockReason && <span className="block text-xs text-danger">{f.blockReason}</span>}
                 </td>
                 <td className="px-4 py-2">{formatVnDateTime(f.createdAt)}</td>
-                <td className="px-4 py-2 text-right">{f.status === "clean" && <DownloadButton fileId={f.id} />}</td>
+                <td className="px-4 py-2 text-right">{f.status === "clean" && <DownloadButton fileId={f.id} download={downloadAction} />}</td>
               </tr>
             ))}
             {files.length === 0 && (

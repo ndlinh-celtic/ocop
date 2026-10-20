@@ -41,6 +41,9 @@ export interface EntityRepo {
   /** False, inserting nothing, when another Chủ thể already has this identifier. */
   insert(e: Entity): Promise<boolean>;
   findById(scope: DataScope, id: string): Promise<Entity | null>;
+  /** findById with the row locked FOR UPDATE until the transaction ends. */
+  lock(scope: DataScope, id: string): Promise<Entity | null>;
+  update(e: Entity): Promise<void>;
   list(scope: DataScope): Promise<Entity[]>;
 }
 
@@ -60,6 +63,34 @@ export function assertIdentifierShape(kind: EntityKind, identifier: string) {
     return;
   }
   if (!TAX_CODE.test(identifier)) throw new DomainError("identifier_invalid", "Mã số thuế gồm 10 hoặc 13 chữ số");
+}
+
+/** What a Chủ thể may change about itself after registering: everything but its Loại and identifier. */
+export interface EntityDetails {
+  name: string;
+  address: string;
+  representativeName: string;
+  phone: string;
+}
+
+const PHONE = /^\+?[0-9]{9,12}$/;
+
+function required(value: string, code: string, message: string) {
+  const v = value.trim();
+  if (!v) throw new DomainError(code, message);
+  return v;
+}
+
+/** Trims and checks the details, on registration and on every edit alike. */
+export function parseDetails(input: EntityDetails): EntityDetails {
+  const phone = input.phone.replace(/[\s.-]/g, "");
+  if (!PHONE.test(phone)) throw new DomainError("phone_invalid", "Số điện thoại không hợp lệ");
+  return {
+    name: required(input.name, "name_required", "Nhập tên tổ chức hoặc họ tên chủ hộ"),
+    address: required(input.address, "address_required", "Nhập địa chỉ"),
+    representativeName: required(input.representativeName, "representative_required", "Nhập họ tên người đại diện"),
+    phone,
+  };
 }
 
 /** How a số định danh cá nhân appears to anyone but its owner (story 13): only the last four digits. */

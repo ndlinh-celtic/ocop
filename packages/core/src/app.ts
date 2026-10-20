@@ -29,6 +29,8 @@ import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
+import { addLegalDocument, getLegalStanding } from "./entities/legal-documents";
+import { revealPersonalId, updateEntity } from "./entities/profile";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -119,6 +121,10 @@ export function createCore(deps: CoreDeps) {
       register: registerEntity(deps),
       getEntity: getEntity(deps),
       listEntities: listEntities(deps),
+      getLegalStanding: getLegalStanding(deps),
+      addLegalDocument: addLegalDocument(deps),
+      updateEntity: updateEntity(deps),
+      revealPersonalId: revealPersonalId(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

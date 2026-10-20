@@ -27,6 +27,11 @@ const ROLE_ACTIONS = {
   "round.manage": ["province_officer"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
   "entity.read": ["entity_owner"],
+  // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).
+  "entity.update": ["entity_owner"],
+  "entity.legal_document.manage": ["entity_owner"],
+  // The full số định danh cá nhân, audited as a personal data access (story 13).
+  "entity.personal_id.reveal": ["entity_owner"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

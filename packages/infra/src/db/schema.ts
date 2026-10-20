@@ -122,7 +122,7 @@ export const notification = platform.table("notification", {
 export const file = platform.table("file", {
   id: uuid("id").primaryKey(),
   ownerUserId: uuid("owner_user_id").notNull(),
-  purpose: text("purpose").$type<"test_upload">().notNull(),
+  purpose: text("purpose").$type<"test_upload" | "legal_document">().notNull(),
   storageKey: text("storage_key").notNull(),
   fileName: text("file_name").notNull(),
   declaredType: text("declared_type").notNull(),
@@ -310,6 +310,27 @@ export const entity = entitySchema.table("entity", {
   wardId: uuid("ward_id").notNull(),
   createdAt: ts("created_at").notNull(),
   updatedAt: ts("updated_at").notNull(),
+});
+
+export const legalDocumentType = entitySchema.table("legal_document_type", {
+  code: text("code").primaryKey(),
+  name: text("name").notNull(),
+  requiredFor: text("required_for").array().$type<("enterprise" | "cooperative" | "household")[]>().notNull(),
+  sortOrder: integer("sort_order").notNull(),
+});
+
+export const legalDocument = entitySchema.table("legal_document", {
+  id: uuid("id").primaryKey(),
+  entityId: uuid("entity_id").notNull(),
+  typeCode: text("type_code").notNull(),
+  documentNumber: text("document_number"),
+  issuedOn: date("issued_on", { mode: "string" }).notNull(),
+  validUntil: date("valid_until", { mode: "string" }),
+  fileId: uuid("file_id").notNull(),
+  addedBy: uuid("added_by").notNull(),
+  addedAt: ts("added_at").notNull(),
+  replacedBy: uuid("replaced_by"),
+  replacedAt: ts("replaced_at"),
 });
 
 export const rateLimitHit = platform.table("rate_limit_hit", {
