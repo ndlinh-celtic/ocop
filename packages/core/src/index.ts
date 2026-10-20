@@ -216,3 +216,6 @@ export {
   type RejectionGround,
 } from "./dossiers/model";
 export type { RejectInput } from "./dossiers/reject-transfer";
+export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
+export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
+export type { SystemSettingRepo } from "./system/settings-model";

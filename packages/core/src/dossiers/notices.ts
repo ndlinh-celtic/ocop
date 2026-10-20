@@ -24,7 +24,7 @@ interface Notice {
 }
 
 /** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
-async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
+export async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
   const assignments = (await tx.roleAssignments.listForScope("entity_owner", "entity", entityId)).filter((a) => isAssignmentActive(a, now));
   const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
   return users.filter((u): u is User => u !== null && u.status === "active");

@@ -55,6 +55,8 @@ const ROLE_ACTIONS = {
   "dossier.create_on_behalf": ["ward_officer"],
   "dossier.evidence.upload_on_behalf": ["ward_officer"],
   "dossier.document.download_on_behalf": ["ward_officer"],
+  // Cấu hình chung toàn hệ thống, such as the mốc nhắc hạn (story 37).
+  "system.settings.manage": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
