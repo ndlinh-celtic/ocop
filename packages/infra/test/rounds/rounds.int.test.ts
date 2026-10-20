@@ -267,3 +267,16 @@ describe("L07 SO-01 mở đợt", () => {
     });
   });
 });
+
+describe("L07 đợt Nháp chỉ Cán bộ Sở thấy", () => {
+  it("hides a Nháp round from other Vai trò: not listed, and reported as not found", async () => {
+    const officer = await staff();
+    const { roundId } = await t.app.rounds.createRound(officer, roundInput({ name: "Đợt còn nháp" }));
+    const a = await admin();
+    expect((await t.app.rounds.listRounds(a)).map((r) => r.id)).not.toContain(roundId);
+    await expect(t.app.rounds.getRound(a, { roundId })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.rounds.listDeadlineExtensions(a, { roundId })).rejects.toMatchObject({ code: "not_found" });
+    expect((await t.app.rounds.listRounds(officer)).map((r) => r.id)).toContain(roundId);
+    await expect(t.app.rounds.getRound(officer, { roundId })).resolves.toMatchObject({ status: "draft" });
+  });
+});

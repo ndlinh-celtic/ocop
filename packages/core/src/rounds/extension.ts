@@ -5,6 +5,7 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { roundNotFound } from "./manage";
+import { roundVisibleTo } from "./read";
 import {
   assertDeadlineOrder,
   endOfVnDay,
@@ -122,7 +123,8 @@ export function listDeadlineExtensions(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<DeadlineExtensionView[]> => {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
-      if (!(await tx.rounds.findById(input.roundId))) throw roundNotFound();
+      const round = await tx.rounds.findById(input.roundId);
+      if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       return tx.rounds.listExtensions(input.roundId);
     });
   };

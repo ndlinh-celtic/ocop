@@ -1,4 +1,4 @@
-import { authorize } from "../identity/policy";
+import { authorize, can } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import type { Tx } from "../shared/uow";
@@ -9,6 +9,9 @@ import type { Round } from "./model";
 export interface RoundView extends Round {
   criteriaVersion: { id: string; legalBasis: string; issuedOn: string };
 }
+
+/** A Nháp round is the Cán bộ Sở's work in progress: only those who manage rounds see it; to others it does not exist. */
+export const roundVisibleTo = (actor: Actor, round: Round) => round.status !== "draft" || can(actor, "round.manage");
 
 async function withVersions(tx: Tx, rounds: Round[]): Promise<RoundView[]> {
   const ids = [...new Set(rounds.map((r) => r.criteriaVersionId))];
@@ -23,7 +26,7 @@ async function withVersions(tx: Tx, rounds: Round[]): Promise<RoundView[]> {
 export function listRounds(deps: CoreDeps) {
   return async (actor: Actor): Promise<RoundView[]> => {
     authorize(actor, "round.read");
-    return deps.uow.run(async (tx) => withVersions(tx, await tx.rounds.list()));
+    return deps.uow.run(async (tx) => withVersions(tx, (await tx.rounds.list()).filter((r) => roundVisibleTo(actor, r))));
   };
 }
 
@@ -32,7 +35,7 @@ export function getRound(deps: CoreDeps) {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
       const round = await tx.rounds.findById(input.roundId);
-      if (!round) throw roundNotFound();
+      if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       const [view] = await withVersions(tx, [round]);
       return view!;
     });
