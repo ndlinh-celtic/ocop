@@ -41,6 +41,8 @@ export const NOTICE_EVENTS = [
   "dossier.resubmitted",
   "dossier.closed_unsupplemented",
   "dossier.forwarded",
+  "dossier.returned_by_province",
+  "dossier.return_requested",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -144,9 +146,11 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     case "dossier.resubmitted": {
-      // Who asked for more, and the Cán bộ phụ trách (story 54), each once.
+      // Who asked for more, and the Cán bộ phụ trách (story 54), each once. After a Sở trả về the hồ sơ is
+      // back with the xã to review (story 58), so only the xã hears of it.
       const request = (await tx.supplements.list(dossier.id)).filter((r) => r.outcome === "resubmitted").at(-1);
-      const ids = [...new Set([request?.requestedBy, dossier.handlerUserId].filter((id): id is string => !!id))];
+      const asker = request?.requestedRole === "ward_officer" ? request.requestedBy : null;
+      const ids = [...new Set([asker, dossier.handlerUserId].filter((id): id is string => !!id))];
       const users = await Promise.all(ids.map((id) => tx.users.findById(id)));
       const entity = await tx.entities.findById(scope, dossier.entityId);
       return [
@@ -197,6 +201,45 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
+    // L04 (stories 42, 57): the Sở trả về; the Chủ thể has to bổ sung, and the Cán bộ phụ trách will
+    // review the nộp lại.
+    case "dossier.returned_by_province": {
+      const handler = dossier.handlerUserId ? await tx.users.findById(dossier.handlerUserId) : null;
+      const xa = handler?.status === "active" ? [handler] : dossier.wardId ? await wardOfficersOf(tx, dossier.wardId, now) : [];
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_returned_by_province",
+          title: `Hồ sơ ${product} được Sở trả về để bổ sung`,
+          body: "Sở Nông nghiệp và Môi trường trả hồ sơ về để bổ sung. Xem từng nội dung cần bổ sung và hạn bổ sung.",
+          emailSubject: "Hồ sơ OCOP được Sở trả về để bổ sung",
+          emailLine: "Sở Nông nghiệp và Môi trường trả hồ sơ OCOP của anh/chị về để bổ sung. Vui lòng bổ sung và nộp lại trước hạn.",
+          link: ownerLink,
+        },
+        {
+          recipients: xa,
+          kind: "dossier_returned_by_province",
+          title: `Sở trả về hồ sơ: ${product}`,
+          body: "Sở trả hồ sơ về Yêu cầu bổ sung. Sau khi Chủ thể nộp lại, hồ sơ về Đã nộp xã để xã xem lại và gửi tỉnh lại.",
+          emailSubject: "Sở trả về một hồ sơ OCOP",
+          emailLine: "Sở Nông nghiệp và Môi trường vừa trả về một hồ sơ OCOP anh/chị phụ trách.",
+          link: wardLink,
+        },
+      ];
+    }
+    // L04 (stories 59, 86): the Sở hears of a đề nghị trả về; the lý do is read in the app.
+    case "dossier.return_requested":
+      return [
+        {
+          recipients: await provinceOfficers(tx, now),
+          kind: "dossier_return_requested",
+          title: `Xã đề nghị trả về hồ sơ: ${product}`,
+          body: "UBND xã/phường đề nghị Sở trả về một hồ sơ đã gửi tỉnh. Xem lý do trong hồ sơ.",
+          emailSubject: "Có đề nghị trả về hồ sơ OCOP",
+          emailLine: "UBND xã/phường vừa đề nghị Sở trả về một hồ sơ OCOP đã gửi tỉnh.",
+          link: `/so/ho-so/${dossier.id}`,
+        },
+      ];
     default:
       return [];
   }

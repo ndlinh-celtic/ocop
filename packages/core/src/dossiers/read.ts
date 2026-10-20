@@ -2,7 +2,7 @@ import { authorize } from "../identity/policy";
 import { dataScopeOf, type DataScope } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
-import { assertIdShape } from "../shared/ids";
+import { assertIdShape, isUuid } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { isExpired } from "../entities/legal";
 import type { Entity } from "../entities/model";
@@ -145,6 +145,33 @@ export function dossierTimeline(deps: CoreDeps) {
       assertIdShape(input.dossierId, dossierNotFound);
       if (!(await tx.dossiers.findById(scope, input.dossierId))) throw dossierNotFound();
       return tx.dossiers.events(scope, input.dossierId);
+    });
+  };
+}
+
+/** One cell of the số liệu tổng hợp: how many hồ sơ of a xã are in a state. */
+export interface DossierOverviewRow {
+  wardId: string;
+  wardName: string;
+  state: DossierState;
+  count: number;
+}
+
+/**
+ * Story 79: for the Cán bộ Sở, the hồ sơ submitted but not yet at the province, counted by xã and state,
+ * optionally within one đợt. Counts only, so no Chủ thể data or hồ sơ row is read out.
+ */
+export function provinceOverview(deps: CoreDeps) {
+  return async (actor: Actor, input: { roundId?: string } = {}): Promise<DossierOverviewRow[]> => {
+    authorize(actor, "dossier.overview");
+    return deps.uow.run(async (tx) => {
+      const roundId = input.roundId && isUuid(input.roundId) ? input.roundId : undefined;
+      if (input.roundId && !roundId) return [];
+      const wards = new Map((await tx.wards.list()).map((w) => [w.id, w.name]));
+      const rows = await tx.dossiers.countNotForwarded(roundId ? { roundId } : {});
+      return rows
+        .map((r) => ({ wardId: r.wardId, wardName: wards.get(r.wardId) ?? "", state: r.state, count: r.count }))
+        .sort((a, b) => a.wardName.localeCompare(b.wardName, "vi") || DOSSIER_STATES.indexOf(a.state) - DOSSIER_STATES.indexOf(b.state));
     });
   };
 }

@@ -159,7 +159,26 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { a, dossierId, version };
   }
 
-  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted };
+  /**
+   * L06: a hồ sơ submitted, Tiếp nhận by `officer` (a Cán bộ xã of its xã), with its Checklist sơ bộ all
+   * Đạt and a signed Báo cáo đánh giá cấp xã, then gửi tỉnh: Đã chuyển tỉnh.
+   */
+  async function forwarded(officer: UserActor, criteriaSetId: string, ward = wardId()) {
+    const s = await submitted(criteriaSetId, ward);
+    let { version } = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
+    const { items } = await t.app.dossiers.checklist(officer, { dossierId: s.dossierId });
+    ({ version } = await t.app.dossiers.assessChecklist(officer, {
+      dossierId: s.dossierId,
+      expectedVersion: version,
+      results: items.map((i) => ({ itemCode: i.code, result: "pass" as const })),
+    }));
+    const fileId = await uploadPdf(officer, "signed_ward_report", "BC xã đã ký.pdf");
+    ({ version } = await t.app.dossiers.attachSignedWardReport(officer, { dossierId: s.dossierId, expectedVersion: version, fileId }));
+    ({ version } = await t.app.dossiers.forwardToProvince(officer, { dossierId: s.dossierId, expectedVersion: version }));
+    return { ...s, version };
+  }
+
+  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, forwarded };
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;

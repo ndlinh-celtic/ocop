@@ -44,6 +44,21 @@ export const DOSSIER_STATE_LABEL: Record<DossierState, string> = {
   closed_offline: "Đã đóng, xử lý ngoài hệ thống",
 };
 
+/**
+ * The states in which a hồ sơ needs nothing more within its đợt (L07 step 5: "trạng thái cuối hoặc đã
+ * chốt"): it left the flow (Không đạt sơ bộ, Đã rút), or the hội đồng has chốt điểm and what follows is
+ * the result. Đã chuyển tỉnh and every state before chốt điểm are unfinished, so the đợt cannot end.
+ */
+export const FINISHED_STATES: readonly DossierState[] = [
+  "rejected_preliminary",
+  "withdrawn",
+  "score_finalized",
+  "recognized",
+  "not_passed",
+  "five_star_proposed",
+  "closed_offline",
+];
+
 /** Thông tin sản phẩm (story 18). Free text while writing; which fields are required is checked on submission. */
 export const PRODUCT_FIELDS = ["productName", "description", "ingredients", "process", "packaging", "qualityDeclaration"] as const;
 export type ProductField = (typeof PRODUCT_FIELDS)[number];
@@ -132,6 +147,13 @@ export interface DossierRepo {
   update(d: Dossier, expectedVersion: number): Promise<boolean>;
   /** Newest first, narrowed by `filter` in the same query. */
   list(scope: DataScope, filter?: DossierListFilter): Promise<Dossier[]>;
+  /**
+   * Story 79: how many hồ sơ, per xã and state, have been submitted but never reached the province. Only
+   * counts: no row of a hồ sơ leaves the repository, so there is no scope to filter by.
+   */
+  countNotForwarded(filter?: { roundId?: string }): Promise<{ wardId: string; state: DossierState; count: number }[]>;
+  /** Số hồ sơ chưa xong of a đợt: submitted into it and not yet in a finished state (see FINISHED_STATES). */
+  countUnfinishedInRound(roundId: string): Promise<number>;
   appendEvent(e: DossierEvent): Promise<void>;
   /** Oldest first, for a hồ sơ within the scope. */
   events(scope: DataScope, dossierId: string): Promise<DossierEvent[]>;
@@ -163,6 +185,10 @@ export interface DossierRepo {
   saveChecklistResult(r: ChecklistResult): Promise<void>;
   /** Appends a signed Báo cáo đánh giá cấp xã; the DB refuses any later change. */
   insertWardReport(r: WardReport): Promise<void>;
+  /** Appends a đề nghị trả về of the xã; the app may not change or delete it afterwards. */
+  insertReturnRequest(r: ReturnRequest): Promise<void>;
+  /** Every đề nghị trả về of a hồ sơ already loaded within scope, oldest first. */
+  returnRequests(dossierId: string): Promise<ReturnRequest[]>;
   /** The newest signed Báo cáo đánh giá cấp xã of a hồ sơ already loaded within scope, with its file name. */
   latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string; fileStatus: FileStatus }) | null>;
 }
@@ -178,6 +204,18 @@ export interface WardReport {
   fileId: string;
   uploadedBy: string;
   uploadedAt: Date;
+}
+
+/**
+ * Đề nghị trả về (story 59): a Cán bộ xã asks the Sở to trả về a hồ sơ already gửi tỉnh, with a lý do.
+ * It changes nothing on the hồ sơ; the Sở decides.
+ */
+export interface ReturnRequest {
+  id: string;
+  dossierId: string;
+  reason: string;
+  requestedBy: string;
+  requestedAt: Date;
 }
 
 /** Story 61: how the xã found one item of the Checklist sơ bộ. */

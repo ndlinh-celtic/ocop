@@ -33,8 +33,17 @@ export interface RequestSupplementInput {
   items: SupplementItemInput[];
 }
 
-/** L04 XA-05 (story 50): asks the Chủ thể for more, moving the hồ sơ into Yêu cầu bổ sung. */
-export function requestSupplement(deps: CoreDeps) {
+/** L04 XA-05 (story 50): the xã asks the Chủ thể for more, moving the hồ sơ into Yêu cầu bổ sung. */
+export const requestSupplement = (deps: CoreDeps) => askForMore(deps, "dossier.supplement.request");
+
+/**
+ * L04 (stories 57, 58): the Sở trả về a hồ sơ Đã chuyển tỉnh to Yêu cầu bổ sung, with the same list of
+ * nội dung and hạn bổ sung as a yêu cầu bổ sung of the xã. The nộp lại brings it back to Đã nộp xã.
+ */
+export const returnFromProvince = (deps: CoreDeps) => askForMore(deps, "dossier.province_return");
+
+/** Opens a yêu cầu bổ sung through `action`: the xã's own, or the Sở trả về. */
+function askForMore(deps: CoreDeps, action: "dossier.supplement.request" | "dossier.province_return") {
   return async (actor: Actor, input: RequestSupplementInput): Promise<{ version: number }> => {
     authorize(actor, "dossier.read");
     const deadline = parseDeadline(input.deadline);
@@ -44,7 +53,7 @@ export function requestSupplement(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const after = await transition(deps, tx, actor, before, {
-        action: "dossier.supplement.request",
+        action,
         expectedVersion: input.expectedVersion,
         patch: { supplementDeadline: deadline },
         metadata: { deadline: deadline.toISOString(), itemCount: items.length },

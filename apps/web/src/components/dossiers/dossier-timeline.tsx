@@ -13,6 +13,8 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.supplement.close": "Đóng hồ sơ quá hạn bổ sung",
   "dossier.reject": "Xã loại hồ sơ",
   "dossier.ward_transfer": "Chuyển xã",
+  "dossier.forward": "Xã gửi tỉnh",
+  "dossier.province_return": "Sở trả về để bổ sung",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

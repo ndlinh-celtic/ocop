@@ -23,15 +23,22 @@ export function RequestSupplementForm({
   today,
   criteria,
   documentTypes,
+  submit = requestSupplementAction,
+  title = "Yêu cầu bổ sung",
+  submitLabel = "Gửi yêu cầu bổ sung",
 }: {
   dossierId: string;
   version: number;
+  /** The server action taking the nội dung and hạn: the xã's yêu cầu bổ sung, or the Sở trả về (#44). */
+  submit?: (dossierId: string, expectedVersion: number, prev: WardDossierFormState, form: FormData) => Promise<WardDossierFormState>;
+  title?: string;
+  submitLabel?: string;
   /** YYYY-MM-DD in giờ Việt Nam, the earliest hạn bổ sung. */
   today: string;
   criteria: { id: string; label: string }[];
   documentTypes: { code: string; name: string }[];
 }) {
-  const [state, action, pending] = useActionState<WardDossierFormState, FormData>(requestSupplementAction.bind(null, dossierId, version), {});
+  const [state, action, pending] = useActionState<WardDossierFormState, FormData>(submit.bind(null, dossierId, version), {});
   const [rows, setRows] = useState<Row[]>([{ key: 0, content: "", target: "" }]);
   const update = (key: number, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   const items = rows
@@ -44,7 +51,7 @@ export function RequestSupplementForm({
 
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
-      <h2 className="mb-2 font-semibold">Yêu cầu bổ sung</h2>
+      <h2 className="mb-2 font-semibold">{title}</h2>
       <p className="mb-3 text-sm text-text-2">Chủ thể được thông báo, sửa hồ sơ, trả lời từng nội dung và nộp lại trước hạn bổ sung.</p>
       <form action={action} className="flex flex-col gap-3">
         <input type="hidden" name="items" value={JSON.stringify(items)} />
@@ -105,7 +112,7 @@ export function RequestSupplementForm({
           disabled={pending || items.length === 0}
           className="flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60"
         >
-          <FilePlus2 className="size-4" aria-hidden /> Gửi yêu cầu bổ sung
+          <FilePlus2 className="size-4" aria-hidden /> {submitLabel}
         </button>
         {state.error && (
           <p role="alert" className="text-sm text-danger">

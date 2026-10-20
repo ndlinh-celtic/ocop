@@ -1,7 +1,21 @@
-import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNull, lt, max, sql, type SQL } from "drizzle-orm";
+import { FINISHED_STATES, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { checklistResult, criterionEntry, dossier, dossierEvent, entity, evidenceFile, evidenceLink, file, round, submission, submissionFile, wardReport } from "../db/schema";
+import {
+  checklistResult,
+  criterionEntry,
+  dossier,
+  dossierEvent,
+  entity,
+  evidenceFile,
+  evidenceLink,
+  file,
+  returnRequest,
+  round,
+  submission,
+  submissionFile,
+  wardReport,
+} from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -16,6 +30,9 @@ function inScope(scope: DataScope): SQL {
     case "ward":
       // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
       return and(live, eq(dossier.wardId, scope.wardId))!;
+    case "province":
+      // From the first gửi tỉnh on, even after the Sở trả về it (story 78).
+      return and(live, isNotNull(dossier.firstForwardedAt))!;
     case "on_behalf":
       // Nhập hộ (story 75): every hồ sơ of the Chủ thể, only while it is đăng ký ở xã of the officer.
       return and(
@@ -75,6 +92,28 @@ export function dossierRepo(db: Db): DossierRepo {
           : undefined,
       );
       return (await db.select().from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
+    },
+    async countNotForwarded(filter = {}) {
+      const rows = await db
+        .select({ wardId: dossier.wardId, state: dossier.state, count: sql<number>`count(*)::int` })
+        .from(dossier)
+        .where(
+          and(
+            isNull(dossier.deletedAt),
+            isNotNull(dossier.wardId),
+            isNull(dossier.firstForwardedAt),
+            filter.roundId ? eq(dossier.roundId, filter.roundId) : undefined,
+          ),
+        )
+        .groupBy(dossier.wardId, dossier.state);
+      return rows.map((r) => ({ wardId: r.wardId!, state: r.state, count: r.count }));
+    },
+    async countUnfinishedInRound(roundId) {
+      const [row] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(dossier)
+        .where(and(isNull(dossier.deletedAt), eq(dossier.roundId, roundId), notInArray(dossier.state, [...FINISHED_STATES])));
+      return row?.count ?? 0;
     },
     async appendEvent(e) {
       await db.insert(dossierEvent).values(e);
@@ -151,6 +190,12 @@ export function dossierRepo(db: Db): DossierRepo {
         .orderBy(desc(wardReport.uploadedAt), desc(wardReport.id))
         .limit(1);
       return row ?? null;
+    },
+    async insertReturnRequest(r) {
+      await db.insert(returnRequest).values(r);
+    },
+    async returnRequests(dossierId) {
+      return db.select().from(returnRequest).where(eq(returnRequest.dossierId, dossierId)).orderBy(asc(returnRequest.requestedAt), asc(returnRequest.id));
     },
     async criterionEntries(dossierId) {
       return db.select().from(criterionEntry).where(eq(criterionEntry.dossierId, dossierId));

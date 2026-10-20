@@ -12,6 +12,8 @@ import type { Actor } from "../shared/context";
 export type DataScope =
   | { kind: "entity"; entityId: string }
   | { kind: "ward"; wardId: string }
+  /** Cán bộ Sở: the hồ sơ that have ever reached Đã chuyển tỉnh, and the Chủ thể of those (story 78). */
+  | { kind: "province" }
   /** Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75). */
   | { kind: "on_behalf"; entityId: string; wardId: string }
   | { kind: "none" };
@@ -36,6 +38,8 @@ export function dataScopeOf(actor: Actor): DataScope {
       return type === "entity" && id ? { kind: "entity", entityId: id } : NONE;
     case "ward_officer":
       return type === "ward" && id ? { kind: "ward", wardId: id } : NONE;
+    case "province_officer":
+      return type === "province" ? { kind: "province" } : NONE;
     default:
       return NONE;
   }

@@ -16,6 +16,8 @@ import { requireActor } from "@/server/session";
 import { ChecklistForm } from "./checklist-form";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
 import { RejectForm, TransferWardForm } from "./reject-transfer-forms";
+import { ReturnRequestForm } from "./return-request-form";
+import { ReturnRequests } from "@/components/dossiers/return-requests";
 import { TransferRoundForm } from "./round-transfer-form";
 import { CloseUnsupplementedForm, RequestSupplementForm } from "./supplement-forms";
 
@@ -40,6 +42,8 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   ]);
   if (!dossier || !timeline || !submissions || !supplements) notFound();
   const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
+  // L04 (story 59): once gửi tỉnh, the xã may only ask the Sở to trả về.
+  const returnRequests = dossier.firstForwardedAt ? await app().core.dossiers.returnRequests(actor, { dossierId }) : [];
   const now = new Date();
   const mayRequestSupplement = can(actor, "dossier.supplement.request", dossier) && dossier.receivedAt !== null;
   const documentTypes = mayRequestSupplement ? (await app().core.entities.getLegalStanding(actor, { entityId: dossier.entity.id })).requirements : [];
@@ -129,6 +133,9 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           )}
         </section>
       )}
+
+      {can(actor, "dossier.return_request", dossier) && <ReturnRequestForm dossierId={dossier.id} version={dossier.version} />}
+      <ReturnRequests requests={returnRequests} />
 
       {dossier.state === "supplement_requested" && dossier.supplementDeadline && !isPastSupplementDeadline(dossier, now) && (
         <p role="status" className="rounded-lg border bg-amber-soft px-4 py-2 text-sm text-amber">

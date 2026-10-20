@@ -132,7 +132,7 @@ export {
 } from "./rounds/model";
 export type { RoundInput } from "./rounds/manage";
 export type { ChecklistItemInput } from "./rounds/checklist";
-export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
+export { roundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
 export { dataScopeOf, type DataScope } from "./identity/scope";
@@ -216,6 +216,10 @@ export {
   type RejectionGround,
 } from "./dossiers/model";
 export type { RejectInput } from "./dossiers/reject-transfer";
+// #44: the province's view of hồ sơ, the Sở trả về and the đề nghị trả về of the xã.
+export { FINISHED_STATES, type ReturnRequest } from "./dossiers/model";
+export type { ReturnRequestView } from "./dossiers/return-request";
+export type { DossierOverviewRow } from "./dossiers/read";
 export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
 export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
 export type { SystemSettingRepo } from "./system/settings-model";

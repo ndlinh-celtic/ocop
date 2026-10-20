@@ -1,7 +1,7 @@
 import {
   createCore,
   DEFAULT_SETTINGS,
-  placeholderRoundActivity,
+  roundActivity,
   type Clock,
   type Core,
   type CoreSettings,
@@ -138,6 +138,6 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     inspector: createFileInspector(files, overrides.scanner ?? clamdScanner({ host: config.CLAMD_HOST ?? "clamd", port: config.CLAMD_PORT ?? 3310 })),
     documents: overrides.documents ?? docxRenderer(),
     settings,
-    roundActivity: overrides.roundActivity ?? placeholderRoundActivity,
+    roundActivity: overrides.roundActivity ?? roundActivity,
   });
 }

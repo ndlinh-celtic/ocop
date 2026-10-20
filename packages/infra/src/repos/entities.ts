@@ -18,6 +18,9 @@ function inScope(scope: DataScope): SQL {
         eq(entity.wardId, scope.wardId),
         sql`exists (select 1 from ${dossier} where ${dossier.entityId} = ${entity.id} and ${dossier.wardId} = ${scope.wardId} and ${dossier.deletedAt} is null)`,
       )!;
+    case "province":
+      // Story 78: a Chủ thể with at least one hồ sơ that has reached the province.
+      return sql`exists (select 1 from ${dossier} where ${dossier.entityId} = ${entity.id} and ${dossier.firstForwardedAt} is not null and ${dossier.deletedAt} is null)`;
     case "on_behalf":
       // Nhập hộ (story 75): the one Chủ thể, only while it is đăng ký ở xã of the officer.
       return and(eq(entity.id, scope.entityId), eq(entity.wardId, scope.wardId))!;

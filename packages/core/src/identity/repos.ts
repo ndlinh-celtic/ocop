@@ -14,9 +14,13 @@ export interface RoleAssignmentRepo {
   insert(a: RoleAssignment): Promise<void>;
   findById(id: string): Promise<RoleAssignment | null>;
   listForUser(userId: string): Promise<RoleAssignment[]>;
-  /** Every Phân vai, past and current, of a Vai trò on one Phạm vi, oldest first. */
-  /** Assignments of `role` on one scope; `scopeId` null for a scope without id (the province). */
-  listForScope(role: Role, scopeType: ScopeType, scopeId: string | null): Promise<RoleAssignment[]>;
+  /**
+   * Every Phân vai, past and current, of a Vai trò on one Phạm vi, oldest first. Only Phân vai rows come
+   * back, never hồ sơ or Chủ thể. `scopeId` is null exactly for the Phạm vi without an id (tỉnh, hệ
+   * thống), as the DB's scope_id_presence check also holds, so a null never widens an entity or ward lookup.
+   */
+  listForScope(role: Role, scopeType: "province" | "system", scopeId: null): Promise<RoleAssignment[]>;
+  listForScope(role: Role, scopeType: Exclude<ScopeType, "province" | "system">, scopeId: string): Promise<RoleAssignment[]>;
   existsActiveWithRole(role: Role, at: Date): Promise<boolean>;
   /** Closes the validity window; Phân vai rows are never deleted. */
   end(id: string, validTo: Date): Promise<void>;

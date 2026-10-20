@@ -430,6 +430,15 @@ export const wardReport = dossierSchema.table("ward_report", {
   uploadedAt: ts("uploaded_at").notNull(),
 });
 
+// L04 đề nghị trả về of the xã, append-only (0027_return_requests.sql).
+export const returnRequest = dossierSchema.table("return_request", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  reason: text("reason").notNull(),
+  requestedBy: uuid("requested_by").notNull(),
+  requestedAt: ts("requested_at").notNull(),
+});
+
 export const criterionEntry = dossierSchema.table(
   "criterion_entry",
   {
