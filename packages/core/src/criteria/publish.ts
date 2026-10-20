@@ -5,10 +5,10 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { versionNotFound } from "./helpers";
 import { findVersionIssues, type ValidationIssue } from "./validation";
 import { assertDraft } from "./version";
 
-const notFound = () => new DomainError("not_found", "Không tìm thấy phiên bản tiêu chí");
 
 /** Publishing was refused because the check still finds problems; `issues` lists all of them. */
 export class CriteriaValidationError extends DomainError {
@@ -23,7 +23,7 @@ export function validateVersion(deps: CoreDeps) {
   return async (actor: Actor, input: { versionId: string }): Promise<{ issues: ValidationIssue[] }> => {
     authorize(actor, "criteria.read_draft");
     return deps.uow.run(async (tx) => {
-      if (!(await tx.criteriaVersions.findById(input.versionId))) throw notFound();
+      if (!(await tx.criteriaVersions.findById(input.versionId))) throw versionNotFound();
       return { issues: findVersionIssues(await tx.criteriaVersions.loadRows(input.versionId)) };
     });
   };
@@ -39,7 +39,7 @@ export function publishVersion(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const proof = await requireRecentAuth(deps, tx, actor);
       const version = await tx.criteriaVersions.lock(input.versionId);
-      if (!version) throw notFound();
+      if (!version) throw versionNotFound();
       assertDraft(version);
       const issues = findVersionIssues(await tx.criteriaVersions.loadRows(version.id));
       if (issues.length > 0) throw new CriteriaValidationError(issues);

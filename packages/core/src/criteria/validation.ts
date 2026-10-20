@@ -1,3 +1,4 @@
+import { sum } from "./helpers";
 import type { SetRows, VersionRows } from "./version";
 
 export type ValidationIssueCode =
@@ -25,7 +26,6 @@ export interface ValidationIssue {
 /** Declared and computed points are decimals (numeric(7,2)); compare them past float noise. */
 const same = (a: number, b: number) => Math.abs(a - b) < 1e-6;
 
-const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 /** Rounds away float noise for messages: 17.000000001 → 17. */
 const shown = (n: number) => Math.round(n * 100) / 100;
 

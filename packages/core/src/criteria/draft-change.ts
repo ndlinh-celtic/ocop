@@ -5,8 +5,9 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import type { Tx } from "../shared/uow";
 import type { DraftChangeAction, DraftNodeKind, DraftTarget } from "./draft-events";
+import { versionNotFound } from "./helpers";
 import { findVersionIssues, type ValidationIssue } from "./validation";
-import { assertDraft, type CriteriaVersion, type DraftNodeRows } from "./version";
+import { assertDraft, type CriteriaVersion, type DraftNodeRows, type VersionRows } from "./version";
 
 /*
  * The frame every change to a draft Phiên bản tiêu chí runs in (L19 AD-03): edit (#22) and add, remove,
@@ -22,6 +23,8 @@ export interface DraftChange {
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   metadata?: Record<string, unknown>;
+  /** The version's rows after the change when `apply` already has them (structure changes), so they are not loaded again. */
+  rowsAfter?: VersionRows;
 }
 
 export interface DraftChangeResult {
@@ -29,25 +32,26 @@ export interface DraftChangeResult {
   issues: ValidationIssue[];
 }
 
-const versionNotFound = () => new DomainError("not_found", "Không tìm thấy phiên bản tiêu chí");
-
 /**
  * Locks the version (SELECT … FOR UPDATE, so changes to one draft run one at a time), refuses a published one,
  * runs `apply`, writes the audit row and outbox event in the same transaction, then re-runs the check.
- * `apply` returns null when nothing changed: no audit row and no event then.
+ * `apply` returns null when nothing changed: no audit row and no event then. `rows()` gives `apply` the whole
+ * tree, loaded once; the check runs on `rowsAfter` when `apply` returns it, and loads the tree otherwise.
  * The caller has already authorized the actor.
  */
 export function changeDraft(
   deps: CoreDeps,
   actor: UserActor,
   versionId: string,
-  apply: (tx: Tx, version: CriteriaVersion) => Promise<DraftChange | null>,
+  apply: (tx: Tx, version: CriteriaVersion, rows: () => Promise<VersionRows>) => Promise<DraftChange | null>,
 ): Promise<DraftChangeResult> {
   return deps.uow.run(async (tx) => {
     const version = await tx.criteriaVersions.lock(versionId);
     if (!version) throw versionNotFound();
     assertDraft(version);
-    const change = await apply(tx, version);
+    let loaded: Promise<VersionRows> | undefined;
+    const rows = () => (loaded ??= tx.criteriaVersions.loadRows(version.id));
+    const change = await apply(tx, version, rows);
     if (change) {
       const now = deps.clock.now();
       await tx.audit.append(
@@ -62,7 +66,9 @@ export function changeDraft(
       );
       await emit(deps, tx, { type: change.action, payload: { versionId: version.id, node: change.node, nodeId: change.nodeId } });
     }
-    return { issues: findVersionIssues(await tx.criteriaVersions.loadRows(version.id)) };
+    // Unchanged, the tree `apply` may have loaded is still current; changed, it is stale unless `apply` updated it.
+    const after = change ? (change.rowsAfter ?? (await tx.criteriaVersions.loadRows(version.id))) : await rows();
+    return { issues: findVersionIssues(after) };
   });
 }
 

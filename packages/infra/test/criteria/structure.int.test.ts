@@ -274,6 +274,23 @@ describe("L19 AD-03/AD-04 kiểm tra sau mỗi thao tác", () => {
     expect(removed.issues).toEqual([]);
   });
 
+  it("returns the same check as validating the version afresh, for every kind of change", async () => {
+    const { a, versionId, ids } = await draft();
+    const fresh = async () => (await t.app.criteria.validateVersion(a, { versionId })).issues;
+    const steps = [
+      () => t.app.criteria.addNode(a, { versionId, addition: { node: "part", parent: { node: "set", id: ids.set }, values: { code: "B", name: "PHẦN B", points: 5 } } }),
+      () => t.app.criteria.addNode(a, { versionId, addition: { node: "scoreLevel", parent: { node: "criterion", id: ids.criterion }, values: { description: "Thêm", points: 120 } } }),
+      () => t.app.criteria.addNode(a, { versionId, addition: { node: "productGroup", values: { name: "Nhóm thử" } } }),
+      () => t.app.criteria.moveNode(a, { versionId, node: "part", id: ids.part, direction: "down" }),
+      () => t.app.criteria.removeNode(a, { versionId, node: "section", id: ids.section }),
+      () => t.app.criteria.removeNode(a, { versionId, node: "subgroup", id: ids.subgroup }),
+    ];
+    for (const step of steps) {
+      const { issues } = await step();
+      expect(issues).toEqual(await fresh());
+    }
+  });
+
   it("reports a Tiêu chí left without a 0-point Mức điểm, and publishing is refused", async () => {
     const { a, versionId, ids } = await draft();
     const { nodeId } = await t.app.criteria.addNode(a, {

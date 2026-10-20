@@ -5,9 +5,9 @@ import type { CoreDeps } from "../shared/deps";
 import type { Tx } from "../shared/uow";
 import { changeDraft, findDraftNode, type DraftChangeResult } from "./draft-change";
 import { DRAFT_NODE_KINDS, type DraftNodeKind } from "./draft-events";
-import { minimumStar, optionalText, parseOrRefuse, points, required } from "./edit";
+import { branch, minimumStar, optionalText, parseOrRefuse, points, required } from "./edit";
 import { SYSTEM_ZERO_LEVEL } from "./qd26-file";
-import { descendantsOf, nextPosition, siblingsOf } from "./tree";
+import { descendantsOf, nextPosition, siblingsOf, withNode, withoutNode, withPositions } from "./tree";
 import type { CriteriaVersion, DraftNodeRows } from "./version";
 
 /*
@@ -17,12 +17,6 @@ import type { CriteriaVersion, DraftNodeRows } from "./version";
 
 const id = z.string().min(1);
 const parent = <const P extends readonly [DraftNodeKind, ...DraftNodeKind[]]>(...kinds: P) => z.object({ node: z.enum(kinds), id });
-const branch = z
-  .string()
-  .trim()
-  .max(10, "Tối đa 10 ký tự")
-  .nullish()
-  .transform((b) => (b ? b : null));
 
 /** One node to add: its kind, its parent and its values. It goes at the end of its siblings. */
 export const nodeAdditionSchema = z.discriminatedUnion("node", [
@@ -42,7 +36,7 @@ export const nodeAdditionSchema = z.discriminatedUnion("node", [
   z.object({
     node: z.literal("scoreLevel"),
     parent: parent("criterion"),
-    values: z.strictObject({ description: required, points, minimumStar: minimumStar.default(null), branch }),
+    values: z.strictObject({ description: required, points, minimumStar: minimumStar.default(null), branch: branch.default(null) }),
   }),
 ]);
 
@@ -123,9 +117,9 @@ export function addNode(deps: CoreDeps) {
     authorize(actor, "criteria.edit");
     const addition = parseOrRefuse(nodeAdditionSchema, input.addition, "values", "Nút cần thêm không hợp lệ");
     const nodeId = deps.ids.next();
-    const result = await changeDraft(deps, actor, input.versionId, async (tx, version) => {
+    const result = await changeDraft(deps, actor, input.versionId, async (tx, version, tree) => {
       const { kind, row } = await newRow(tx, version, nodeId, addition);
-      const rows = await tx.criteriaVersions.loadRows(version.id);
+      const rows = await tree();
       row.position = nextPosition(siblingsOf(rows, kind, row));
       await tx.criteriaVersions.insertNode(kind, version.id, row);
       // A new Tiêu chí always offers "Không đáp ứng, 0 điểm" (GLOSSARY.md, Mức điểm).
@@ -134,7 +128,9 @@ export function addNode(deps: CoreDeps) {
           ? { id: deps.ids.next(), setId: (row as DraftNodeRows["criterion"]).setId, criterionId: nodeId, description: SYSTEM_ZERO_LEVEL, points: 0, minimumStar: null, branch: null, systemAdded: true, position: 0 }
           : null;
       if (zeroLevel) await tx.criteriaVersions.insertNode("scoreLevel", version.id, zeroLevel);
+      const added = withNode(rows, kind, row);
       return {
+        rowsAfter: zeroLevel ? withNode(added, "scoreLevel", zeroLevel) : added,
         action: "criteria.draft.node_added",
         node: kind,
         nodeId,
@@ -152,11 +148,20 @@ export function removeNode(deps: CoreDeps) {
   return async (actor: Actor, input: RemoveNodeInput): Promise<DraftChangeResult> => {
     authorize(actor, "criteria.edit");
     const ref = parseOrRefuse(nodeRefSchema, { node: input.node, id: input.id }, "", "Nút cần xóa không hợp lệ");
-    return changeDraft(deps, actor, input.versionId, async (tx, version) => {
+    return changeDraft(deps, actor, input.versionId, async (tx, version, tree) => {
       const row = await findDraftNode(tx, version, ref.node, ref.id);
-      const removed = descendantsOf(await tx.criteriaVersions.loadRows(version.id), ref.node, ref.id);
+      const rows = await tree();
+      const removed = descendantsOf(rows, ref.node, ref.id);
       await tx.criteriaVersions.deleteNode(ref.node, ref.id);
-      return { action: "criteria.draft.node_removed", node: ref.node, nodeId: ref.id, before: { ...row }, after: null, metadata: { removed } };
+      return {
+        action: "criteria.draft.node_removed",
+        node: ref.node,
+        nodeId: ref.id,
+        before: { ...row },
+        after: null,
+        metadata: { removed },
+        rowsAfter: withoutNode(rows, ref.node, ref.id),
+      };
     });
   };
 }
@@ -174,9 +179,10 @@ export function moveNode(deps: CoreDeps) {
       "",
       "Nút cần di chuyển không hợp lệ",
     );
-    return changeDraft(deps, actor, input.versionId, async (tx, version) => {
+    return changeDraft(deps, actor, input.versionId, async (tx, version, tree) => {
       const row = await findDraftNode(tx, version, ref.node, ref.id);
-      const siblings = siblingsOf(await tx.criteriaVersions.loadRows(version.id), ref.node, row);
+      const rows = await tree();
+      const siblings = siblingsOf(rows, ref.node, row);
       const from = siblings.findIndex((s) => s.kind === ref.node && s.id === ref.id);
       const to = ref.direction === "up" ? from - 1 : from + 1;
       if (from < 0 || to < 0 || to >= siblings.length) return null;
@@ -184,10 +190,14 @@ export function moveNode(deps: CoreDeps) {
       [order[from], order[to]] = [order[to]!, order[from]!];
       // Renumber the whole sequence 0..n-1, so positions stay distinct whatever they were before.
       const changed = order.map((s, position) => ({ ...s, position })).filter((s, i) => order[i]!.position !== s.position);
+      let rowsAfter = rows;
       for (const kind of new Set(changed.map((s) => s.kind))) {
-        await tx.criteriaVersions.setPositions(kind, changed.filter((s) => s.kind === kind));
+        const positions = changed.filter((s) => s.kind === kind);
+        await tx.criteriaVersions.setPositions(kind, positions);
+        rowsAfter = withPositions(rowsAfter, kind, positions);
       }
       return {
+        rowsAfter,
         action: "criteria.draft.node_moved",
         node: ref.node,
         nodeId: ref.id,

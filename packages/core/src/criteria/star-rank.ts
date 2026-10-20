@@ -1,5 +1,6 @@
 import { criteriaOf, type CriteriaSet, type Criterion, type CriterionScores, type RankThresholds, type ScoreLevel, type Star } from "./model";
 import type { CriteriaSetDetail } from "./detail";
+import { sum } from "./helpers";
 
 export interface StarRankInput {
   readonly set: CriteriaSet;
@@ -38,13 +39,13 @@ export interface StarRank {
  * Sums raw (possibly averaged) points, then rounds to 1e-9 to drop float noise: averages in thirds that add up
  * to 50 must compare as 50. Always sum raw scores; summing already-rounded totals compounds the error.
  */
-const sum = (values: readonly number[]) => Math.round(values.reduce((a, b) => a + b, 0) * 1e9) / 1e9;
+const roundedSum = (values: readonly number[]) => Math.round(sum(values) * 1e9) / 1e9;
 
 const THRESHOLD_STARS = [5, 4, 3, 2] as const;
 
 const starByThreshold = (total: number, thresholds: RankThresholds): Star => THRESHOLD_STARS.find((s) => total >= thresholds[s]) ?? 1;
 
-/** Float noise allowed when comparing averaged points with a Sao tối thiểu requirement (same 1e-9 as `sum`). */
+/** Float noise allowed when comparing averaged points with a Sao tối thiểu requirement (same 1e-9 as `roundedSum`). */
 const EPS = 1e-9;
 
 /**
@@ -104,9 +105,9 @@ function rankBy<C extends Criterion, K extends object>(
   scoreOf: (c: C) => number,
   keyOf: (c: C) => K,
 ): StarRank & { unmet: (K & UnmetMinimumStar)[] } {
-  const parts = scoredParts.map((part) => ({ code: part.code, total: sum(part.criteria.map(scoreOf)) }));
+  const parts = scoredParts.map((part) => ({ code: part.code, total: roundedSum(part.criteria.map(scoreOf)) }));
   const all = scoredParts.flatMap((p) => p.criteria);
-  const total = sum(all.map(scoreOf));
+  const total = roundedSum(all.map(scoreOf));
 
   const unmet = all
     .flatMap((c) =>
