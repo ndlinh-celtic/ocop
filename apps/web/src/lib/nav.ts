@@ -97,7 +97,7 @@ export const NAV: Record<Role, NavItem[]> = {
   admin: [
     HOME,
     { href: "/quan-tri/nguoi-dung", label: "Người dùng và phân vai", icon: UsersRound, ready: true },
-    { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: false },
+    { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: true },
     { href: "/quan-tri/danh-muc", label: "Danh mục", icon: Library, ready: false },
     { href: "/quan-tri/nhat-ky", label: "Nhật ký", icon: ScrollText, ready: true },
     { href: "/quan-tri/thu-tai-tep", label: "Thử tải tệp", icon: Upload, ready: true },
