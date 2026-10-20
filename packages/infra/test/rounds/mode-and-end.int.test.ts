@@ -160,6 +160,14 @@ describe("L07 HD-06 đổi Chế độ chấm", () => {
     expect(await t.app.rounds.getRound(officer, { roundId })).toMatchObject({ gradingMode: "direct" });
   });
 
+  it("tells the round page whether the grading config is locked by a phiếu chấm", async () => {
+    const officer = await staff();
+    const roundId = await openRound(officer);
+    expect(await t.app.rounds.getRound(officer, { roundId })).toMatchObject({ gradingConfigLocked: false });
+    activity.scoreSheets = true;
+    expect(await t.app.rounds.getRound(officer, { roundId })).toMatchObject({ gradingConfigLocked: true });
+  });
+
   it("refuses a Nháp round (edited as a whole) and a round Đã kết thúc", async () => {
     const officer = await staff();
     const draft = await draftRound(officer);

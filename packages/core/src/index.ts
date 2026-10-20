@@ -121,4 +121,4 @@ export {
 export type { RoundInput } from "./rounds/manage";
 export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
-export type { RoundView } from "./rounds/read";
+export type { RoundDetail, RoundView } from "./rounds/read";

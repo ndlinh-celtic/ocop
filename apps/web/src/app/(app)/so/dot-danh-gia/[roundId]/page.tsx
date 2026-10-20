@@ -91,13 +91,21 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
       {configurable && (
         <section className="rounded-lg border bg-surface p-4">
           <h2 className="font-medium">Đổi cấu hình chấm</h2>
-          <p className="mb-4 text-sm text-text-2">Đổi được cho đến khi đợt có phiếu chấm đầu tiên.</p>
-          <RoundConfigForms
-            gradingMode={round.gradingMode}
-            aggregation={round.aggregation}
-            changeGradingMode={changeGradingModeAction.bind(null, round.id)}
-            changeAggregationRule={changeAggregationRuleAction.bind(null, round.id)}
-          />
+          {round.gradingConfigLocked ? (
+            <p className="mt-1 text-sm text-text-2">
+              Đợt đã có phiếu chấm, nên Chế độ chấm và Quy tắc tổng hợp đã khóa: mọi phiếu của đợt chấm theo cùng một cấu hình.
+            </p>
+          ) : (
+            <>
+              <p className="mb-4 text-sm text-text-2">Đổi được cho đến khi đợt có phiếu chấm đầu tiên.</p>
+              <RoundConfigForms
+                gradingMode={round.gradingMode}
+                aggregation={round.aggregation}
+                changeGradingMode={changeGradingModeAction.bind(null, round.id)}
+                changeAggregationRule={changeAggregationRuleAction.bind(null, round.id)}
+              />
+            </>
+          )}
         </section>
       )}
       {editable && (

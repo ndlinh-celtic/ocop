@@ -10,6 +10,12 @@ export interface RoundView extends Round {
   criteriaVersion: { id: string; legalBasis: string; issuedOn: string };
 }
 
+/** One round for its page: a RoundView plus whether its Chế độ chấm and Quy tắc tổng hợp are locked. */
+export interface RoundDetail extends RoundView {
+  /** True once the round has its first phiếu chấm (HD-06): changeGradingMode and changeAggregationRule refuse then. */
+  gradingConfigLocked: boolean;
+}
+
 /** A Nháp round is the Cán bộ Sở's work in progress: only those who manage rounds see it; to others it does not exist. */
 export const roundVisibleTo = (actor: Actor, round: Round) => round.status !== "draft" || can(actor, "round.manage");
 
@@ -31,13 +37,13 @@ export function listRounds(deps: CoreDeps) {
 }
 
 export function getRound(deps: CoreDeps) {
-  return async (actor: Actor, input: { roundId: string }): Promise<RoundView> => {
+  return async (actor: Actor, input: { roundId: string }): Promise<RoundDetail> => {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
       const round = await tx.rounds.findById(input.roundId);
       if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       const [view] = await withVersions(tx, [round]);
-      return view!;
+      return { ...view!, gradingConfigLocked: await deps.roundActivity.hasScoreSheets(tx, round.id) };
     });
   };
 }
