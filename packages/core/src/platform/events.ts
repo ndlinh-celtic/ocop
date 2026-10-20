@@ -17,7 +17,8 @@ export type DomainEventBody =
   | { type: "round.created"; payload: { roundId: string } }
   | { type: "round.updated"; payload: { roundId: string } }
   | { type: "round.deleted"; payload: { roundId: string } }
-  | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } };
+  | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } }
+  | { type: "round.submission_closed"; payload: { roundId: string; submissionDeadline: string; closedAt: string } };
 
 export type EventType = DomainEventBody["type"];
 
