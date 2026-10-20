@@ -9,6 +9,9 @@ import { changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction
 import { RoundActionButton } from "../round-buttons";
 import { RoundConfigForms } from "../round-config-form";
 import { RoundForm } from "../round-form";
+import { ExtendDeadlineForm } from "./extend-deadline-form";
+import { extendDeadlineAction } from "./extension-actions";
+import { ExtensionHistory } from "./extension-history";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +19,8 @@ const orNotFound = (err: unknown) => (err instanceof DomainError && err.code ===
 
 /**
  * S82: one Đợt đánh giá. While Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, changes
- * Chế độ chấm and Quy tắc tổng hợp (HD-06), and ends it from Đã đóng nộp.
+ * Chế độ chấm and Quy tắc tổng hợp (HD-06), ends it from Đã đóng nộp, and extends
+ * Hạn nộp xã or Hạn gửi tỉnh (Gia hạn đợt).
  */
 export default async function RoundPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params;
@@ -28,6 +32,9 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
   // L07 HD-06: after opening, only Chế độ chấm and Quy tắc tổng hợp change (until the first phiếu chấm).
   const configurable = manager && (round.status === "open_for_submission" || round.status === "submission_closed");
   const endable = manager && round.status === "submission_closed";
+  // L07 Gia hạn đợt: an opened round that has not ended.
+  const extendable = manager && (round.status === "open_for_submission" || round.status === "submission_closed");
+  const extensions = round.status === "draft" ? [] : await app().core.rounds.listDeadlineExtensions(actor, { roundId });
   const versions = editable ? (await app().core.criteria.listVersions(actor)).filter((v) => v.status === "published") : [];
   const facts: [string, string][] = [
     ["Năm", String(round.year)],
@@ -114,6 +121,17 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           />
         </section>
       )}
+      {extendable && (
+        <section className="rounded-lg border bg-surface p-4">
+          <h2 className="mb-3 font-medium">Gia hạn đợt</h2>
+          <ExtendDeadlineForm
+            action={extendDeadlineAction.bind(null, round.id)}
+            current={{ submission: vnDateOf(round.submissionDeadline), forwarding: vnDateOf(round.forwardingDeadline) }}
+            submissionClosed={round.status === "submission_closed"}
+          />
+        </section>
+      )}
+      {round.status !== "draft" && <ExtensionHistory extensions={extensions} />}
     </div>
   );
 }

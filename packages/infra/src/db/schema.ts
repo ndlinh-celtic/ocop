@@ -282,3 +282,16 @@ export const round = roundSchema.table("round", {
   endedAt: ts("ended_at"),
   endedBy: uuid("ended_by"),
 });
+
+// Gia hạn đợt history, append-only (0013_round_deadline_extension.sql).
+export const deadlineExtension = roundSchema.table("deadline_extension", {
+  id: uuid("id").primaryKey(),
+  roundId: uuid("round_id").notNull(),
+  deadline: text("deadline").$type<"submission" | "forwarding">().notNull(),
+  previousDeadline: ts("previous_deadline").notNull(),
+  newDeadline: ts("new_deadline").notNull(),
+  reason: text("reason").notNull(),
+  extendedBy: uuid("extended_by").notNull(),
+  extendedAt: ts("extended_at").notNull(),
+  reopened: boolean("reopened").notNull(),
+});
