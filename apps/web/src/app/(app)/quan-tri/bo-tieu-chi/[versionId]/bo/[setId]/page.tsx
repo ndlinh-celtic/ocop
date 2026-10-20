@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { StatusTag } from "../../../status-tag";
+import { PreviewPanel } from "./preview-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,18 @@ export default async function CriteriaSetPage({ params }: { params: Promise<{ ve
           )}
           {set.footerNote && <p className="mt-1 text-text-2">{set.footerNote}</p>}
         </section>
+      )}
+
+      {view.version.status === "draft" && (
+        <PreviewPanel
+          setId={set.id}
+          parts={set.parts.map((p) => ({
+            code: p.code,
+            name: p.name,
+            points: p.points,
+            criteria: p.sections.flatMap((sc) => sc.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i]))).map((c) => ({ id: c.id, code: c.code, name: c.name, maxPoints: c.maxPoints, levels: [...c.levels] })),
+          }))}
+        />
       )}
 
       <section className="rounded-lg border bg-surface p-4">
