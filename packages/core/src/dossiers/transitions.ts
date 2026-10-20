@@ -39,6 +39,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.withdraw",
   "dossier.receive",
   "dossier.handler.change",
+  "dossier.checklist.assess",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -55,6 +56,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.withdrawn",
   "dossier.received",
   "dossier.handler_changed",
+  "dossier.checklist_assessed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -100,6 +102,19 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       roles: ["ward_officer"],
       event: "dossier.handler_changed",
       timeline: true,
+      guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+    }),
+  ),
+  // L06 XA-04 (story 61): the Checklist sơ bộ of a received hồ sơ, editable until it is gửi tỉnh. Nhận xét
+  // are the xã's working notes, so this is not a row of the timeline the Chủ thể reads.
+  ...(["submitted_to_ward", "supplement_requested"] as const).map(
+    (from): TransitionRule => ({
+      action: "dossier.checklist.assess",
+      from,
+      to: from,
+      roles: ["ward_officer"],
+      event: "dossier.checklist_assessed",
+      timeline: false,
       guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
     }),
   ),
