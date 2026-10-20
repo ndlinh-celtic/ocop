@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CriteriaSetHeading, CriteriaSetSheet } from "@/components/criteria/criteria-set-sheet";
-import type { EditTarget } from "@/components/criteria/edit-target";
+import type { EditSlot } from "@/components/criteria/edit-target";
 import { orNotFound } from "@/components/criteria/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { EditNode } from "../../edit-node";
+import { DraftControls } from "../../draft-controls";
 import { ValidationIssues } from "../../validation-issues";
 import { PreviewPanel } from "./preview-panel";
 
@@ -21,7 +21,7 @@ export default async function CriteriaSetPage({ params }: { params: Promise<{ ve
   const draft = view.version.status === "draft";
   // The check of this Bộ tiêu chí (and of the whole version), current after every edit (L19 AD-03).
   const issues = draft ? (await app().core.criteria.validateVersion(actor, { versionId })).issues.filter((i) => i.setId === null || i.setId === set.id) : [];
-  const edit = draft ? (target: EditTarget) => <EditNode versionId={versionId} target={target} /> : undefined;
+  const edit: EditSlot | undefined = draft ? (target) => <DraftControls versionId={versionId} target={target} /> : undefined;
   return (
     <div className="flex flex-col gap-6">
       <nav className="text-sm text-text-3">

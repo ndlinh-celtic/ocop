@@ -1,6 +1,7 @@
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
 import { editDraft } from "./criteria/edit";
+import { addNode, moveNode, removeNode } from "./criteria/structure";
 import { copyVersion, deleteVersion } from "./criteria/copy";
 import { importVersion } from "./criteria/import";
 import { publishVersion, validateVersion } from "./criteria/publish";
@@ -20,6 +21,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { closeDueSubmissions } from "./rounds/close-due";
+import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
 import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
@@ -90,6 +92,9 @@ export function createCore(deps: CoreDeps) {
       publishVersion: publishVersion(deps),
       previewSet: previewSet(deps),
       editDraft: editDraft(deps),
+      addNode: addNode(deps),
+      removeNode: removeNode(deps),
+      moveNode: moveNode(deps),
       copyVersion: copyVersion(deps),
       deleteVersion: deleteVersion(deps),
     },
@@ -98,6 +103,9 @@ export function createCore(deps: CoreDeps) {
       updateRound: updateRound(deps),
       deleteRound: deleteRound(deps),
       openRound: openRound(deps),
+      changeGradingMode: changeGradingMode(deps),
+      changeAggregationRule: changeAggregationRule(deps),
+      endRound: endRound(deps),
       listRounds: listRounds(deps),
       getRound: getRound(deps),
       currentOpenRound: currentOpenRound(deps),

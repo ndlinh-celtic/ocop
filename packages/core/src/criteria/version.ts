@@ -170,6 +170,12 @@ export interface CriteriaVersionRepo {
   updateNode<K extends DraftNodeKind>(kind: K, id: string, patch: Partial<Omit<DraftNodeRows[K], "id">>): Promise<void>;
   updateVersion(id: string, patch: Partial<VersionFields>): Promise<void>;
   setThresholds(versionId: string, thresholds: RankThresholds): Promise<void>;
+  /** Adds one node to the version (#23); its parent must exist in the same version. */
+  insertNode<K extends DraftNodeKind>(kind: K, versionId: string, row: DraftNodeRows[K]): Promise<void>;
+  /** Removes one node; its children go with it (the foreign keys cascade). */
+  deleteNode(kind: DraftNodeKind, id: string): Promise<void>;
+  /** Sets the `position` of several nodes of one kind. */
+  setPositions(kind: DraftNodeKind, positions: readonly { id: string; position: number }[]): Promise<void>;
 }
 
 /** The fields of a version itself that Quản trị edits in a draft. */

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type RequestContext, type UserActor } from "@ocop/core";
+import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type RequestContext, type RoundActivity, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
 import type { ScanResult, VirusScanner } from "../../src/files/clamd";
@@ -102,7 +102,7 @@ export interface TestApp {
   signInWithToken(email: string, password: string, totpSecret?: string): Promise<{ actor: UserActor; token: string }>;
 }
 
-export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpRequired?: boolean } = {}): TestApp {
+export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpRequired?: boolean; roundActivity?: RoundActivity } = {}): TestApp {
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
   const scanner = new FakeScanner();
@@ -122,6 +122,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
       anchorStore,
       scanner,
+      roundActivity: opts.roundActivity,
     },
   );
   let boss: PgBoss | undefined;

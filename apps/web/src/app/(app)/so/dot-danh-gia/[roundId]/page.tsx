@@ -5,8 +5,9 @@ import { RoundStatusTag } from "@/components/rounds/round-status-tag";
 import { formatVnDate, formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { deleteRoundAction, openRoundAction, updateRoundAction } from "../actions";
+import { changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction, endRoundAction, openRoundAction, updateRoundAction } from "../actions";
 import { RoundActionButton } from "../round-buttons";
+import { RoundConfigForms } from "../round-config-form";
 import { RoundForm } from "../round-form";
 import { ExtendDeadlineForm } from "./extend-deadline-form";
 import { extendDeadlineAction } from "./extension-actions";
@@ -16,15 +17,23 @@ export const dynamic = "force-dynamic";
 
 const orNotFound = (err: unknown) => (err instanceof DomainError && err.code === "not_found" ? null : Promise.reject(err));
 
-/** S82: one Đợt đánh giá; while Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, extends its deadlines (Gia hạn đợt). */
+/**
+ * S82: one Đợt đánh giá. While Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, changes
+ * Chế độ chấm and Quy tắc tổng hợp (HD-06), ends it from Đã đóng nộp, and extends
+ * Hạn nộp xã or Hạn gửi tỉnh (Gia hạn đợt).
+ */
 export default async function RoundPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params;
   const actor = await requireActor();
   const round = await app().core.rounds.getRound(actor, { roundId }).catch(orNotFound);
   if (!round) notFound();
-  const editable = round.status === "draft" && can(actor, "round.manage");
+  const manager = can(actor, "round.manage");
+  const editable = round.status === "draft" && manager;
+  // L07 HD-06: after opening, only Chế độ chấm and Quy tắc tổng hợp change (until the first phiếu chấm).
+  const configurable = manager && (round.status === "open_for_submission" || round.status === "submission_closed");
+  const endable = manager && round.status === "submission_closed";
   // L07 Gia hạn đợt: an opened round that has not ended.
-  const extendable = (round.status === "open_for_submission" || round.status === "submission_closed") && can(actor, "round.manage");
+  const extendable = manager && (round.status === "open_for_submission" || round.status === "submission_closed");
   const extensions = round.status === "draft" ? [] : await app().core.rounds.listDeadlineExtensions(actor, { roundId });
   const versions = editable ? (await app().core.criteria.listVersions(actor)).filter((v) => v.status === "published") : [];
   const facts: [string, string][] = [
@@ -39,6 +48,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
       `Trung bình cộng, tối thiểu ${round.aggregation.minGraders} người chấm, cờ chênh lệch từ ${round.aggregation.deviationFlagPoints} điểm`,
     ],
     ["Mở lúc", round.openedAt ? formatVnDateTime(round.openedAt) : "Chưa mở"],
+    ...(round.endedAt ? ([["Kết thúc lúc", formatVnDateTime(round.endedAt)]] as [string, string][]) : []),
   ];
   return (
     <div className="flex flex-col gap-6">
@@ -58,6 +68,15 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
             <RoundActionButton action={deleteRoundAction.bind(null, round.id)} label="Xóa đợt" confirm="Xóa đợt Nháp này?" danger />
           </div>
         )}
+        {endable && (
+          <div className="ml-auto">
+            <RoundActionButton
+              action={endRoundAction.bind(null, round.id)}
+              label="Kết thúc đợt"
+              confirm="Kết thúc đợt? Chỉ kết thúc được khi mọi hồ sơ đã có kết quả; đợt Đã kết thúc không mở lại được."
+            />
+          </div>
+        )}
       </div>
       <section className="rounded-lg border bg-surface p-4">
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -69,6 +88,18 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           ))}
         </dl>
       </section>
+      {configurable && (
+        <section className="rounded-lg border bg-surface p-4">
+          <h2 className="font-medium">Đổi cấu hình chấm</h2>
+          <p className="mb-4 text-sm text-text-2">Đổi được cho đến khi đợt có phiếu chấm đầu tiên.</p>
+          <RoundConfigForms
+            gradingMode={round.gradingMode}
+            aggregation={round.aggregation}
+            changeGradingMode={changeGradingModeAction.bind(null, round.id)}
+            changeAggregationRule={changeAggregationRuleAction.bind(null, round.id)}
+          />
+        </section>
+      )}
       {editable && (
         <section className="rounded-lg border bg-surface p-4">
           <h2 className="mb-3 font-medium">Sửa đợt</h2>

@@ -69,16 +69,20 @@ export function VersionOverview({ version, setHref, edit }: { version: VersionDe
                           </Link>{" "}
                           <span className="text-text-3">
                             · {b.criterionCount} tiêu chí · {b.totalPoints} điểm
-                          </span>
+                          </span>{" "}
+                          {edit?.({ node: "set", id: b.id, label: `Bộ ${b.code}`, values: { name: b.name, totalPoints: b.totalPoints } })}
                         </li>
                       ))}
+                      {edit && <li>{edit({ add: "set", parent: { node: "subgroup", id: s.id }, label: "Thêm bộ tiêu chí" })}</li>}
                     </ul>
                   </li>
                 ))}
+                {edit && <li>{edit({ add: "subgroup", parent: { node: "productGroup", id: g.id }, label: "Thêm phân nhóm" })}</li>}
               </ol>
             </li>
           ))}
         </ol>
+        {edit && <div className="border-t px-4 py-3">{edit({ add: "productGroup", label: "Thêm nhóm sản phẩm" })}</div>}
       </section>
     </>
   );

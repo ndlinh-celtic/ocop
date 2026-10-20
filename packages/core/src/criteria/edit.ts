@@ -14,10 +14,10 @@ import type { DraftNodeRows } from "./version";
  * each value is checked; the web parses form input with it too.
  */
 
-const required = z.string().trim().min(1, "Không được để trống");
-const optionalText = z.string().trim();
+export const required = z.string().trim().min(1, "Không được để trống");
+export const optionalText = z.string().trim();
 /** numeric(7,2) in the database. */
-const points = z
+export const points = z
   .number({ error: "Phải là số" })
   .finite("Phải là số")
   .min(0, "Không được âm")
@@ -25,9 +25,9 @@ const points = z
   .refine((n) => Math.abs(Math.round(n * 100) - n * 100) < 1e-6, "Tối đa hai chữ số thập phân");
 const isoDate = z.iso.date({ error: "Phải là ngày dạng YYYY-MM-DD" });
 /** Sao tối thiểu as printed (***, ****, *****), or none. */
-const minimumStar = z.union([z.literal(3), z.literal(4), z.literal(5), z.null()], { error: "Phải là 3, 4, 5 sao hoặc để trống" });
+export const minimumStar = z.union([z.literal(3), z.literal(4), z.literal(5), z.null()], { error: "Phải là 3, 4, 5 sao hoặc để trống" });
 /** Nhãn nhánh "a", "b"…; blank means the Tiêu chí does not split. */
-const branch = z
+export const branch = z
   .string()
   .trim()
   .max(10, "Tối đa 10 ký tự")
@@ -81,13 +81,19 @@ const FIELD_LABEL: Record<string, string> = {
   branch: "Nhãn nhánh",
 };
 
-function parseEdit(edit: unknown): ParsedEdit {
-  const parsed = draftEditSchema.safeParse(edit);
+/**
+ * Parses with `schema`, turning the first problem into `invalid_value` named by the field it is in
+ * (`<container>.<field>`, e.g. `changes.name`), or `fallback` when it is not about one field.
+ */
+export function parseOrRefuse<S extends z.ZodType>(schema: S, value: unknown, container: string, fallback: string): z.output<S> {
+  const parsed = schema.safeParse(value);
   if (parsed.success) return parsed.data;
   const issue = parsed.error.issues[0]!;
-  const field = issue.path[0] === "changes" && issue.path[1] !== undefined ? FIELD_LABEL[String(issue.path[1])] : undefined;
-  throw new DomainError("invalid_value", field ? `${field}: ${issue.message}` : "Nội dung sửa không hợp lệ");
+  const field = issue.path[0] === container && issue.path[1] !== undefined ? FIELD_LABEL[String(issue.path[1])] : undefined;
+  throw new DomainError("invalid_value", field ? `${field}: ${issue.message}` : fallback);
 }
+
+const parseEdit = (edit: unknown): ParsedEdit => parseOrRefuse(draftEditSchema, edit, "changes", "Nội dung sửa không hợp lệ");
 
 /** The fields of `changes` whose value differs from `current`, as before/after pairs; null when none does. */
 function diff<T extends object>(current: T, changes: Partial<T>): { before: Partial<T>; after: Partial<T> } | null {
