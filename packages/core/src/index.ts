@@ -67,4 +67,5 @@ export type {
 } from "./criteria/detail";
 export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue } from "./criteria/qd26-file";
 export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
+export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
