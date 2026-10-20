@@ -55,15 +55,6 @@ export async function addLegalDocumentAction(input: z.infer<typeof documentInput
   return {};
 }
 
-export async function downloadLegalFileAction(fileId: string): Promise<{ url?: string; error?: string }> {
-  const actor = await requireActor();
-  try {
-    return { url: (await app().core.files.requestDownload(actor, { fileId })).url };
-  } catch (err) {
-    return { error: domainMessage(err) };
-  }
-}
-
 export interface EntityFormState {
   error?: string;
   saved?: boolean;
@@ -84,14 +75,4 @@ export async function updateEntityAction(entityId: string, _prev: EntityFormStat
   }
   revalidatePath(PAGE);
   return { saved: true };
-}
-
-/** Story 13: the full số định danh cá nhân, an audited personal data access. */
-export async function revealPersonalIdAction(entityId: string): Promise<{ personalId?: string; error?: string }> {
-  const actor = await requireActor();
-  try {
-    return await app().core.entities.revealPersonalId(actor, { entityId });
-  } catch (err) {
-    return { error: domainMessage(err) };
-  }
 }

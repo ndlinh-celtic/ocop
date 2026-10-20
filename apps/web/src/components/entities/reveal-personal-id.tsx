@@ -4,7 +4,7 @@ import { Eye } from "lucide-react";
 import { useState } from "react";
 import { revealPersonalIdAction } from "./actions";
 
-/** Story 13: the masked số định danh cá nhân, shown in full on request (an audited access). */
+/** Stories 13, 14: the masked số định danh cá nhân, shown in full on request (an audited access). */
 export function RevealPersonalId({ entityId, masked }: { entityId: string; masked: string }) {
   const [full, setFull] = useState<string>();
   const [error, setError] = useState<string>();
