@@ -6,10 +6,16 @@ import { grantRoleAction, type GrantState } from "./actions";
 
 /** Chủ thể and hội đồng scopes have no catalogue until steps 3 and 4. */
 const GRANTABLE = ROLES.filter((r) => ["ward", "province", "system"].includes(SCOPE_OF_ROLE[r]));
+const DEFAULT_ROLE: Role = "ward_officer";
 
 export function GrantRoleForm({ userId, wards }: { userId: string; wards: { id: string; code: string; name: string }[] }) {
-  const [role, setRole] = useState<Role>("ward_officer");
-  const [state, action, pending] = useActionState<GrantState, FormData>(grantRoleAction.bind(null, userId), {});
+  const [role, setRole] = useState<Role>(DEFAULT_ROLE);
+  const [state, action, pending] = useActionState<GrantState, FormData>(async (prev, form) => {
+    const next = await grantRoleAction(userId, prev, form);
+    // React resets the form once the action ends; the Vai trò, and so which Phạm vi is asked for, follows.
+    setRole(DEFAULT_ROLE);
+    return next;
+  }, {});
   return (
     <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label className="flex flex-col gap-1 text-sm font-medium">
