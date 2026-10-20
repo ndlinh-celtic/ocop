@@ -37,6 +37,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.delete",
   "dossier.submit",
   "dossier.withdraw",
+  "dossier.receive",
+  "dossier.handler.change",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -51,6 +53,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.deleted",
   "dossier.submitted",
   "dossier.withdrawn",
+  "dossier.received",
+  "dossier.handler_changed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -77,6 +81,28 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     timeline: true,
     guard: (d) => (d.receivedAt === null ? null : new DomainError("already_received", "Xã đã tiếp nhận hồ sơ nên không rút được nữa")),
   },
+  // L05 XA-02 (story 40): Tiếp nhận, once; it names the Cán bộ phụ trách.
+  {
+    action: "dossier.receive",
+    from: "submitted_to_ward",
+    to: "submitted_to_ward",
+    roles: ["ward_officer"],
+    event: "dossier.received",
+    timeline: true,
+    guard: (d) => (d.receivedAt === null ? null : new DomainError("already_received", "Hồ sơ đã được tiếp nhận")),
+  },
+  // L05 XA-03 (story 41): another Cán bộ phụ trách, at any time while the xã handles a received hồ sơ.
+  ...(["submitted_to_ward", "supplement_requested"] as const).map(
+    (from): TransitionRule => ({
+      action: "dossier.handler.change",
+      from,
+      to: from,
+      roles: ["ward_officer"],
+      event: "dossier.handler_changed",
+      timeline: true,
+      guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+    }),
+  ),
 ];
 
 /** The rule for `action` from the hồ sơ's current state, if the table has one. */

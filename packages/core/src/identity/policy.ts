@@ -39,9 +39,11 @@ const ROLE_ACTIONS = {
   "entity.representative_email.change": ["ward_officer"],
   // Hồ sơ (spec #30): who may read or start them at all. What may be done to one hồ sơ is the transition
   // table of dossiers/transitions.ts, checked by can(actor, action, dossier).
-  "dossier.read": ["entity_owner"],
+  "dossier.read": ["entity_owner", "ward_officer"],
   "dossier.create": ["entity_owner"],
   "dossier.evidence.upload": ["entity_owner"],
+  // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
+  "dossier.handler.list": ["ward_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

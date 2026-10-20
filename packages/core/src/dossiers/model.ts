@@ -99,6 +99,14 @@ export interface EvidenceFile {
   addedAt: Date;
 }
 
+/** Narrows a list of hồ sơ; every field given must hold. */
+export interface DossierListFilter {
+  state?: DossierState;
+  /** Đã nộp xã and not yet Tiếp nhận: "Chờ tiếp nhận" (story 39). */
+  awaitingReceipt?: boolean;
+  handlerUserId?: string;
+}
+
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.
  * Out-of-scope rows come back as absent.
@@ -110,8 +118,8 @@ export interface DossierRepo {
   lock(scope: DataScope, id: string): Promise<Dossier | null>;
   /** Writes every mutable field, only while the stored version is still `expectedVersion`; false otherwise. */
   update(d: Dossier, expectedVersion: number): Promise<boolean>;
-  /** Newest first. */
-  list(scope: DataScope): Promise<Dossier[]>;
+  /** Newest first, narrowed by `filter` in the same query. */
+  list(scope: DataScope, filter?: DossierListFilter): Promise<Dossier[]>;
   appendEvent(e: DossierEvent): Promise<void>;
   /** Oldest first, for a hồ sơ within the scope. */
   events(scope: DataScope, dossierId: string): Promise<DossierEvent[]>;
@@ -133,6 +141,8 @@ export interface DossierRepo {
   insertSubmission(s: Submission, files: readonly SubmissionFileRef[]): Promise<void>;
   /** Every Phiên bản nộp of a hồ sơ already loaded within scope, oldest first. */
   submissions(dossierId: string): Promise<Submission[]>;
+  /** When each of these hồ sơ, already loaded within scope, was last nộp or nộp lại; absent if never. */
+  lastSubmittedAt(dossierIds: readonly string[]): Promise<Map<string, Date>>;
   /** The newest Phiên bản nộp of a hồ sơ already loaded within scope. */
   latestSubmission(dossierId: string): Promise<Submission | null>;
 }

@@ -18,8 +18,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
     await t.app.identity.activateAccount(anonymous(), { token, password: PASSWORD });
   }
 
-  /** A freshly registered and activated Chủ thể, signed in; not yet Đã xác thực. */
-  async function owner() {
+  /** A freshly registered and activated Chủ thể of `ward`, signed in; not yet Đã xác thực. */
+  async function owner(ward = wardId()) {
     const n = ++seq;
     const email = `chu-the-${n}@example.vn`;
     await t.app.entities.register(anonymous({ ip: `198.51.100.${++ip}` }), {
@@ -30,7 +30,7 @@ export function fixtures(t: TestApp, wardId: () => string) {
       representativeName: `Đại diện ${n}`,
       phone: "0901234567",
       email,
-      wardId: wardId(),
+      wardId: ward,
     });
     await activate(email);
     return t.signInAs(email, PASSWORD);
@@ -52,8 +52,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
   }
 
   /** A Chủ thể that is Đã xác thực: it holds a clean, non-expiring GPKD. */
-  async function verifiedOwner() {
-    const a = await owner();
+  async function verifiedOwner(ward = wardId()) {
+    const a = await owner(ward);
     const fileId = await uploadPdf(a, "legal_document", "GPKD.pdf");
     await t.app.entities.addLegalDocument(a, {
       entityId: entityIdOf(a),
@@ -147,9 +147,9 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return version;
   }
 
-  /** A Chủ thể Đã xác thực with a complete Nháp on `criteriaSetId`, submitted into the đợt Đang nhận nộp. */
-  async function submitted(criteriaSetId: string) {
-    const a = await verifiedOwner();
+  /** A Chủ thể Đã xác thực of `ward` with a complete Nháp on `criteriaSetId`, submitted into the đợt Đang nhận nộp. */
+  async function submitted(criteriaSetId: string, ward = wardId()) {
+    const a = await verifiedOwner(ward);
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId });
     const expectedVersion = await completeDraft(a, dossierId);
     const { version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion });

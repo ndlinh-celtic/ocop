@@ -180,6 +180,6 @@ export {
 export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType, type DossierRef, type TransitionRule } from "./dossiers/transitions";
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";
-export type { DossierFlag, DossierSummary, DossierView } from "./dossiers/read";
+export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
