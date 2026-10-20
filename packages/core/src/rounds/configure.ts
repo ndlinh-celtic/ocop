@@ -6,7 +6,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
-import { checkedAggregation, roundNotFound } from "./manage";
+import { checkedAggregation, roundNotFound, sameAggregation } from "./manage";
 import { GRADING_MODES, type AggregationRule, type GradingMode, type Round } from "./model";
 
 /**
@@ -60,8 +60,7 @@ export function changeAggregationRule(deps: CoreDeps) {
     const aggregation = checkedAggregation(input.aggregation);
     return deps.uow.run(async (tx) => {
       const before = await lockConfigurable(deps, tx, input.roundId);
-      const same = (Object.keys(aggregation) as (keyof AggregationRule)[]).every((k) => before.aggregation[k] === aggregation[k]);
-      if (same) return;
+      if (sameAggregation(before.aggregation, aggregation)) return;
       const now = deps.clock.now();
       const after: Round = { ...before, aggregation, updatedAt: now };
       await tx.rounds.update(after);

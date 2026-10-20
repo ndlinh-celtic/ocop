@@ -222,6 +222,15 @@ describe("L07 HD-06 đổi Quy tắc tổng hợp", () => {
     expect(entry).toMatchObject({ actorUserId: officer.userId, before: { aggregation: AGGREGATION }, after: { aggregation: NEW_RULE } });
   });
 
+  it("writes nothing when the rule given equals the current one once normalised", async () => {
+    const officer = await staff();
+    const roundId = await openRound(officer);
+    await t.app.rounds.changeAggregationRule(officer, { roundId, aggregation: { ...AGGREGATION, deviationFlagPoints: 14.999999999 } });
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.aggregation_changed' AND payload->>'roundId' = $1", [roundId]);
+    expect(rows).toEqual([]);
+    expect(await t.app.audit.search(await admin(), { action: ["round.aggregation_changed"], targetId: roundId })).toEqual([]);
+  });
+
   it("changes it while the round is Đã đóng nộp", async () => {
     const officer = await staff();
     const roundId = await closedRound(officer);

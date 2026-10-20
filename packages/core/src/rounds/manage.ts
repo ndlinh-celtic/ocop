@@ -1,4 +1,5 @@
 import { auditEntry } from "../audit/audit";
+import { points } from "../criteria/edit";
 import { authorize } from "../identity/policy";
 import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
@@ -34,16 +35,28 @@ export interface RoundInput {
 
 export const roundNotFound = () => new DomainError("not_found", "Không tìm thấy đợt đánh giá");
 
-/** A Quy tắc tổng hợp with only the known fields, or a DomainError `invalid_aggregation`. */
+/** Points are numeric(7,2): two decimals, so float noise from a form (12.499999999) reads as 12.5. */
+const twoDecimals = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * A Quy tắc tổng hợp with only the known fields and the Ngưỡng cờ chênh lệch normalised, or a DomainError
+ * `invalid_aggregation`. The threshold follows the rule of every other points value (criteria `points`).
+ */
 export function checkedAggregation({ method, minGraders, deviationFlagPoints }: AggregationRule): AggregationRule {
   if (!AGGREGATION_METHODS.includes(method)) throw new DomainError("invalid_aggregation", "Cách tổng hợp không hợp lệ");
   if (!Number.isInteger(minGraders) || minGraders < 1 || minGraders > 50) {
     throw new DomainError("invalid_aggregation", "Số người chấm tối thiểu phải là số nguyên từ 1 đến 50");
   }
-  if (!Number.isFinite(deviationFlagPoints) || deviationFlagPoints < 0) {
-    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm không âm");
+  const flag = points.safeParse(deviationFlagPoints);
+  if (!flag.success) {
+    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm từ 0 đến 99999.99, tối đa hai chữ số thập phân");
   }
-  return { method, minGraders, deviationFlagPoints };
+  return { method, minGraders, deviationFlagPoints: twoDecimals(flag.data) };
+}
+
+/** Two Quy tắc tổng hợp are the same when every field is, points compared as stored (two decimals). */
+export function sameAggregation(a: AggregationRule, b: AggregationRule): boolean {
+  return a.method === b.method && a.minGraders === b.minGraders && twoDecimals(a.deviationFlagPoints) === twoDecimals(b.deviationFlagPoints);
 }
 
 /** The checked fields of a Nháp round, or a DomainError naming the first rule broken. */
