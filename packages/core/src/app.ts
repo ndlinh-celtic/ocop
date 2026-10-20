@@ -20,6 +20,9 @@ import { activateAccount, createStaffUser, describeActivation, listUsers, getUse
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
+import { closeDueSubmissions } from "./rounds/close-due";
+import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
+import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
 
@@ -92,6 +95,16 @@ export function createCore(deps: CoreDeps) {
       moveNode: moveNode(deps),
       copyVersion: copyVersion(deps),
       deleteVersion: deleteVersion(deps),
+    },
+    rounds: {
+      createRound: createRound(deps),
+      updateRound: updateRound(deps),
+      deleteRound: deleteRound(deps),
+      openRound: openRound(deps),
+      listRounds: listRounds(deps),
+      getRound: getRound(deps),
+      currentOpenRound: currentOpenRound(deps),
+      closeDueSubmissions: closeDueSubmissions(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

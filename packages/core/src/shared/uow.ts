@@ -7,6 +7,7 @@ import type { OneTimeTokenRepo } from "../identity/tokens";
 import type { NotificationRepo } from "../notifications/notification";
 import type { WardRepo } from "../org/ward";
 import type { Outbox, ProcessedEvents } from "../platform/events";
+import type { RoundRepo } from "../rounds/model";
 import type { EmailDeliveries } from "../platform/mail";
 
 /** Everything a use case can touch inside one database transaction. */
@@ -24,6 +25,7 @@ export interface Tx {
   emailDeliveries: EmailDeliveries;
   files: FileRepo;
   criteriaVersions: CriteriaVersionRepo;
+  rounds: RoundRepo;
 }
 
 export interface UnitOfWork {

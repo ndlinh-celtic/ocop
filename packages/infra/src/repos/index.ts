@@ -8,6 +8,7 @@ import { oneTimeTokenRepo, roleAssignmentRepo, sessionRepo, userRepo } from "./i
 import { notificationRepo } from "./notifications";
 import { wardRepo } from "./org";
 import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform";
+import { roundRepo } from "./rounds";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -24,5 +25,6 @@ export function buildRepos(db: Db): Tx {
     emailDeliveries: emailDeliveriesRepo(db),
     files: fileRepo(db),
     criteriaVersions: criteriaVersionRepo(db),
+    rounds: roundRepo(db),
   };
 }
