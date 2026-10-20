@@ -67,6 +67,12 @@ describe("L01 CT-01 Chủ thể self-registration", () => {
     });
   });
 
+  it("labels the Chủ thể's Phạm vi with its name, as the shell shows it", async () => {
+    const input = form({ name: "Hợp tác xã Bưởi An Phú", identifier: "0312000009", email: "htx.buoi@example.vn" });
+    const owner = await registerAndActivate(input);
+    expect((await t.app.identity.myAssignments(owner)).map((a) => [a.role, a.scopeLabel])).toEqual([["entity_owner", "Hợp tác xã Bưởi An Phú"]]);
+  });
+
   it("checks the identifier against the Loại tổ chức: 10 or 13 digit mã số thuế, 12 digit số định danh for a hộ", async () => {
     await expect(t.app.entities.register(visitor(), form({ identifier: "12345" }))).rejects.toMatchObject({ code: "identifier_invalid" });
     await expect(t.app.entities.register(visitor(), form({ kind: "household", identifier: "0312456891" }))).rejects.toMatchObject({

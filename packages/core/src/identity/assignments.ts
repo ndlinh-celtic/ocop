@@ -38,6 +38,7 @@ export async function scopeLabel(tx: Tx, a: Pick<RoleAssignment, "scopeType" | "
   if (a.scopeType === "system") return "Toàn hệ thống";
   if (a.scopeType === "province") return "Toàn tỉnh";
   if (a.scopeType === "ward" && a.scopeId) return (await tx.wards.findById(a.scopeId))?.name ?? "Xã/phường đã xóa";
+  if (a.scopeType === "entity" && a.scopeId) return (await tx.entities.findById({ kind: "entity", entityId: a.scopeId }, a.scopeId))?.name ?? "Chủ thể";
   return a.scopeId ?? "";
 }
 
