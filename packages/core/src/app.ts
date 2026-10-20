@@ -34,6 +34,7 @@ import { revealPersonalId, updateEntity } from "./entities/profile";
 import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
+import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
@@ -142,6 +143,11 @@ export function createCore(deps: CoreDeps) {
       timeline: dossierTimeline(deps),
       updateProduct: updateProduct(deps),
       addEvidenceFile: addEvidenceFile(deps),
+      removeEvidenceFile: removeEvidenceFile(deps),
+      linkEvidence: linkEvidence(deps),
+      selfScore: selfScore(deps),
+      explainCriterion: explainCriterion(deps),
+      selfAssessment: selfAssessment(deps),
       delete: deleteDossier(deps),
     },
     system: {

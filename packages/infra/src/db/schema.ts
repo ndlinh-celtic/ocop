@@ -392,3 +392,26 @@ export const evidenceFile = dossierSchema.table(
   },
   (t) => [primaryKey({ columns: [t.dossierId, t.fileId] })],
 );
+
+// Minh chứng theo tiêu chí and tự chấm thử (0020_evidence_links_and_self_assessment.sql).
+export const evidenceLink = dossierSchema.table(
+  "evidence_link",
+  {
+    dossierId: uuid("dossier_id").notNull(),
+    fileId: uuid("file_id").notNull(),
+    criterionId: uuid("criterion_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.dossierId, t.fileId, t.criterionId] })],
+);
+
+export const criterionEntry = dossierSchema.table(
+  "criterion_entry",
+  {
+    dossierId: uuid("dossier_id").notNull(),
+    criterionId: uuid("criterion_id").notNull(),
+    scoreLevelId: uuid("score_level_id"),
+    explanation: text("explanation").notNull(),
+    updatedAt: ts("updated_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.dossierId, t.criterionId] })],
+);

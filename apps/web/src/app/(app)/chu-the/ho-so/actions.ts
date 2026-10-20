@@ -1,6 +1,6 @@
 "use server";
 
-import { DomainError, type ProductField } from "@ocop/core";
+import { DomainError, type ProductField, type UploadInstructions } from "@ocop/core";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -74,4 +74,76 @@ export async function deleteDossierAction(dossierId: string, expectedVersion: nu
   }
   revalidatePath(LIST);
   redirect(LIST);
+}
+
+const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });
+
+/** L02 CT-05 step one: a pre-signed upload of a tệp minh chứng, quarantined until the virus scan (story 22). */
+export async function requestEvidenceUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+  const actor = await requireActor();
+  const parsed = uploadInput.safeParse(input);
+  if (!parsed.success) return { error: "Chọn tệp minh chứng" };
+  try {
+    return await app().core.files.requestUpload(actor, { ...parsed.data, purpose: "evidence" });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+}
+
+const editInput = z.object({ dossierId: z.string(), expectedVersion: z.number().int().positive() });
+const parts = z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional();
+
+/** Step two: the upload is complete and the file goes into the kho minh chứng of the hồ sơ (story 20). */
+export async function addEvidenceAction(input: z.infer<typeof editInput> & { fileId: string; parts?: { partNumber: number; etag: string }[] }): Promise<SaveResult> {
+  const actor = await requireActor();
+  const parsed = editInput.extend({ fileId: z.string(), parts }).safeParse(input);
+  if (!parsed.success) return { error: "Nội dung không hợp lệ", conflict: false };
+  const { parts: uploaded, ...add } = parsed.data;
+  return save(add.dossierId, async () => {
+    await app().core.files.completeUpload(actor, { fileId: add.fileId, parts: uploaded });
+    return app().core.dossiers.addEvidenceFile(actor, add);
+  });
+}
+
+/** Takes a file out of the kho minh chứng of the bản làm việc, with its ties to Tiêu chí. */
+export async function removeEvidenceAction(input: z.infer<typeof editInput> & { fileId: string }): Promise<SaveResult> {
+  const actor = await requireActor();
+  const parsed = editInput.extend({ fileId: z.string() }).safeParse(input);
+  if (!parsed.success) return { error: "Nội dung không hợp lệ", conflict: false };
+  return save(parsed.data.dossierId, () => app().core.dossiers.removeEvidenceFile(actor, parsed.data));
+}
+
+/** Story 20: the Tiêu chí a file of the kho is tied to. */
+export async function linkEvidenceAction(input: z.infer<typeof editInput> & { fileId: string; criterionIds: string[] }): Promise<SaveResult> {
+  const actor = await requireActor();
+  const parsed = editInput.extend({ fileId: z.string(), criterionIds: z.array(z.string()).max(500) }).safeParse(input);
+  if (!parsed.success) return { error: "Nội dung không hợp lệ", conflict: false };
+  return save(parsed.data.dossierId, () => app().core.dossiers.linkEvidence(actor, parsed.data));
+}
+
+/** Story 23: the Mức điểm picked for a Tiêu chí when tự chấm thử; null clears it. */
+export async function selfScoreAction(input: z.infer<typeof editInput> & { criterionId: string; levelId: string | null }): Promise<SaveResult> {
+  const actor = await requireActor();
+  const parsed = editInput.extend({ criterionId: z.string(), levelId: z.string().nullable() }).safeParse(input);
+  if (!parsed.success) return { error: "Nội dung không hợp lệ", conflict: false };
+  return save(parsed.data.dossierId, () => app().core.dossiers.selfScore(actor, parsed.data));
+}
+
+/** Story 21: the giải trình of a Tiêu chí. */
+export async function explainCriterionAction(input: z.infer<typeof editInput> & { criterionId: string; explanation: string }): Promise<SaveResult> {
+  const actor = await requireActor();
+  const parsed = editInput.extend({ criterionId: z.string(), explanation: z.string().max(10_000) }).safeParse(input);
+  if (!parsed.success) return { error: "Giải trình quá dài", conflict: false };
+  return save(parsed.data.dossierId, () => app().core.dossiers.explainCriterion(actor, parsed.data));
+}
+
+/** Runs one write of the hồ sơ editor; a stale version is reported so the editor can reload. */
+async function save(dossierId: string, write: () => Promise<{ version: number }>): Promise<SaveResult> {
+  try {
+    const result = await write();
+    revalidatePath(`${LIST}/${dossierId}`);
+    return result;
+  } catch (err) {
+    return { error: domainMessage(err), conflict: err instanceof DomainError && err.code === "version_conflict" };
+  }
 }

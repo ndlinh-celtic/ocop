@@ -58,6 +58,10 @@ export function ProductForm({ dossierId, initial, version: initialVersion, edita
   }
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
+  // Other editors of the page (kho minh chứng, tự chấm thử) bump the version too; follow the page's latest.
+  useEffect(() => {
+    version.current = Math.max(version.current, initialVersion);
+  }, [initialVersion]);
 
   function change(name: ProductField, value: string) {
     setValues((v) => ({ ...v, [name]: value }));

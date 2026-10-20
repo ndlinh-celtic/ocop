@@ -36,15 +36,18 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return t.signInAs(email, PASSWORD);
   }
 
-  /** Uploads a PDF through the files flow (pre-signed PUT, then the scan) and returns its id. */
-  async function uploadPdf(actor: UserActor, purpose: FilePurpose, fileName = "Tệp.pdf") {
-    const content = Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(300)]);
+  /**
+   * Uploads a PDF through the files flow (pre-signed PUT, then the scan) and returns its id. With
+   * `scan: false` the file is left `scanning`; `content` replaces the random PDF (e.g. EICAR).
+   */
+  async function uploadPdf(actor: UserActor, purpose: FilePurpose, fileName = "Tệp.pdf", opts: { scan?: boolean; content?: Buffer } = {}) {
+    const content = opts.content ?? Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(300)]);
     const { fileId, upload } = await t.app.files.requestUpload(actor, { purpose, fileName, contentType: "application/pdf", size: content.length });
     if (upload.kind !== "single") throw new Error("expected a single PUT");
     const res = await fetch(upload.url, { method: "PUT", headers: upload.headers, body: content });
     if (!res.ok) throw new Error(`PUT ${res.status}`);
     await t.app.files.completeUpload(actor, { fileId });
-    await t.drainJobs();
+    if (opts.scan !== false) await t.drainJobs();
     return fileId;
   }
 

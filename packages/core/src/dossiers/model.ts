@@ -118,6 +118,32 @@ export interface DossierRepo {
   addEvidence(e: { dossierId: string; fileId: string; addedBy: string; addedAt: Date }): Promise<boolean>;
   /** Kho minh chứng of a hồ sơ the caller has already loaded within its scope, oldest first. */
   evidence(dossierId: string): Promise<EvidenceFile[]>;
+  /** Takes a file out of the kho with its ties to Tiêu chí; false when it was not there. */
+  removeEvidence(dossierId: string, fileId: string): Promise<boolean>;
+  /** Replaces the Tiêu chí a file of the kho is tied to. */
+  setEvidenceLinks(dossierId: string, fileId: string, criterionIds: readonly string[]): Promise<void>;
+  /** Every gắn minh chứng – tiêu chí of a hồ sơ already loaded within scope. */
+  evidenceLinks(dossierId: string): Promise<EvidenceLink[]>;
+  /** Tự chấm and giải trình of a hồ sơ already loaded within scope, one per Tiêu chí touched. */
+  criterionEntries(dossierId: string): Promise<CriterionEntry[]>;
+  /** Inserts or replaces the entry of one Tiêu chí. */
+  saveCriterionEntry(e: CriterionEntry): Promise<void>;
+}
+
+/** Gắn minh chứng – tiêu chí (story 20): one file of the kho tied to one Tiêu chí. */
+export interface EvidenceLink {
+  fileId: string;
+  criterionId: string;
+}
+
+/** What the Chủ thể wrote for one Tiêu chí of its hồ sơ: the Mức điểm picked when tự chấm thử, and its giải trình. */
+export interface CriterionEntry {
+  dossierId: string;
+  criterionId: string;
+  /** A Mức điểm of the Tiêu chí, in the published Phiên bản tiêu chí of the hồ sơ; null until picked. */
+  scoreLevelId: string | null;
+  explanation: string;
+  updatedAt: Date;
 }
 
 export const dossierNotFound = () => new DomainError("not_found", "Không tìm thấy hồ sơ");

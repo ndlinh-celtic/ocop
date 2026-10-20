@@ -27,16 +27,38 @@ export interface TransitionRule {
 export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt">;
 
 /** Actions on an existing hồ sơ; their audit action is the same string. */
-export const DOSSIER_ACTIONS = ["dossier.edit", "dossier.evidence.add", "dossier.delete"] as const;
+export const DOSSIER_ACTIONS = [
+  "dossier.edit",
+  "dossier.evidence.add",
+  "dossier.evidence.remove",
+  "dossier.evidence.link",
+  "dossier.self_score",
+  "dossier.explain",
+  "dossier.delete",
+] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
-export const DOSSIER_EVENT_TYPES = ["dossier.created", "dossier.updated", "dossier.evidence_added", "dossier.deleted"] as const;
+export const DOSSIER_EVENT_TYPES = [
+  "dossier.created",
+  "dossier.updated",
+  "dossier.evidence_added",
+  "dossier.evidence_removed",
+  "dossier.evidence_linked",
+  "dossier.self_scored",
+  "dossier.explained",
+  "dossier.deleted",
+] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
 export const TRANSITIONS: readonly TransitionRule[] = [
   // L02 CT-03: the Chủ thể writes its Nháp (#39 adds the same rows from supplement_requested).
   { action: "dossier.edit", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.updated", timeline: false },
   { action: "dossier.evidence.add", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.evidence_added", timeline: false },
+  // L02 CT-05, CT-06: minh chứng theo tiêu chí, giải trình and tự chấm thử on the bản làm việc.
+  { action: "dossier.evidence.remove", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.evidence_removed", timeline: false },
+  { action: "dossier.evidence.link", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.evidence_linked", timeline: false },
+  { action: "dossier.self_score", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.self_scored", timeline: false },
+  { action: "dossier.explain", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.explained", timeline: false },
   // Story 26: a Nháp, which by this table has never been submitted, may be deleted.
   { action: "dossier.delete", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.deleted", timeline: true },
 ];

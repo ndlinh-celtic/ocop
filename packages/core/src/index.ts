@@ -165,7 +165,9 @@ export {
   type DossierEvent,
   type DossierRepo,
   type DossierState,
+  type CriterionEntry,
   type EvidenceFile,
+  type EvidenceLink,
   type ProductField,
   type ProductInfo,
 } from "./dossiers/model";
@@ -173,3 +175,4 @@ export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";
 export type { DossierSummary, DossierView } from "./dossiers/read";
+export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
