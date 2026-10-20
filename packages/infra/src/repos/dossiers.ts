@@ -1,7 +1,7 @@
 import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
 import { and, asc, desc, eq, inArray, isNull, max, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { checklistResult, criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
+import { checklistResult, criterionEntry, dossier, dossierEvent, entity, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -16,6 +16,13 @@ function inScope(scope: DataScope): SQL {
     case "ward":
       // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
       return and(live, eq(dossier.wardId, scope.wardId))!;
+    case "on_behalf":
+      // Nhập hộ (story 75): every hồ sơ of the Chủ thể, only while it is đăng ký ở xã of the officer.
+      return and(
+        live,
+        eq(dossier.entityId, scope.entityId),
+        sql`exists (select 1 from ${entity} where ${entity.id} = ${dossier.entityId} and ${entity.wardId} = ${scope.wardId})`,
+      )!;
     case "none":
       return sql`false`;
     default: {

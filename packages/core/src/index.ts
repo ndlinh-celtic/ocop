@@ -135,6 +135,7 @@ export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity"
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
 export { dataScopeOf, type DataScope } from "./identity/scope";
+export { onBehalfOf } from "./identity/on-behalf";
 export {
   assertIdentifierShape,
   ENTITY_KIND_LABEL,

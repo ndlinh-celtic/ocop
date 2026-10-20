@@ -1,4 +1,4 @@
-import { dossierInScope, ruleFor, type DossierAction, type DossierRef } from "../dossiers/transitions";
+import { dossierInScope, recordedAction, ruleAllows, ruleFor, type DossierAction, type DossierRef } from "../dossiers/transitions";
 import type { Actor } from "../shared/context";
 import { forbidden } from "../shared/errors";
 import type { Role } from "./roles";
@@ -46,6 +46,12 @@ const ROLE_ACTIONS = {
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
   "dossier.document.download": ["entity_owner", "ward_officer"],
+  // L01 Nhập hộ (stories 72 to 75): what a Cán bộ xã may do for a Chủ thể đăng ký ở xã mình, through
+  // onBehalfOf(). The actions on one hồ sơ are the transition table's rows marked `onBehalf`.
+  "dossier.read_on_behalf": ["ward_officer"],
+  "dossier.create_on_behalf": ["ward_officer"],
+  "dossier.evidence.upload_on_behalf": ["ward_officer"],
+  "dossier.document.download_on_behalf": ["ward_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
@@ -53,13 +59,17 @@ const SELF_ACTIONS = ["notification.read_own", "role.switch_own", "totp.enroll_o
 
 export type Action = keyof typeof ROLE_ACTIONS | (typeof SELF_ACTIONS)[number];
 
-type PolicyActor = { kind: "user"; activeRole: Role | null } | { kind: "anonymous" | "system" };
+type PolicyActor = { kind: "user"; activeRole: Role | null; onBehalfOf?: string } | { kind: "anonymous" | "system" };
 
 /**
  * `can(actor, action)`: whether the Vai trò đang dùng may take an action that has no resource.
  * `can(actor, action, dossier)`: whether it may take this action on this loaded hồ sơ: the transition
  * table has a row for the action from the hồ sơ's state that lists the Vai trò, and the actor's Phạm vi
  * covers the hồ sơ. Guards that depend on time are checked again by transition().
+ *
+ * An actor doing Nhập hộ (`onBehalfOf`) may take only the `*_on_behalf` variant of an action: a row of
+ * ROLE_ACTIONS under that name, or a row of the transition table marked `onBehalf`, and in both cases
+ * only as a Cán bộ xã.
  */
 export function can(actor: PolicyActor, action: Action): boolean;
 export function can(actor: Actor, action: DossierAction, dossier: DossierRef): boolean;
@@ -67,11 +77,12 @@ export function can(actor: PolicyActor | Actor, action: Action | DossierAction, 
   if (actor.kind !== "user") return false;
   if (dossier) {
     const rule = ruleFor(action as DossierAction, dossier.state);
-    return !!rule && actor.activeRole !== null && rule.roles.includes(actor.activeRole) && dossierInScope(dataScopeOf(actor as Actor), dossier);
+    return !!rule && ruleAllows(rule, actor) && dossierInScope(dataScopeOf(actor as Actor), dossier);
   }
   if ((SELF_ACTIONS as readonly string[]).includes(action)) return true;
-  const allowed = ROLE_ACTIONS[action as keyof typeof ROLE_ACTIONS] as readonly Role[];
-  return actor.activeRole !== null && allowed.includes(actor.activeRole);
+  if (actor.activeRole === null) return false;
+  const allowed = ROLE_ACTIONS[recordedAction(action, actor) as keyof typeof ROLE_ACTIONS] as readonly Role[] | undefined;
+  return !!allowed && allowed.includes(actor.activeRole);
 }
 
 export function authorize(actor: Actor, action: Action): asserts actor is Extract<Actor, { kind: "user" }> {
