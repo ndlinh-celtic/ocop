@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
@@ -34,6 +35,8 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
   const submittable = can(actor, "dossier.submit", dossier);
   const check = submittable ? await app().core.dossiers.submissionCheck(actor, { dossierId }) : null;
   const withdrawable = can(actor, "dossier.withdraw", dossier) && dossier.receivedAt === null;
+  // Story 35: the Báo cáo đánh giá cấp xã once signed, never the nhận xét of the Checklist sơ bộ.
+  const { signed } = dossier.receivedAt ? await app().core.dossiers.wardReport(actor, { dossierId }) : { signed: null };
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,6 +76,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
           </p>
           <SubmissionDocuments dossierId={dossier.id} submissionNumber={dossier.latestSubmission.number} />
           {dossier.receivedAt && <p>Xã đã tiếp nhận lúc {formatVnDateTime(dossier.receivedAt)}.</p>}
+          {signed && <SignedWardReport dossierId={dossier.id} signed={signed} />}
           <DossierFlags flags={dossier.flags} />
         </section>
       )}

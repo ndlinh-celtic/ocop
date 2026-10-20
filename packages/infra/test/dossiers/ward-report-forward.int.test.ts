@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import PizZip from "pizzip";
 import type { UserActor } from "@ocop/core";
 import { seedWards } from "../../src/seed/wards";
-import { createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
+import { createTestApp, createTestDatabase, EICAR, systemActor, type TestApp, type TestDatabase } from "../support";
 import { ADMIN, entityIdOf, fixtures, PRODUCT } from "./fixtures";
 
 let db: TestDatabase;
@@ -133,13 +133,28 @@ describe("L06 XA-07 bản Báo cáo đánh giá cấp xã đã ký (story 65)", 
     await expect(
       t.app.files.requestUpload(officer, { purpose: "signed_ward_report", fileName: "BC.docx", contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 10 }),
     ).rejects.toMatchObject({ code: "file_type_not_allowed" });
-    await expect(attach(await f.uploadPdf(officer, "signed_ward_report", "Đang quét.pdf", { scan: false }))).rejects.toMatchObject({ code: "file_not_ready" });
+    const { fileId: pending } = await t.app.files.requestUpload(officer, { purpose: "signed_ward_report", fileName: "Chưa tải.pdf", contentType: "application/pdf", size: 10 });
+    await expect(attach(pending)).rejects.toMatchObject({ code: "file_not_ready" });
+    const infected = await f.uploadPdf(officer, "signed_ward_report", "Nhiễm.pdf", { content: Buffer.from(`%PDF-1.7\n${EICAR}`) });
+    await expect(attach(infected)).rejects.toMatchObject({ code: "file_blocked" });
     await expect(attach(await f.uploadPdf(a, "evidence", "Minh chứng.pdf"))).rejects.toMatchObject({ code: "not_found" });
     const colleague = await f.staff("ward_officer", wardId);
     await expect(attach(await f.uploadPdf(colleague, "signed_ward_report"))).rejects.toMatchObject({ code: "not_found" });
     await expect(t.app.files.requestUpload(a, { purpose: "signed_ward_report", fileName: "BC.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({
       code: "forbidden",
     });
+  });
+
+  it("is attached while its virus scan runs, but gửi tỉnh waits until the scan finds it clean", async () => {
+    const officer = await f.staff("ward_officer", wardId);
+    const { dossierId, version } = await assessed(officer);
+    const fileId = await f.uploadPdf(officer, "signed_ward_report", "Đang quét.pdf", { scan: false });
+    const { version: v2 } = await t.app.dossiers.attachSignedWardReport(officer, { dossierId, expectedVersion: version, fileId });
+    expect((await t.app.dossiers.wardReport(officer, { dossierId })).signed).toMatchObject({ fileId, status: "scanning" });
+
+    await expect(t.app.dossiers.forwardToProvince(officer, { dossierId, expectedVersion: v2 })).rejects.toMatchObject({ code: "ward_report_not_ready" });
+    await t.drainJobs();
+    await expect(t.app.dossiers.forwardToProvince(officer, { dossierId, expectedVersion: v2 })).resolves.toEqual({ version: v2 + 1 });
   });
 
   it("the Chủ thể sees and downloads the signed report; another Chủ thể does not (story 35)", async () => {

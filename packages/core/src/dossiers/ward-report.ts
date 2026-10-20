@@ -8,6 +8,7 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
+import type { FileStatus } from "../files/model";
 import type { Tx } from "../shared/uow";
 import { checklistOf } from "./checklist";
 import { vnDate, vnNumber } from "./documents";
@@ -106,7 +107,9 @@ export function attachSignedWardReport(deps: CoreDeps) {
       assertIdShape(input.fileId, fileNotFound);
       const file = await tx.files.findById(input.fileId);
       if (!file || file.ownerUserId !== actor.userId || file.purpose !== "signed_ward_report") throw fileNotFound();
-      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa quét xong hoặc đã bị chặn");
+      // A file still being scanned may be attached; gửi tỉnh waits for it to be clean.
+      if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa được tải lên xong");
+      if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp đã bị chặn vì không an toàn, hãy tải lên bản khác");
       const latest = await tx.dossiers.latestSubmission(before.id);
       if (!latest) throw dossierNotFound();
       const after = await transition(deps, tx, actor, before, {
@@ -129,7 +132,7 @@ export function attachSignedWardReport(deps: CoreDeps) {
 
 export interface WardReportStatus {
   /** The newest signed report; `current` when it reports on the newest Phiên bản nộp. */
-  signed: { fileId: string; fileName: string; submissionNumber: number; uploadedAt: Date; current: boolean } | null;
+  signed: { fileId: string; fileName: string; status: FileStatus; submissionNumber: number; uploadedAt: Date; current: boolean } | null;
   /** Every item of the Checklist sơ bộ has a result. */
   checklistComplete: boolean;
   /** Hạn gửi tỉnh of the hồ sơ's đợt; null before the first nộp. */
@@ -147,6 +150,7 @@ async function statusOf(tx: Tx, dossier: Dossier, now: Date): Promise<WardReport
     signed: report && {
       fileId: report.fileId,
       fileName: report.fileName,
+      status: report.fileStatus,
       submissionNumber: report.submissionNumber,
       uploadedAt: report.uploadedAt,
       current: report.submissionNumber === latest?.number,
@@ -183,6 +187,7 @@ export function downloadSignedWardReport(deps: CoreDeps) {
       const report = await tx.dossiers.latestWardReport(dossier.id);
       const file = report && (await tx.files.findById(report.fileId));
       if (!report || !file) throw fileNotFound();
+      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
       const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), deps.clock.now(), {
@@ -225,7 +230,9 @@ export function forwardToProvince(deps: CoreDeps) {
           checklist: items.map((i) => ({ itemCode: i.code, label: i.label, result: results.get(i.code)?.result ?? null })),
         },
       });
-      if (!status.signed?.current) throw new DomainError("ward_report_missing", "Chưa có Báo cáo đánh giá cấp xã đã ký cho Phiên bản nộp mới nhất");
+      const signed = status.signed?.current && status.signed.status !== "blocked" ? status.signed : null;
+      if (!signed) throw new DomainError("ward_report_missing", "Chưa có Báo cáo đánh giá cấp xã đã ký cho Phiên bản nộp mới nhất");
+      if (signed.status !== "clean") throw new DomainError("ward_report_not_ready", "Bản đã ký đang được quét virus, hãy thử lại sau ít phút");
       if (!status.checklistComplete) throw new DomainError("checklist_incomplete", "Chưa đánh giá đủ các mục Checklist sơ bộ");
       if (status.pastForwardingDeadline) throw new DomainError("forwarding_deadline_passed", "Đã quá Hạn gửi tỉnh của đợt; hồ sơ chờ đợt sau");
       return { version: after.version };

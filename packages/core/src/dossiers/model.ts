@@ -152,7 +152,7 @@ export interface DossierRepo {
   /** Appends a signed Báo cáo đánh giá cấp xã; the DB refuses any later change. */
   insertWardReport(r: WardReport): Promise<void>;
   /** The newest signed Báo cáo đánh giá cấp xã of a hồ sơ already loaded within scope, with its file name. */
-  latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string }) | null>;
+  latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string; fileStatus: FileStatus }) | null>;
 }
 
 /**

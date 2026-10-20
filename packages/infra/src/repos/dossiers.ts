@@ -130,6 +130,7 @@ export function dossierRepo(db: Db): DossierRepo {
           uploadedBy: wardReport.uploadedBy,
           uploadedAt: wardReport.uploadedAt,
           fileName: file.fileName,
+          fileStatus: file.status,
         })
         .from(wardReport)
         .innerJoin(file, eq(file.id, wardReport.fileId))
