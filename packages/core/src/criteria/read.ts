@@ -96,12 +96,11 @@ export function getCriteriaSet(deps: CoreDeps) {
       const found = await tx.criteriaVersions.findSet(input.setId);
       const version = found && (await tx.criteriaVersions.findById(found.versionId));
       if (!found || !version || !visible(actor, version)) throw setNotFound();
-      const t = await tx.criteriaVersions.taxonomy(version.id);
-      const subgroup = t.subgroups.find((s) => s.id === found.rows.set.subgroupId);
-      const group = t.productGroups.find((g) => g.id === subgroup?.productGroupId);
+      const subgroup = (await tx.criteriaVersions.findNode("subgroup", found.rows.set.subgroupId))?.row;
+      const group = subgroup && (await tx.criteriaVersions.findNode("productGroup", subgroup.productGroupId))?.row;
       return {
         version: { id: version.id, legalBasis: version.legalBasis, status: version.status },
-        thresholds: t.thresholds,
+        thresholds: await tx.criteriaVersions.thresholds(version.id),
         productGroup: group?.name ?? "",
         subgroup: subgroup?.name ?? "",
         set: assembleSet(found.rows),

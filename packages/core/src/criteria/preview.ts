@@ -26,7 +26,7 @@ export function previewSet(deps: CoreDeps) {
       assertIdShape(input.setId, setNotFound);
       const found = await tx.criteriaVersions.findSet(input.setId);
       if (!found) throw setNotFound();
-      return { rows: found.rows, thresholds: (await tx.criteriaVersions.taxonomy(found.versionId)).thresholds };
+      return { rows: found.rows, thresholds: await tx.criteriaVersions.thresholds(found.versionId) };
     });
     const set = assembleSet(rows);
     const owner = new Map(rows.levels.map((l) => [l.id, l]));

@@ -151,9 +151,13 @@ export interface CriteriaVersionRepo {
   /** Inserts a version with its whole tree. */
   insert(version: CriteriaVersion, rows: VersionRows): Promise<void>;
   findById(id: string): Promise<CriteriaVersion | null>;
+  /** The versions with these ids, in no particular order; unknown ids are left out. One query. */
+  findByIds(ids: readonly string[]): Promise<CriteriaVersion[]>;
   /** Newest first. */
   list(filter: { status?: VersionStatus }): Promise<VersionSummary[]>;
   taxonomy(versionId: string): Promise<VersionTaxonomy>;
+  /** Only the Ngưỡng hạng of a version, without its Cây phân loại. */
+  thresholds(versionId: string): Promise<RankThresholds>;
   findSet(setId: string): Promise<{ versionId: string; rows: SetRows } | null>;
   /** Like findById, but holds a row lock until the transaction ends (SELECT … FOR UPDATE). */
   lock(id: string): Promise<CriteriaVersion | null>;

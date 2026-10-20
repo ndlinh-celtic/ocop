@@ -1,4 +1,4 @@
-import type { CriteriaVersion, CriteriaVersionRepo, DraftNodeKind, SetRows, VersionStatus } from "@ocop/core";
+import type { CriteriaVersion, CriteriaVersionRepo, DraftNodeKind, RankThresholds, SetRows, VersionStatus } from "@ocop/core";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { Db } from "../db/types";
@@ -47,14 +47,19 @@ const toVersion = (row: typeof criteriaVersion.$inferSelect): CriteriaVersion =>
 
 export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
   /** Ngưỡng hạng and Cây phân loại of a version, without the per-set Tiêu chí count (loadRows has the criteria anyway). */
+  async function thresholdsOf(versionId: string): Promise<RankThresholds> {
+    const rows = await db.select().from(rankThreshold).where(eq(rankThreshold.versionId, versionId));
+    const min = (stars: 2 | 3 | 4 | 5) => rows.find((t) => t.stars === stars)?.minScore ?? 0;
+    return { 2: min(2), 3: min(3), 4: min(4), 5: min(5) };
+  }
+
   async function taxonomyRows(versionId: string) {
-    const thresholds = await db.select().from(rankThreshold).where(eq(rankThreshold.versionId, versionId));
+    const thresholds = await thresholdsOf(versionId);
     const groups = await db.select().from(productGroup).where(eq(productGroup.versionId, versionId)).orderBy(asc(productGroup.position));
     const subgroups = await db.select().from(productSubgroup).where(eq(productSubgroup.versionId, versionId)).orderBy(asc(productSubgroup.position));
     const sets = await db.select().from(criteriaSet).where(eq(criteriaSet.versionId, versionId)).orderBy(asc(criteriaSet.position));
-    const min = (stars: 2 | 3 | 4 | 5) => thresholds.find((t) => t.stars === stars)?.minScore ?? 0;
     return {
-      thresholds: { 2: min(2), 3: min(3), 4: min(4), 5: min(5) },
+      thresholds,
       productGroups: groups.map(({ versionId: _, ...g }) => g),
       subgroups: subgroups.map(({ versionId: _, ...s }) => s),
       sets: sets.map(({ versionId: _, ...s }) => s),
@@ -86,6 +91,14 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
       const [row] = await db.select().from(criteriaVersion).where(eq(criteriaVersion.id, id));
       return row ? toVersion(row) : null;
     },
+
+    async findByIds(ids) {
+      if (ids.length === 0) return [];
+      const rows = await db.select().from(criteriaVersion).where(inArray(criteriaVersion.id, [...ids]));
+      return rows.map(toVersion);
+    },
+
+    thresholds: thresholdsOf,
 
     async list(filter) {
       const setCounts = db

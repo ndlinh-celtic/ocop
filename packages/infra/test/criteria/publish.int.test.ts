@@ -159,7 +159,13 @@ describe("L19 xem phiên bản đã phát hành", () => {
     expect(listed).not.toContain(draft);
     const tree = await t.app.criteria.getVersion(member, { versionId: published });
     const setId = tree.productGroups[0]!.subgroups[0]!.sets[0]!.id;
-    expect(await t.app.criteria.getCriteriaSet(member, { setId })).toMatchObject({ version: { id: published, status: "published" }, set: { code: "1" } });
+    expect(await t.app.criteria.getCriteriaSet(member, { setId })).toMatchObject({
+      version: { id: published, status: "published" },
+      thresholds: tree.thresholds,
+      productGroup: "Nhóm thử",
+      subgroup: "Phân nhóm thử",
+      set: { code: "1" },
+    });
     await expect(t.app.criteria.getVersion(member, { versionId: draft })).rejects.toMatchObject({ code: "not_found" });
   });
 });

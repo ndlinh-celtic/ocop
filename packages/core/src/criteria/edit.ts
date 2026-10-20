@@ -122,7 +122,7 @@ export function editDraft(deps: CoreDeps) {
         return edited(version.id, d);
       }
       if (edit.node === "thresholds") {
-        const current: RankThresholds = (await tx.criteriaVersions.taxonomy(version.id)).thresholds;
+        const current: RankThresholds = await tx.criteriaVersions.thresholds(version.id);
         const d = diff(current, edit.changes);
         if (d) await tx.criteriaVersions.setThresholds(version.id, { ...current, ...d.after });
         return edited(version.id, d);

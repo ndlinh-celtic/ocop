@@ -22,7 +22,7 @@ export const roundVisibleTo = (actor: Actor, round: Round) => round.status !== "
 
 async function withVersions(tx: Tx, rounds: Round[]): Promise<RoundView[]> {
   const ids = [...new Set(rounds.map((r) => r.criteriaVersionId))];
-  const versions = new Map((await Promise.all(ids.map((id) => tx.criteriaVersions.findById(id)))).flatMap((v) => (v ? [[v.id, v] as const] : [])));
+  const versions = new Map((await tx.criteriaVersions.findByIds(ids)).map((v) => [v.id, v]));
   return rounds.map((r) => {
     const v = versions.get(r.criteriaVersionId);
     return { ...r, criteriaVersion: { id: r.criteriaVersionId, legalBasis: v?.legalBasis ?? "", issuedOn: v?.issuedOn ?? "" } };
