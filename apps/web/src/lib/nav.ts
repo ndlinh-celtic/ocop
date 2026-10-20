@@ -63,7 +63,7 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   province_officer: [
     HOME,
-    { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: false },
+    { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: true },
     { href: "/so/ho-so", label: "Hồ sơ toàn tỉnh", icon: FolderOpen, ready: false },
     { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: false },
     STATS,

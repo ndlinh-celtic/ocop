@@ -8,7 +8,11 @@ export type DomainEventBody =
   | { type: "files.uploaded"; payload: { fileId: string } }
   | { type: "files.blocked"; payload: { fileId: string } }
   | { type: "criteria.version.imported"; payload: { versionId: string } }
-  | { type: "criteria.version.published"; payload: { versionId: string } };
+  | { type: "criteria.version.published"; payload: { versionId: string } }
+  | { type: "round.created"; payload: { roundId: string } }
+  | { type: "round.updated"; payload: { roundId: string } }
+  | { type: "round.deleted"; payload: { roundId: string } }
+  | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } };
 
 export type EventType = DomainEventBody["type"];
 
