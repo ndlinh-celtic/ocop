@@ -85,6 +85,41 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
       };
     },
 
+    async lock(id) {
+      const [row] = await db.select().from(criteriaVersion).where(eq(criteriaVersion.id, id)).for("update");
+      return row ? toVersion(row) : null;
+    },
+
+    async loadRows(versionId) {
+      const t = await this.taxonomy(versionId);
+      const exclusions = await db.select().from(exclusionCondition).where(eq(exclusionCondition.versionId, versionId)).orderBy(asc(exclusionCondition.position));
+      const parts = await db.select().from(criteriaPart).where(eq(criteriaPart.versionId, versionId)).orderBy(asc(criteriaPart.position));
+      const sections = await db.select().from(criteriaSection).where(eq(criteriaSection.versionId, versionId)).orderBy(asc(criteriaSection.position));
+      const groups = await db.select().from(criterionGroup).where(eq(criterionGroup.versionId, versionId)).orderBy(asc(criterionGroup.position));
+      const criteria = await db.select().from(criterion).where(eq(criterion.versionId, versionId)).orderBy(asc(criterion.position));
+      const levels = await db.select().from(scoreLevel).where(eq(scoreLevel.versionId, versionId)).orderBy(asc(scoreLevel.position));
+      const ofSet = <R extends { setId: string; versionId: string }>(rows: R[], setId: string) =>
+        rows.filter((r) => r.setId === setId).map(({ versionId: _, ...r }) => r);
+      return {
+        thresholds: t.thresholds,
+        productGroups: t.productGroups,
+        subgroups: t.subgroups,
+        sets: t.sets.map(({ criterionCount: _, ...set }) => ({
+          set,
+          exclusions: ofSet(exclusions, set.id),
+          parts: ofSet(parts, set.id),
+          sections: ofSet(sections, set.id),
+          criterionGroups: ofSet(groups, set.id),
+          criteria: ofSet(criteria, set.id),
+          levels: ofSet(levels, set.id),
+        })),
+      };
+    },
+
+    async markPublished(id, at, by) {
+      await db.update(criteriaVersion).set({ status: "published", publishedAt: at, publishedBy: by }).where(eq(criteriaVersion.id, id));
+    },
+
     async findSet(setId) {
       const [set] = await db.select().from(criteriaSet).where(eq(criteriaSet.id, setId));
       if (!set) return null;

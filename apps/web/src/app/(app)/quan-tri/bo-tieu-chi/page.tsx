@@ -5,7 +5,7 @@ import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { ImportForm } from "./import-form";
-import { formatIsoDate, StatusTag } from "./status-tag";
+import { formatIsoDate, StatusTag } from "@/components/criteria/status-tag";
 
 export const dynamic = "force-dynamic";
 
