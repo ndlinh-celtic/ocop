@@ -19,7 +19,15 @@ export type { Ward, WardRepo } from "./org/ward";
 export type { Notification, NotificationRepo } from "./notifications/notification";
 export { REAUTH_WINDOW_MS, requireRecentAuth, type ReauthProof, type ReauthResult } from "./identity/reauth";
 export type { FileStore, PresignedRequest } from "./files/file-store";
-export { DEFAULT_ALLOWED_TYPES, FILE_PURPOSES, type FilePurpose, type FileRepo, type FileStatus, type StoredFile } from "./files/model";
+export { DEFAULT_ALLOWED_TYPES, FILE_PURPOSES, type FilePurpose, type FileRepo, type FileStatus, type StoredFile, type StoredFilePurpose } from "./files/model";
+export {
+  DOCX_TYPE,
+  type DocumentRenderer,
+  type DocumentTemplate,
+  type DocumentTemplates,
+  type RegistrationFormData,
+  type SelfAssessmentReportData,
+} from "./documents/renderer";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
@@ -183,3 +191,4 @@ export type { UpdateProductInput } from "./dossiers/edit";
 export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
+export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";

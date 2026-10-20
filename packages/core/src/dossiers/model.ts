@@ -206,8 +206,8 @@ export interface SubmissionSnapshot {
   /** Tổng điểm and Hạng sao of the tự chấm, for reference only. */
   selfScore: { total: number; star: number };
   /**
-   * The Phiếu đăng ký and Báo cáo tự đánh giá generated for this nộp (#37), as file ids; null until the
-   * generation is in place.
+   * The Phiếu đăng ký and Báo cáo tự đánh giá generated for this nộp (#37), as file ids. Null only in a
+   * Phiên bản nộp written before the generation was in place.
    */
   documents: { registrationForm: string | null; selfAssessmentReport: string | null };
 }

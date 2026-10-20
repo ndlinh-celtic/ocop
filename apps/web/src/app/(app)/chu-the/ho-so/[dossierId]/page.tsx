@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -66,10 +67,11 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
       </div>
 
       {dossier.latestSubmission && (
-        <section className="rounded-lg border bg-surface p-4 text-sm shadow-card">
+        <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
           <p>
             Phiên bản nộp {dossier.latestSubmission.number}, nộp lúc {formatVnDateTime(dossier.latestSubmission.submittedAt)}.
           </p>
+          <SubmissionDocuments dossierId={dossier.id} submissionNumber={dossier.latestSubmission.number} />
           {dossier.receivedAt && <p>Xã đã tiếp nhận lúc {formatVnDateTime(dossier.receivedAt)}.</p>}
           <DossierFlags flags={dossier.flags} />
         </section>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -53,9 +54,12 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
 
       <section className="rounded-lg border bg-surface p-4 text-sm shadow-card">
         {latest && (
-          <p>
-            Phiên bản nộp {latest.number}, nộp lúc {formatVnDateTime(latest.submittedAt)}.
-          </p>
+          <>
+            <p>
+              Phiên bản nộp {latest.number}, nộp lúc {formatVnDateTime(latest.submittedAt)}.
+            </p>
+            <SubmissionDocuments dossierId={dossier.id} submissionNumber={latest.number} />
+          </>
         )}
         {dossier.receivedAt ? (
           <p>

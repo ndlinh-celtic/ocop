@@ -44,6 +44,8 @@ const ROLE_ACTIONS = {
   "dossier.evidence.upload": ["entity_owner"],
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
+  // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
+  "dossier.document.download": ["entity_owner", "ward_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
