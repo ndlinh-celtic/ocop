@@ -1,3 +1,4 @@
+import type { DossierState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -122,7 +123,7 @@ export const notification = platform.table("notification", {
 export const file = platform.table("file", {
   id: uuid("id").primaryKey(),
   ownerUserId: uuid("owner_user_id").notNull(),
-  purpose: text("purpose").$type<"test_upload" | "legal_document">().notNull(),
+  purpose: text("purpose").$type<"test_upload" | "legal_document" | "evidence">().notNull(),
   storageKey: text("storage_key").notNull(),
   fileName: text("file_name").notNull(),
   declaredType: text("declared_type").notNull(),
@@ -338,3 +339,56 @@ export const rateLimitHit = platform.table("rate_limit_hit", {
   subjectHash: text("subject_hash").notNull(),
   occurredAt: ts("occurred_at").notNull(),
 });
+
+// Hồ sơ (0019_dossiers.sql).
+export const dossierSchema = pgSchema("dossier");
+
+export const dossier = dossierSchema.table("dossier", {
+  id: uuid("id").primaryKey(),
+  entityId: uuid("entity_id").notNull(),
+  criteriaSetId: uuid("criteria_set_id").notNull(),
+  criteriaVersionId: uuid("criteria_version_id").notNull(),
+  state: text("state").$type<DossierState>().notNull(),
+  wardId: uuid("ward_id"),
+  roundId: uuid("round_id"),
+  productName: text("product_name").notNull(),
+  description: text("description").notNull(),
+  ingredients: text("ingredients").notNull(),
+  process: text("process").notNull(),
+  packaging: text("packaging").notNull(),
+  qualityDeclaration: text("quality_declaration").notNull(),
+  receivedAt: ts("received_at"),
+  receivedBy: uuid("received_by"),
+  handlerUserId: uuid("handler_user_id"),
+  firstForwardedAt: ts("first_forwarded_at"),
+  copiedFrom: uuid("copied_from"),
+  deletedAt: ts("deleted_at"),
+  version: integer("version").notNull(),
+  createdAt: ts("created_at").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+});
+
+export const dossierEvent = dossierSchema.table("dossier_event", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  action: text("action").notNull(),
+  fromState: text("from_state").$type<DossierState>(),
+  toState: text("to_state").$type<DossierState>().notNull(),
+  actorUserId: uuid("actor_user_id"),
+  actorRole: text("actor_role"),
+  occurredAt: ts("occurred_at").notNull(),
+  reason: text("reason"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull(),
+});
+
+export const evidenceFile = dossierSchema.table(
+  "evidence_file",
+  {
+    dossierId: uuid("dossier_id").notNull(),
+    fileId: uuid("file_id").notNull(),
+    addedBy: uuid("added_by").notNull(),
+    addedAt: ts("added_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.dossierId, t.fileId] })],
+);

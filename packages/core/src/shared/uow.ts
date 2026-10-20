@@ -12,6 +12,7 @@ import type { EmailDeliveries } from "../platform/mail";
 import type { EntityRepo } from "../entities/model";
 import type { LegalDocumentRepo } from "../entities/legal";
 import type { RateLimitRepo } from "../platform/rate-limit";
+import type { DossierRepo } from "../dossiers/model";
 
 /** Everything a use case can touch inside one database transaction. */
 export interface Tx {
@@ -32,6 +33,7 @@ export interface Tx {
   entities: EntityRepo;
   legalDocuments: LegalDocumentRepo;
   rateLimits: RateLimitRepo;
+  dossiers: DossierRepo;
 }
 
 export interface UnitOfWork {

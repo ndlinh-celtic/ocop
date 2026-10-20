@@ -1,6 +1,8 @@
+import { dossierInScope, ruleFor, type DossierAction, type DossierRef } from "../dossiers/transitions";
 import type { Actor } from "../shared/context";
 import { forbidden } from "../shared/errors";
 import type { Role } from "./roles";
+import { dataScopeOf } from "./scope";
 
 /**
  * Policy for the actions of step 1 (spec #1). Rules that depend on a resource's Phạm vi or state
@@ -35,6 +37,11 @@ const ROLE_ACTIONS = {
   // L01 (stories 11, 12): a Cán bộ xã creates a Chủ thể of their xã and changes its Người dùng đại diện's email.
   "entity.create": ["ward_officer"],
   "entity.representative_email.change": ["ward_officer"],
+  // Hồ sơ (spec #30): who may read or start them at all. What may be done to one hồ sơ is the transition
+  // table of dossiers/transitions.ts, checked by can(actor, action, dossier).
+  "dossier.read": ["entity_owner"],
+  "dossier.create": ["entity_owner"],
+  "dossier.evidence.upload": ["entity_owner"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
@@ -44,8 +51,20 @@ export type Action = keyof typeof ROLE_ACTIONS | (typeof SELF_ACTIONS)[number];
 
 type PolicyActor = { kind: "user"; activeRole: Role | null } | { kind: "anonymous" | "system" };
 
-export function can(actor: PolicyActor, action: Action): boolean {
+/**
+ * `can(actor, action)`: whether the Vai trò đang dùng may take an action that has no resource.
+ * `can(actor, action, dossier)`: whether it may take this action on this loaded hồ sơ: the transition
+ * table has a row for the action from the hồ sơ's state that lists the Vai trò, and the actor's Phạm vi
+ * covers the hồ sơ. Guards that depend on time are checked again by transition().
+ */
+export function can(actor: PolicyActor, action: Action): boolean;
+export function can(actor: Actor, action: DossierAction, dossier: DossierRef): boolean;
+export function can(actor: PolicyActor | Actor, action: Action | DossierAction, dossier?: DossierRef): boolean {
   if (actor.kind !== "user") return false;
+  if (dossier) {
+    const rule = ruleFor(action as DossierAction, dossier.state);
+    return !!rule && actor.activeRole !== null && rule.roles.includes(actor.activeRole) && dossierInScope(dataScopeOf(actor as Actor), dossier);
+  }
   if ((SELF_ACTIONS as readonly string[]).includes(action)) return true;
   const allowed = ROLE_ACTIONS[action as keyof typeof ROLE_ACTIONS] as readonly Role[];
   return actor.activeRole !== null && allowed.includes(actor.activeRole);

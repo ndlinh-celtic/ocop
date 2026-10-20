@@ -155,3 +155,21 @@ export {
 export type { AddLegalDocumentInput, LegalDocumentView, LegalStandingView } from "./entities/legal-documents";
 export type { RateLimit, RateLimitRepo } from "./platform/rate-limit";
 export { consumeRateLimit } from "./platform/throttle";
+export {
+  DOSSIER_STATE_LABEL,
+  DOSSIER_STATES,
+  dossierNotFound,
+  EMPTY_PRODUCT,
+  PRODUCT_FIELDS,
+  type Dossier,
+  type DossierEvent,
+  type DossierRepo,
+  type DossierState,
+  type EvidenceFile,
+  type ProductField,
+  type ProductInfo,
+} from "./dossiers/model";
+export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType, type DossierRef, type TransitionRule } from "./dossiers/transitions";
+export type { CreationOptions } from "./dossiers/create";
+export type { UpdateProductInput } from "./dossiers/edit";
+export type { DossierSummary, DossierView } from "./dossiers/read";

@@ -11,6 +11,7 @@ import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform
 import { roundRepo } from "./rounds";
 import { entityRepo, legalDocumentRepo } from "./entities";
 import { rateLimitRepo } from "./rate-limits";
+import { dossierRepo } from "./dossiers";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -31,5 +32,6 @@ export function buildRepos(db: Db): Tx {
     entities: entityRepo(db),
     legalDocuments: legalDocumentRepo(db),
     rateLimits: rateLimitRepo(db),
+    dossiers: dossierRepo(db),
   };
 }

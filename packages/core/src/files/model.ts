@@ -5,7 +5,7 @@
 export type FileStatus = "awaiting_upload" | "scanning" | "clean" | "blocked";
 
 /** What a file is for; it decides which Vai trò may upload it (see `uploads.ts`). */
-export const FILE_PURPOSES = ["test_upload", "legal_document"] as const;
+export const FILE_PURPOSES = ["test_upload", "legal_document", "evidence"] as const;
 export type FilePurpose = (typeof FILE_PURPOSES)[number];
 
 export interface StoredFile {
