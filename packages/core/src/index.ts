@@ -77,3 +77,21 @@ export { DRAFT_NODE_KINDS, type DraftNodeKind, type DraftTarget, type DraftChang
 export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
 export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
+export {
+  AGGREGATION_METHODS,
+  endOfVnDay,
+  GRADING_MODE_LABEL,
+  GRADING_MODES,
+  ROUND_STATUS_LABEL,
+  ROUND_STATUSES,
+  roundAlreadyOpen,
+  vnDateOf,
+  type AggregationMethod,
+  type AggregationRule,
+  type GradingMode,
+  type Round,
+  type RoundRepo,
+  type RoundStatus,
+} from "./rounds/model";
+export type { RoundInput } from "./rounds/manage";
+export type { RoundView } from "./rounds/read";

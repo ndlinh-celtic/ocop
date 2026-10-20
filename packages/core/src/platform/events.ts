@@ -13,7 +13,11 @@ export type DomainEventBody =
   | { type: "criteria.version.published"; payload: { versionId: string } }
   | { type: "criteria.version.copied"; payload: { versionId: string; copiedFrom: string } }
   | { type: "criteria.version.deleted"; payload: { versionId: string } }
-  | { type: DraftChangeAction; payload: DraftChangePayload };
+  | { type: DraftChangeAction; payload: DraftChangePayload }
+  | { type: "round.created"; payload: { roundId: string } }
+  | { type: "round.updated"; payload: { roundId: string } }
+  | { type: "round.deleted"; payload: { roundId: string } }
+  | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } };
 
 export type EventType = DomainEventBody["type"];
 

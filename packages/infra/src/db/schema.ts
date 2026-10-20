@@ -7,6 +7,7 @@ export const identity = pgSchema("identity");
 export const platform = pgSchema("platform");
 export const org = pgSchema("org");
 export const criteria = pgSchema("criteria");
+export const roundSchema = pgSchema("round");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -256,4 +257,28 @@ export const scoreLevel = criteria.table("score_level", {
   branch: text("branch"),
   systemAdded: boolean("system_added").notNull(),
   position: integer("position").notNull(),
+});
+
+// Đợt đánh giá (0012_rounds.sql).
+export const round = roundSchema.table("round", {
+  id: uuid("id").primaryKey(),
+  name: text("name").notNull(),
+  year: smallint("year").notNull(),
+  status: text("status").$type<"draft" | "open_for_submission" | "submission_closed" | "ended">().notNull(),
+  criteriaVersionId: uuid("criteria_version_id").notNull(),
+  submissionDeadline: ts("submission_deadline").notNull(),
+  forwardingDeadline: ts("forwarding_deadline").notNull(),
+  evaluationDeadline: ts("evaluation_deadline").notNull(),
+  gradingMode: text("grading_mode").$type<"direct" | "advisory_based">().notNull(),
+  aggregationMethod: text("aggregation_method").$type<"mean">().notNull(),
+  minGraders: smallint("min_graders").notNull(),
+  deviationFlagPoints: pts("deviation_flag_points").notNull(),
+  createdAt: ts("created_at").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+  openedAt: ts("opened_at"),
+  openedBy: uuid("opened_by"),
+  submissionClosedAt: ts("submission_closed_at"),
+  endedAt: ts("ended_at"),
+  endedBy: uuid("ended_by"),
 });
