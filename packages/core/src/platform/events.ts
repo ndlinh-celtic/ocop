@@ -1,3 +1,5 @@
+import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
+
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
   | { type: "identity.user.created"; payload: { userId: string } }
@@ -8,7 +10,8 @@ export type DomainEventBody =
   | { type: "files.uploaded"; payload: { fileId: string } }
   | { type: "files.blocked"; payload: { fileId: string } }
   | { type: "criteria.version.imported"; payload: { versionId: string } }
-  | { type: "criteria.version.published"; payload: { versionId: string } };
+  | { type: "criteria.version.published"; payload: { versionId: string } }
+  | { type: DraftChangeAction; payload: DraftChangePayload };
 
 export type EventType = DomainEventBody["type"];
 

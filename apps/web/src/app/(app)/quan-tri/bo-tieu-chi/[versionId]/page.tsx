@@ -5,12 +5,13 @@ import { StatusTag } from "@/components/criteria/status-tag";
 import { VersionOverview } from "@/components/criteria/version-overview";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { EditNode } from "./edit-node";
 import { PublishButton } from "./publish-button";
 import { ValidationIssues } from "./validation-issues";
 
 export const dynamic = "force-dynamic";
 
-/** S72: one Phiên bản tiêu chí; a draft also shows its check and the publish button (L19 AD-04). */
+/** S72: one Phiên bản tiêu chí; a draft is editable (AD-03) and shows its check and the publish button (AD-04). */
 export default async function CriteriaVersionPage({ params }: { params: Promise<{ versionId: string }> }) {
   const { versionId } = await params;
   const actor = await requireActor();
@@ -28,7 +29,11 @@ export default async function CriteriaVersionPage({ params }: { params: Promise<
         {check && <PublishButton versionId={version.id} disabled={check.issues.length > 0} />}
       </div>
       {check && <ValidationIssues versionId={version.id} issues={check.issues} />}
-      <VersionOverview version={version} setHref={(setId) => `/quan-tri/bo-tieu-chi/${version.id}/bo/${setId}`} />
+      <VersionOverview
+        version={version}
+        setHref={(setId) => `/quan-tri/bo-tieu-chi/${version.id}/bo/${setId}`}
+        edit={check ? (target) => <EditNode versionId={version.id} target={target} /> : undefined}
+      />
     </div>
   );
 }

@@ -2,13 +2,16 @@ import type { ValidationIssue } from "@ocop/core";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import Link from "next/link";
 
-/** L19 AD-04: every problem of the draft at once, each with its Bộ tiêu chí and mã tiêu chí. */
-export function ValidationIssues({ versionId, issues }: { versionId: string; issues: ValidationIssue[] }) {
+/**
+ * L19 AD-04: every problem of the draft at once, each with its Bộ tiêu chí and mã tiêu chí.
+ * `scope` "set" is the page of one Bộ tiêu chí, given only its own problems and the version-wide ones.
+ */
+export function ValidationIssues({ versionId, issues, scope = "version" }: { versionId: string; issues: ValidationIssue[]; scope?: "version" | "set" }) {
   if (issues.length === 0) {
     return (
       <section role="status" className="flex items-center gap-2 rounded-lg border border-brand bg-brand-soft p-4 text-sm">
         <CircleCheck className="size-5 shrink-0 text-brand" aria-hidden />
-        Kiểm tra không thấy lỗi. Bản nháp sẵn sàng phát hành.
+        {scope === "set" ? "Kiểm tra không thấy lỗi trong bộ tiêu chí này." : "Kiểm tra không thấy lỗi. Bản nháp sẵn sàng phát hành."}
       </section>
     );
   }
@@ -16,7 +19,7 @@ export function ValidationIssues({ versionId, issues }: { versionId: string; iss
     <section className="rounded-lg border border-danger bg-surface" aria-labelledby="validation-title">
       <h2 id="validation-title" className="flex items-center gap-2 border-b px-4 py-3 font-medium text-danger">
         <CircleAlert className="size-5 shrink-0" aria-hidden />
-        {issues.length} lỗi kiểm tra; sửa hết trước khi phát hành
+        {issues.length} lỗi kiểm tra{scope === "set" ? " trong bộ tiêu chí này" : ""}; sửa hết trước khi phát hành
       </h2>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">

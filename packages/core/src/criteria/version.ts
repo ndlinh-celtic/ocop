@@ -1,4 +1,5 @@
 import { DomainError } from "../shared/errors";
+import type { DraftNodeKind } from "./draft-events";
 import type { RankThresholds, Star } from "./model";
 
 /** Phiên bản tiêu chí: draft until published, then immutable (ADR 0006). Published only one way. */
@@ -160,6 +161,29 @@ export interface CriteriaVersionRepo {
   loadRows(versionId: string): Promise<VersionRows>;
   /** draft → published; the DB refuses any later change to the version (#19). */
   markPublished(id: string, at: Date, by: string): Promise<void>;
+
+  /* Draft editing (L19 AD-03). The triggers of #19 refuse all of these on a published version. */
+  /** One node of the tree with the version it belongs to. */
+  findNode<K extends DraftNodeKind>(kind: K, id: string): Promise<{ versionId: string; row: DraftNodeRows[K] } | null>;
+  updateNode<K extends DraftNodeKind>(kind: K, id: string, patch: Partial<Omit<DraftNodeRows[K], "id">>): Promise<void>;
+  updateVersion(id: string, patch: Partial<VersionFields>): Promise<void>;
+  setThresholds(versionId: string, thresholds: RankThresholds): Promise<void>;
+}
+
+/** The fields of a version itself that Quản trị edits in a draft. */
+export type VersionFields = Pick<CriteriaVersion, "legalBasis" | "issuedOn" | "effectiveOn">;
+
+/** The stored row of each kind of node (draft-events.ts `DraftNodeKind`). */
+export interface DraftNodeRows {
+  productGroup: ProductGroupRow;
+  subgroup: SubgroupRow;
+  set: CriteriaSetRow;
+  exclusion: ExclusionConditionRow;
+  part: PartRow;
+  section: SectionRow;
+  criterionGroup: CriterionGroupRow;
+  criterion: CriterionRow;
+  scoreLevel: ScoreLevelRow;
 }
 
 /** Domain layer of the immutability (ADR 0006): only a draft may change. Every write use case calls it. */
