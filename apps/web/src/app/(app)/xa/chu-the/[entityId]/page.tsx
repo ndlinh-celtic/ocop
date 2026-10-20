@@ -1,10 +1,11 @@
-import { can } from "@ocop/core";
-import { BadgeCheck, CircleAlert } from "lucide-react";
+import { can, onBehalfOf } from "@ocop/core";
+import { BadgeCheck, CircleAlert, UserCog } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EntityProfile } from "@/components/entities/entity-profile";
 import { DocumentTable, REQUIREMENT_STATE, RequirementList } from "@/components/entities/legal-documents";
 import { RevealPersonalId } from "@/components/entities/reveal-personal-id";
+import { dossierHome } from "@/lib/dossier-paths";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
@@ -34,7 +35,15 @@ export default async function WardEntityPage({ params, searchParams }: { params:
         <Link href="/xa/chu-the" className="text-sm text-brand">
           ← Chủ thể của xã
         </Link>
-        <h1 className="mt-1 text-xl font-semibold">{entity.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold">{entity.name}</h1>
+          {/* L01 Nhập hộ: only for a Chủ thể đăng ký ở xã mình (story 75). */}
+          {entity.ward.id === actor.activeScope?.id && can(onBehalfOf(actor, entity.id), "dossier.read") && (
+            <Link href={dossierHome(entity.id)} className="flex items-center gap-2 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium">
+              <UserCog className="size-4" aria-hidden /> Nhập hộ hồ sơ
+            </Link>
+          )}
+        </div>
       </div>
 
       {moi && (

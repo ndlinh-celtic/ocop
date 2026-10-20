@@ -136,6 +136,7 @@ export { roundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
 export { dataScopeOf, type DataScope } from "./identity/scope";
+export { onBehalfOf } from "./identity/on-behalf";
 export {
   assertIdentifierShape,
   ENTITY_KIND_LABEL,
@@ -219,3 +220,6 @@ export type { RejectInput } from "./dossiers/reject-transfer";
 export { FINISHED_STATES, type ReturnRequest } from "./dossiers/model";
 export type { ReturnRequestView } from "./dossiers/return-request";
 export type { DossierOverviewRow } from "./dossiers/read";
+export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
+export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
+export type { SystemSettingRepo } from "./system/settings-model";

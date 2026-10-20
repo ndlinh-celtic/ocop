@@ -1,7 +1,21 @@
 import { FINISHED_STATES, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, max, notInArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { checklistResult, criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, returnRequest, submission, submissionFile, wardReport } from "../db/schema";
+import {
+  checklistResult,
+  criterionEntry,
+  dossier,
+  dossierEvent,
+  entity,
+  evidenceFile,
+  evidenceLink,
+  file,
+  returnRequest,
+  round,
+  submission,
+  submissionFile,
+  wardReport,
+} from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -19,6 +33,13 @@ function inScope(scope: DataScope): SQL {
     case "province":
       // From the first gửi tỉnh on, even after the Sở trả về it (story 78).
       return and(live, isNotNull(dossier.firstForwardedAt))!;
+    case "on_behalf":
+      // Nhập hộ (story 75): every hồ sơ of the Chủ thể, only while it is đăng ký ở xã of the officer.
+      return and(
+        live,
+        eq(dossier.entityId, scope.entityId),
+        sql`exists (select 1 from ${entity} where ${entity.id} = ${dossier.entityId} and ${entity.wardId} = ${scope.wardId})`,
+      )!;
     case "none":
       return sql`false`;
     default: {
@@ -63,6 +84,12 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.state ? eq(dossier.state, filter.state) : undefined,
         filter.awaitingReceipt ? and(eq(dossier.state, "submitted_to_ward"), isNull(dossier.receivedAt)) : undefined,
         filter.handlerUserId ? eq(dossier.handlerUserId, filter.handlerUserId) : undefined,
+        filter.awaitingNextRoundAt
+          ? and(
+              eq(dossier.state, "submitted_to_ward"),
+              inArray(dossier.roundId, db.select({ id: round.id }).from(round).where(lt(round.forwardingDeadline, filter.awaitingNextRoundAt))),
+            )
+          : undefined,
       );
       return (await db.select().from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
     },

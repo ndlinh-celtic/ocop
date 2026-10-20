@@ -1,4 +1,4 @@
-import type { ChecklistItem, ChecklistResultValue, DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type { ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -430,7 +430,7 @@ export const wardReport = dossierSchema.table("ward_report", {
   uploadedAt: ts("uploaded_at").notNull(),
 });
 
-// L04 đề nghị trả về of the xã, append-only (0026_return_requests.sql).
+// L04 đề nghị trả về of the xã, append-only (0027_return_requests.sql).
 export const returnRequest = dossierSchema.table("return_request", {
   id: uuid("id").primaryKey(),
   dossierId: uuid("dossier_id").notNull(),
@@ -496,3 +496,24 @@ export const supplementItem = dossierSchema.table("supplement_item", {
   respondedAt: ts("responded_at"),
   respondedBy: uuid("responded_by"),
 });
+
+// Cấu hình chung and the ledger of nhắc hạn (0026_due_reminders.sql).
+export const systemSetting = platform.table("system_setting", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+  updatedBy: uuid("updated_by").notNull(),
+});
+
+export const reminderSent = dossierSchema.table(
+  "reminder_sent",
+  {
+    kind: text("kind").$type<ReminderKind>().notNull(),
+    subjectId: uuid("subject_id").notNull(),
+    contextId: uuid("context_id").notNull(),
+    deadline: ts("deadline").notNull(),
+    milestoneDays: integer("milestone_days").notNull(),
+    sentAt: ts("sent_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.kind, t.subjectId, t.contextId, t.deadline, t.milestoneDays] })],
+);

@@ -9,11 +9,23 @@ import { createDossierAction, type DossierFormState } from "../actions";
  * Story 15, 17: picks one Bộ tiêu chí from Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí, after a warning that
  * neither it nor the văn bản căn cứ can change later. With `sourceId`, the new hồ sơ is a copy.
  */
-export function SetPicker({ productGroups, legalBasis, sourceId }: { productGroups: TaxonomyGroup[]; legalBasis: string; sourceId?: string }) {
+export function SetPicker({
+  productGroups,
+  legalBasis,
+  sourceId,
+  onBehalf,
+}: {
+  productGroups: TaxonomyGroup[];
+  legalBasis: string;
+  sourceId?: string;
+  /** Nhập hộ (L01): the Chủ thể the Cán bộ xã creates the hồ sơ for. */
+  onBehalf?: string;
+}) {
   const [state, action, pending] = useActionState<DossierFormState, FormData>(createDossierAction, {});
   return (
     <form action={action} className="flex flex-col gap-4">
       {sourceId && <input type="hidden" name="sourceId" value={sourceId} />}
+      {onBehalf && <input type="hidden" name="onBehalf" value={onBehalf} />}
       {productGroups.map((g) => (
         <fieldset key={g.id} className="rounded-lg border bg-surface p-4 shadow-card">
           <legend className="px-1 font-semibold">{g.name}</legend>

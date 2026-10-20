@@ -28,6 +28,8 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
+import { reminderMilestones, setReminderMilestones } from "./system/settings";
+import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
 import { addLegalDocument, downloadLegalDocument, getLegalStanding } from "./entities/legal-documents";
@@ -41,6 +43,7 @@ import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
 import { listReturnRequests, requestReturn } from "./dossiers/return-request";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
+import { roundTransferTargets, transferRound } from "./dossiers/round-transfer";
 import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
@@ -166,6 +169,8 @@ export function createCore(deps: CoreDeps) {
       receive: receiveDossier(deps),
       reject: rejectDossier(deps),
       transferWard: transferWard(deps),
+      transferRound: transferRound(deps),
+      roundTransferTargets: roundTransferTargets(deps),
       changeHandler: changeHandler(deps),
       handlers: listHandlers(deps),
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
@@ -184,9 +189,12 @@ export function createCore(deps: CoreDeps) {
       downloadSignedWardReport: downloadSignedWardReport(deps),
       forwardToProvince: forwardToProvince(deps),
       provinceOverview: provinceOverview(deps),
+      sendDueReminders: sendDueReminders(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
+      reminderMilestones: reminderMilestones(deps),
+      setReminderMilestones: setReminderMilestones(deps),
     },
   };
 }

@@ -24,7 +24,7 @@ interface Notice {
 }
 
 /** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
-async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
+export async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
   const assignments = (await tx.roleAssignments.listForScope("entity_owner", "entity", entityId)).filter((a) => isAssignmentActive(a, now));
   const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
   return users.filter((u): u is User => u !== null && u.status === "active");
@@ -36,6 +36,7 @@ export const NOTICE_EVENTS = [
   "dossier.received",
   "dossier.rejected_preliminary",
   "dossier.ward_transferred",
+  "dossier.round_transferred",
   "dossier.supplement_requested",
   "dossier.resubmitted",
   "dossier.closed_unsupplemented",
@@ -119,6 +120,19 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
+    // L06 XA-08 (story 69): chuyển đợt tells the Chủ thể its hồ sơ will be considered in a later đợt.
+    case "dossier.round_transferred":
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_round_transferred",
+          title: `Hồ sơ ${product} đã được chuyển đợt`,
+          body: "UBND xã/phường đã chuyển hồ sơ sang đợt đánh giá sau. Xem lý do chuyển trong dòng thời gian của hồ sơ.",
+          emailSubject: "Hồ sơ OCOP đã được chuyển đợt",
+          emailLine: "Hồ sơ OCOP của anh/chị đã được chuyển sang đợt đánh giá sau.",
+          link: ownerLink,
+        },
+      ];
     case "dossier.supplement_requested":
       return [
         {

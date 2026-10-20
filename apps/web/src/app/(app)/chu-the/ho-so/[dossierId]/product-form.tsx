@@ -23,7 +23,20 @@ type Status = { kind: "idle" | "saving" | "saved" } | { kind: "error"; message: 
  * loses focus, carrying the version it last saw. If someone else changed the hồ sơ meanwhile, the save
  * is refused and the Chủ thể is asked to reload rather than overwrite.
  */
-export function ProductForm({ dossierId, initial, version: initialVersion, editable }: { dossierId: string; initial: ProductInfo; version: number; editable: boolean }) {
+export function ProductForm({
+  dossierId,
+  initial,
+  version: initialVersion,
+  editable,
+  onBehalf,
+}: {
+  dossierId: string;
+  initial: ProductInfo;
+  version: number;
+  editable: boolean;
+  /** Nhập hộ (L01): the Chủ thể the Cán bộ xã writes for. */
+  onBehalf?: string;
+}) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -42,7 +55,7 @@ export function ProductForm({ dossierId, initial, version: initialVersion, edita
     if (Object.keys(changed).length === 0) return;
     setStatus({ kind: "saving" });
     const snapshot = latest.current;
-    const run = saveProductAction({ dossierId, expectedVersion: version.current, ...changed }).then((res) => {
+    const run = saveProductAction({ dossierId, expectedVersion: version.current, ...changed, onBehalf }).then((res) => {
       if ("version" in res) {
         version.current = res.version;
         saved.current = snapshot;

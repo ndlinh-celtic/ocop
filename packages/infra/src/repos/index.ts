@@ -13,6 +13,7 @@ import { entityRepo, legalDocumentRepo } from "./entities";
 import { rateLimitRepo } from "./rate-limits";
 import { dossierRepo } from "./dossiers";
 import { supplementRepo } from "./supplements";
+import { reminderRepo, systemSettingRepo } from "./reminders";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -35,5 +36,7 @@ export function buildRepos(db: Db): Tx {
     rateLimits: rateLimitRepo(db),
     dossiers: dossierRepo(db),
     supplements: supplementRepo(db),
+    reminders: reminderRepo(db),
+    systemSettings: systemSettingRepo(db),
   };
 }

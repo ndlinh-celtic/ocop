@@ -7,7 +7,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError, forbidden } from "../shared/errors";
 import type { Tx } from "../shared/uow";
 import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState } from "./model";
-import { dossierInScope, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
+import { dossierInScope, recordedAction, ruleAllows, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
 
 /** The fields of a hồ sơ a transition may change besides its state and version. */
 export type DossierPatch = Partial<Omit<Dossier, "id" | "entityId" | "criteriaSetId" | "criteriaVersionId" | "state" | "version" | "copiedFrom" | "createdAt" | "createdBy" | "updatedAt">>;
@@ -36,7 +36,7 @@ export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, befor
   if (!dossierInScope(dataScopeOf(actor), before)) throw dossierNotFound();
   const rule = ruleFor(input.action, before.state);
   if (!rule) {
-    if (!TRANSITIONS.some((r) => r.action === input.action && actor.activeRole && r.roles.includes(actor.activeRole))) throw forbidden();
+    if (!TRANSITIONS.some((r) => r.action === input.action && ruleAllows(r, actor))) throw forbidden();
     throw new DomainError("invalid_state", `Không thể thực hiện thao tác này khi hồ sơ đang ở trạng thái ${DOSSIER_STATE_LABEL[before.state]}`);
   }
   if (!can(actor, input.action, before)) throw forbidden();
@@ -86,25 +86,32 @@ interface Recorded {
   metadata: Record<string, unknown>;
 }
 
+/**
+ * Writes the timeline row, the audit row and the outbox event of a move. Under Nhập hộ the action is
+ * `<action>_on_behalf`, the row names the Chủ thể in `onBehalfOf` and is always on the timeline, so the
+ * Chủ thể sees what the Cán bộ xã did for it (stories 73, 74); the outbox event stays the same.
+ */
 async function record(deps: CoreDeps, tx: Tx, actor: UserActor, now: Date, r: Recorded) {
   const { dossier } = r;
-  if (r.timeline) {
+  const action = recordedAction(r.action, actor);
+  const onBehalf = actor.onBehalfOf !== undefined;
+  if (r.timeline || onBehalf) {
     await tx.dossiers.appendEvent({
       id: deps.ids.next(),
       dossierId: dossier.id,
-      action: r.action,
+      action,
       fromState: r.from,
       toState: dossier.state,
       actorUserId: actor.userId,
       actorRole: actor.activeRole,
       occurredAt: now,
       reason: r.reason,
-      metadata: r.metadata,
+      metadata: onBehalf ? { ...r.metadata, onBehalfOf: actor.onBehalfOf } : r.metadata,
     });
   }
   await tx.audit.append(
     auditEntry(actor, deps.ids.next(), now, {
-      action: r.action,
+      action,
       targetType: "dossier",
       targetId: dossier.id,
       before: r.from === null ? null : { state: r.from, version: dossier.version - 1 },
