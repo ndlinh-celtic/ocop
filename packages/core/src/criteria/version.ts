@@ -1,3 +1,4 @@
+import { DomainError } from "../shared/errors";
 import type { RankThresholds, Star } from "./model";
 
 /** Phiên bản tiêu chí: draft until published, then immutable (ADR 0006). Published only one way. */
@@ -153,4 +154,17 @@ export interface CriteriaVersionRepo {
   list(filter: { status?: VersionStatus }): Promise<VersionSummary[]>;
   taxonomy(versionId: string): Promise<VersionTaxonomy>;
   findSet(setId: string): Promise<{ versionId: string; rows: SetRows } | null>;
+  /** Like findById, but holds a row lock until the transaction ends (SELECT … FOR UPDATE). */
+  lock(id: string): Promise<CriteriaVersion | null>;
+  /** The whole tree of a version, e.g. for validation. */
+  loadRows(versionId: string): Promise<VersionRows>;
+  /** draft → published; the DB refuses any later change to the version (#19). */
+  markPublished(id: string, at: Date, by: string): Promise<void>;
+}
+
+/** Domain layer of the immutability (ADR 0006): only a draft may change. Every write use case calls it. */
+export function assertDraft(version: CriteriaVersion): void {
+  if (version.status !== "draft") {
+    throw new DomainError("version_published", "Phiên bản tiêu chí đã phát hành, không sửa được. Hãy sao chép thành phiên bản mới.");
+  }
 }

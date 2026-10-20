@@ -18,6 +18,7 @@ const ROLE_ACTIONS = {
   // Phiên bản tiêu chí (spec #16): only Quản trị writes them or sees drafts.
   "criteria.import": ["admin"],
   "criteria.read_draft": ["admin"],
+  "criteria.publish": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

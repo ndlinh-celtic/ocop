@@ -56,6 +56,7 @@ export type {
   VersionSummary,
   VersionTaxonomy,
 } from "./criteria/version";
+export { assertDraft } from "./criteria/version";
 export type {
   CriteriaSetDetail,
   ExclusionCondition,
@@ -67,4 +68,6 @@ export type {
 } from "./criteria/detail";
 export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue } from "./criteria/qd26-file";
 export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
+export { CriteriaValidationError } from "./criteria/publish";
+export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
