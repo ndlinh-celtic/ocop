@@ -1,5 +1,5 @@
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
-import type { GradingMode } from "../rounds/model";
+import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
@@ -22,7 +22,7 @@ export type DomainEventBody =
   | { type: "round.submission_closed"; payload: { roundId: string; submissionDeadline: string; closedAt: string } }
   | {
       type: "round.deadline_extended";
-      payload: { roundId: string; extensionId: string; deadline: "submission" | "forwarding"; previousDeadline: string; newDeadline: string };
+      payload: { roundId: string; extensionId: string; deadline: ExtendableDeadline; previousDeadline: string; newDeadline: string };
     }
   | { type: "round.reopened"; payload: { roundId: string; extensionId: string; submissionDeadline: string } }
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }

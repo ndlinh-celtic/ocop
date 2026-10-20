@@ -19,7 +19,7 @@ const extendForm = z.object({
   reason: z.string().trim().min(1),
 });
 
-/** L07 Gia hạn đợt: moves Hạn nộp xã or Hạn gửi tỉnh later, with a reason. */
+/** L07 Gia hạn đợt: moves Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh later, with a reason. */
 export async function extendDeadlineAction(roundId: string, _prev: ExtendDeadlineState, form: FormData): Promise<ExtendDeadlineState> {
   const actor = await requireActor();
   const parsed = extendForm.safeParse({ deadline: form.get("deadline"), newDate: form.get("newDate"), reason: form.get("reason") });

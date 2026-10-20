@@ -20,7 +20,7 @@ const orNotFound = (err: unknown) => (err instanceof DomainError && err.code ===
 /**
  * S82: one Đợt đánh giá. While Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, changes
  * Chế độ chấm and Quy tắc tổng hợp (HD-06), ends it from Đã đóng nộp, and extends
- * Hạn nộp xã or Hạn gửi tỉnh (Gia hạn đợt).
+ * Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh (Gia hạn đợt).
  */
 export default async function RoundPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params;
@@ -126,7 +126,11 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           <h2 className="mb-3 font-medium">Gia hạn đợt</h2>
           <ExtendDeadlineForm
             action={extendDeadlineAction.bind(null, round.id)}
-            current={{ submission: vnDateOf(round.submissionDeadline), forwarding: vnDateOf(round.forwardingDeadline) }}
+            current={{
+              submission: vnDateOf(round.submissionDeadline),
+              forwarding: vnDateOf(round.forwardingDeadline),
+              evaluation: vnDateOf(round.evaluationDeadline),
+            }}
             submissionClosed={round.status === "submission_closed"}
           />
         </section>

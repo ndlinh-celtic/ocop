@@ -28,10 +28,10 @@ export interface ExtendDeadlineInput {
 }
 
 const REASON_MAX = 2000;
-const FIELD = { submission: "submissionDeadline", forwarding: "forwardingDeadline" } as const;
+const FIELD = { submission: "submissionDeadline", forwarding: "forwardingDeadline", evaluation: "evaluationDeadline" } as const;
 
 /**
- * L07 Gia hạn đợt (#26): Cán bộ Sở moves Hạn nộp xã or Hạn gửi tỉnh later, with a reason. Only an opened
+ * L07 Gia hạn đợt (#26): Cán bộ Sở moves Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh later, with a reason. Only an opened
  * round that has not ended (a Nháp round is edited directly). Never shortens, and the three deadlines stay
  * in order. Extending Hạn nộp xã of a Đã đóng nộp round brings it back to Đang nhận nộp, unless another
  * round is open; the new Hạn nộp xã must then lie in the future, or the auto-close job would close it again.
@@ -40,7 +40,7 @@ export function extendDeadline(deps: CoreDeps) {
   return async (actor: Actor, input: ExtendDeadlineInput): Promise<{ extensionId: string; reopened: boolean }> => {
     authorize(actor, "round.manage");
     if (!EXTENDABLE_DEADLINES.includes(input.deadline)) {
-      throw new DomainError("invalid_deadline", "Chỉ gia hạn được Hạn nộp xã hoặc Hạn gửi tỉnh");
+      throw new DomainError("invalid_deadline", "Chỉ gia hạn được Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh");
     }
     const reason = input.reason.trim();
     if (!reason) throw new DomainError("reason_required", "Nhập lý do gia hạn");

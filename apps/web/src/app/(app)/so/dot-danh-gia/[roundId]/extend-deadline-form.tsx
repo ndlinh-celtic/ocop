@@ -8,7 +8,7 @@ const input = "rounded-md border border-line-strong bg-surface px-3 py-2";
 const label = "flex flex-col gap-1 text-sm font-medium";
 
 /**
- * L07 Gia hạn đợt: Cán bộ Sở picks Hạn nộp xã or Hạn gửi tỉnh, a later date and a reason. `current` holds
+ * L07 Gia hạn đợt: Cán bộ Sở picks Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh, a later date and a reason. `current` holds
  * each deadline as YYYY-MM-DD (Vietnam), the earliest date the picker offers is the day after it.
  */
 export function ExtendDeadlineForm({
