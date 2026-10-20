@@ -1,4 +1,4 @@
-import type { DraftEdit } from "@ocop/core";
+import type { DraftEdit, NodeAddition } from "@ocop/core";
 import type { ReactNode } from "react";
 
 /** One editable node of a draft as the read-only views show it: what to edit and its current values (L19 AD-03). */
@@ -12,5 +12,19 @@ export interface EditTarget {
   label: string;
 }
 
-/** Slot the shared criteria views call next to each editable node; only the admin draft pages pass one. */
-export type EditSlot = (target: EditTarget) => ReactNode;
+/** A place where a node can be added to a draft (#23): the kind of node, its parent, and what to call it. */
+export interface AddTarget {
+  add: NodeAddition["node"];
+  /** Absent for a Nhóm sản phẩm, which sits directly in the version. */
+  parent?: { node: Exclude<DraftEdit["node"], "version" | "thresholds">; id: string };
+  /** The button text, e.g. "Thêm tiêu chí". */
+  label: string;
+}
+
+export const isAddTarget = (target: EditTarget | AddTarget): target is AddTarget => "add" in target;
+
+/**
+ * Slot the shared criteria views call next to each editable node (an EditTarget: edit, move, remove) and
+ * where a node can be added (an AddTarget); only the admin draft pages pass one.
+ */
+export type EditSlot = (target: EditTarget | AddTarget) => ReactNode;

@@ -157,6 +157,20 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
       await db.update(table).set(patch as Partial<NodeTable["$inferInsert"]>).where(eq(table.id, id));
     },
 
+    async insertNode(kind, versionId, row) {
+      await db.insert(nodeTable(kind)).values({ ...row, versionId } as NodeTable["$inferInsert"]);
+    },
+
+    async deleteNode(kind, id) {
+      const table = nodeTable(kind);
+      await db.delete(table).where(eq(table.id, id));
+    },
+
+    async setPositions(kind, positions) {
+      const table = nodeTable(kind);
+      for (const { id, position } of positions) await db.update(table).set({ position }).where(eq(table.id, id));
+    },
+
     async updateVersion(id, patch) {
       await db.update(criteriaVersion).set(patch).where(eq(criteriaVersion.id, id));
     },

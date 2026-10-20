@@ -5,7 +5,7 @@ import { StatusTag } from "@/components/criteria/status-tag";
 import { VersionOverview } from "@/components/criteria/version-overview";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { EditNode } from "./edit-node";
+import { DraftControls } from "./draft-controls";
 import { PublishButton } from "./publish-button";
 import { ValidationIssues } from "./validation-issues";
 
@@ -41,7 +41,7 @@ export default async function CriteriaVersionPage({ params }: { params: Promise<
       <VersionOverview
         version={version}
         setHref={(setId) => `/quan-tri/bo-tieu-chi/${version.id}/bo/${setId}`}
-        edit={check ? (target) => <EditNode versionId={version.id} target={target} /> : undefined}
+        edit={check ? (target) => <DraftControls versionId={version.id} target={target} /> : undefined}
       />
     </div>
   );
