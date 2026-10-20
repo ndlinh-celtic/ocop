@@ -282,6 +282,20 @@ describe("L07 đợt Nháp chỉ Cán bộ Sở thấy", () => {
 });
 
 describe("L07 SO-01 mở đợt khi đợt đang mở đã quá Hạn nộp xã", () => {
+  it("L02 gives no round Đang nhận nộp once its Hạn nộp xã has passed, even before the job closes it", async () => {
+    const officer = await staff();
+    const open = (await t.app.rounds.currentOpenRound(officer))!; // Hạn nộp xã 30/11/2026
+    const before = t.clock.now();
+    try {
+      t.clock.set(new Date("2026-11-30T16:59:59Z")); // the deadline second itself still counts
+      expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: open.id });
+      t.clock.set(new Date("2026-11-30T17:00:00Z"));
+      expect(await t.app.rounds.currentOpenRound(officer)).toBeNull();
+    } finally {
+      t.clock.set(before);
+    }
+  });
+
   it("closes the overdue round first, as the auto-close job would, then opens the new one", async () => {
     const officer = await staff();
     const overdue = (await t.app.rounds.currentOpenRound(officer))!; // left open by "mở đợt", Hạn nộp xã 30/11/2026
