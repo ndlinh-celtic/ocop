@@ -131,8 +131,9 @@ export function editDraft(deps: CoreDeps) {
       const d = diff<DraftNodeRows[typeof edit.node]>(row, edit.changes);
       if (!d) return null;
       const patch: Partial<DraftNodeRows[DraftNodeKind]> = { ...d.after };
-      // A system-added "Không đáp ứng" level stays 0 points (GLOSSARY.md); given points, it is Quản trị's own level.
-      if (edit.node === "scoreLevel" && "systemAdded" in row && row.systemAdded && (edit.changes.points ?? 0) !== 0) {
+      // A system-added "Không đáp ứng, 0 điểm" level (GLOSSARY.md) that Quản trị changes in any way (points,
+      // description, Sao tối thiểu...) is Quản trị's own level from then on. `d` holds only real changes.
+      if (edit.node === "scoreLevel" && "systemAdded" in row && row.systemAdded) {
         Object.assign(patch, { systemAdded: false });
       }
       await tx.criteriaVersions.updateNode(edit.node, edit.id, patch);
