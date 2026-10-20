@@ -79,6 +79,11 @@ export interface RoundRepo {
   list(): Promise<Round[]>;
   /** The round Đang nhận nộp, if any. */
   findOpen(): Promise<Round | null>;
+  /**
+   * Rounds Đang nhận nộp whose Hạn nộp xã is strictly before `now`, oldest deadline first, row-locked
+   * until the transaction ends (SELECT … FOR UPDATE). A concurrent run waits, then skips rows it closed.
+   */
+  lockDueForClosing(now: Date): Promise<Round[]>;
 }
 
 const VN_OFFSET_HOURS = 7;

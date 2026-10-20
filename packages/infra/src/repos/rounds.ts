@@ -1,5 +1,5 @@
 import { roundAlreadyOpen, type Round, type RoundRepo } from "@ocop/core";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, lt } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { round } from "../db/schema";
 
@@ -59,6 +59,15 @@ export function roundRepo(db: Db): RoundRepo {
     async findOpen() {
       const [row] = await db.select().from(round).where(eq(round.status, "open_for_submission"));
       return row ? toRound(row) : null;
+    },
+    async lockDueForClosing(now) {
+      const rows = await db
+        .select()
+        .from(round)
+        .where(and(eq(round.status, "open_for_submission"), lt(round.submissionDeadline, now)))
+        .orderBy(asc(round.submissionDeadline))
+        .for("update");
+      return rows.map(toRound);
     },
   };
 }
