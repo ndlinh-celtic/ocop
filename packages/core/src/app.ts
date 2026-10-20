@@ -35,10 +35,11 @@ import { revealPersonalId, updateEntity } from "./entities/profile";
 import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
 import { downloadSubmissionDocument } from "./dossiers/documents";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
-import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
+import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
-import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem } from "./dossiers/supplement";
+import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
@@ -169,6 +170,9 @@ export function createCore(deps: CoreDeps) {
       handlers: listHandlers(deps),
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
       requestSupplement: requestSupplement(deps),
+      returnFromProvince: returnFromProvince(deps),
+      requestReturn: requestReturn(deps),
+      returnRequests: listReturnRequests(deps),
       respondSupplementItem: respondSupplementItem(deps),
       supplementRequests: listSupplementRequests(deps),
       closeUnsupplemented: closeUnsupplemented(deps),
@@ -179,6 +183,7 @@ export function createCore(deps: CoreDeps) {
       wardReport: wardReportStatus(deps),
       downloadSignedWardReport: downloadSignedWardReport(deps),
       forwardToProvince: forwardToProvince(deps),
+      provinceOverview: provinceOverview(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

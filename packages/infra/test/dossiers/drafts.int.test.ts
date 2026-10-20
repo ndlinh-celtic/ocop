@@ -163,12 +163,17 @@ describe("L02 Phạm vi and state of a hồ sơ (stories 32, 76, 80, 81, 83)", (
     await expect(t.app.dossiers.get(b, { dossierId: "not-a-uuid" })).rejects.toMatchObject(notFound);
   });
 
-  it("Quản trị and Cán bộ Sở neither read nor start a hồ sơ of a Chủ thể (story 83)", async () => {
+  it("Quản trị and Cán bộ Sở neither read nor start a hồ sơ Nháp of a Chủ thể (stories 78, 83)", async () => {
     const a = await f.verifiedOwner();
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });
-    for (const other of [await f.admin(), await f.staff("province_officer")]) {
-      await expect(t.app.dossiers.get(other, { dossierId })).rejects.toMatchObject({ code: "forbidden" });
-      await expect(t.app.dossiers.list(other)).rejects.toMatchObject({ code: "forbidden" });
+    const admin = await f.admin();
+    await expect(t.app.dossiers.get(admin, { dossierId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.dossiers.list(admin)).rejects.toMatchObject({ code: "forbidden" });
+    // The Sở reads only what has reached the province (#44): a Nháp is not found.
+    const province = await f.staff("province_officer");
+    await expect(t.app.dossiers.get(province, { dossierId })).rejects.toMatchObject({ code: "not_found" });
+    expect((await t.app.dossiers.list(province)).map((d) => d.id)).not.toContain(dossierId);
+    for (const other of [admin, province]) {
       await expect(t.app.dossiers.create(other, { criteriaSetId: sets["Rau củ quả"] })).rejects.toMatchObject({ code: "forbidden" });
     }
   });

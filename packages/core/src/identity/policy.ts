@@ -28,7 +28,7 @@ const ROLE_ACTIONS = {
   // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
   "round.manage": ["province_officer"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
-  "entity.read": ["entity_owner", "ward_officer"],
+  "entity.read": ["entity_owner", "ward_officer", "province_officer"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).
   "entity.update": ["entity_owner"],
   "entity.legal_document.manage": ["entity_owner"],
@@ -39,13 +39,17 @@ const ROLE_ACTIONS = {
   "entity.representative_email.change": ["ward_officer"],
   // Hồ sơ (spec #30): who may read or start them at all. What may be done to one hồ sơ is the transition
   // table of dossiers/transitions.ts, checked by can(actor, action, dossier).
-  "dossier.read": ["entity_owner", "ward_officer"],
+  "dossier.read": ["entity_owner", "ward_officer", "province_officer"],
   "dossier.create": ["entity_owner"],
+  // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
+  "dossier.overview": ["province_officer"],
+  // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.
+  "dossier.return_request.read": ["ward_officer", "province_officer"],
   "dossier.evidence.upload": ["entity_owner"],
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
-  "dossier.document.download": ["entity_owner", "ward_officer"],
+  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer"],
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],

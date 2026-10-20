@@ -48,6 +48,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.checklist.assess",
   "dossier.ward_report.attach",
   "dossier.forward",
+  "dossier.province_return",
+  "dossier.return_request",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -73,6 +75,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.checklist_assessed",
   "dossier.ward_report_attached",
   "dossier.forwarded",
+  "dossier.returned_by_province",
+  "dossier.return_requested",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -206,6 +210,26 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     timeline: true,
     guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
   },
+  // L04 (story 57): the Sở trả về a hồ sơ Đã chuyển tỉnh as a yêu cầu bổ sung of its own, so the Chủ thể
+  // answers one list; the nộp lại brings it back to Đã nộp xã for the xã to review (story 58).
+  {
+    action: "dossier.province_return",
+    from: "forwarded_to_province",
+    to: "supplement_requested",
+    roles: ["province_officer"],
+    event: "dossier.returned_by_province",
+    timeline: true,
+  },
+  // L04 (story 59): the xã asks the Sở to trả về a hồ sơ it has gửi tỉnh. The state stays; it is a matter
+  // between the xã and the Sở, so not a row of the timeline the Chủ thể reads.
+  {
+    action: "dossier.return_request",
+    from: "forwarded_to_province",
+    to: "forwarded_to_province",
+    roles: ["ward_officer"],
+    event: "dossier.return_requested",
+    timeline: false,
+  },
 ];
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */
@@ -228,6 +252,9 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
     case "ward":
       // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
       return d.wardId === scope.wardId;
+    case "province":
+      // From the first gửi tỉnh on, even after the Sở trả về it (story 78).
+      return d.firstForwardedAt !== null;
     case "none":
       return false;
     default: {

@@ -9,7 +9,12 @@ import type { Actor } from "../shared/context";
  * has reached the province) in step 3, `council` and `assigned` in step 4. Adding one is a new member here,
  * a new case in `dataScopeOf`, and a new case in each repository's exhaustive switch: nothing is restructured.
  */
-export type DataScope = { kind: "entity"; entityId: string } | { kind: "ward"; wardId: string } | { kind: "none" };
+export type DataScope =
+  | { kind: "entity"; entityId: string }
+  | { kind: "ward"; wardId: string }
+  /** Cán bộ Sở: the hồ sơ that have ever reached Đã chuyển tỉnh, and the Chủ thể of those (story 78). */
+  | { kind: "province" }
+  | { kind: "none" };
 
 const NONE: DataScope = { kind: "none" };
 
@@ -26,6 +31,8 @@ export function dataScopeOf(actor: Actor): DataScope {
       return type === "entity" && id ? { kind: "entity", entityId: id } : NONE;
     case "ward_officer":
       return type === "ward" && id ? { kind: "ward", wardId: id } : NONE;
+    case "province_officer":
+      return type === "province" ? { kind: "province" } : NONE;
     default:
       return NONE;
   }
