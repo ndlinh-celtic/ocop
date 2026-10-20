@@ -84,6 +84,37 @@ export interface RoundRepo {
    * until the transaction ends (SELECT … FOR UPDATE). A concurrent run waits, then skips rows it closed.
    */
   lockDueForClosing(now: Date): Promise<Round[]>;
+  /** Appends one row of Gia hạn đợt history (append-only in the DB). */
+  insertExtension(extension: DeadlineExtension): Promise<void>;
+  /** The Gia hạn đợt history of a round, newest first, with the name of who extended. */
+  listExtensions(roundId: string): Promise<DeadlineExtensionView[]>;
+}
+
+/** The deadlines a Gia hạn đợt may move: Hạn nộp xã and Hạn gửi tỉnh (Hạn đánh giá tỉnh is a reminder only). */
+export const EXTENDABLE_DEADLINES = ["submission", "forwarding"] as const;
+export type ExtendableDeadline = (typeof EXTENDABLE_DEADLINES)[number];
+
+export const EXTENDABLE_DEADLINE_LABEL: Record<ExtendableDeadline, string> = {
+  submission: "Hạn nộp xã",
+  forwarding: "Hạn gửi tỉnh",
+};
+
+/** One Gia hạn đợt (#26): which deadline, from when to when, why, by whom, and whether it reopened submission. */
+export interface DeadlineExtension {
+  id: string;
+  roundId: string;
+  deadline: ExtendableDeadline;
+  previousDeadline: Date;
+  newDeadline: Date;
+  reason: string;
+  extendedBy: string;
+  extendedAt: Date;
+  /** True when it brought a Đã đóng nộp round back to Đang nhận nộp. */
+  reopened: boolean;
+}
+
+export interface DeadlineExtensionView extends DeadlineExtension {
+  extendedByName: string;
 }
 
 const VN_OFFSET_HOURS = 7;

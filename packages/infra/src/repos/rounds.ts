@@ -1,7 +1,7 @@
 import { roundAlreadyOpen, type Round, type RoundRepo } from "@ocop/core";
-import { and, asc, desc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, lt } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { round } from "../db/schema";
+import { deadlineExtension, round, userAccount } from "../db/schema";
 
 type Row = typeof round.$inferSelect;
 
@@ -68,6 +68,17 @@ export function roundRepo(db: Db): RoundRepo {
         .orderBy(asc(round.submissionDeadline))
         .for("update");
       return rows.map(toRound);
+    },
+    async insertExtension(e) {
+      await db.insert(deadlineExtension).values(e);
+    },
+    async listExtensions(roundId) {
+      return db
+        .select({ ...getTableColumns(deadlineExtension), extendedByName: userAccount.fullName })
+        .from(deadlineExtension)
+        .innerJoin(userAccount, eq(userAccount.id, deadlineExtension.extendedBy))
+        .where(eq(deadlineExtension.roundId, roundId))
+        .orderBy(desc(deadlineExtension.extendedAt), desc(deadlineExtension.id));
     },
   };
 }

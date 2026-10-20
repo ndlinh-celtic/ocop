@@ -8,18 +8,24 @@ import { requireActor } from "@/server/session";
 import { deleteRoundAction, openRoundAction, updateRoundAction } from "../actions";
 import { RoundActionButton } from "../round-buttons";
 import { RoundForm } from "../round-form";
+import { ExtendDeadlineForm } from "./extend-deadline-form";
+import { extendDeadlineAction } from "./extension-actions";
+import { ExtensionHistory } from "./extension-history";
 
 export const dynamic = "force-dynamic";
 
 const orNotFound = (err: unknown) => (err instanceof DomainError && err.code === "not_found" ? null : Promise.reject(err));
 
-/** S82: one Đợt đánh giá; while Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01). */
+/** S82: one Đợt đánh giá; while Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, extends its deadlines (Gia hạn đợt). */
 export default async function RoundPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params;
   const actor = await requireActor();
   const round = await app().core.rounds.getRound(actor, { roundId }).catch(orNotFound);
   if (!round) notFound();
   const editable = round.status === "draft" && can(actor, "round.manage");
+  // L07 Gia hạn đợt: an opened round that has not ended.
+  const extendable = (round.status === "open_for_submission" || round.status === "submission_closed") && can(actor, "round.manage");
+  const extensions = round.status === "draft" ? [] : await app().core.rounds.listDeadlineExtensions(actor, { roundId });
   const versions = editable ? (await app().core.criteria.listVersions(actor)).filter((v) => v.status === "published") : [];
   const facts: [string, string][] = [
     ["Năm", String(round.year)],
@@ -84,6 +90,17 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           />
         </section>
       )}
+      {extendable && (
+        <section className="rounded-lg border bg-surface p-4">
+          <h2 className="mb-3 font-medium">Gia hạn đợt</h2>
+          <ExtendDeadlineForm
+            action={extendDeadlineAction.bind(null, round.id)}
+            current={{ submission: vnDateOf(round.submissionDeadline), forwarding: vnDateOf(round.forwardingDeadline) }}
+            submissionClosed={round.status === "submission_closed"}
+          />
+        </section>
+      )}
+      {round.status !== "draft" && <ExtensionHistory extensions={extensions} />}
     </div>
   );
 }

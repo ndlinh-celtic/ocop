@@ -20,6 +20,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { closeDueSubmissions } from "./rounds/close-due";
+import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
 import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
@@ -101,6 +102,8 @@ export function createCore(deps: CoreDeps) {
       getRound: getRound(deps),
       currentOpenRound: currentOpenRound(deps),
       closeDueSubmissions: closeDueSubmissions(deps),
+      extendDeadline: extendDeadline(deps),
+      listDeadlineExtensions: listDeadlineExtensions(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

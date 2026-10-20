@@ -80,6 +80,8 @@ export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, Ver
 export {
   AGGREGATION_METHODS,
   endOfVnDay,
+  EXTENDABLE_DEADLINE_LABEL,
+  EXTENDABLE_DEADLINES,
   GRADING_MODE_LABEL,
   GRADING_MODES,
   ROUND_STATUS_LABEL,
@@ -88,10 +90,14 @@ export {
   vnDateOf,
   type AggregationMethod,
   type AggregationRule,
+  type DeadlineExtension,
+  type DeadlineExtensionView,
+  type ExtendableDeadline,
   type GradingMode,
   type Round,
   type RoundRepo,
   type RoundStatus,
 } from "./rounds/model";
 export type { RoundInput } from "./rounds/manage";
+export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundView } from "./rounds/read";
