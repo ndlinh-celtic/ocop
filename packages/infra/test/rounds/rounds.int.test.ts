@@ -280,3 +280,34 @@ describe("L07 đợt Nháp chỉ Cán bộ Sở thấy", () => {
     await expect(t.app.rounds.getRound(officer, { roundId })).resolves.toMatchObject({ status: "draft" });
   });
 });
+
+describe("L07 SO-01 mở đợt khi đợt đang mở đã quá Hạn nộp xã", () => {
+  it("closes the overdue round first, as the auto-close job would, then opens the new one", async () => {
+    const officer = await staff();
+    const overdue = (await t.app.rounds.currentOpenRound(officer))!; // left open by "mở đợt", Hạn nộp xã 30/11/2026
+    expect(overdue.submissionDeadline).toEqual(new Date("2026-11-30T16:59:59Z"));
+    const before = t.clock.now();
+    t.clock.set(new Date("2026-11-30T17:00:30Z")); // past Hạn nộp xã; the job has not run yet
+    try {
+      const { roundId } = await t.app.rounds.createRound(officer, roundInput({ name: "Đợt kế tiếp", submissionDeadline: "2026-12-10" }));
+      await t.app.rounds.openRound(officer, { roundId });
+
+      expect(await t.app.rounds.getRound(officer, { roundId: overdue.id })).toMatchObject({
+        status: "submission_closed",
+        submissionClosedAt: new Date("2026-11-30T17:00:30Z"),
+      });
+      expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: roundId });
+      const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.submission_closed' AND payload->>'roundId' = $1", [
+        overdue.id,
+      ]);
+      expect(rows.map((r) => r.payload)).toEqual([
+        { roundId: overdue.id, submissionDeadline: "2026-11-30T16:59:59.000Z", closedAt: "2026-11-30T17:00:30.000Z" },
+      ]);
+      const [entry] = await t.app.audit.search(await admin(), { action: ["round.submission_closed"], targetId: overdue.id });
+      expect(entry).toMatchObject({ actorUserId: null, actorRole: "system:rounds.close-due", after: { status: "submission_closed" } });
+      expect(await t.app.rounds.closeDueSubmissions(systemActor("rounds.close-due"))).toEqual({ closed: [] });
+    } finally {
+      t.clock.set(before);
+    }
+  });
+});

@@ -5,6 +5,7 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import type { Tx } from "../shared/uow";
+import { closeDueActorFor, closeDueInTx } from "./close-due";
 import {
   AGGREGATION_METHODS,
   assertDeadlineOrder,
@@ -172,6 +173,8 @@ export function openRound(deps: CoreDeps) {
       if (isPastSubmissionDeadline(before, now)) {
         throw new DomainError("deadline_passed", "Hạn nộp xã đã qua, không mở được đợt. Hãy sửa Hạn nộp xã trước khi mở.");
       }
+      // A round past its Hạn nộp xã that the job has not closed yet must not block this one.
+      await closeDueInTx(deps, tx, closeDueActorFor(actor), now);
       const open = await tx.rounds.findOpen();
       if (open) throw roundAlreadyOpen(open.name);
       const after: Round = { ...before, status: "open_for_submission", openedAt: now, openedBy: actor.userId, updatedAt: now };

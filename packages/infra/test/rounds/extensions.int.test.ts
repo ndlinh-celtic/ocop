@@ -307,6 +307,17 @@ describe("L07 gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đ�
     expect(await t.app.rounds.listDeadlineExtensions(officer, { roundId })).toEqual(before);
     expect((await round(roundId)).status).toBe("submission_closed");
   });
+
+  it("reopens once the other round is past its Hạn nộp xã, closing it first even before the job runs", async () => {
+    const other = (await t.app.rounds.currentOpenRound(officer))!;
+    t.clock.set(new Date("2027-01-05T17:00:10Z")); // just past the other round's Hạn nộp xã
+    await expect(
+      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2027-01-08", reason: "Mở lại sau đợt khác" }),
+    ).resolves.toMatchObject({ reopened: true });
+    expect(await round(other.id)).toMatchObject({ status: "submission_closed", submissionClosedAt: new Date("2027-01-05T17:00:10Z") });
+    expect(await events("round.submission_closed", other.id)).toHaveLength(1);
+    expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: roundId });
+  });
 });
 
 describe("L07 lịch sử gia hạn trong cơ sở dữ liệu", () => {

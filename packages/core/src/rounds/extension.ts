@@ -4,6 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { closeDueActorFor, closeDueInTx } from "./close-due";
 import { roundNotFound } from "./manage";
 import { roundVisibleTo } from "./read";
 import {
@@ -65,6 +66,7 @@ export function extendDeadline(deps: CoreDeps) {
         throw new DomainError("deadline_passed", "Hạn nộp xã mới đã qua; chọn một ngày từ hôm nay trở đi");
       }
       if (reopened) {
+        await closeDueInTx(deps, tx, closeDueActorFor(actor), now);
         const open = await tx.rounds.findOpen();
         if (open) throw roundAlreadyOpen(open.name);
         after.status = "open_for_submission";
