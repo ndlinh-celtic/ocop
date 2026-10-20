@@ -47,7 +47,7 @@ Một trong bốn giai đoạn của Đợt đánh giá: Nháp, Đang nhận n�
 _Avoid_: Đợt mở/đóng (khi không rõ là đóng nộp hay kết thúc)
 
 **Gia hạn đợt**:
-Việc Sở lùi Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh, có lý do; gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp.
+Việc Sở lùi Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh, có lý do. Hạn nộp xã chỉ gia hạn được khi đợt còn Đang nhận nộp; Hạn gửi tỉnh và Hạn đánh giá tỉnh gia hạn được khi đợt Đang nhận nộp hoặc Đã đóng nộp.
 _Avoid_: Mở lại đợt, kéo dài đợt
 
 **Hạn nộp xã**:
@@ -133,6 +133,7 @@ _Avoid_: Công thức điểm, quy chế (khi nói về cấu hình)
 - Hồ sơ nháp khác Phiên bản tiêu chí của đợt đang mở thì không nộp được; Chủ thể có thể sao chép thông tin sản phẩm và tệp minh chứng sang hồ sơ mới, rồi gắn lại minh chứng theo tiêu chí. Điểm tự chấm không được sao chép.
 - Hồ sơ thuộc một **Đợt đánh giá** từ lúc Chủ thể nộp, và chỉ nộp được vào đợt áp dụng đúng Phiên bản tiêu chí của hồ sơ; UBND xã/phường có thể chuyển hồ sơ sang đợt sau áp dụng cùng phiên bản, kèm lý do.
 - Tại mỗi thời điểm có tối đa một **Đợt đánh giá** ở trạng thái Đang nhận nộp; Chủ thể nộp là vào đợt đó.
+- Đợt ở trạng thái Đã đóng nộp không bao giờ trở lại Đang nhận nộp; **Gia hạn đợt** không mở lại đợt.
 - Hạng dưới 3 sao là không đạt và không được cấp giấy chứng nhận; hạng vẫn được ghi trong kết quả.
 - Sửa một **Phiên bản tiêu chí** đã phát hành (kể cả sửa lỗi bóc tách) là tạo phiên bản mới bằng cách sao chép rồi hiệu chỉnh, có thể cùng văn bản căn cứ; các phiên bản không có quan hệ kế thừa với nhau.
 - Ngày hiệu lực của **Phiên bản tiêu chí** chỉ để ghi nhận; phiên bản được dùng là phiên bản mà **Đợt đánh giá** áp dụng.

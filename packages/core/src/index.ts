@@ -104,6 +104,7 @@ export {
   EXTENDABLE_DEADLINES,
   GRADING_MODE_LABEL,
   GRADING_MODES,
+  isPastSubmissionDeadline,
   ROUND_STATUS_LABEL,
   ROUND_STATUSES,
   roundAlreadyOpen,

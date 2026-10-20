@@ -1,4 +1,4 @@
-import { can, DomainError, GRADING_MODE_LABEL, vnDateOf } from "@ocop/core";
+import { can, DomainError, GRADING_MODE_LABEL, isPastSubmissionDeadline, vnDateOf } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RoundStatusTag } from "@/components/rounds/round-status-tag";
@@ -139,7 +139,8 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
               forwarding: vnDateOf(round.forwardingDeadline),
               evaluation: vnDateOf(round.evaluationDeadline),
             }}
-            submissionClosed={round.status === "submission_closed"}
+            // Hạn nộp xã is not extendable once submission has closed, even before the job has marked it so.
+            submissionClosed={round.status === "submission_closed" || isPastSubmissionDeadline(round, new Date())}
           />
         </section>
       )}

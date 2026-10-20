@@ -27,7 +27,6 @@ export function ExtensionHistory({ extensions }: { extensions: DeadlineExtension
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDateTime(e.extendedAt)}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">
                     {EXTENDABLE_DEADLINE_LABEL[e.deadline]}
-                    {e.reopened && <span className="block text-xs text-info">Đưa đợt về Đang nhận nộp</span>}
                   </td>
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDate(e.previousDeadline)}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDate(e.newDeadline)}</td>

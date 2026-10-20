@@ -24,7 +24,6 @@ export type DomainEventBody =
       type: "round.deadline_extended";
       payload: { roundId: string; extensionId: string; deadline: ExtendableDeadline; previousDeadline: string; newDeadline: string };
     }
-  | { type: "round.reopened"; payload: { roundId: string; extensionId: string; submissionDeadline: string } }
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
   | { type: "round.ended"; payload: { roundId: string } };

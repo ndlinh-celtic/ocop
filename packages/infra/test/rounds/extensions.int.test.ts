@@ -106,7 +106,7 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
       newDate: "2026-12-20",
       reason: "  Nhiều xã đề nghị thêm thời gian  ",
     });
-    expect(result).toEqual({ extensionId: expect.any(String), reopened: false });
+    expect(result).toEqual({ extensionId: expect.any(String) });
     expect(await round(roundId)).toMatchObject({ status: "open_for_submission", forwardingDeadline: new Date("2026-12-20T16:59:59Z") });
     expect(await t.app.rounds.listDeadlineExtensions(officer, { roundId })).toEqual([
       {
@@ -119,7 +119,6 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
         extendedAt: new Date("2026-11-02T03:00:00Z"),
         extendedBy: officer.userId,
         extendedByName: "Cán Bộ Sở",
-        reopened: false,
       },
     ]);
   });
@@ -141,16 +140,13 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
       targetType: "round",
       before: { forwardingDeadline: "2026-12-15T16:59:59.000Z" },
       after: { forwardingDeadline: "2026-12-20T16:59:59.000Z" },
-      metadata: { deadline: "forwarding", reason: "Nhiều xã đề nghị thêm thời gian", reopened: false },
+      metadata: { deadline: "forwarding", reason: "Nhiều xã đề nghị thêm thời gian" },
     });
   });
 
-  it("extends Hạn nộp xã of an open round without emitting round.reopened", async () => {
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-05", reason: "Lũ lụt" }),
-    ).resolves.toMatchObject({ reopened: false });
+  it("extends Hạn nộp xã of an open round, which stays Đang nhận nộp", async () => {
+    await t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-05", reason: "Lũ lụt" });
     expect(await round(roundId)).toMatchObject({ status: "open_for_submission", submissionDeadline: new Date("2026-12-05T16:59:59Z") });
-    expect(await events("round.reopened", roundId)).toEqual([]);
   });
 
   it("lists the history newest first", async () => {
@@ -189,7 +185,6 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
       previousDeadline: new Date("2027-01-31T16:59:59Z"),
       newDeadline: new Date("2027-02-28T16:59:59Z"),
       reason: "Hội đồng họp muộn",
-      reopened: false,
     });
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.deadline_extended"], targetId: roundId });
     expect(entry).toMatchObject({ after: { forwardingDeadline: "2027-02-10T16:59:59.000Z" } });
@@ -246,7 +241,7 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
   });
 });
 
-describe("L07 gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp", () => {
+describe("L07 gia hạn đợt Đã đóng nộp: chỉ Hạn gửi tỉnh và Hạn đánh giá tỉnh, đợt không mở lại", () => {
   let roundId: string;
   beforeAll(async () => {
     // The previous describe left its round open; close it so this one may open.
@@ -255,74 +250,61 @@ describe("L07 gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đ�
     t.clock.set(new Date("2026-12-06T01:00:00Z"));
     ({ roundId } = await t.app.rounds.createRound(
       officer,
-      roundInput({ name: "Đợt mở lại", submissionDeadline: "2026-12-10", forwardingDeadline: "2027-01-10" }),
+      roundInput({ name: "Đợt đã đóng nộp", submissionDeadline: "2026-12-10", forwardingDeadline: "2027-01-10" }),
     ));
     await t.app.rounds.openRound(officer, { roundId });
     t.clock.set(new Date("2026-12-11T00:00:00Z"));
     await t.app.rounds.closeDueSubmissions(JOB);
   });
 
-  it("extends Hạn gửi tỉnh of a closed round without reopening it", async () => {
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2027-01-12", reason: "Chờ xã bổ sung" }),
-    ).resolves.toMatchObject({ reopened: false });
-    expect((await round(roundId)).status).toBe("submission_closed");
+  it("extends Hạn gửi tỉnh of a closed round, which stays Đã đóng nộp", async () => {
+    await t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2027-01-12", reason: "Chờ xã bổ sung" });
+    expect(await round(roundId)).toMatchObject({ status: "submission_closed", forwardingDeadline: new Date("2027-01-12T16:59:59Z") });
   });
 
-  it("refuses a new Hạn nộp xã already in the past, which the job would close again", async () => {
-    t.clock.set(new Date("2026-12-15T00:00:00Z"));
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-14", reason: "Muộn" }),
-    ).rejects.toMatchObject({ code: "deadline_passed" });
-    expect((await round(roundId)).status).toBe("submission_closed");
+  it("extends Hạn đánh giá tỉnh of a closed round, which stays Đã đóng nộp", async () => {
+    await t.app.rounds.extendDeadline(officer, { roundId, deadline: "evaluation", newDate: "2027-02-15", reason: "Hội đồng họp muộn" });
+    expect(await round(roundId)).toMatchObject({ status: "submission_closed", evaluationDeadline: new Date("2027-02-15T16:59:59Z") });
   });
 
-  it("reopens the round, emits round.reopened, and the job leaves it open until the new deadline", async () => {
-    const result = await t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-20", reason: "Mưa bão" });
-    expect(result).toEqual({ extensionId: expect.any(String), reopened: true });
-    expect(await round(roundId)).toMatchObject({
-      status: "open_for_submission",
-      submissionDeadline: new Date("2026-12-20T16:59:59Z"),
-      submissionClosedAt: new Date("2026-12-11T00:00:00Z"),
-    });
-    expect(await events("round.reopened", roundId)).toEqual([{ roundId, extensionId: result.extensionId, submissionDeadline: "2026-12-20T16:59:59.000Z" }]);
-    const [entry] = await t.app.audit.search(await admin(), { action: ["round.reopened"], targetId: roundId });
-    expect(entry).toMatchObject({ before: { status: "submission_closed" }, after: { status: "open_for_submission" } });
-    expect((await t.app.rounds.listDeadlineExtensions(officer, { roundId }))[0]).toMatchObject({ deadline: "submission", reopened: true });
-    expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: roundId });
-
-    expect(await t.app.rounds.closeDueSubmissions(JOB)).toEqual({ closed: [] });
-    t.clock.set(new Date("2026-12-20T17:00:00Z"));
-    expect(await t.app.rounds.closeDueSubmissions(JOB)).toEqual({ closed: [roundId] });
-  });
-
-  it("refuses to reopen while another round is Đang nhận nộp, and keeps no history of the refusal", async () => {
-    const { roundId: other } = await t.app.rounds.createRound(
-      officer,
-      roundInput({ name: "Đợt khác", submissionDeadline: "2027-01-05", forwardingDeadline: "2027-01-20" }),
-    );
-    await t.app.rounds.openRound(officer, { roundId: other });
+  it("refuses to extend Hạn nộp xã once submission has closed, and keeps no history of the refusal", async () => {
     const before = await t.app.rounds.listDeadlineExtensions(officer, { roundId });
     await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2027-01-02", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "round_already_open" });
+      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-20", reason: "Mưa bão" }),
+    ).rejects.toMatchObject({ code: "submission_closed" });
     expect(await t.app.rounds.listDeadlineExtensions(officer, { roundId })).toEqual(before);
-    expect((await round(roundId)).status).toBe("submission_closed");
+    expect(await round(roundId)).toMatchObject({ status: "submission_closed", submissionDeadline: new Date("2026-12-10T16:59:59Z") });
   });
 
-  it("reopens once the other round is past its Hạn nộp xã, closing it first even before the job runs", async () => {
-    const other = (await t.app.rounds.currentOpenRound(officer))!;
-    t.clock.set(new Date("2027-01-05T17:00:10Z")); // just past the other round's Hạn nộp xã
+  it("refuses to extend Hạn nộp xã of a round still marked open but past it, before the job has closed it", async () => {
+    const { roundId: late } = await t.app.rounds.createRound(
+      officer,
+      roundInput({ name: "Đợt chưa kịp đóng", submissionDeadline: "2026-12-20", forwardingDeadline: "2027-01-20" }),
+    );
+    await t.app.rounds.openRound(officer, { roundId: late });
+    t.clock.set(new Date("2026-12-20T17:00:10Z")); // just past Hạn nộp xã; the job has not run yet
     await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2027-01-08", reason: "Mở lại sau đợt khác" }),
-    ).resolves.toMatchObject({ reopened: true });
-    expect(await round(other.id)).toMatchObject({ status: "submission_closed", submissionClosedAt: new Date("2027-01-05T17:00:10Z") });
-    expect(await events("round.submission_closed", other.id)).toHaveLength(1);
-    expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: roundId });
+      t.app.rounds.extendDeadline(officer, { roundId: late, deadline: "submission", newDate: "2026-12-25", reason: "Muộn" }),
+    ).rejects.toMatchObject({ code: "submission_closed" });
+    expect((await round(late)).submissionDeadline).toEqual(new Date("2026-12-20T16:59:59Z"));
   });
 });
 
 describe("L07 lịch sử gia hạn trong cơ sở dữ liệu", () => {
+  it("has no reopened flag, since a round never goes back to Đang nhận nộp", async () => {
+    const { rows } = await db.admin.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = 'round' AND table_name = 'deadline_extension' AND column_name = 'reopened'",
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("refuses to move a Đã đóng nộp round back to Đang nhận nộp, even for the owner", async () => {
+    const { rows } = await db.admin.query("SELECT id FROM round.round WHERE status = 'submission_closed' LIMIT 1");
+    for (const pool of [db.app, db.admin]) {
+      await expect(pool.query("UPDATE round.round SET status = 'open_for_submission' WHERE id = $1", [rows[0].id])).rejects.toThrow(/never reopens/);
+    }
+  });
+
   it("is append-only for the app user", async () => {
     await expect(db.app.query("UPDATE round.deadline_extension SET reason = 'sửa'")).rejects.toThrow(/permission denied/);
     await expect(db.app.query("DELETE FROM round.deadline_extension")).rejects.toThrow(/permission denied/);
@@ -332,8 +314,8 @@ describe("L07 lịch sử gia hạn trong cơ sở dữ liệu", () => {
     const [ext] = (await db.admin.query("SELECT * FROM round.deadline_extension LIMIT 1")).rows;
     const insert = (over: { prev?: string; next?: string; reason?: string }) =>
       db.app.query(
-        `INSERT INTO round.deadline_extension (id, round_id, deadline, previous_deadline, new_deadline, reason, extended_by, extended_at, reopened)
-         VALUES (gen_random_uuid(), $1, 'forwarding', $2, $3, $4, $5, now(), false)`,
+        `INSERT INTO round.deadline_extension (id, round_id, deadline, previous_deadline, new_deadline, reason, extended_by, extended_at)
+         VALUES (gen_random_uuid(), $1, 'forwarding', $2, $3, $4, $5, now())`,
         [ext.round_id, over.prev ?? "2027-01-02T00:00:00Z", over.next ?? "2027-01-01T00:00:00Z", over.reason ?? "Thử", ext.extended_by],
       );
     await expect(insert({})).rejects.toThrow(/extends_later/);

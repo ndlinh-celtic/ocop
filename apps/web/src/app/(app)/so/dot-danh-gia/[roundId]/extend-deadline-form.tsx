@@ -9,7 +9,8 @@ const label = "flex flex-col gap-1 text-sm font-medium";
 
 /**
  * L07 Gia hạn đợt: Cán bộ Sở picks Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh, a later date and a reason. `current` holds
- * each deadline as YYYY-MM-DD (Vietnam), the earliest date the picker offers is the day after it.
+ * each deadline as YYYY-MM-DD (Vietnam), the earliest date the picker offers is the day after it. Once submission
+ * has closed, Hạn nộp xã is no longer offered: a round never goes back to Đang nhận nộp.
  */
 export function ExtendDeadlineForm({
   action: submit,
@@ -21,14 +22,15 @@ export function ExtendDeadlineForm({
   submissionClosed: boolean;
 }) {
   const [state, action, pending] = useActionState<ExtendDeadlineState, FormData>(submit, {});
-  const [deadline, setDeadline] = useState<ExtendableDeadline>("submission");
+  const choices = EXTENDABLE_DEADLINES.filter((d) => !(submissionClosed && d === "submission"));
+  const [deadline, setDeadline] = useState<ExtendableDeadline>(choices[0]!);
   return (
     <form key={state.done?.at} action={action} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={label}>
           Mốc hạn
           <select name="deadline" value={deadline} onChange={(e) => setDeadline(e.target.value as ExtendableDeadline)} className={input}>
-            {EXTENDABLE_DEADLINES.map((d) => (
+            {choices.map((d) => (
               <option key={d} value={d}>
                 {EXTENDABLE_DEADLINE_LABEL[d]} (hiện tại {current[d].split("-").reverse().join("/")})
               </option>
@@ -44,9 +46,7 @@ export function ExtendDeadlineForm({
         Lý do gia hạn
         <textarea name="reason" required maxLength={2000} rows={3} className={input} />
       </label>
-      {submissionClosed && deadline === "submission" && (
-        <p className="text-sm text-warning">Gia hạn Hạn nộp xã sẽ đưa đợt về Đang nhận nộp, nếu không có đợt nào khác đang nhận nộp.</p>
-      )}
+      {submissionClosed && <p className="text-sm text-text-2">Đợt đã đóng nộp: Hạn nộp xã không gia hạn được nữa.</p>}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60">
           Gia hạn
@@ -58,7 +58,7 @@ export function ExtendDeadlineForm({
         )}
         {state.done && (
           <p role="status" className="text-sm text-text-2">
-            {state.done.reopened ? "Đã gia hạn; đợt trở lại Đang nhận nộp." : "Đã gia hạn."}
+            Đã gia hạn.
           </p>
         )}
       </div>
