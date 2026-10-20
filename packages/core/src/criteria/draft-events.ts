@@ -22,9 +22,10 @@ export type DraftTarget = "version" | "thresholds" | DraftNodeKind;
 
 /**
  * Audit action and outbox event type of a change to a draft (one string for both, like
- * `criteria.version.published`). Ticket #23 adds e.g. "criteria.draft.node_added" here.
+ * `criteria.version.published`): content edited (#22), a node added, removed with its children, or moved
+ * among its siblings (#23).
  */
-export type DraftChangeAction = "criteria.draft.edited";
+export type DraftChangeAction = "criteria.draft.edited" | "criteria.draft.node_added" | "criteria.draft.node_removed" | "criteria.draft.node_moved";
 
 export interface DraftChangePayload {
   versionId: string;

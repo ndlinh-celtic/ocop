@@ -1,6 +1,7 @@
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
 import { editDraft } from "./criteria/edit";
+import { addNode, moveNode, removeNode } from "./criteria/structure";
 import { copyVersion, deleteVersion } from "./criteria/copy";
 import { importVersion } from "./criteria/import";
 import { publishVersion, validateVersion } from "./criteria/publish";
@@ -86,6 +87,9 @@ export function createCore(deps: CoreDeps) {
       publishVersion: publishVersion(deps),
       previewSet: previewSet(deps),
       editDraft: editDraft(deps),
+      addNode: addNode(deps),
+      removeNode: removeNode(deps),
+      moveNode: moveNode(deps),
       copyVersion: copyVersion(deps),
       deleteVersion: deleteVersion(deps),
     },

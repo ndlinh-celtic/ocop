@@ -56,6 +56,7 @@ export function CriteriaSetSheet({ set, edit }: { set: CriteriaSetDetail; edit?:
               ))}
             </ol>
           )}
+          {edit && <div className="mt-2">{edit({ add: "exclusion", parent: { node: "set", id: set.id }, label: "Thêm điều kiện loại" })}</div>}
         </section>
 
         {set.parts.map((part) => (
@@ -98,18 +99,27 @@ export function CriteriaSetSheet({ set, edit }: { set: CriteriaSetDetail; edit?:
                             {item.criteria.map((c) => (
                               <CriterionCard key={c.id} criterion={c} edit={edit} />
                             ))}
+                            {edit && <div>{edit({ add: "criterion", parent: { node: "criterionGroup", id: item.id }, label: `Thêm tiêu chí vào nhóm ${item.code}` })}</div>}
                           </div>
                         </div>
                       ) : (
                         <CriterionCard key={item.id} criterion={item} edit={edit} />
                       ),
                     )}
+                    {edit && (
+                      <div className="flex flex-wrap gap-2">
+                        {edit({ add: "criterion", parent: { node: "section", id: section.id }, label: `Thêm tiêu chí vào mục ${section.code}` })}
+                        {edit({ add: "criterionGroup", parent: { node: "section", id: section.id }, label: `Thêm nhóm tiêu chí vào mục ${section.code}` })}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
+              {edit && <div className="px-4 py-3">{edit({ add: "section", parent: { node: "part", id: part.id }, label: `Thêm mục vào phần ${part.code}` })}</div>}
             </div>
           </section>
         ))}
+        {edit && <div>{edit({ add: "part", parent: { node: "set", id: set.id }, label: "Thêm phần" })}</div>}
     </>
   );
 }
@@ -141,7 +151,7 @@ function CriterionCard({ criterion: c, edit }: { criterion: StoredCriterion; edi
             <th className="py-1 text-left font-normal">Mức điểm</th>
             <th className="w-20 py-1 text-right font-normal">Sao tối thiểu</th>
             <th className="w-14 py-1 text-right font-normal">Điểm</th>
-            {edit && <th className="w-10 py-1" aria-label="Sửa" />}
+            {edit && <th className="w-28 py-1" aria-label="Sửa" />}
           </tr>
         </thead>
         <tbody>
@@ -177,6 +187,7 @@ function CriterionCard({ criterion: c, edit }: { criterion: StoredCriterion; edi
           ))}
         </tbody>
       </table>
+      {edit && <div className="mt-2">{edit({ add: "scoreLevel", parent: { node: "criterion", id: c.id }, label: "Thêm mức điểm" })}</div>}
     </article>
   );
 }

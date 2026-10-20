@@ -73,6 +73,15 @@ export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
 export { CriteriaValidationError } from "./criteria/publish";
 export { draftEditSchema, type DraftEdit, type EditDraftInput } from "./criteria/edit";
 export type { DraftChangeResult } from "./criteria/draft-change";
+export {
+  nodeAdditionSchema,
+  type AddNodeInput,
+  type AddNodeResult,
+  type MoveDirection,
+  type MoveNodeInput,
+  type NodeAddition,
+  type RemoveNodeInput,
+} from "./criteria/structure";
 export { DRAFT_NODE_KINDS, type DraftNodeKind, type DraftTarget, type DraftChangeAction, type DraftChangePayload } from "./criteria/draft-events";
 export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
 export type { PreviewSetInput } from "./criteria/preview";
