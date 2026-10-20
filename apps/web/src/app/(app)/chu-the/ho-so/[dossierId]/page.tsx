@@ -1,9 +1,11 @@
-import { can, DOSSIER_STATE_LABEL, type DossierEvent } from "@ocop/core";
+import { can } from "@ocop/core";
 import { Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
-import { formatIsoDate, formatVnDateTime } from "@/lib/format";
+import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
+import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
@@ -13,19 +15,6 @@ import { SubmitPanel, WithdrawForm } from "./submit-panel";
 import { Workbench } from "./workbench";
 
 export const dynamic = "force-dynamic";
-
-const ACTION_LABEL: Record<string, string> = {
-  "dossier.create": "Tạo hồ sơ",
-  "dossier.delete": "Xóa hồ sơ",
-  "dossier.submit": "Nộp hồ sơ",
-  "dossier.withdraw": "Rút hồ sơ",
-};
-
-function describe(e: DossierEvent) {
-  const label = ACTION_LABEL[e.action] ?? e.action;
-  const move = e.fromState && e.fromState !== e.toState ? `${label}: ${DOSSIER_STATE_LABEL[e.fromState]} → ${DOSSIER_STATE_LABEL[e.toState]}` : label;
-  return e.reason ? `${move}. Lý do: ${e.reason}` : move;
-}
 
 /**
  * S14 Trình soạn hồ sơ (L02 CT-03, CT-05, CT-06): thông tin sản phẩm, kho minh chứng gắn theo tiêu chí,
@@ -81,11 +70,8 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
           <p>
             Phiên bản nộp {dossier.latestSubmission.number}, nộp lúc {formatVnDateTime(dossier.latestSubmission.submittedAt)}.
           </p>
-          {dossier.flags.map((flag) => (
-            <p key={flag.typeCode} role="status" className="mt-1 text-danger">
-              {flag.typeName} trong Phiên bản nộp đã hết hiệu lực từ sau ngày {formatIsoDate(flag.validUntil)}.
-            </p>
-          ))}
+          {dossier.receivedAt && <p>Xã đã tiếp nhận lúc {formatVnDateTime(dossier.receivedAt)}.</p>}
+          <DossierFlags flags={dossier.flags} />
         </section>
       )}
 
@@ -112,17 +98,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
       {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} />}
       {withdrawable && <WithdrawForm dossierId={dossier.id} version={dossier.version} />}
 
-      <section className="rounded-lg border bg-surface shadow-card">
-        <h2 className="border-b p-4 font-semibold">Dòng thời gian</h2>
-        <ol className="divide-y">
-          {timeline.map((e) => (
-            <li key={e.id} className="flex flex-wrap justify-between gap-2 px-4 py-2 text-sm">
-              <span>{describe(e)}</span>
-              <span className="text-text-3">{formatVnDateTime(e.occurredAt)}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <DossierTimeline events={timeline} />
     </div>
   );
 }

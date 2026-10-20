@@ -8,7 +8,10 @@ import { requireActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
-/** L01 (story 77): the Chủ thể đăng ký ở xã của Cán bộ xã, the xã being the Phạm vi of the Vai trò đang dùng. */
+/**
+ * L01 (story 77): the Chủ thể đăng ký ở xã của Cán bộ xã, and those with a hồ sơ now in the xã; the xã is
+ * the Phạm vi of the Vai trò đang dùng.
+ */
 export default async function WardEntitiesPage() {
   const actor = await requireActor();
   const entities = await app().core.entities.listEntities(actor);
@@ -18,7 +21,7 @@ export default async function WardEntitiesPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Chủ thể của xã</h1>
-          <p className="text-sm text-text-2">Các Chủ thể đăng ký ở xã/phường bạn phụ trách.</p>
+          <p className="text-sm text-text-2">Các Chủ thể đăng ký ở xã/phường bạn phụ trách, và Chủ thể có hồ sơ đang ở xã.</p>
         </div>
         {can(actor, "entity.create") && (
           <Link href="/xa/chu-the/tao-moi" className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink">

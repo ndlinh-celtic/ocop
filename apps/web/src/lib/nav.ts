@@ -56,7 +56,7 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   ward_officer: [
     HOME,
-    { href: "/xa/ho-so", label: "Hồ sơ tại xã", icon: FolderOpen, ready: false },
+    { href: "/xa/ho-so", label: "Hồ sơ tại xã", icon: FolderOpen, ready: true },
     { href: "/xa/chu-the", label: "Chủ thể", icon: Building2, ready: true },
     { href: "/xa/gui-len-tinh", label: "Gửi lên tỉnh", icon: Send, ready: false },
     STATS,
