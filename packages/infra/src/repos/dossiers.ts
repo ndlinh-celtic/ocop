@@ -1,5 +1,5 @@
 import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
-import { and, asc, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, max, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
 
@@ -54,8 +54,14 @@ export function dossierRepo(db: Db): DossierRepo {
         .returning({ id: dossier.id });
       return updated.length === 1;
     },
-    async list(scope) {
-      return (await db.select().from(dossier).where(inScope(scope)).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
+    async list(scope, filter = {}) {
+      const where = and(
+        inScope(scope),
+        filter.state ? eq(dossier.state, filter.state) : undefined,
+        filter.awaitingReceipt ? and(eq(dossier.state, "submitted_to_ward"), isNull(dossier.receivedAt)) : undefined,
+        filter.handlerUserId ? eq(dossier.handlerUserId, filter.handlerUserId) : undefined,
+      );
+      return (await db.select().from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
     },
     async appendEvent(e) {
       await db.insert(dossierEvent).values(e);
@@ -122,6 +128,15 @@ export function dossierRepo(db: Db): DossierRepo {
     },
     async submissions(dossierId) {
       return (await db.select().from(submission).where(eq(submission.dossierId, dossierId)).orderBy(asc(submission.number))) as Submission[];
+    },
+    async lastSubmittedAt(dossierIds) {
+      if (dossierIds.length === 0) return new Map();
+      const rows = await db
+        .select({ dossierId: submission.dossierId, at: max(submission.submittedAt) })
+        .from(submission)
+        .where(inArray(submission.dossierId, [...dossierIds]))
+        .groupBy(submission.dossierId);
+      return new Map(rows.flatMap((r) => (r.at ? [[r.dossierId, r.at] as const] : [])));
     },
     async latestSubmission(dossierId) {
       const [row] = await db.select().from(submission).where(eq(submission.dossierId, dossierId)).orderBy(desc(submission.number)).limit(1);

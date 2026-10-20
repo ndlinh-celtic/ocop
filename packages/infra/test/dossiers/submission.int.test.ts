@@ -197,7 +197,7 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ productName: PRODUCT.productName, version, evidence: [] });
   });
 
-  it("refuses a nộp from a stale version, another Chủ thể's as not found, and a Cán bộ xã's as forbidden", async () => {
+  it("refuses a nộp from a stale version, another Chủ thể's as not found, and a Cán bộ xã's as not found too: a Nháp belongs to no xã", async () => {
     const a = await f.verifiedOwner();
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });
     const expectedVersion = await f.completeDraft(a, dossierId);
@@ -205,7 +205,7 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
     await expect(t.app.dossiers.submit(a, { dossierId, expectedVersion: expectedVersion - 1 })).rejects.toMatchObject({ code: "version_conflict" });
     await expect(t.app.dossiers.submit(await f.verifiedOwner(), { dossierId, expectedVersion })).rejects.toMatchObject({ code: "not_found" });
     await expect(t.app.dossiers.submissions(await f.verifiedOwner(), { dossierId })).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.dossiers.submit(await f.staff("ward_officer", wardId), { dossierId, expectedVersion })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.dossiers.submit(await f.staff("ward_officer", wardId), { dossierId, expectedVersion })).rejects.toMatchObject({ code: "not_found" });
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "draft", version: expectedVersion });
   });
 
@@ -273,13 +273,12 @@ describe("L03 CT-10 rút hồ sơ (story 33)", () => {
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward", version });
   });
 
-  it("refuses once the xã has Tiếp nhận the hồ sơ", async () => {
+  it("refuses once the xã has Tiếp nhận the hồ sơ (L05 XA-02)", async () => {
     const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
-    // Stands in for Tiếp nhận (#38), which will stamp received_at through transition().
     const officer = await f.staff("ward_officer", wardId);
-    await db.admin.query("UPDATE dossier.dossier SET received_at = now(), received_by = $2, version = version + 1 WHERE id = $1", [dossierId, officer.userId]);
+    const received = await t.app.dossiers.receive(officer, { dossierId, expectedVersion: version });
 
-    await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: version + 1, reason: "Muộn" })).rejects.toMatchObject({ code: "already_received" });
+    await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: received.version, reason: "Muộn" })).rejects.toMatchObject({ code: "already_received" });
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward" });
   });
 });

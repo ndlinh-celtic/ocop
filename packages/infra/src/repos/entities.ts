@@ -1,7 +1,7 @@
 import type { DataScope, Entity, EntityRepo, LegalDocumentRecord, LegalDocumentRepo } from "@ocop/core";
-import { and, asc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, isNull, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { entity, file, legalDocument, legalDocumentType } from "../db/schema";
+import { dossier, entity, file, legalDocument, legalDocumentType } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause: rows outside it are never loaded (#14). The switch is
@@ -12,8 +12,12 @@ function inScope(scope: DataScope): SQL {
     case "entity":
       return eq(entity.id, scope.entityId);
     case "ward":
-      // Story 77: the Chủ thể đăng ký ở xã mình. Those with a hồ sơ now in the xã join with the hồ sơ module.
-      return eq(entity.wardId, scope.wardId);
+      // Story 77: the Chủ thể đăng ký ở xã mình, or with a hồ sơ now in the xã (submitted here, or moved
+      // here by Chuyển xã); a Nháp belongs to no xã.
+      return or(
+        eq(entity.wardId, scope.wardId),
+        sql`exists (select 1 from ${dossier} where ${dossier.entityId} = ${entity.id} and ${dossier.wardId} = ${scope.wardId} and ${dossier.deletedAt} is null)`,
+      )!;
     case "none":
       return sql`false`;
     default: {

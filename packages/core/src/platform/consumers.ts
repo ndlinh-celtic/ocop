@@ -1,4 +1,5 @@
 import type { SystemActor } from "../shared/context";
+import { emailDossierEvent, notifyDossierEvent } from "../dossiers/notices";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
@@ -42,6 +43,15 @@ export const CONSUMERS = {
   "notifications.file-blocked": {
     events: ["files.blocked"],
     handle: notifyFileBlocked,
+  },
+  // Story 86: Cán bộ xã hear of a new hồ sơ, the Chủ thể of its Tiếp nhận.
+  "notifications.dossier": {
+    events: ["dossier.submitted", "dossier.received"],
+    handle: notifyDossierEvent,
+  },
+  "dossiers.notice-email": {
+    events: ["dossier.submitted", "dossier.received"],
+    handle: emailDossierEvent,
   },
 } as const satisfies Record<string, Consumer>;
 
