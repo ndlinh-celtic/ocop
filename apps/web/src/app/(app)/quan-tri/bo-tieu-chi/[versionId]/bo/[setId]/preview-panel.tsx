@@ -1,6 +1,6 @@
 "use client";
 
-import type { StarRank, UnmetMinimumStar } from "@ocop/core";
+import type { StoredStarRank, StoredUnmetMinimumStar } from "@ocop/core";
 import { useRef, useState, useTransition } from "react";
 import { previewSetAction } from "./preview-actions";
 
@@ -34,7 +34,7 @@ const stars = (n: number) => (
  */
 export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPart[] }) {
   const [chosen, setChosen] = useState<Record<string, string>>({});
-  const [rank, setRank] = useState<StarRank | null>(null);
+  const [rank, setRank] = useState<StoredStarRank | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const latest = useRef(0);
@@ -63,8 +63,8 @@ export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPa
   };
 
   // Every unmet Sao tối thiểu is above the current Hạng sao, so each one keeps the Bộ from a higher rank.
-  const blocking = new Map<string, UnmetMinimumStar[]>();
-  for (const u of rank?.unmet ?? []) blocking.set(u.code, [...(blocking.get(u.code) ?? []), u]);
+  const blocking = new Map<string, StoredUnmetMinimumStar[]>();
+  for (const u of rank?.unmet ?? []) blocking.set(u.criterionId, [...(blocking.get(u.criterionId) ?? []), u]);
 
   return (
     <details className="rounded-lg border bg-surface">
@@ -78,7 +78,7 @@ export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPa
                 Phần {part.code}. {part.name} ({part.points} điểm)
               </legend>
               {part.criteria.map((c) => {
-                const blocks = blocking.get(c.code);
+                const blocks = blocking.get(c.id);
                 return (
                   <label
                     key={c.id}
@@ -156,7 +156,7 @@ export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPa
                   <h4 className="font-medium">Yêu cầu chưa đạt</h4>
                   <ul className="mt-1 flex flex-col gap-1">
                     {rank.unmet.map((u) => (
-                      <li key={`${u.code}-${u.star}`} className="text-warning">
+                      <li key={`${u.criterionId}-${u.star}`} className="text-warning">
                         {u.code}: cần {u.required} điểm để đạt {u.star} sao (đang {u.actual})
                       </li>
                     ))}

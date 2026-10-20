@@ -1,4 +1,5 @@
 import { criteriaOf, type CriteriaSet, type Criterion, type CriterionScores, type RankThresholds, type ScoreLevel, type Star } from "./model";
+import type { CriteriaSetDetail } from "./detail";
 
 export interface StarRankInput {
   readonly set: CriteriaSet;
@@ -71,19 +72,47 @@ export function averageScores(sheets: readonly CriterionScores[]): Record<string
 }
 
 export function rankStars({ set, thresholds, scores }: StarRankInput): StarRank {
-  const scoreOf = (c: Criterion) => scores[c.code] ?? 0;
-  const parts = set.parts.map((part) => ({
-    code: part.code,
-    total: sum(criteriaOf(part).map(scoreOf)),
-  }));
-  const total = sum(set.parts.flatMap(criteriaOf).map(scoreOf));
+  const parts = set.parts.map((part) => ({ code: part.code, criteria: criteriaOf(part) }));
+  return rankBy(parts, thresholds, (c) => scores[c.code] ?? 0, () => ({}));
+}
 
-  const unmet = set.parts
-    .flatMap(criteriaOf)
+export interface StoredStarRankInput {
+  readonly set: CriteriaSetDetail;
+  readonly thresholds: RankThresholds;
+  /** Points per Tiêu chí id; a Tiêu chí without an entry scores 0. */
+  readonly scores: ReadonlyMap<string, number>;
+}
+
+/** An unmet Sao tối thiểu of a stored Tiêu chí, identified by id because a draft may repeat a code. */
+export interface StoredUnmetMinimumStar extends UnmetMinimumStar {
+  readonly criterionId: string;
+}
+
+export interface StoredStarRank extends StarRank {
+  readonly unmet: readonly StoredUnmetMinimumStar[];
+}
+
+/** rankStars for a stored Bộ tiêu chí, with scores keyed by Tiêu chí id (a draft can hold duplicate codes). */
+export function rankStoredSet({ set, thresholds, scores }: StoredStarRankInput): StoredStarRank {
+  const parts = set.parts.map((part) => ({ code: part.code, criteria: criteriaOf(part) }));
+  return rankBy(parts, thresholds, (c) => scores.get(c.id) ?? 0, (c) => ({ criterionId: c.id }));
+}
+
+function rankBy<C extends Criterion, K extends object>(
+  scoredParts: readonly { code: string; criteria: readonly C[] }[],
+  thresholds: RankThresholds,
+  scoreOf: (c: C) => number,
+  keyOf: (c: C) => K,
+): StarRank & { unmet: (K & UnmetMinimumStar)[] } {
+  const parts = scoredParts.map((part) => ({ code: part.code, total: sum(part.criteria.map(scoreOf)) }));
+  const all = scoredParts.flatMap((p) => p.criteria);
+  const total = sum(all.map(scoreOf));
+
+  const unmet = all
     .flatMap((c) =>
       requirementsOf(c)
         .filter((r) => scoreOf(c) + EPS < r.required)
-        .map((r) => ({ code: c.code, name: c.name, star: r.star, required: r.required, actual: scoreOf(c) })),
+        .map((r) => ({ ...keyOf(c), code: c.code, name: c.name, star: r.star, required: r.required, actual: scoreOf(c) })),
     )
     .sort((a, b) => a.star - b.star);
 

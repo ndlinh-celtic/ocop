@@ -1,12 +1,12 @@
 "use server";
 
-import type { StarRank } from "@ocop/core";
+import type { StoredStarRank } from "@ocop/core";
 import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
 import { requireActor } from "@/server/session";
 
-export type PreviewState = { rank: StarRank } | { error: string };
+export type PreviewState = { rank: StoredStarRank } | { error: string };
 
 const input = z.object({ setId: z.string().min(1), levelIds: z.array(z.string().min(1)).max(1000) });
 
