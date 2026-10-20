@@ -46,6 +46,9 @@ const ROLE_ACTIONS = {
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
   "dossier.document.download": ["entity_owner", "ward_officer"],
+  // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
+  "dossier.ward_report.generate": ["ward_officer"],
+  "dossier.ward_report.upload": ["ward_officer"],
   // L01 Nhập hộ (stories 72 to 75): what a Cán bộ xã may do for a Chủ thể đăng ký ở xã mình, through
   // onBehalfOf(). The actions on one hồ sơ are the transition table's rows marked `onBehalf`.
   "dossier.read_on_behalf": ["ward_officer"],

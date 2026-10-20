@@ -1,10 +1,12 @@
 import { can, ENTITY_KIND_LABEL, isExpired, isPastSupplementDeadline, maskPersonalId, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS, vnDateOf } from "@ocop/core";
+import { Send } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
 import { RejectionNotice } from "@/components/dossiers/rejection-notice";
+import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { SupplementRequests } from "@/components/dossiers/supplement-requests";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
@@ -36,6 +38,7 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
     app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !timeline || !submissions || !supplements) notFound();
+  const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
   const now = new Date();
   const mayRequestSupplement = can(actor, "dossier.supplement.request", dossier) && dossier.receivedAt !== null;
   const documentTypes = mayRequestSupplement ? (await app().core.entities.getLegalStanding(actor, { entityId: dossier.entity.id })).requirements : [];
@@ -105,6 +108,18 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
       {/* L06 XA-04: assessed once Tiếp nhận, editable until gửi tỉnh; read-only afterwards. */}
       {checklist && dossier.receivedAt && checklist.items.length > 0 && (
         <ChecklistForm dossierId={dossier.id} version={dossier.version} checklist={checklist} editable={can(actor, "dossier.checklist.assess", dossier)} />
+      )}
+      {/* L06 XA-07 (S25): the Báo cáo đánh giá cấp xã and gửi tỉnh, from Tiếp nhận on. */}
+      {dossier.receivedAt && (can(actor, "dossier.forward", dossier) || wardReport.signed) && (
+        <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
+          <h2 className="font-semibold">Báo cáo đánh giá cấp xã và gửi tỉnh</h2>
+          {wardReport.signed ? <SignedWardReport dossierId={dossier.id} signed={wardReport.signed} /> : <p className="text-text-3">Chưa có bản đã ký.</p>}
+          {can(actor, "dossier.forward", dossier) && (
+            <Link href={`/xa/ho-so/${dossier.id}/gui-tinh`} className="inline-flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink">
+              <Send className="size-4" aria-hidden /> Lập báo cáo và gửi lên tỉnh
+            </Link>
+          )}
+        </section>
       )}
 
       {dossier.state === "supplement_requested" && dossier.supplementDeadline && !isPastSupplementDeadline(dossier, now) && (

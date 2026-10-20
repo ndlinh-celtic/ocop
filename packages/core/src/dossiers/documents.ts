@@ -30,8 +30,8 @@ const DOCUMENT_TITLE: Record<SubmissionDocument, string> = {
 const fileNameOf = (document: SubmissionDocument, submissionNumber: number) => `${DOCUMENT_TITLE[document]} - Phiên bản nộp ${submissionNumber}.docx`;
 
 /** YYYY-MM-DD as read in Vietnam: DD/MM/YYYY. */
-const vnDate = (isoDay: string) => isoDay.split("-").reverse().join("/");
-const vnNumber = (n: number) => String(n).replace(".", ",");
+export const vnDate = (isoDay: string) => isoDay.split("-").reverse().join("/");
+export const vnNumber = (n: number) => String(n).replace(".", ",");
 
 export interface SubmissionContext {
   number: number;

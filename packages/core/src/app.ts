@@ -41,6 +41,7 @@ import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
+import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
@@ -173,6 +174,11 @@ export function createCore(deps: CoreDeps) {
       closeUnsupplemented: closeUnsupplemented(deps),
       checklist: dossierChecklist(deps),
       assessChecklist: assessChecklist(deps),
+      generateWardReport: generateWardReport(deps),
+      attachSignedWardReport: attachSignedWardReport(deps),
+      wardReport: wardReportStatus(deps),
+      downloadSignedWardReport: downloadSignedWardReport(deps),
+      forwardToProvince: forwardToProvince(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

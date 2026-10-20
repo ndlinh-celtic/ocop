@@ -40,7 +40,7 @@ const READS_COMMENTS: readonly Role[] = ["ward_officer", "province_officer"];
 const MAX_COMMENT = 2000;
 
 /** The items of the hồ sơ's đợt with this hồ sơ's results; none before it is submitted into a đợt. */
-async function checklistOf(tx: Tx, dossier: Dossier): Promise<{ items: ChecklistItem[]; results: Map<string, ChecklistResult> }> {
+export async function checklistOf(tx: Tx, dossier: Dossier): Promise<{ items: ChecklistItem[]; results: Map<string, ChecklistResult> }> {
   const round = dossier.roundId ? await tx.rounds.findById(dossier.roundId) : null;
   const results = new Map((await tx.dossiers.checklistResults(dossier.id)).map((r) => [r.itemCode, r]));
   return { items: round?.checklist ?? [], results };

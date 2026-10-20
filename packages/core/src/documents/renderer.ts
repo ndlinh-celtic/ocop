@@ -46,9 +46,38 @@ export interface SelfAssessmentReportData {
   submittedOn: string;
 }
 
+/**
+ * Báo cáo đánh giá cấp xã (L06 XA-07, #42): the Checklist sơ bộ of the newest Phiên bản nộp, printed,
+ * signed by the xã and uploaded back as a PDF. Thời gian, địa điểm, thành phần tham gia and ý kiến của
+ * Chủ thể are left blank in the template for the xã to fill by hand. Nhận xét are not printed: the
+ * signed report reaches the Chủ thể (story 35).
+ */
+export interface WardReportData {
+  wardName: string;
+  roundName: string;
+  entityName: string;
+  entityKind: string;
+  identifier: string;
+  address: string;
+  representativeName: string;
+  phone: string;
+  productName: string;
+  criteriaSetCode: string;
+  criteriaSetName: string;
+  submissionNumber: string;
+  submittedOn: string;
+  selfScoreTotal: string;
+  selfScoreStar: string;
+  checklist: { index: string; label: string; result: string }[];
+  /** "Đủ điều kiện chuyển tỉnh" or "Chưa đủ điều kiện chuyển tỉnh". */
+  suggestion: string;
+  generatedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
+  ward_report: WardReportData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;

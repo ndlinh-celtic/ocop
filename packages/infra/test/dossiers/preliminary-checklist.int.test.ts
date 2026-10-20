@@ -192,13 +192,18 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
   it("can be changed until the hồ sơ is gửi tỉnh, not after", async () => {
     const officer = await f.staff("ward_officer", wardX);
     const { dossierId, version } = await received(officer);
-    const [item] = (await t.app.dossiers.checklist(officer, { dossierId })).items;
-    const { version: v2 } = await t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: version, results: [{ itemCode: item!.code, result: "fail" }] });
-    // Gửi tỉnh is #42; stand in for it by moving the row as the transition would.
-    await db.admin.query("UPDATE dossier.dossier SET state = 'forwarded_to_province', first_forwarded_at = now(), version = version + 1 WHERE id = $1", [dossierId]);
+    const { items } = await t.app.dossiers.checklist(officer, { dossierId });
+    const { version: v2 } = await t.app.dossiers.assessChecklist(officer, {
+      dossierId,
+      expectedVersion: version,
+      results: items.map((i) => ({ itemCode: i.code, result: "fail" as const })),
+    });
+    const fileId = await f.uploadPdf(officer, "signed_ward_report", "BC xã đã ký.pdf");
+    const { version: v3 } = await t.app.dossiers.attachSignedWardReport(officer, { dossierId, expectedVersion: v2, fileId });
+    const { version: v4 } = await t.app.dossiers.forwardToProvince(officer, { dossierId, expectedVersion: v3 });
 
     await expect(
-      t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: v2 + 1, results: [{ itemCode: item!.code, result: "pass" }] }),
+      t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: v4, results: [{ itemCode: items[0]!.code, result: "pass" }] }),
     ).rejects.toMatchObject({ code: "invalid_state" });
   });
 });

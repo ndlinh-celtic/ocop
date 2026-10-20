@@ -39,6 +39,7 @@ export const NOTICE_EVENTS = [
   "dossier.supplement_requested",
   "dossier.resubmitted",
   "dossier.closed_unsupplemented",
+  "dossier.forwarded",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -158,9 +159,40 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           link: ownerLink,
         },
       ];
+    // L06 XA-07 (story 67): gửi tỉnh tells the Sở, which now receives it, and the Chủ thể.
+    case "dossier.forwarded": {
+      const entity = await tx.entities.findById(scope, dossier.entityId);
+      return [
+        {
+          recipients: await provinceOfficers(tx, now),
+          kind: "dossier_forwarded",
+          title: `Hồ sơ gửi tỉnh: ${product}`,
+          body: `UBND xã/phường đã gửi tỉnh hồ sơ của ${entity?.name ?? "một Chủ thể"}.`,
+          emailSubject: "Có hồ sơ OCOP mới gửi tỉnh",
+          emailLine: "UBND xã/phường vừa gửi tỉnh một hồ sơ OCOP.",
+          link: `/so/ho-so/${dossier.id}`,
+        },
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_forwarded",
+          title: `Hồ sơ ${product} đã được gửi tỉnh`,
+          body: "UBND xã/phường đã đánh giá sơ bộ và gửi hồ sơ lên Sở Nông nghiệp và Môi trường.",
+          emailSubject: "Hồ sơ OCOP đã được gửi tỉnh",
+          emailLine: "UBND xã/phường đã gửi hồ sơ OCOP của anh/chị lên tỉnh.",
+          link: ownerLink,
+        },
+      ];
+    }
     default:
       return [];
   }
+}
+
+/** The Người dùng holding an active Phân vai Cán bộ Sở (Phạm vi tỉnh). */
+async function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
+  const assignments = (await tx.roleAssignments.listForScope("province_officer", "province", null)).filter((a) => isAssignmentActive(a, now));
+  const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
+  return users.filter((u): u is User => u !== null && u.status === "active");
 }
 
 /** In-app side of the notices on a hồ sơ. */
