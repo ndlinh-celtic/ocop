@@ -9,6 +9,8 @@ import { notificationRepo } from "./notifications";
 import { wardRepo } from "./org";
 import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform";
 import { roundRepo } from "./rounds";
+import { entityRepo } from "./entities";
+import { rateLimitRepo } from "./rate-limits";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -26,5 +28,7 @@ export function buildRepos(db: Db): Tx {
     files: fileRepo(db),
     criteriaVersions: criteriaVersionRepo(db),
     rounds: roundRepo(db),
+    entities: entityRepo(db),
+    rateLimits: rateLimitRepo(db),
   };
 }

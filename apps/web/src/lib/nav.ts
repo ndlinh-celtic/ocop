@@ -49,7 +49,7 @@ export const NAV: Record<Role, NavItem[]> = {
   entity_owner: [
     HOME,
     { href: "/chu-the/ho-so", label: "Hồ sơ của tôi", icon: FolderOpen, ready: false },
-    { href: "/chu-the/phap-ly", label: "Hồ sơ pháp lý", icon: FileBadge, ready: false },
+    { href: "/chu-the/phap-ly", label: "Hồ sơ pháp lý", icon: FileBadge, ready: true },
     CRITERIA,
     ...COMMON,
   ],

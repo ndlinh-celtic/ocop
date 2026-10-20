@@ -20,6 +20,8 @@ export interface CoreSettings {
     maxLifetimeMs: number;
   };
   passwordResetTtlMs: number;
+  /** Public Chủ thể registration attempts allowed per client address and window. */
+  registrationRateLimit: { max: number; windowMs: number };
   files: {
     maxBytes: number;
     allowedTypes: Record<string, string[]>;
@@ -35,6 +37,7 @@ export const DEFAULT_SETTINGS: Omit<CoreSettings, "totpRequired" | "appBaseUrl">
   lockout: { maxFailures: 5, windowMs: 15 * 60_000, lockMs: 15 * 60_000 },
   session: { idleStrictMs: 30 * 60_000, idleRelaxedMs: 8 * 3_600_000, maxLifetimeMs: 12 * 3_600_000 },
   passwordResetTtlMs: 3_600_000,
+  registrationRateLimit: { max: 5, windowMs: 3_600_000 },
   files: {
     maxBytes: 100 * 1024 * 1024,
     allowedTypes: DEFAULT_ALLOWED_TYPES,

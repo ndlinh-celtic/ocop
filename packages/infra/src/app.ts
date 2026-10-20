@@ -72,6 +72,7 @@ export function settingsFrom(config: AppConfig): CoreSettings {
       maxLifetimeMs: config.SESSION_MAX_HOURS ? config.SESSION_MAX_HOURS * 60 * MIN : d.session.maxLifetimeMs,
     },
     passwordResetTtlMs: config.PASSWORD_RESET_MINUTES ? config.PASSWORD_RESET_MINUTES * MIN : d.passwordResetTtlMs,
+    registrationRateLimit: d.registrationRateLimit,
     files: { ...d.files, maxBytes: config.FILE_MAX_MB ? config.FILE_MAX_MB * 1024 * 1024 : d.files.maxBytes },
   };
 }

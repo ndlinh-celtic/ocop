@@ -29,6 +29,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <Link href="/quen-mat-khau" className="mt-4 block text-center text-sm text-brand">
           Quên mật khẩu?
         </Link>
+        <Link href="/dang-ky" className="mt-4 block rounded-lg border border-line-strong px-4 py-2 text-center text-sm font-medium">
+          Đăng ký tài khoản chủ thể
+        </Link>
       </div>
     </main>
   );

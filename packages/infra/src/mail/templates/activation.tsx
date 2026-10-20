@@ -13,7 +13,7 @@ export function ActivationEmail({ fullName, link, expiresAtText }: ActivationPro
   return (
     <EmailLayout preview="Kích hoạt tài khoản OCOP">
       <Text>Xin chào {fullName},</Text>
-      <Text>Quản trị hệ thống đã tạo tài khoản cho anh/chị. Bấm nút dưới đây để đặt mật khẩu và kích hoạt tài khoản.</Text>
+      <Text>Tài khoản của anh/chị trên hệ thống OCOP đã được tạo. Bấm nút dưới đây để đặt mật khẩu và kích hoạt tài khoản.</Text>
       <Button href={link} style={{ backgroundColor: "#16a34a", color: "#ffffff", borderRadius: 8, padding: "10px 18px", fontWeight: 600 }}>
         Kích hoạt tài khoản
       </Button>

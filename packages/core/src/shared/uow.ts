@@ -9,6 +9,8 @@ import type { WardRepo } from "../org/ward";
 import type { Outbox, ProcessedEvents } from "../platform/events";
 import type { RoundRepo } from "../rounds/model";
 import type { EmailDeliveries } from "../platform/mail";
+import type { EntityRepo } from "../entities/model";
+import type { RateLimitRepo } from "../platform/rate-limit";
 
 /** Everything a use case can touch inside one database transaction. */
 export interface Tx {
@@ -26,6 +28,8 @@ export interface Tx {
   files: FileRepo;
   criteriaVersions: CriteriaVersionRepo;
   rounds: RoundRepo;
+  entities: EntityRepo;
+  rateLimits: RateLimitRepo;
 }
 
 export interface UnitOfWork {
