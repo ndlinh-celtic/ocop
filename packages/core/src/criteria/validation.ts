@@ -7,6 +7,7 @@ export type ValidationIssueCode =
   | "part_points_mismatch"
   | "set_total_mismatch"
   | "duplicate_criterion_code"
+  | "missing_zero_level"
   | "duplicate_name"
   | "thresholds_not_increasing"
   | "threshold_exceeds_total";
@@ -40,8 +41,11 @@ function setIssues({ set, parts, sections, criterionGroups, criteria, levels }: 
     `${label}: khai báo ${shown(declared)} điểm, tổng ${below} là ${shown(computed)}`;
 
   for (const c of criteria) {
-    const top = Math.max(0, ...levels.filter((l) => l.criterionId === c.id).map((l) => l.points));
+    const own = levels.filter((l) => l.criterionId === c.id).map((l) => l.points);
+    const top = Math.max(0, ...own);
     if (!same(top, c.maxPoints)) report("max_points_mismatch", c.code, `Điểm tối đa ${shown(c.maxPoints)} khác mức cao nhất ${shown(top)}`);
+    // Every Tiêu chí must let the grader pick "Không đáp ứng, 0 điểm" (spec #16; the import adds it when the sheet has none).
+    if (!own.some((points) => same(points, 0))) report("missing_zero_level", c.code, "Tiêu chí chưa có mức 0 điểm (Không đáp ứng)");
   }
   for (const g of criterionGroups) {
     const computed = sum(criteria.filter((c) => c.groupId === g.id).map((c) => c.maxPoints));

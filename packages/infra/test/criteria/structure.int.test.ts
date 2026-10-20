@@ -273,6 +273,19 @@ describe("L19 AD-03/AD-04 kiểm tra sau mỗi thao tác", () => {
     const removed = await t.app.criteria.removeNode(a, { versionId, node: "criterion", id: added.nodeId });
     expect(removed.issues).toEqual([]);
   });
+
+  it("reports a Tiêu chí left without a 0-point Mức điểm, and publishing is refused", async () => {
+    const { a, versionId, ids } = await draft();
+    const { nodeId } = await t.app.criteria.addNode(a, {
+      versionId,
+      addition: { node: "criterion", parent: { node: "section", id: ids.section }, values: { code: "1.2", name: "Thêm", maxPoints: 0 } },
+    });
+    const added = (await sectionItems(a, ids.set)).find((i) => i.id === nodeId)!;
+    const zero = added.kind === "criterion" ? added.levels.find((l) => l.systemAdded)! : null;
+    const { issues } = await t.app.criteria.removeNode(a, { versionId, node: "scoreLevel", id: zero!.id });
+    expect(issues).toEqual([expect.objectContaining({ code: "missing_zero_level", setId: ids.set, criterionCode: "1.2" })]);
+    await expect(t.app.criteria.publishVersion(a, { versionId })).rejects.toMatchObject({ code: "validation_failed" });
+  });
 });
 
 describe("L19 AD-03 từ chối thao tác cấu trúc", () => {
