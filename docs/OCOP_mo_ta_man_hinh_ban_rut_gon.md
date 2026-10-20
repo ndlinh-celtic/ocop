@@ -160,7 +160,7 @@ Toast cho thao tác nhanh, banner cho trạng thái trang, chuông kèm danh sá
 | S22 | Chi tiết hồ sơ và kiểm tra tại xã | Cán bộ xã | Máy tính | 1 | L05, L06 |
 | S23 | Checklist đánh giá sơ bộ | Cán bộ xã | Máy tính | 1 | L06 |
 | S24 | Tạo yêu cầu bổ sung | Cán bộ xã, Sở | Máy tính | 1 | L04 |
-| S25 | Lập biên bản và gửi lên tỉnh | Lãnh đạo xã | Máy tính | 1 | L06 |
+| S25 | Báo cáo đánh giá cấp xã và gửi lên tỉnh | Cán bộ xã | Máy tính | 1 | L06 |
 | S30 | Trang chủ Sở NN&MT | Cán bộ Sở | Máy tính | 1 | L07, L08 |
 | S31 | Quản lý đợt đánh giá | Cán bộ Sở | Máy tính | 1 | L07 |
 | S32 | Danh sách hồ sơ toàn tỉnh | Cán bộ Sở | Máy tính | 1 | L08 |
@@ -363,13 +363,13 @@ Mỗi màn hình gồm: mục đích, bố cục, thành phần chính, trạng 
 - **Trạng thái:** chưa có mục nào thì không gửi được; gửi thành công hiện toast và đổi trạng thái hồ sơ.
 - **Ghi chú:** dùng chung cho cán bộ Sở khi trả hồ sơ về xã theo đề nghị của Tổ tư vấn; khi đó hộp thoại ghi rõ "Trả về xã", chọn xã và ghi nhận xét.
 
-#### S25. Lập biên bản và gửi lên tỉnh
+#### S25. Báo cáo đánh giá cấp xã và gửi lên tỉnh
 **Chức năng:** XA-07, XA-08 · **Luồng:** L06
-- **Mục đích:** gộp các hồ sơ đạt sơ bộ thành gói gửi tỉnh theo đợt.
-- **Bố cục:** ba cột trên máy tính: danh sách hồ sơ đạt sơ bộ (có ô chọn); xem trước biên bản và văn bản đề xuất (sinh từ mẫu); cột thao tác cuối.
-- **Thành phần:** chọn Đợt gửi (hiển thị hạn gửi và đếm ngược); bảng hồ sơ kèm ô chọn; khung xem trước tài liệu; nút "Tải bản nháp (Word, PDF)"; vùng "Tải lên bản đã ký" (sau khi ký số ngoài hệ thống); nút "Gửi lên tỉnh".
-- **Hộp thoại xác nhận:** nêu số hồ sơ, đợt, thông báo sẽ gửi tới Sở và chủ thể.
-- **Trạng thái:** quá hạn gửi của đợt (cảnh báo, gợi ý chuyển sang đợt kế tiếp), chưa tải lên bản đã ký (cho phép gửi nếu cơ quan chấp nhận, kèm cảnh báo; cần xác nhận quy trình).
+- **Mục đích:** lập Báo cáo đánh giá cấp xã cho một hồ sơ, tải lên bản đã ký số và gửi hồ sơ lên tỉnh. Mỗi hồ sơ một báo cáo; không gộp nhiều hồ sơ vào một biên bản, không có văn bản đề xuất theo lô (nếu xã cần công văn kèm thì làm ngoài hệ thống).
+- **Bố cục:** hai cột trên máy tính: xem trước Báo cáo đánh giá cấp xã (sinh từ mẫu theo Phiên bản nộp mới nhất và Checklist sơ bộ); cột thao tác bên phải. Mở từ chi tiết hồ sơ (S22) khi Checklist sơ bộ đã đánh giá đủ.
+- **Thành phần:** đợt của hồ sơ (hiển thị Hạn gửi tỉnh và đếm ngược); khung xem trước; nút "Tải bản nháp (Word)"; vùng "Tải lên bản đã ký" (PDF, sau khi ký số ngoài hệ thống); nút "Gửi lên tỉnh". Mẫu có chỗ trống cho thời gian, địa điểm, thành phần tham gia và ý kiến của Chủ thể; các phần này điền ngoài hệ thống.
+- **Hộp thoại xác nhận:** nêu hồ sơ, đợt, thông báo sẽ gửi tới Sở và Chủ thể.
+- **Trạng thái:** chưa tải lên bản đã ký (nút "Gửi lên tỉnh" bị khóa, ghi rõ lý do); quá Hạn gửi tỉnh của đợt (nút bị khóa, hồ sơ hiện nhãn "Chờ đợt sau", gợi ý chuyển sang đợt sau cùng Phiên bản tiêu chí); đã gửi (chỉ đọc, kèm thời điểm gửi và bản đã ký).
 
 ### 5.4 Nhóm Sở NN&MT
 
@@ -396,7 +396,7 @@ Mỗi màn hình gồm: mục đích, bố cục, thành phần chính, trạng 
 
 #### S33. Chi tiết hồ sơ tại tỉnh
 **Chức năng:** SO-02 · **Luồng:** L08
-- Giống S22 về cấu trúc tab (Tổng quan, Minh chứng, Biên bản sơ bộ của xã, Lịch sử) và có thêm tab "Thẩm định và chấm điểm" chỉ đọc cho Sở (hiển thị trạng thái, không hiển thị điểm từng thành viên).
+- Giống S22 về cấu trúc tab (Tổng quan, Minh chứng, Báo cáo đánh giá cấp xã, Lịch sử) và có thêm tab "Thẩm định và chấm điểm" chỉ đọc cho Sở (hiển thị trạng thái, không hiển thị điểm từng thành viên).
 - **Hành động:** Tiếp nhận, Trả về xã (ghi lý do), Phân công (mở S41).
 - **Trạng thái:** hồ sơ đang trong chế độ chấm nào hiển thị rõ bằng chip.
 
@@ -475,7 +475,7 @@ Mỗi màn hình gồm: mục đích, bố cục, thành phần chính, trạng 
 #### S51. Thẩm định và chấm điểm đề xuất
 **Chức năng:** TM-02, TM-05, TM-06 · **Luồng:** L10
 - **Mục đích:** rà soát minh chứng và nhập điểm đề xuất kèm căn cứ.
-- **Bố cục:** khung hai bên (mục 3.9). Trái: tab Thông tin hồ sơ, Minh chứng (nhóm theo tiêu chí, xem nhanh qua S91), Biên bản sơ bộ của xã. Phải: biểu mẫu chấm theo tiêu chí (nhóm theo Phần A, B, C). Thanh cố định ở cuối: tổng điểm theo phần và tổng chung, "Lưu nháp", "Chuyển sang soạn báo cáo Tổ tư vấn" (S52).
+- **Bố cục:** khung hai bên (mục 3.9). Trái: tab Thông tin hồ sơ, Minh chứng (nhóm theo tiêu chí, xem nhanh qua S91), Báo cáo đánh giá cấp xã. Phải: biểu mẫu chấm theo tiêu chí (nhóm theo Phần A, B, C). Thanh cố định ở cuối: tổng điểm theo phần và tổng chung, "Lưu nháp", "Chuyển sang soạn báo cáo Tổ tư vấn" (S52).
 - **Thành phần mỗi tiêu chí (bên phải):** tên, điểm tối đa, ô điểm đề xuất (mục 3.4), ô "Căn cứ" (văn bản, bắt buộc khi có điểm), "Viện dẫn minh chứng" (chọn từ các tệp đã gắn tiêu chí, hiển thị chip tên tệp), cờ đánh dấu "Thiếu minh chứng", "Cần xác minh", "Lưu ý cho hội đồng".
 - **Trạng thái:** thiếu căn cứ (báo lỗi khi chuyển bước), phát hiện thiếu hồ sơ nghiêm trọng (nút "Đề nghị Sở trả về xã": mở hộp thoại ghi lý do gửi Sở, không tự trả trực tiếp), tự lưu nháp mỗi vài giây.
 
@@ -564,7 +564,7 @@ Mỗi màn hình gồm: mục đích, bố cục, thành phần chính, trạng 
 **Chức năng:** AD-06 · **Luồng:** L07, L09
 - **Mục đích:** quản lý danh mục dùng chung.
 - **Bố cục:** các tab: Nhóm sản phẩm, Xã/phường, Mẫu văn bản.
-- **Thành phần:** Nhóm sản phẩm (6 nhóm, sắp xếp, bật tắt); Xã/phường của tỉnh (mã, tên, ngày hiệu lực, tên cũ khi sáp nhập); Mẫu văn bản (loại: biên bản sơ bộ, văn bản đề xuất, bảng tổng hợp, biên bản họp, quyết định, giấy chứng nhận, thư kết quả; tải lên mẫu Word hoặc PDF, danh sách trường tự điền, xem trước, phiên bản mẫu).
+- **Thành phần:** Nhóm sản phẩm (6 nhóm, sắp xếp, bật tắt); Xã/phường của tỉnh (mã, tên, ngày hiệu lực, tên cũ khi sáp nhập); Mẫu văn bản (loại: Phiếu đăng ký, Báo cáo tự đánh giá, Báo cáo đánh giá cấp xã, bảng tổng hợp, biên bản họp, quyết định, giấy chứng nhận, thư kết quả; tải lên mẫu Word hoặc PDF, danh sách trường tự điền, xem trước, phiên bản mẫu).
 - **Trạng thái:** mẫu đang được dùng bởi đợt đang mở: sửa tạo phiên bản mới, không ảnh hưởng tài liệu đã sinh.
 - **Ghi chú:** phần quản lý mẫu văn bản là giả định của bản mô tả này để phục vụ việc sinh biên bản từ mẫu; cần xác nhận phạm vi.
 

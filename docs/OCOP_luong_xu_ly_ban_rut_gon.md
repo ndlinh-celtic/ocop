@@ -47,6 +47,7 @@ stateDiagram-v2
     state "Đã nộp xã" as NopXa
     state "Yêu cầu bổ sung" as BoSung
     state "Không đạt sơ bộ" as KhongDatSB
+    state "Đã rút" as DaRut
     state "Đã chuyển tỉnh" as ChuyenTinh
     state "Tổ tư vấn thẩm định" as ThamMuu
     state "Đã phát hành báo cáo Tổ tư vấn" as PhatHanh
@@ -63,6 +64,8 @@ stateDiagram-v2
     NopXa --> BoSung: Xã yêu cầu bổ sung
     BoSung --> NopXa: Chủ thể nộp lại
     NopXa --> KhongDatSB: Xã loại
+    NopXa --> DaRut: Chủ thể rút (xã chưa tiếp nhận)
+    BoSung --> KhongDatSB: Quá hạn bổ sung, lý do Không bổ sung
     NopXa --> ChuyenTinh: Xã đề xuất
     ChuyenTinh --> BoSung: Sở trả về xã
     ChuyenTinh --> ThamMuu: Chế độ dựa trên Tổ tư vấn
@@ -78,6 +81,8 @@ stateDiagram-v2
     GuiBo --> CN34: Bộ trả về, Sở chuyển về công nhận cấp tỉnh
     GuiBo --> DaDong: Sở đóng hồ sơ
 ```
+
+Vòng đời có 15 trạng thái: 14 trạng thái gốc và **Đã rút** (ADR 0007). Tiếp nhận, đổi cán bộ phụ trách, chuyển xã và chuyển đợt không phải trạng thái; chúng là sự kiện trên hồ sơ ở "Đã nộp xã".
 
 ## 2. Nhóm Chủ thể OCOP
 
@@ -145,7 +150,7 @@ flowchart TD
 
 **Ngoại lệ**
 - Hết hạn nộp: hồ sơ giữ ở "Nháp", nộp được vào đợt kế tiếp nếu đợt đó áp dụng cùng Phiên bản tiêu chí; nếu khác, hồ sơ hiển thị "Không nộp được vào đợt hiện tại: khác phiên bản tiêu chí" kèm nút tạo hồ sơ mới (L02).
-- Rút hồ sơ trước khi xã xử lý: trạng thái "Đã rút", ghi lý do.
+- Rút hồ sơ khi xã chưa tiếp nhận: trạng thái "Đã rút", ghi lý do.
 
 **Dữ liệu ghi nhận:** phiên bản hồ sơ, thời điểm nộp, lịch sử trạng thái, lịch nhắc.
 
@@ -162,7 +167,7 @@ flowchart TD
 5. Hồ sơ quay về "Đã nộp xã"; người yêu cầu nhận thông báo.
 
 **Ngoại lệ**
-- Quá hạn bổ sung: hệ thống nhắc, sau đó cho phép cán bộ đóng hồ sơ với lý do "Không bổ sung".
+- Quá hạn bổ sung: hệ thống nhắc, sau đó cho phép cán bộ đóng hồ sơ về "Không đạt sơ bộ" với lý do "Không bổ sung".
 - Hồ sơ đã ở tỉnh: chỉ Sở trả về xã, tránh nhiều đầu mối yêu cầu cùng lúc.
 
 **Dữ liệu ghi nhận:** danh sách yêu cầu, phản hồi từng mục, các phiên bản hồ sơ.
