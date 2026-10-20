@@ -104,7 +104,7 @@
   // Menu theo vai trò (mục 2). sub: các màn con hiển thị dưới mục.
   O.MENUS = {
     chuthe: [['s10', 'Trang chủ', 'house'], ['s12', 'Hồ sơ của tôi', 'folder-open', ['s13', 's14', 's15', 's16', 's17', 's18', 's19']], ['s11', 'Hồ sơ pháp lý', 'file-badge'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
-    xa: [['s20', 'Trang chủ', 'house'], ['s21', 'Hồ sơ tại xã', 'folder-open', ['s22', 's23', 's24']], ['s25', 'Gửi lên tỉnh', 'send'], ['s35', 'Thống kê', 'chart-column'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
+    xa: [['s20', 'Trang chủ', 'house'], ['s21', 'Hồ sơ tại xã', 'folder-open', ['s22', 's23', 's24', 's25']], ['s35', 'Thống kê', 'chart-column'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
     so: [['s30', 'Trang chủ', 'house'], ['s31', 'Đợt đánh giá', 'calendar-range'], ['s32', 'Hồ sơ toàn tỉnh', 'folder-open', ['s33']], ['s34', 'Hồ sơ 5 sao', 'star'], ['s35', 'Thống kê', 'chart-column'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
     thuky: [['s42', 'Trang chủ', 'house'], ['s40', 'Hội đồng', 'users'], ['s41', 'Phân công', 'git-fork'], ['s42', 'Tiến độ chấm', 'list-checks'], ['s43', 'Chốt điểm', 'lock'], ['s44', 'Văn bản', 'file-text'], ['s45', 'Chứng nhận', 'award'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
     ttv: [['s50', 'Hàng đợi thẩm định', 'inbox', ['s51', 's52']], ['s53', 'Sao chép sang phiếu chấm', 'copy'], ['s04', 'Thông báo', 'bell'], ['s03', 'Tài khoản', 'circle-user']],
@@ -113,7 +113,7 @@
   };
   // vai trò ở thanh dưới di động (tối đa 4)
   O.BOTTOM = {
-    chuthe: ['s10', 's12', 's04', 's03'], xa: ['s20', 's21', 's25', 's04'], so: ['s30', 's32', 's34', 's04'], thuky: ['s42', 's41', 's43', 's04'],
+    chuthe: ['s10', 's12', 's04', 's03'], xa: ['s20', 's21', 's35', 's04'], so: ['s30', 's32', 's34', 's04'], thuky: ['s42', 's41', 's43', 's04'],
     ttv: ['s50', 's53', 's04', 's03'], thanhvien: ['s60', 's63', 's04', 's03'], quantri: ['s70', 's71', 's74', 's04'],
   };
 

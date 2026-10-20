@@ -93,7 +93,7 @@
     { icon: 'file-check-2', tone: 'purple', title: 'Có báo cáo Tổ tư vấn mới cho hồ sơ HS-2026-0124', sub: 'Trà thảo mộc túi lọc · Phiên bản 2', at: '1 giờ trước', day: 'Hôm nay', unread: true, go: 's61', type: 'ttv' },
     { icon: 'calendar-clock', tone: 'amber', title: 'Đợt đánh giá 2026 đóng nhận hồ sơ sau 5 ngày', sub: 'Hạn nộp của xã: 30/04/2026', at: '08:00', day: 'Hôm nay', unread: true, go: 's31', type: 'han' },
     { icon: 'badge-check', tone: 'green', title: 'Hồ sơ Mật ong rừng tràm đã có kết quả đánh giá', sub: 'HS-2026-0127 · Mở hồ sơ để xem chi tiết', at: '18/10/2026 16:20', day: 'Trước đó', go: 's19', type: 'trangthai' },
-    { icon: 'send', tone: 'blue', title: 'UBND Xã An Phú đã gửi 3 hồ sơ lên tỉnh', sub: 'Biên bản số 05/BB-UBND', at: '17/10/2026 10:05', day: 'Trước đó', go: 's32', type: 'trangthai' },
+    { icon: 'send', tone: 'blue', title: 'UBND Xã An Phú đã gửi hồ sơ Gạo thơm An Phú lên tỉnh', sub: 'Báo cáo đánh giá cấp xã số 05/BC-UBND', at: '17/10/2026 10:05', day: 'Trước đó', go: 's32', type: 'trangthai' },
     { icon: 'users', tone: 'purple', title: 'Bạn được phân công chấm hồ sơ Nón lá làng nghề', sub: 'HS-2026-0125 · Hạn của đợt 28/10/2026', at: '16/10/2026 14:30', day: 'Trước đó', go: 's60', type: 'phancong' },
     { icon: 'wrench', tone: 'gray', title: 'Hệ thống bảo trì từ 22:00 đến 23:30 ngày 25/10/2026', sub: 'Thông báo hệ thống', at: '15/10/2026 09:00', day: 'Trước đó', go: 's92', params: { variant: 'baotri' }, type: 'baotri' },
   ];
