@@ -37,7 +37,18 @@ export {
   type Section,
   type Star,
 } from "./criteria/model";
-export { averageScores, rankStars, type PartTotal, type StarRank, type StarRankInput, type UnmetMinimumStar } from "./criteria/star-rank";
+export {
+  averageScores,
+  rankStars,
+  rankStoredSet,
+  type PartTotal,
+  type StarRank,
+  type StarRankInput,
+  type StoredStarRank,
+  type StoredStarRankInput,
+  type StoredUnmetMinimumStar,
+  type UnmetMinimumStar,
+} from "./criteria/star-rank";
 export type {
   CriteriaSetRow,
   CriteriaVersion,
@@ -110,4 +121,4 @@ export {
 export type { RoundInput } from "./rounds/manage";
 export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
-export type { RoundView } from "./rounds/read";
+export type { RoundDetail, RoundView } from "./rounds/read";

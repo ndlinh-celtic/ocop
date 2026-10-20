@@ -3,6 +3,7 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assembleSet, type CriteriaSetDetail } from "./detail";
+import { byPosition, versionNotFound } from "./helpers";
 import type { RankThresholds } from "./model";
 import type { CriteriaVersion, VersionSummary } from "./version";
 
@@ -11,7 +12,6 @@ import type { CriteriaVersion, VersionSummary } from "./version";
  * (spec #16 story 33). A draft is reported as not found to everyone else.
  */
 
-const notFound = () => new DomainError("not_found", "Không tìm thấy phiên bản tiêu chí");
 
 export interface TaxonomySet {
   id: string;
@@ -62,9 +62,8 @@ export function getVersion(deps: CoreDeps) {
     authorize(actor, "criteria.read_published");
     return deps.uow.run(async (tx) => {
       const version = await tx.criteriaVersions.findById(input.versionId);
-      if (!version || !visible(actor, version)) throw notFound();
+      if (!version || !visible(actor, version)) throw versionNotFound();
       const t = await tx.criteriaVersions.taxonomy(version.id);
-      const byPosition = <T extends { position: number }>(rows: T[]) => [...rows].sort((a, b) => a.position - b.position);
       return {
         ...version,
         thresholds: t.thresholds,

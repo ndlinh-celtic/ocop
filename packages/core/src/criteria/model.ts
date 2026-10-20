@@ -61,6 +61,9 @@ export interface CriteriaSet {
 /** Points per Tiêu chí code. Values may be fractional when averaged over several score sheets. */
 export type CriterionScores = Readonly<Record<string, number>>;
 
-export function criteriaOf(part: Part): Criterion[] {
+/** The Tiêu chí of a Phần in sheet order, those inside a Nhóm tiêu chí included. Keeps the stored type of a stored Phần. */
+export function criteriaOf<C extends Criterion>(part: {
+  readonly sections: readonly { readonly items: readonly (C | { readonly kind: "group"; readonly criteria: readonly C[] })[] }[];
+}): C[] {
   return part.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i])));
 }

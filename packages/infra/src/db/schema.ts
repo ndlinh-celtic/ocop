@@ -287,7 +287,7 @@ export const round = roundSchema.table("round", {
 export const deadlineExtension = roundSchema.table("deadline_extension", {
   id: uuid("id").primaryKey(),
   roundId: uuid("round_id").notNull(),
-  deadline: text("deadline").$type<"submission" | "forwarding">().notNull(),
+  deadline: text("deadline").$type<"submission" | "forwarding" | "evaluation">().notNull(),
   previousDeadline: ts("previous_deadline").notNull(),
   newDeadline: ts("new_deadline").notNull(),
   reason: text("reason").notNull(),

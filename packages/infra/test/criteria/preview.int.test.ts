@@ -59,6 +59,7 @@ const FILE = JSON.stringify({
 
 let set: CriteriaSetDetail;
 const criteria = () => set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i])))) as StoredCriterion[];
+const criterionId = (code: string) => criteria().find((c) => c.code === code)!.id;
 /** The id of the Mức điểm worth `points` on Tiêu chí `code`. */
 const level = (code: string, points: number) => criteria().find((c) => c.code === code)!.levels.find((l) => l.points === points)!.id;
 
@@ -95,13 +96,13 @@ describe("L19 AD-03 xem trước Bộ tiêu chí bằng chấm thử", () => {
   it("caps the Hạng sao at the Sao tối thiểu a Tiêu chí misses and reports it", async () => {
     const result = await t.app.criteria.previewSet(await admin(), { setId: set.id, levelIds: [level("1.1", 30), level("2.1", 40)] });
     expect(result).toMatchObject({ total: 70, byThreshold: 4, byMinimumStars: 3, star: 3 });
-    expect(result.unmet).toEqual([{ code: "1.1", name: "Tiêu chí 1.1", star: 4, required: 60, actual: 30 }]);
+    expect(result.unmet).toEqual([{ criterionId: criterionId("1.1"), code: "1.1", name: "Tiêu chí 1.1", star: 4, required: 60, actual: 30 }]);
   });
 
   it("scores 0 for a Tiêu chí without a chosen Mức điểm", async () => {
     const result = await t.app.criteria.previewSet(await admin(), { setId: set.id, levelIds: [level("1.1", 60)] });
     expect(result).toMatchObject({ total: 60, byThreshold: 3, byMinimumStars: 2, star: 2 });
-    expect(result.unmet).toEqual([{ code: "2.1", name: "Tiêu chí 2.1", star: 3, required: 20, actual: 0 }]);
+    expect(result.unmet).toEqual([{ criterionId: criterionId("2.1"), code: "2.1", name: "Tiêu chí 2.1", star: 3, required: 20, actual: 0 }]);
   });
 
   it("refuses a Mức điểm of another Bộ tiêu chí or an unknown id", async () => {
@@ -114,6 +115,23 @@ describe("L19 AD-03 xem trước Bộ tiêu chí bằng chấm thử", () => {
     await expect(t.app.criteria.previewSet(a, { setId: set.id, levelIds: ["00000000-0000-7000-8000-000000000000"] })).rejects.toMatchObject({
       code: "level_not_in_set",
     });
+  });
+
+  it("scores each Tiêu chí by id, so a draft with two Tiêu chí of the same code still previews", async () => {
+    const a = await admin();
+    const { versionId } = await t.app.criteria.importVersion(a, { fileName: "trung-ma.json", content: FILE.replace("98/2027", "96/2027") });
+    const setId = (await t.app.criteria.getVersion(a, { versionId })).productGroups[0]!.subgroups[0]!.sets[0]!.id;
+    const before = (await t.app.criteria.getCriteriaSet(a, { setId })).set;
+    const second = before.parts[1]!.sections[0]!.items[0] as StoredCriterion;
+    await t.app.criteria.editDraft(a, { versionId, edit: { node: "criterion", id: second.id, changes: { code: "1.1" } } });
+    const [first, renamed] = (await t.app.criteria.getCriteriaSet(a, { setId })).set.parts.flatMap((p) => p.sections[0]!.items) as StoredCriterion[];
+
+    const result = await t.app.criteria.previewSet(a, {
+      setId,
+      levelIds: [first!.levels.find((l) => l.points === 30)!.id, renamed!.levels.find((l) => l.points === 40)!.id],
+    });
+    expect(result).toMatchObject({ parts: [{ code: "A", total: 30 }, { code: "B", total: 40 }], total: 70, byMinimumStars: 3, star: 3 });
+    expect(result.unmet).toEqual([{ criterionId: first!.id, code: "1.1", name: "Tiêu chí 1.1", star: 4, required: 60, actual: 30 }]);
   });
 
   it("refuses two Mức điểm for one Tiêu chí", async () => {

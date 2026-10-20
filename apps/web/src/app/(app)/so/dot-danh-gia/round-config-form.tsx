@@ -42,7 +42,7 @@ function ConfigForm({ action: submit, title, children }: { action: Action; title
 
 /**
  * L07 HD-06: an opened round's Chế độ chấm and Quy tắc tổng hợp, editable until its first phiếu chấm
- * (the core refuses afterwards and the refusal shows inline).
+ * (the round page hides them once getRound reports gradingConfigLocked; the core refuses as well).
  */
 export function RoundConfigForms({
   gradingMode,

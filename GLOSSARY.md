@@ -47,7 +47,7 @@ Một trong bốn giai đoạn của Đợt đánh giá: Nháp, Đang nhận n�
 _Avoid_: Đợt mở/đóng (khi không rõ là đóng nộp hay kết thúc)
 
 **Gia hạn đợt**:
-Việc Sở lùi Hạn nộp xã hoặc Hạn gửi tỉnh, có lý do; gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp.
+Việc Sở lùi Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh, có lý do; gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp.
 _Avoid_: Mở lại đợt, kéo dài đợt
 
 **Hạn nộp xã**:

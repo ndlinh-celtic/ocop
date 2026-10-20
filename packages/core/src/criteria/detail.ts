@@ -1,4 +1,5 @@
 import type { CriteriaSet, Criterion, CriterionGroup, Part, ScoreLevel, Section } from "./model";
+import { byPosition } from "./helpers";
 import type { SetRows } from "./version";
 
 /*
@@ -46,8 +47,6 @@ export interface CriteriaSetDetail extends CriteriaSet {
   readonly exclusionConditions: readonly ExclusionCondition[];
   readonly parts: readonly StoredPart[];
 }
-
-const byPosition = <T extends { position: number }>(rows: readonly T[]) => [...rows].sort((a, b) => a.position - b.position);
 
 function groupBy<T, K>(rows: readonly T[], key: (r: T) => K): Map<K, T[]> {
   const map = new Map<K, T[]>();

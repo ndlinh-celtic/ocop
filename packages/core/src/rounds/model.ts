@@ -43,7 +43,7 @@ export interface RoundDeadlines {
   submissionDeadline: Date;
   /** Hạn gửi tỉnh. */
   forwardingDeadline: Date;
-  /** Hạn đánh giá tỉnh: a reminder only. */
+  /** Hạn đánh giá tỉnh: a reminder only (nothing closes at it); extendable like the other two. */
   evaluationDeadline: Date;
 }
 
@@ -90,13 +90,17 @@ export interface RoundRepo {
   listExtensions(roundId: string): Promise<DeadlineExtensionView[]>;
 }
 
-/** The deadlines a Gia hạn đợt may move: Hạn nộp xã and Hạn gửi tỉnh (Hạn đánh giá tỉnh is a reminder only). */
-export const EXTENDABLE_DEADLINES = ["submission", "forwarding"] as const;
+/**
+ * The deadlines a Gia hạn đợt may move: Hạn nộp xã, Hạn gửi tỉnh and Hạn đánh giá tỉnh. Hạn đánh giá tỉnh
+ * must be extendable too, or Hạn gửi tỉnh could never pass it (the three stay in order).
+ */
+export const EXTENDABLE_DEADLINES = ["submission", "forwarding", "evaluation"] as const;
 export type ExtendableDeadline = (typeof EXTENDABLE_DEADLINES)[number];
 
 export const EXTENDABLE_DEADLINE_LABEL: Record<ExtendableDeadline, string> = {
   submission: "Hạn nộp xã",
   forwarding: "Hạn gửi tỉnh",
+  evaluation: "Hạn đánh giá tỉnh",
 };
 
 /** One Gia hạn đợt (#26): which deadline, from when to when, why, by whom, and whether it reopened submission. */

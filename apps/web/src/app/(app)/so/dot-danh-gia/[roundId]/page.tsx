@@ -20,7 +20,7 @@ const orNotFound = (err: unknown) => (err instanceof DomainError && err.code ===
 /**
  * S82: one Đợt đánh giá. While Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, changes
  * Chế độ chấm and Quy tắc tổng hợp (HD-06), ends it from Đã đóng nộp, and extends
- * Hạn nộp xã or Hạn gửi tỉnh (Gia hạn đợt).
+ * Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh (Gia hạn đợt).
  */
 export default async function RoundPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params;
@@ -91,13 +91,21 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
       {configurable && (
         <section className="rounded-lg border bg-surface p-4">
           <h2 className="font-medium">Đổi cấu hình chấm</h2>
-          <p className="mb-4 text-sm text-text-2">Đổi được cho đến khi đợt có phiếu chấm đầu tiên.</p>
-          <RoundConfigForms
-            gradingMode={round.gradingMode}
-            aggregation={round.aggregation}
-            changeGradingMode={changeGradingModeAction.bind(null, round.id)}
-            changeAggregationRule={changeAggregationRuleAction.bind(null, round.id)}
-          />
+          {round.gradingConfigLocked ? (
+            <p className="mt-1 text-sm text-text-2">
+              Đợt đã có phiếu chấm, nên Chế độ chấm và Quy tắc tổng hợp đã khóa: mọi phiếu của đợt chấm theo cùng một cấu hình.
+            </p>
+          ) : (
+            <>
+              <p className="mb-4 text-sm text-text-2">Đổi được cho đến khi đợt có phiếu chấm đầu tiên.</p>
+              <RoundConfigForms
+                gradingMode={round.gradingMode}
+                aggregation={round.aggregation}
+                changeGradingMode={changeGradingModeAction.bind(null, round.id)}
+                changeAggregationRule={changeAggregationRuleAction.bind(null, round.id)}
+              />
+            </>
+          )}
         </section>
       )}
       {editable && (
@@ -126,7 +134,11 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           <h2 className="mb-3 font-medium">Gia hạn đợt</h2>
           <ExtendDeadlineForm
             action={extendDeadlineAction.bind(null, round.id)}
-            current={{ submission: vnDateOf(round.submissionDeadline), forwarding: vnDateOf(round.forwardingDeadline) }}
+            current={{
+              submission: vnDateOf(round.submissionDeadline),
+              forwarding: vnDateOf(round.forwardingDeadline),
+              evaluation: vnDateOf(round.evaluationDeadline),
+            }}
             submissionClosed={round.status === "submission_closed"}
           />
         </section>

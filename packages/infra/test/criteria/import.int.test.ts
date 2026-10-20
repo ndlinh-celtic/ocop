@@ -348,6 +348,10 @@ describe("L19 seed QĐ 26", () => {
       await t2.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
       expect(await seedCriteria(fresh.app, t2.app, qd26, "ocop_tieu_chi_qd26_2026.json")).toMatchObject({ created: true });
       expect(await seedCriteria(fresh.app, t2.app, qd26, "ocop_tieu_chi_qd26_2026.json")).toMatchObject({ created: false });
+      // The importer trims văn bản căn cứ, so a padded copy of the same file is the same version.
+      const padded = qd26.replace('"van_ban": "26/2026/QĐ-TTg"', '"van_ban": "  26/2026/QĐ-TTg "');
+      expect(padded).not.toBe(qd26);
+      expect(await seedCriteria(fresh.app, t2.app, padded, "ocop_tieu_chi_qd26_2026.json")).toMatchObject({ created: false });
 
       const a = await t2.signInAs(ADMIN.email, ADMIN.password);
       const versions = await t2.app.criteria.listVersions(a);

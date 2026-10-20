@@ -46,6 +46,21 @@ const nodeTable = (kind: DraftNodeKind) => NODE_TABLE[kind] as unknown as NodeTa
 const toVersion = (row: typeof criteriaVersion.$inferSelect): CriteriaVersion => ({ ...row, status: row.status as VersionStatus });
 
 export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
+  /** Ngưỡng hạng and Cây phân loại of a version, without the per-set Tiêu chí count (loadRows has the criteria anyway). */
+  async function taxonomyRows(versionId: string) {
+    const thresholds = await db.select().from(rankThreshold).where(eq(rankThreshold.versionId, versionId));
+    const groups = await db.select().from(productGroup).where(eq(productGroup.versionId, versionId)).orderBy(asc(productGroup.position));
+    const subgroups = await db.select().from(productSubgroup).where(eq(productSubgroup.versionId, versionId)).orderBy(asc(productSubgroup.position));
+    const sets = await db.select().from(criteriaSet).where(eq(criteriaSet.versionId, versionId)).orderBy(asc(criteriaSet.position));
+    const min = (stars: 2 | 3 | 4 | 5) => thresholds.find((t) => t.stars === stars)?.minScore ?? 0;
+    return {
+      thresholds: { 2: min(2), 3: min(3), 4: min(4), 5: min(5) },
+      productGroups: groups.map(({ versionId: _, ...g }) => g),
+      subgroups: subgroups.map(({ versionId: _, ...s }) => s),
+      sets: sets.map(({ versionId: _, ...s }) => s),
+    };
+  }
+
   return {
     async insert(version, rows) {
       const versionId = version.id;
@@ -84,25 +99,16 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
     },
 
     async taxonomy(versionId) {
-      const thresholds = await db.select().from(rankThreshold).where(eq(rankThreshold.versionId, versionId));
-      const groups = await db.select().from(productGroup).where(eq(productGroup.versionId, versionId)).orderBy(asc(productGroup.position));
-      const subgroups = await db.select().from(productSubgroup).where(eq(productSubgroup.versionId, versionId)).orderBy(asc(productSubgroup.position));
-      const sets = await db.select().from(criteriaSet).where(eq(criteriaSet.versionId, versionId)).orderBy(asc(criteriaSet.position));
-      const counts = sets.length
+      const t = await taxonomyRows(versionId);
+      const counts = t.sets.length
         ? await db
             .select({ setId: criterion.setId, n: count() })
             .from(criterion)
-            .where(inArray(criterion.setId, sets.map((s) => s.id)))
+            .where(inArray(criterion.setId, t.sets.map((s) => s.id)))
             .groupBy(criterion.setId)
         : [];
       const countOf = new Map(counts.map((c) => [c.setId, Number(c.n)]));
-      const min = (stars: 2 | 3 | 4 | 5) => thresholds.find((t) => t.stars === stars)?.minScore ?? 0;
-      return {
-        thresholds: { 2: min(2), 3: min(3), 4: min(4), 5: min(5) },
-        productGroups: groups.map(({ versionId: _, ...g }) => g),
-        subgroups: subgroups.map(({ versionId: _, ...s }) => s),
-        sets: sets.map(({ versionId: _, ...s }) => ({ ...s, criterionCount: countOf.get(s.id) ?? 0 })),
-      };
+      return { ...t, sets: t.sets.map((s) => ({ ...s, criterionCount: countOf.get(s.id) ?? 0 })) };
     },
 
     async lock(id) {
@@ -111,7 +117,7 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
     },
 
     async loadRows(versionId) {
-      const t = await this.taxonomy(versionId);
+      const t = await taxonomyRows(versionId);
       const exclusions = await db.select().from(exclusionCondition).where(eq(exclusionCondition.versionId, versionId)).orderBy(asc(exclusionCondition.position));
       const parts = await db.select().from(criteriaPart).where(eq(criteriaPart.versionId, versionId)).orderBy(asc(criteriaPart.position));
       const sections = await db.select().from(criteriaSection).where(eq(criteriaSection.versionId, versionId)).orderBy(asc(criteriaSection.position));
@@ -124,7 +130,7 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
         thresholds: t.thresholds,
         productGroups: t.productGroups,
         subgroups: t.subgroups,
-        sets: t.sets.map(({ criterionCount: _, ...set }) => ({
+        sets: t.sets.map((set) => ({
           set,
           exclusions: ofSet(exclusions, set.id),
           parts: ofSet(parts, set.id),

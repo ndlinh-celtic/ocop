@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { CriteriaSet, Criterion, ScoreLevel, Star } from "../src/criteria/model";
 import { averageScores, rankStars } from "../src/criteria/star-rank";
 import { QD26_THRESHOLDS, qd26Set, scoresTotalling, topScores } from "./qd26";
 
@@ -173,5 +174,63 @@ describe("L15 Hạng sao from several score sheets", () => {
     );
     expect(result.total).toBe(50);
     expect(result.byThreshold).toBe(3);
+  });
+});
+
+/** Replaces the Mức điểm of one Tiêu chí, so a test can state the exact levels it ranks against. */
+function withLevels(set: CriteriaSet, code: string, levels: ScoreLevel[]): CriteriaSet {
+  const edit = (c: Criterion): Criterion => (c.code === code ? { ...c, levels } : c);
+  return {
+    ...set,
+    parts: set.parts.map((p) => ({
+      ...p,
+      sections: p.sections.map((s) => ({
+        ...s,
+        items: s.items.map((i) => (i.kind === "group" ? { ...i, criteria: i.criteria.map(edit) } : edit(i))),
+      })),
+    })),
+  };
+}
+const level = (points: number, minimumStar: Star | null, branch: string | null = null): ScoreLevel => ({
+  description: `${branch ?? ""} ${points}`,
+  points,
+  minimumStar,
+  branch,
+});
+
+describe("L15 Sao tối thiểu on averaged scores", () => {
+  it("three sheets at 0.7 meet a 0.7-point Sao tối thiểu despite float rounding", () => {
+    // 0.7 + 0.7 + 0.7 = 2.0999999999999996 in floats, so the naive mean is 0.6999999999999998.
+    const set = withLevels(set1, "1.5", [level(0, null), level(0.7, 5), level(3, null)]);
+    const scores = averageScores([0.7, 0.7, 0.7].map((p) => ({ ...topScores(set1), "1.5": p })));
+    const result = rank(scores, set);
+    expect(result.unmet).toEqual([]);
+    expect(result.byMinimumStars).toBe(5);
+  });
+});
+
+describe("L19 Sao tối thiểu per nhánh a/b (bộ 26, edited)", () => {
+  const NAME_8 = "Đáp ứng điều kiện kinh doanh dịch vụ";
+  // Tiêu chí 8 edited: branch a needs 3 points for 4 sao, branch b needs only 1; the 0 level has no branch.
+  const set26 = withLevels(qd26Set(26), "8", [level(0, null), level(1, null, "a"), level(3, 4, "a"), level(1, 4, "b"), level(3, null, "b")]);
+
+  it("1 point meets 4 sao through branch b, though branch a would need 3", () => {
+    const result = rank({ ...topScores(set26), "8": 1 }, set26);
+    expect(result.unmet).toEqual([]);
+    expect(result.byMinimumStars).toBe(5);
+  });
+
+  it("0 points meets no branch: blocked at 4 sao by the easiest branch's 1 point", () => {
+    const result = rank({ ...topScores(set26), "8": 0 }, set26);
+    expect(result.byMinimumStars).toBe(3);
+    expect(result.unmet).toEqual([{ code: "8", name: NAME_8, star: 4, required: 1, actual: 0 }]);
+  });
+
+  it("an unbranched level's Sao tối thiểu applies to every branch", () => {
+    // 4 sao needs 1 point on both branches; 5 sao needs 3 on branch a, 2 on branch b.
+    const set = withLevels(qd26Set(26), "8", [level(0, null), level(1, 4), level(2, null, "a"), level(3, 5, "a"), level(2, 5, "b")]);
+    expect(rank({ ...topScores(set), "8": 2 }, set).unmet).toEqual([]);
+    expect(rank({ ...topScores(set), "8": 1 }, set).unmet).toEqual([{ code: "8", name: NAME_8, star: 5, required: 2, actual: 1 }]);
+    expect(rank({ ...topScores(set), "8": 0 }, set).byMinimumStars).toBe(3);
   });
 });
