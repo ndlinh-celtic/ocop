@@ -4,6 +4,7 @@ import { AGGREGATION_METHODS, GRADING_MODES, type RoundInput } from "@ocop/core"
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { formInteger, formNumber } from "@/lib/form-fields";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
 import { requireActor } from "@/server/session";
@@ -21,15 +22,15 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const roundForm = z.object({
   name: z.string().trim().min(1),
-  year: z.coerce.number().int(),
+  year: formInteger(),
   submissionDeadline: isoDate,
   forwardingDeadline: isoDate,
   evaluationDeadline: isoDate,
   criteriaVersionId: z.string().min(1),
   gradingMode: z.enum(GRADING_MODES),
   aggregationMethod: z.enum(AGGREGATION_METHODS),
-  minGraders: z.coerce.number().int(),
-  deviationFlagPoints: z.coerce.number(),
+  minGraders: formInteger(),
+  deviationFlagPoints: formNumber(),
 });
 
 function parseRound(form: FormData): RoundInput | null {
