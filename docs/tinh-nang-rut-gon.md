@@ -104,7 +104,7 @@ Cột Trạng thái ở sheet Tính năng rút gọn dùng menu thả xuống đ
 | AD-03 | 7. Quản trị hệ thống | Tiêu chí & thang điểm | Cấu hình bộ tiêu chí và thang điểm linh hoạt, không hard-code | Giữ nguyên | Đợt 1 | L19 |  | Chưa làm |
 | AD-04 | 7. Quản trị hệ thống | Tiêu chí & thang điểm | Phiên bản hóa bộ tiêu chí, lưu snapshot điểm theo phiên bản tại thời điểm chấm | Giữ nguyên | Đợt 1 | L19 |  | Chưa làm |
 | AD-05 | 7. Quản trị hệ thống | Tiêu chí & thang điểm | Bộ tiêu chí riêng theo nhóm sản phẩm (ví dụ du lịch cộng đồng) | Giữ nguyên | Đợt 1 | L19 |  | Chưa làm |
-| AD-06 | 7. Quản trị hệ thống | Danh mục | Quản lý danh mục: nhóm sản phẩm, xã/phường của tỉnh, đợt đánh giá | Rút gọn | Đợt 1 | L07 | Chỉ một tỉnh, không cần đơn vị hành chính hai cấp | Chưa làm |
+| AD-06 | 7. Quản trị hệ thống | Danh mục | Quản lý danh mục: nhóm sản phẩm, xã/phường của tỉnh, đợt đánh giá | Rút gọn | Đợt 1 | L07 | Chỉ một tỉnh, không cần đơn vị hành chính hai cấp. Nhóm sản phẩm nằm trong Phiên bản tiêu chí (ADR 0006), không là danh mục quản trị | Chưa làm |
 | AD-08 | 7. Quản trị hệ thống | Bảo mật & vận hành | Nhật ký hoạt động (audit log), sao lưu định kỳ | Giữ nguyên | Đợt 1 | L21 |  | Chưa làm |
 | AD-09 | 7. Quản trị hệ thống | Bảo mật & vận hành | Audit riêng cho thao tác sao chép dữ liệu của Tổ tư vấn (ai, từ phiên bản nào, cho ai, lúc nào); lưu điểm gốc của Tổ tư vấn bên cạnh điểm thành viên xác nhận | Giữ nguyên | Đợt 1 | L21 |  | Chưa làm |
 | DC-09 | 7. Quản trị hệ thống | Tích hợp & bảo mật | Xác thực hai lớp (TOTP) cho hội đồng và quản trị | Rút gọn | Đợt 1 | L20 | Bỏ phần VNeID/SSO | Chưa làm |
@@ -185,7 +185,7 @@ Cột Trạng thái ở sheet Tính năng rút gọn dùng menu thả xuống đ
 | Phạm vi | Bản rút gọn dành cho một tỉnh | Gồm 64 mã chức năng gốc cộng phần xác thực hai lớp của DC-09; 41 mã còn lại hoãn, làm ngoài hệ thống, gộp hoặc ngoài phạm vi (sheet Hoãn hoặc cắt). |
 | Phạm vi | Bộ NN&MT không phải người dùng hệ thống | Hệ thống chỉ có công cụ xuất gói hồ sơ 5 sao (SO-04). Gửi đánh giá và nhận kết quả bằng văn bản ngoài hệ thống. Sở chỉ đánh dấu trạng thái: Đã gửi đề nghị 5 sao, rồi Chuyển về công nhận cấp tỉnh (khi Bộ trả về) hoặc Đóng hồ sơ (kết quả khác). |
 | Giả định | Cột Đợt triển khai | Đợt 1 là luồng lõi. Đợt 2 gồm 4 mục có thể làm sau lõi: CT-15, SO-06, HD-12, CK-02 (QR và thống kê). Đây là đề xuất, có thể điều chỉnh. |
-| Cần kiểm tra | Phân bổ điểm Phần A/B/C = 40/25/35 và ngưỡng từng hạng | Chưa đối chiếu với Phụ lục QĐ 26/2026/QĐ-TTg; hệ thống cấu hình qua bộ tiêu chí có phiên bản. |
+| Đã kiểm tra | Phân bổ điểm Phần A/B/C = 40/25/35 và ngưỡng từng hạng | Đã đối chiếu Phụ lục QĐ 26/2026/QĐ-TTg (26 bộ tiêu chí, ngưỡng 30/50/70/90, Sao tối thiểu); dữ liệu ở `docs/tieu-chi/`. |
 | Cần kiểm tra | Mốc thời gian các đợt (xã, tỉnh) | Lưu trong cấu hình đợt, không viết cứng. |
 | Cần kiểm tra | Vai trò và thẩm quyền của Tổ tư vấn | Xác nhận đơn vị đảm nhiệm và quy chế hội đồng (số thành viên chấm, trách nhiệm điểm xác nhận). |
 | Rủi ro | Thành viên chấp nhận điểm của Tổ tư vấn mà không xem xét | Sao chép một chiều, bắt buộc xác nhận từng phiếu, bắt buộc ghi lý do khi điểm khác với điểm của Tổ tư vấn, lưu điểm gốc của Tổ tư vấn. |
