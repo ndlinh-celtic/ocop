@@ -124,6 +124,25 @@ describe("L20 AD-01 Phân vai", () => {
     expect(r).toMatchObject({ ok: true, stage: "full" });
   });
 
+  it("story 15: an officer granted a Vai trò that needs TOTP enrols right after setting the password", async () => {
+    const strict = createTestApp(db, { totpRequired: true, clock: t.clock });
+    const admin = await t.signInAs(ADMIN.email, ADMIN.password);
+    const { userId } = await t.app.identity.createStaffUser(admin, { email: "so.moi@tinh.gov.vn", fullName: "Phan Văn Sở" });
+    await strict.app.identity.grantRole(admin, { userId, role: "province_officer", scopeId: null });
+    await t.drainJobs();
+    const activation = t.mailbox.to("so.moi@tinh.gov.vn").find((m) => m.text.includes("kich-hoat?token="))!;
+    const token = /kich-hoat\?token=([\w-]+)/.exec(activation.text)![1]!;
+
+    const activated = await strict.app.identity.activateAccount(anonymous(), { token, password: PASSWORD });
+    expect(activated).toMatchObject({ ok: true, stage: "totp_enrollment" });
+    if (!activated.ok) throw new Error();
+    // Not usable until enrolled, but no second password prompt either.
+    await expect(strict.app.identity.authenticate(anonymous(), { sessionToken: activated.sessionToken })).resolves.toBeNull();
+    await expect(strict.app.identity.startTotpEnrollment(anonymous(), { sessionToken: activated.sessionToken })).resolves.toMatchObject({
+      otpauthUri: expect.stringContaining("so.moi"),
+    });
+  });
+
   it("granting a Vai trò that needs TOTP to someone without it signs them out, so the next sign-in enrols", async () => {
     const strict = createTestApp(db, { totpRequired: true, clock: t.clock });
     const userId = await activeOfficer("so@tinh.gov.vn", "Đỗ Thị Sở");

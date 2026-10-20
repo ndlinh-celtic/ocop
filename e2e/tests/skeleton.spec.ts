@@ -15,10 +15,10 @@ test("L20 Quản trị creates a Cán bộ xã, who activates by email and lands
   });
 
   await test.step("Quản trị creates the account and grants Cán bộ xã on a ward", async () => {
-    await page.getByRole("link", { name: "Tài khoản và vai trò" }).first().click();
+    await page.getByRole("link", { name: "Người dùng và phân vai" }).first().click();
     await page.getByLabel("Họ tên").fill(officer.fullName);
     await page.getByLabel("Email").fill(officer.email);
-    await page.getByRole("button", { name: "Tạo tài khoản" }).click();
+    await page.getByRole("button", { name: "Thêm cán bộ" }).click();
     await expect(page.getByRole("status")).toContainText(officer.email);
     await page.getByRole("link", { name: officer.fullName }).click();
     await page.getByLabel("Vai trò").selectOption({ label: "Cán bộ xã" });
@@ -37,14 +37,11 @@ test("L20 Quản trị creates a Cán bộ xã, who activates by email and lands
     await officerPage.getByLabel(/Mật khẩu mới/).fill(officer.password);
     await officerPage.getByLabel("Nhập lại mật khẩu").fill(officer.password);
     await officerPage.getByRole("button", { name: "Kích hoạt tài khoản" }).click();
-    await officerPage.waitForURL(/\/dang-nhap\?kich-hoat=1$/);
+    // Activation signs the officer in; Cán bộ xã does not need TOTP, so straight into the app.
+    await officerPage.waitForURL("/");
   });
 
-  await test.step("the officer signs in and sees the Cán bộ xã shell and the Phân vai notice", async () => {
-    await officerPage.getByLabel("Email").fill(officer.email);
-    await officerPage.getByLabel("Mật khẩu").fill(officer.password);
-    await officerPage.getByRole("button", { name: "Đăng nhập" }).click();
-    await officerPage.waitForURL("/");
+  await test.step("the officer sees the Cán bộ xã shell and the Phân vai notice", async () => {
     await expect(officerPage.getByText("Cán bộ xã ·").first()).toBeVisible();
     await expect(officerPage.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Hồ sơ tại xã" })).toBeVisible();
     // The notification is written by the worker; reload until it is there.

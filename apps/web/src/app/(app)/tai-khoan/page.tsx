@@ -12,7 +12,7 @@ export default async function AccountPage() {
   const totpEnabled = await app().core.identity.hasTotp(actor);
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <h1 className="text-xl font-semibold">Tài khoản</h1>
+      <h1 className="text-xl font-semibold">Thông tin cá nhân</h1>
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <p className="font-medium">{actor.fullName}</p>
         <p className="text-sm text-text-2">{actor.email}</p>

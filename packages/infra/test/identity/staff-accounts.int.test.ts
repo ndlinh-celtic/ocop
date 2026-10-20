@@ -18,7 +18,7 @@ afterAll(async () => {
 
 const linkToken = (text: string) => /kich-hoat\?token=([\w-]+)/.exec(text)?.[1];
 
-describe("L20 AD-01 Quản trị creates staff accounts", () => {
+describe("L20 AD-01 Quản trị creates staff Người dùng", () => {
   let officerId: string;
   let firstToken: string;
 
@@ -79,11 +79,12 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
     });
   });
 
-  it("the officer sets a password with the link, then signs in", async () => {
+  it("the officer sets a password with the link and is signed in straight away", async () => {
     await expect(t.app.identity.describeActivation(anonymous(), { token: firstToken })).resolves.toMatchObject({ fullName: OFFICER.fullName });
-    await expect(t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "mat-khau-can-bo-1" })).resolves.toEqual({
-      ok: true,
-    });
+    const activated = await t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "mat-khau-can-bo-1" });
+    expect(activated).toMatchObject({ ok: true, stage: "full" });
+    if (!activated.ok) throw new Error();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: activated.sessionToken })).resolves.toMatchObject({ userId: officerId });
     const officer = await t.signInAs(OFFICER.email, "mat-khau-can-bo-1");
     expect(officer.userId).toBe(officerId);
   });

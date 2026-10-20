@@ -38,7 +38,7 @@ export interface NavItem {
 const HOME: NavItem = { href: "/", label: "Trang chủ", icon: House, ready: true };
 const COMMON: NavItem[] = [
   { href: "/thong-bao", label: "Thông báo", icon: Bell, ready: true },
-  { href: "/tai-khoan", label: "Tài khoản", icon: CircleUser, ready: true },
+  { href: "/tai-khoan", label: "Thông tin cá nhân", icon: CircleUser, ready: true },
 ];
 const STATS: NavItem = { href: "/thong-ke", label: "Thống kê", icon: ChartColumn, ready: false };
 
@@ -96,7 +96,7 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   admin: [
     HOME,
-    { href: "/quan-tri/nguoi-dung", label: "Tài khoản và vai trò", icon: UsersRound, ready: true },
+    { href: "/quan-tri/nguoi-dung", label: "Người dùng và phân vai", icon: UsersRound, ready: true },
     { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: false },
     { href: "/quan-tri/danh-muc", label: "Danh mục", icon: Library, ready: false },
     { href: "/quan-tri/nhat-ky", label: "Nhật ký", icon: ScrollText, ready: true },

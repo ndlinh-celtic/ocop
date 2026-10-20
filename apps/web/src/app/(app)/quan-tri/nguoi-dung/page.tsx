@@ -17,7 +17,7 @@ export default async function UsersPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Người dùng</h1>
       <section className="rounded-lg border bg-surface p-4">
-        <h2 className="mb-3 font-medium">Tạo tài khoản cán bộ</h2>
+        <h2 className="mb-3 font-medium">Thêm cán bộ</h2>
         <CreateUserForm />
       </section>
       <section className="overflow-x-auto rounded-lg border bg-surface">

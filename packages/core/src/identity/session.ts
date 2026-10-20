@@ -39,6 +39,42 @@ export function stageAfterPassword(user: User, assignments: RoleAssignment[], at
   return mustUseTotp(assignments, at, totpRequired) ? "totp_enrollment" : "full";
 }
 
+/**
+ * Opens a session for a Người dùng who just proved their password (sign-in or activation): straight
+ * to `full`, or to the TOTP step they still owe.
+ */
+export async function openSession(deps: CoreDeps, tx: Tx, user: User, now: Date, ctx: RequestContext, via: "sign_in" | "activation") {
+  const assignments = await tx.roleAssignments.listForUser(user.id);
+  const assignment = defaultAssignment(assignments, now);
+  const stage = stageAfterPassword(user, assignments, now, deps.settings.totpRequired);
+  // Only a completed sign-in resets the count, so the password step cannot clear TOTP failures.
+  if (stage === "full") await clearFailures(tx, user);
+  const sessionToken = newToken();
+  const sessionId = deps.ids.next();
+  await tx.sessions.insert({
+    id: sessionId,
+    stage,
+    userId: user.id,
+    tokenHash: hashToken(sessionToken),
+    activeAssignmentId: assignment?.id ?? null,
+    createdAt: now,
+    lastSeenAt: now,
+    authenticatedAt: now,
+    authMethod: "password",
+    revokedAt: null,
+  });
+  const actor = { kind: "user" as const, userId: user.id, activeRole: assignment?.role ?? null, ctx };
+  await tx.audit.append(
+    auditEntry(actor, deps.ids.next(), now, {
+      action: stage === "full" ? "auth.sign_in.succeeded" : "auth.password.verified",
+      targetType: "session",
+      targetId: sessionId,
+      metadata: { ...(stage === "full" ? { method: "password" } : { next: stage }), ...(via === "activation" ? { via } : {}) },
+    }),
+  );
+  return { sessionToken, stage };
+}
+
 export function signIn(deps: CoreDeps) {
   // Verifying against a throwaway hash keeps "unknown email" as slow as "wrong password".
   let dummyHash: Promise<string> | undefined;
@@ -81,35 +117,8 @@ export function signIn(deps: CoreDeps) {
         return { ok: false, reason: "invalid_credentials" };
       }
 
-      const assignments = await tx.roleAssignments.listForUser(user.id);
-      const assignment = defaultAssignment(assignments, now);
-      const stage = stageAfterPassword(user, assignments, now, deps.settings.totpRequired);
-      // Only a completed sign-in resets the count, so the password step cannot clear TOTP failures.
-      if (stage === "full") await clearFailures(tx, user);
-      const token = newToken();
-      const sessionId = deps.ids.next();
-      await tx.sessions.insert({
-        id: sessionId,
-        stage,
-        userId: user.id,
-        tokenHash: hashToken(token),
-        activeAssignmentId: assignment?.id ?? null,
-        createdAt: now,
-        lastSeenAt: now,
-        authenticatedAt: now,
-        authMethod: "password",
-        revokedAt: null,
-      });
-      const actor = { kind: "user" as const, userId: user.id, activeRole: assignment?.role ?? null, ctx };
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), now, {
-          action: stage === "full" ? "auth.sign_in.succeeded" : "auth.password.verified",
-          targetType: "session",
-          targetId: sessionId,
-          metadata: stage === "full" ? { method: "password" } : { next: stage },
-        }),
-      );
-      return { ok: true, sessionToken: token, userId: user.id, stage };
+      const opened = await openSession(deps, tx, user, now, ctx, "sign_in");
+      return { ok: true, sessionToken: opened.sessionToken, userId: user.id, stage: opened.stage };
     });
   };
 }

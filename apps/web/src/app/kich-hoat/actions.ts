@@ -5,6 +5,7 @@ import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
 import { anonymous } from "@/server/request";
+import { setSessionCookie } from "@/server/session";
 
 export interface ActivateState {
   error?: string;
@@ -24,5 +25,6 @@ export async function activateAction(token: string, _prev: ActivateState, form: 
     return { error: domainMessage(err) };
   }
   if (!result.ok) return { error: "Liên kết không còn hiệu lực. Liên hệ Quản trị để được gửi lại." };
-  redirect("/dang-nhap?kich-hoat=1");
+  await setSessionCookie(result.sessionToken);
+  redirect(result.stage === "totp_enrollment" ? "/dang-ky-totp" : "/");
 }

@@ -6,7 +6,8 @@ import { DomainError } from "../shared/errors";
 import type { Tx } from "../shared/uow";
 import { hashToken } from "../shared/tokens";
 import { scopeLabel } from "./assignments";
-import { isAssignmentActive, type User } from "./model";
+import { isAssignmentActive, type SessionStage, type User } from "./model";
+import { openSession } from "./session";
 import { authorize } from "./policy";
 import { assertPasswordAcceptable } from "./password";
 import { isUsable } from "./tokens";
@@ -137,7 +138,8 @@ export function describeActivation(deps: CoreDeps) {
     });
 }
 
-export type ActivationResult = { ok: true } | { ok: false; reason: "invalid_link" };
+/** Activation also signs the officer in, into the TOTP enrolment step if their Vai trò needs it (story 15). */
+export type ActivationResult = { ok: true; sessionToken: string; stage: SessionStage } | { ok: false; reason: "invalid_link" };
 
 export function activateAccount(deps: CoreDeps) {
   return async (anonymous: AnonymousActor, input: { token: string; password: string }): Promise<ActivationResult> => {
@@ -154,7 +156,8 @@ export function activateAccount(deps: CoreDeps) {
       await tx.users.update(user.id, { passwordHash, status: "active" });
       const actor = { kind: "user" as const, userId: user.id, activeRole: null, ctx };
       await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "identity.user.activated", targetType: "user", targetId: user.id }));
-      return { ok: true };
+      const opened = await openSession(deps, tx, { ...user, passwordHash, status: "active" }, now, ctx, "activation");
+      return { ok: true, ...opened };
     });
   };
 }

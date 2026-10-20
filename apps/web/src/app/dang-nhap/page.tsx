@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 const NOTICES: Record<string, string> = {
   "het-han": "Phiên đăng nhập đã hết hạn. Đăng nhập lại.",
   "tam-khoa": "Tài khoản tạm khóa do nhập sai nhiều lần. Kiểm tra email để biết thời gian mở khóa.",
-  "kich-hoat": "Đã kích hoạt tài khoản. Đăng nhập bằng mật khẩu vừa đặt.",
   "dat-lai": "Đã đặt mật khẩu mới. Đăng nhập lại.",
 };
 

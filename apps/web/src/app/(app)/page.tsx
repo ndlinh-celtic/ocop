@@ -18,7 +18,7 @@ export default async function Home() {
       <div className="mx-auto flex max-w-xl flex-col gap-4">
         <h1 className="text-xl font-semibold">Xin chào {actor.fullName}</h1>
         {mine.length === 0 ? (
-          <EmptyState icon={Repeat} title="Tài khoản chưa được phân vai">
+          <EmptyState icon={Repeat} title="Bạn chưa được phân vai">
             Liên hệ Quản trị để được gán vai trò và phạm vi làm việc.
           </EmptyState>
         ) : (

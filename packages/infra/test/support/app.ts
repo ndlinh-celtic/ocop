@@ -97,7 +97,7 @@ export interface TestApp {
    */
   drainJobs(opts?: { includeRetries?: boolean }): Promise<void>;
   stop(): Promise<void>;
-  /** Signs in through every step; pass the TOTP secret for accounts that have TOTP. */
+  /** Signs in through every step; pass the TOTP secret for a Người dùng who has TOTP. */
   signInAs(email: string, password: string, totpSecret?: string): Promise<UserActor>;
   signInWithToken(email: string, password: string, totpSecret?: string): Promise<{ actor: UserActor; token: string }>;
 }
