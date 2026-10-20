@@ -13,6 +13,9 @@ function inScope(scope: DataScope): SQL {
   switch (scope.kind) {
     case "entity":
       return and(live, eq(dossier.entityId, scope.entityId))!;
+    case "ward":
+      // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
+      return and(live, eq(dossier.wardId, scope.wardId))!;
     case "none":
       return sql`false`;
     default: {

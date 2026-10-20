@@ -5,6 +5,7 @@ import type { CoreDeps } from "../shared/deps";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { entityNotFound, maskPersonalId, type Entity, type EntityKind } from "./model";
+import { representativeOf } from "./representative";
 
 /**
  * A Chủ thể as its reader may see it. The số định danh cá nhân is always masked here, even for the Chủ thể
@@ -41,16 +42,28 @@ async function view(tx: Tx, e: Entity): Promise<EntityView> {
   };
 }
 
+/** One Chủ thể with the email its Người dùng đại diện signs in and recovers the account with. */
+export interface EntityDetailView extends EntityView {
+  representativeEmail: string | null;
+  /** False while the Người dùng đại diện has not yet set a password from the activation email. */
+  representativeActivated: boolean;
+}
+
 /** The Chủ thể within the reader's Phạm vi; any other is not found, whether or not it exists (story 80). */
 export function getEntity(deps: CoreDeps) {
-  return async (actor: Actor, input: { entityId: string }): Promise<EntityView> => {
+  return async (actor: Actor, input: { entityId: string }): Promise<EntityDetailView> => {
     authorize(actor, "entity.read");
     const scope = dataScopeOf(actor);
     return deps.uow.run(async (tx) => {
       assertIdShape(input.entityId, entityNotFound);
       const entity = await tx.entities.findById(scope, input.entityId);
       if (!entity) throw entityNotFound();
-      return view(tx, entity);
+      const representative = await representativeOf(tx, entity.id, deps.clock.now());
+      return {
+        ...(await view(tx, entity)),
+        representativeEmail: representative?.email ?? null,
+        representativeActivated: representative?.status === "active",
+      };
     });
   };
 }

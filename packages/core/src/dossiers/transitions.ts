@@ -52,6 +52,9 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
   switch (scope.kind) {
     case "entity":
       return d.entityId === scope.entityId;
+    case "ward":
+      // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
+      return d.wardId === scope.wardId;
     case "none":
       return false;
     default: {

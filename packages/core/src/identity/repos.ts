@@ -1,5 +1,5 @@
 import type { RoleAssignment, Session, User } from "./model";
-import type { Role } from "./roles";
+import type { Role, ScopeType } from "./roles";
 
 export interface UserRepo {
   insert(user: User): Promise<void>;
@@ -14,6 +14,8 @@ export interface RoleAssignmentRepo {
   insert(a: RoleAssignment): Promise<void>;
   findById(id: string): Promise<RoleAssignment | null>;
   listForUser(userId: string): Promise<RoleAssignment[]>;
+  /** Every Phân vai, past and current, of a Vai trò on one Phạm vi, oldest first. */
+  listForScope(role: Role, scopeType: ScopeType, scopeId: string): Promise<RoleAssignment[]>;
   existsActiveWithRole(role: Role, at: Date): Promise<boolean>;
   /** Closes the validity window; Phân vai rows are never deleted. */
   end(id: string, validTo: Date): Promise<void>;

@@ -5,8 +5,9 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
-import { assertIdShape, isUuid } from "../shared/ids";
+import { assertIdShape } from "../shared/ids";
 import { entityNotFound, parseDetails, type Entity, type EntityDetails } from "./model";
+import { assertWard } from "./register";
 
 export interface UpdateEntityInput extends EntityDetails {
   entityId: string;
@@ -30,7 +31,7 @@ export function updateEntity(deps: CoreDeps) {
       assertIdShape(input.entityId, entityNotFound);
       const before = await tx.entities.lock(scope, input.entityId);
       if (!before) throw entityNotFound();
-      if (!isUuid(input.wardId) || !(await tx.wards.findById(input.wardId))) throw new DomainError("ward_required", "Chọn xã/phường");
+      await assertWard(tx, input.wardId);
 
       const now = deps.clock.now();
       const after: Entity = { ...before, ...details, wardId: input.wardId, updatedAt: now };

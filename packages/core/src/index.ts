@@ -137,8 +137,8 @@ export {
   type EntityKind,
   type EntityRepo,
 } from "./entities/model";
-export type { EntityView } from "./entities/read";
-export type { RegisterEntityInput } from "./entities/register";
+export type { EntityDetailView, EntityView } from "./entities/read";
+export type { NewEntityInput, RegisterEntityInput } from "./entities/register";
 export type { UpdateEntityInput } from "./entities/profile";
 export {
   isExpired,

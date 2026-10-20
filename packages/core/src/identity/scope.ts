@@ -9,7 +9,7 @@ import type { Actor } from "../shared/context";
  * has reached the province) in step 3, `council` and `assigned` in step 4. Adding one is a new member here,
  * a new case in `dataScopeOf`, and a new case in each repository's exhaustive switch: nothing is restructured.
  */
-export type DataScope = { kind: "entity"; entityId: string } | { kind: "none" };
+export type DataScope = { kind: "entity"; entityId: string } | { kind: "ward"; wardId: string } | { kind: "none" };
 
 const NONE: DataScope = { kind: "none" };
 
@@ -24,6 +24,8 @@ export function dataScopeOf(actor: Actor): DataScope {
   switch (actor.activeRole) {
     case "entity_owner":
       return type === "entity" && id ? { kind: "entity", entityId: id } : NONE;
+    case "ward_officer":
+      return type === "ward" && id ? { kind: "ward", wardId: id } : NONE;
     default:
       return NONE;
   }
