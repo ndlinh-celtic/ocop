@@ -1,6 +1,6 @@
-import type { RoundActivity } from "@ocop/core";
+import { vnDateOf, type RoundActivity } from "@ocop/core";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { anonymous, createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, hours, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -89,14 +89,14 @@ async function importPublished() {
 
 const AGGREGATION = { method: "mean" as const, minGraders: 5, deviationFlagPoints: 15 };
 
-/** A Nháp round; the test clock starts on 19/10/2026. */
+/** A Nháp round whose Hạn nộp xã is today (Vietnam time), so the auto-close reaches it once the clock moves a day. */
 async function draftRound(officer: Awaited<ReturnType<typeof staff>>) {
   const { roundId } = await t.app.rounds.createRound(officer, {
     name: "Đợt đánh giá năm 2026",
     year: 2026,
-    submissionDeadline: "2026-11-30",
-    forwardingDeadline: "2026-12-15",
-    evaluationDeadline: "2027-01-31",
+    submissionDeadline: vnDateOf(t.clock.now()),
+    forwardingDeadline: "2030-12-15",
+    evaluationDeadline: "2030-12-31",
     criteriaVersionId: published,
     gradingMode: "direct",
     aggregation: AGGREGATION,
@@ -106,7 +106,7 @@ async function draftRound(officer: Awaited<ReturnType<typeof staff>>) {
 
 /**
  * A round Đang nhận nộp. Only one round may be open at a time, so any round a previous test left open is
- * moved to Đã đóng nộp first (test-only SQL, standing in for the auto-close of #25).
+ * closed first by the real auto-close (#25).
  */
 async function openRound(officer: Awaited<ReturnType<typeof staff>>) {
   await closeOpenRounds();
@@ -115,11 +115,13 @@ async function openRound(officer: Awaited<ReturnType<typeof staff>>) {
   return roundId;
 }
 
+/** Moves past today's Hạn nộp xã and runs the auto-close job (L07, #25). */
 async function closeOpenRounds() {
-  await db.app.query("UPDATE round.round SET status = 'submission_closed', submission_closed_at = $1 WHERE status = 'open_for_submission'", [t.clock.now()]);
+  t.clock.advance(hours(24));
+  await t.app.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
 }
 
-/** A round Đã đóng nộp (test-only SQL for the close step, see openRound). */
+/** A round Đã đóng nộp, closed by the auto-close job. */
 async function closedRound(officer: Awaited<ReturnType<typeof staff>>) {
   const roundId = await openRound(officer);
   await closeOpenRounds();

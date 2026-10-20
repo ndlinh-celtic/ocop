@@ -31,6 +31,11 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
   await boss.work("audit.anchor", async () => {
     await core.audit.anchor(systemActor("audit.anchor"));
   });
+  // L07: a round Đang nhận nộp closes within a minute after Hạn nộp xã (23:59:59 Vietnam time).
+  await boss.schedule("rounds.close-due", "* * * * *", null, { tz });
+  await boss.work("rounds.close-due", async () => {
+    await core.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
+  });
 
   let running = true;
   let timer: NodeJS.Timeout | undefined;

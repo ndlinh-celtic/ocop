@@ -19,6 +19,7 @@ import { activateAccount, createStaffUser, describeActivation, listUsers, getUse
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
+import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
@@ -103,6 +104,7 @@ export function createCore(deps: CoreDeps) {
       listRounds: listRounds(deps),
       getRound: getRound(deps),
       currentOpenRound: currentOpenRound(deps),
+      closeDueSubmissions: closeDueSubmissions(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
