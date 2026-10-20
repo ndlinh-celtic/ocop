@@ -1,4 +1,5 @@
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
+import type { GradingMode } from "../rounds/model";
 
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
@@ -18,7 +19,10 @@ export type DomainEventBody =
   | { type: "round.updated"; payload: { roundId: string } }
   | { type: "round.deleted"; payload: { roundId: string } }
   | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } }
-  | { type: "round.submission_closed"; payload: { roundId: string; submissionDeadline: string; closedAt: string } };
+  | { type: "round.submission_closed"; payload: { roundId: string; submissionDeadline: string; closedAt: string } }
+  | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
+  | { type: "round.aggregation_changed"; payload: { roundId: string } }
+  | { type: "round.ended"; payload: { roundId: string } };
 
 export type EventType = DomainEventBody["type"];
 

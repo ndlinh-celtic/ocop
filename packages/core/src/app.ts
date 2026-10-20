@@ -21,6 +21,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { closeDueSubmissions } from "./rounds/close-due";
+import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
@@ -101,6 +102,9 @@ export function createCore(deps: CoreDeps) {
       updateRound: updateRound(deps),
       deleteRound: deleteRound(deps),
       openRound: openRound(deps),
+      changeGradingMode: changeGradingMode(deps),
+      changeAggregationRule: changeAggregationRule(deps),
+      endRound: endRound(deps),
       listRounds: listRounds(deps),
       getRound: getRound(deps),
       currentOpenRound: currentOpenRound(deps),

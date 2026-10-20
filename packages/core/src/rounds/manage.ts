@@ -32,6 +32,18 @@ export interface RoundInput {
 
 export const roundNotFound = () => new DomainError("not_found", "Không tìm thấy đợt đánh giá");
 
+/** A Quy tắc tổng hợp with only the known fields, or a DomainError `invalid_aggregation`. */
+export function checkedAggregation({ method, minGraders, deviationFlagPoints }: AggregationRule): AggregationRule {
+  if (!AGGREGATION_METHODS.includes(method)) throw new DomainError("invalid_aggregation", "Cách tổng hợp không hợp lệ");
+  if (!Number.isInteger(minGraders) || minGraders < 1 || minGraders > 50) {
+    throw new DomainError("invalid_aggregation", "Số người chấm tối thiểu phải là số nguyên từ 1 đến 50");
+  }
+  if (!Number.isFinite(deviationFlagPoints) || deviationFlagPoints < 0) {
+    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm không âm");
+  }
+  return { method, minGraders, deviationFlagPoints };
+}
+
 /** The checked fields of a Nháp round, or a DomainError naming the first rule broken. */
 async function checkedFields(tx: Tx, input: RoundInput) {
   const name = input.name.trim();
@@ -44,14 +56,7 @@ async function checkedFields(tx: Tx, input: RoundInput) {
   };
   assertDeadlineOrder(deadlines);
   if (!GRADING_MODES.includes(input.gradingMode)) throw new DomainError("invalid_grading_mode", "Chế độ chấm không hợp lệ");
-  const { method, minGraders, deviationFlagPoints } = input.aggregation;
-  if (!AGGREGATION_METHODS.includes(method)) throw new DomainError("invalid_aggregation", "Cách tổng hợp không hợp lệ");
-  if (!Number.isInteger(minGraders) || minGraders < 1 || minGraders > 50) {
-    throw new DomainError("invalid_aggregation", "Số người chấm tối thiểu phải là số nguyên từ 1 đến 50");
-  }
-  if (!Number.isFinite(deviationFlagPoints) || deviationFlagPoints < 0) {
-    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm không âm");
-  }
+  const aggregation = checkedAggregation(input.aggregation);
   const version = await tx.criteriaVersions.findById(input.criteriaVersionId);
   if (!version || version.status !== "published") {
     throw new DomainError("version_not_published", "Chọn một Phiên bản tiêu chí đã phát hành");
@@ -62,7 +67,7 @@ async function checkedFields(tx: Tx, input: RoundInput) {
     ...deadlines,
     criteriaVersionId: version.id,
     gradingMode: input.gradingMode,
-    aggregation: { method, minGraders, deviationFlagPoints },
+    aggregation,
   };
 }
 

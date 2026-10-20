@@ -103,4 +103,5 @@ export {
   type RoundStatus,
 } from "./rounds/model";
 export type { RoundInput } from "./rounds/manage";
+export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
 export type { RoundView } from "./rounds/read";
