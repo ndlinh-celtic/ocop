@@ -6,6 +6,7 @@ import { DossierFlags } from "@/components/dossiers/dossier-flags";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
+import { SupplementRequests } from "@/components/dossiers/supplement-requests";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -13,6 +14,7 @@ import { requireActor } from "@/server/session";
 import { DeleteDossierButton } from "./delete-button";
 import { ProductForm } from "./product-form";
 import { SubmitPanel, WithdrawForm } from "./submit-panel";
+import { SupplementAnswerForm } from "./supplement-answer";
 import { Workbench } from "./workbench";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +26,18 @@ export const dynamic = "force-dynamic";
 export default async function DossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, assessment] = await Promise.all([
+  const [dossier, timeline, assessment, supplements] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.selfAssessment(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !timeline || !assessment) notFound();
+  if (!dossier || !timeline || !assessment || !supplements) notFound();
   const editable = can(actor, "dossier.edit", dossier);
-  const submittable = can(actor, "dossier.submit", dossier);
+  // L04 CT-11: on a hồ sơ Yêu cầu bổ sung the same panel nộp lại.
+  const resubmission = can(actor, "dossier.resubmit", dossier);
+  const submittable = can(actor, "dossier.submit", dossier) || resubmission;
+  const answerable = can(actor, "dossier.supplement.respond", dossier);
   const check = submittable ? await app().core.dossiers.submissionCheck(actor, { dossierId }) : null;
   const withdrawable = can(actor, "dossier.withdraw", dossier) && dossier.receivedAt === null;
 
@@ -77,6 +83,11 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
         </section>
       )}
 
+      <SupplementRequests
+        requests={supplements}
+        answer={answerable ? (item) => <SupplementAnswerForm dossierId={dossier.id} version={dossier.version} itemId={item.id} response={item.response} /> : undefined}
+      />
+
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <h2 className="mb-3 font-semibold">Thông tin sản phẩm</h2>
         {!editable && <p className="mb-3 text-sm text-text-3">Hồ sơ đã nộp không sửa trực tiếp được.</p>}
@@ -97,7 +108,7 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
 
       <Workbench assessment={assessment} editable={editable} />
 
-      {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} />}
+      {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} resubmission={resubmission} />}
       {withdrawable && <WithdrawForm dossierId={dossier.id} version={dossier.version} />}
 
       <DossierTimeline events={timeline} />

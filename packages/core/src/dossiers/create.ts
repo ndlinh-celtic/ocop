@@ -86,6 +86,7 @@ async function newDraft(deps: CoreDeps, tx: Tx, actor: UserActor, criteriaSetId:
     receivedBy: null,
     handlerUserId: null,
     firstForwardedAt: null,
+    supplementDeadline: null,
     copiedFrom: from.copiedFrom,
     deletedAt: null,
     version: 1,

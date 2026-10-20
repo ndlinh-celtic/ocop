@@ -8,6 +8,9 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.withdraw": "Rút hồ sơ",
   "dossier.receive": "Xã tiếp nhận hồ sơ",
   "dossier.handler.change": "Đổi Cán bộ phụ trách",
+  "dossier.supplement.request": "Xã yêu cầu bổ sung",
+  "dossier.resubmit": "Nộp lại hồ sơ",
+  "dossier.supplement.close": "Đóng hồ sơ quá hạn bổ sung",
 };
 
 function describe(e: DossierEvent, names: ReadonlyMap<string, string>) {

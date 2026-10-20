@@ -2,6 +2,7 @@ import { isAssignmentActive, type User } from "../identity/model";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { sendEmail } from "../platform/send-email";
 import type { Tx } from "../shared/uow";
+import type { DossierEventType } from "./transitions";
 import { wardOfficersOf } from "./ward";
 
 /*
@@ -30,8 +31,20 @@ async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]>
   return users.filter((u): u is User => u !== null && u.status === "active");
 }
 
+/** The events of a hồ sơ someone hears about; the consumers subscribe to exactly these. */
+export const NOTICE_EVENTS = [
+  "dossier.submitted",
+  "dossier.received",
+  "dossier.supplement_requested",
+  "dossier.resubmitted",
+  "dossier.closed_unsupplemented",
+] as const satisfies readonly DossierEventType[];
+
+type Event = ConsumerContext["event"];
+const isNoticeEvent = (e: Event): e is Extract<Event, { type: DossierEventType }> => (NOTICE_EVENTS as readonly string[]).includes(e.type);
+
 async function noticeOf({ deps, tx, event }: ConsumerContext): Promise<Notice | null> {
-  if (event.type !== "dossier.submitted" && event.type !== "dossier.received") return null;
+  if (!isNoticeEvent(event)) return null;
   const now = deps.clock.now();
   // The consumer reads on behalf of the Chủ thể the event names.
   const scope = { kind: "entity", entityId: event.payload.entityId } as const;
@@ -50,6 +63,44 @@ async function noticeOf({ deps, tx, event }: ConsumerContext): Promise<Notice | 
       emailSubject: "Hồ sơ mới nộp chờ tiếp nhận",
       emailLine: "Một Chủ thể vừa nộp hồ sơ OCOP về xã/phường của anh/chị. Hồ sơ đang chờ tiếp nhận.",
       link: `/xa/ho-so/${dossier.id}`,
+    };
+  }
+  if (event.type === "dossier.supplement_requested") {
+    return {
+      recipients: await entityUsers(tx, dossier.entityId, now),
+      kind: "dossier_supplement_requested",
+      title: `Hồ sơ ${product} cần bổ sung`,
+      body: "UBND xã/phường yêu cầu bổ sung hồ sơ. Xem từng nội dung cần bổ sung và hạn bổ sung.",
+      emailSubject: "Hồ sơ OCOP có yêu cầu bổ sung",
+      emailLine: "UBND xã/phường có yêu cầu bổ sung hồ sơ OCOP của anh/chị. Vui lòng bổ sung và nộp lại trước hạn.",
+      link: `/chu-the/ho-so/${dossier.id}`,
+    };
+  }
+  if (event.type === "dossier.resubmitted") {
+    // Who asked for more, and the Cán bộ phụ trách (story 54), each once.
+    const request = (await tx.supplements.list(dossier.id)).filter((r) => r.outcome === "resubmitted").at(-1);
+    const ids = [...new Set([request?.requestedBy, dossier.handlerUserId].filter((id): id is string => !!id))];
+    const users = await Promise.all(ids.map((id) => tx.users.findById(id)));
+    const entity = await tx.entities.findById(scope, dossier.entityId);
+    return {
+      recipients: users.filter((u): u is User => u !== null && u.status === "active"),
+      kind: "dossier_resubmitted",
+      title: `Hồ sơ nộp lại: ${product}`,
+      body: `${entity?.name ?? "Chủ thể"} đã bổ sung và nộp lại hồ sơ.`,
+      emailSubject: "Hồ sơ OCOP đã được nộp lại",
+      emailLine: "Một Chủ thể vừa bổ sung và nộp lại hồ sơ OCOP anh/chị đang xử lý.",
+      link: `/xa/ho-so/${dossier.id}`,
+    };
+  }
+  if (event.type === "dossier.closed_unsupplemented") {
+    return {
+      recipients: await entityUsers(tx, dossier.entityId, now),
+      kind: "dossier_rejected",
+      title: `Hồ sơ ${product} không đạt sơ bộ`,
+      body: "Hồ sơ đã quá hạn bổ sung nên UBND xã/phường đóng hồ sơ với lý do: Không bổ sung.",
+      emailSubject: "Hồ sơ OCOP không đạt sơ bộ",
+      emailLine: "Hồ sơ OCOP của anh/chị đã quá hạn bổ sung và được đóng ở trạng thái Không đạt sơ bộ.",
+      link: `/chu-the/ho-so/${dossier.id}`,
     };
   }
   return {

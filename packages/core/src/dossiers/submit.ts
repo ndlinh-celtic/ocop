@@ -22,6 +22,7 @@ import {
 } from "./model";
 import { assess, type SelfAssessment } from "./self-assessment";
 import { transition } from "./transition";
+import { isPastSupplementDeadline, supplementDeadlinePassed } from "./transitions";
 
 /*
  * L03 CT-09, CT-10 (stories 28 to 34): the Chủ thể submits its Nháp into the đợt Đang nhận nộp, which
@@ -37,6 +38,8 @@ export type SubmissionBlocker = { message: string } & (
   | { code: "legal_document_expired"; typeCode: string; typeName: string; validUntil: string }
   | { code: "missing_product_field"; field: ProductField }
   | { code: "criterion_unscored"; criterionId: string; criterionCode: string }
+  /** Nộp lại only while the hạn bổ sung lasts (story 53). */
+  | { code: "supplement_deadline_passed" }
 );
 
 export class SubmissionBlockedError extends DomainError {
@@ -57,14 +60,22 @@ interface Conditions {
 /**
  * The conditions of story 29 on a hồ sơ already loaded within the actor's scope, at `now`. Missing minh
  * chứng and 0-point Mức điểm never block (story 30): the Cán bộ xã decides whether to ask for more.
+ * A nộp lại (story 53) stays in the đợt it was submitted into, past its Hạn nộp xã, while the hạn bổ
+ * sung lasts.
  */
 async function conditions(tx: Tx, actor: UserActor, dossier: Dossier, now: Date): Promise<Conditions> {
   const scope = dataScopeOf(actor);
   const blockers: SubmissionBlocker[] = [];
 
-  const open = await tx.rounds.findOpen();
-  // A đợt past its Hạn nộp xã no longer takes a first nộp, even before the job has closed it.
-  const round = open && !isPastSubmissionDeadline(open, now) ? open : null;
+  let round: Round | null;
+  if (dossier.state === "supplement_requested") {
+    round = dossier.roundId ? await tx.rounds.findById(dossier.roundId) : null;
+    if (isPastSupplementDeadline(dossier, now)) blockers.push({ code: "supplement_deadline_passed", message: supplementDeadlinePassed().message });
+  } else {
+    const open = await tx.rounds.findOpen();
+    // A đợt past its Hạn nộp xã no longer takes a first nộp, even before the job has closed it.
+    round = open && !isPastSubmissionDeadline(open, now) ? open : null;
+  }
   if (!round) {
     blockers.push({ code: "no_open_round", message: "Hiện không có đợt đánh giá nào đang nhận nộp" });
   } else if (round.criteriaVersionId !== dossier.criteriaVersionId) {
@@ -190,6 +201,10 @@ function filesOf(snapshot: SubmissionSnapshot): SubmissionFileRef[] {
  * L03 CT-09 (stories 28 to 32): submits a Nháp into the one đợt Đang nhận nộp, without picking it. The
  * hồ sơ takes the xã of its Chủ thể at this moment (story 10) and the đợt, moves to Đã nộp xã, and its
  * bản làm việc is frozen into Phiên bản nộp 1. Every reason it cannot be submitted is listed at once.
+ *
+ * L04 CT-11 (stories 52 to 54): on a hồ sơ Yêu cầu bổ sung the same call is the nộp lại. It keeps the xã,
+ * the đợt, the Tiếp nhận and the Cán bộ phụ trách, freezes the next Phiên bản nộp with its own freshly
+ * generated văn bản, and closes the yêu cầu bổ sung.
  */
 export function submitDossier(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number; submissionNumber: number }> => {
@@ -199,17 +214,23 @@ export function submitDossier(deps: CoreDeps) {
       const now = deps.clock.now();
       const c = await conditions(tx, actor, before, now);
       const number = ((await tx.dossiers.latestSubmission(before.id))?.number ?? 0) + 1;
-      // transition() first, so that a wrong state, Vai trò or version is reported as such; any blocker
-      // then throws and the transaction rolls the transition back.
+      const resubmission = before.state === "supplement_requested";
+      const wardId = resubmission && before.wardId ? before.wardId : c.entity.wardId;
+      // transition() first, so that a wrong state, Vai trò, version or hạn bổ sung is reported as such;
+      // any blocker then throws and the transaction rolls the transition back.
       const after = await transition(deps, tx, actor, before, {
-        action: "dossier.submit",
+        action: resubmission ? "dossier.resubmit" : "dossier.submit",
         expectedVersion: input.expectedVersion,
-        patch: { wardId: c.entity.wardId, roundId: c.round?.id ?? null },
-        metadata: { submissionNumber: number, roundId: c.round?.id ?? null, wardId: c.entity.wardId },
+        patch: resubmission ? { supplementDeadline: null } : { wardId, roundId: c.round?.id ?? null },
+        metadata: { submissionNumber: number, roundId: c.round?.id ?? null, wardId },
       });
       if (c.blockers.length > 0 || !c.round) throw new SubmissionBlockedError(c.blockers);
+      if (resubmission) {
+        const open = await tx.supplements.findOpen(before.id);
+        if (open) await tx.supplements.close(open.id, now, "resubmitted");
+      }
       const frozen = await snapshotOf(tx, before, c);
-      const ward = await tx.wards.findById(c.entity.wardId);
+      const ward = await tx.wards.findById(wardId);
       const documents = await generateSubmissionDocuments(deps, tx, actor, frozen, {
         dossierId: before.id,
         number,
@@ -223,7 +244,7 @@ export function submitDossier(deps: CoreDeps) {
         dossierId: after.id,
         number,
         roundId: c.round.id,
-        wardId: c.entity.wardId,
+        wardId,
         submittedAt: now,
         submittedBy: actor.userId,
         snapshot,

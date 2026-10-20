@@ -192,3 +192,6 @@ export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSum
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
 export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";
+export { NO_SUPPLEMENT_REASON, type RequestSupplementInput, type SupplementItemInput, type SupplementRequestView } from "./dossiers/supplement";
+export type { SupplementItem, SupplementOutcome, SupplementRepo, SupplementRequest } from "./dossiers/supplement-model";
+export { isPastSupplementDeadline } from "./dossiers/transitions";
