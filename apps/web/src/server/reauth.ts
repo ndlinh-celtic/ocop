@@ -1,11 +1,17 @@
 "use server";
 
+import { z } from "zod";
 import { app } from "./app";
 import { requireActor } from "./session";
 
 export type { ReauthNeeded } from "./with-reauth";
 
-export async function reauthAction(proof: { code?: string; password?: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+const input = z.object({ code: z.string().trim().regex(/^\d{6}$/).optional(), password: z.string().min(1).optional() });
+
+export async function reauthAction(raw: { code?: string; password?: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const parsed = input.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: raw.code !== undefined ? "Nhập mã gồm 6 chữ số." : "Nhập mật khẩu." };
+  const proof = parsed.data;
   const result = await app().core.identity.reauthenticate(await requireActor(), proof);
   if (result.ok) return { ok: true };
   const error =

@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
 import { withReauth } from "@/server/with-reauth";
@@ -10,12 +11,17 @@ export interface ChangePasswordState {
   ok?: boolean;
 }
 
+const input = z
+  .object({ currentPassword: z.string().min(1), newPassword: z.string().min(1), confirm: z.string() })
+  .refine((v) => v.newPassword === v.confirm, { message: "Hai lần nhập mật khẩu mới không khớp" });
+
 export async function changePasswordAction(_prev: ChangePasswordState, form: FormData): Promise<ChangePasswordState> {
   const actor = await requireActor();
-  const newPassword = String(form.get("newPassword") ?? "");
-  if (newPassword !== String(form.get("confirm") ?? "")) return { error: "Hai lần nhập mật khẩu mới không khớp" };
+  const parsed = input.safeParse({ currentPassword: form.get("currentPassword"), newPassword: form.get("newPassword"), confirm: form.get("confirm") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Nhập đủ các ô mật khẩu" };
+  const { currentPassword, newPassword } = parsed.data;
   try {
-    await app().core.identity.changePassword(actor, { currentPassword: String(form.get("currentPassword") ?? ""), newPassword });
+    await app().core.identity.changePassword(actor, { currentPassword, newPassword });
   } catch (err) {
     return { error: domainMessage(err) };
   }

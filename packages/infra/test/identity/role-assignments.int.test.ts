@@ -115,6 +115,15 @@ describe("L20 AD-01 Phân vai", () => {
     expect(row.assignments).toEqual([expect.objectContaining({ role: "ward_officer", active: false })]);
   });
 
+  it("with TOTP mandatory, a Cán bộ xã still signs in with the password alone", async () => {
+    const strict = createTestApp(db, { totpRequired: true, clock: t.clock });
+    const userId = await activeOfficer("xa.khongtotp@tinh.gov.vn", "Lê Văn Xã");
+    const admin = await t.signInAs(ADMIN.email, ADMIN.password);
+    await strict.app.identity.grantRole(admin, { userId, role: "ward_officer", scopeId: wardId });
+    const r = await strict.app.identity.signIn({ email: "xa.khongtotp@tinh.gov.vn", password: PASSWORD }, requestContext());
+    expect(r).toMatchObject({ ok: true, stage: "full" });
+  });
+
   it("granting a Vai trò that needs TOTP to someone without it signs them out, so the next sign-in enrols", async () => {
     const strict = createTestApp(db, { totpRequired: true, clock: t.clock });
     const userId = await activeOfficer("so@tinh.gov.vn", "Đỗ Thị Sở");
@@ -141,23 +150,27 @@ describe("L20 AD-01 Phân vai", () => {
 
 describe("policy table for step 1 actions", () => {
   // Expected values written out from the spec, not derived from the policy itself.
-  const ADMIN_ONLY = ["user.create", "user.list", "user.resend_activation", "role.grant", "role.revoke", "audit.search", "delivery.list"] as const;
+  const ADMIN_ONLY = ["user.create", "user.list", "user.resend_activation", "role.grant", "role.revoke", "audit.search", "delivery.list", "file.test_upload"] as const;
+  const SELF = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own", "reauth.own"] as const;
 
   it.each(ROLES.map((r) => [r]))("%s", async (role: Role) => {
     const { can } = await import("@ocop/core");
     const actor = { kind: "user" as const, activeRole: role };
     for (const action of ADMIN_ONLY) expect(can(actor, action)).toBe(role === "admin");
-    expect(can(actor, "notification.read_own")).toBe(true);
+    for (const action of SELF) expect(can(actor, action)).toBe(true);
   });
 
   it("an anonymous visitor can do none of them", async () => {
     const { can } = await import("@ocop/core");
-    for (const action of [...ADMIN_ONLY, "notification.read_own"] as const) expect(can({ kind: "anonymous" }, action)).toBe(false);
+    for (const action of [...ADMIN_ONLY, ...SELF]) {
+      expect(can({ kind: "anonymous" }, action)).toBe(false);
+      expect(can({ kind: "system" }, action)).toBe(false);
+    }
   });
 
-  it("a signed-in Người dùng with no Vai trò đang dùng can only read their notifications", async () => {
+  it("a signed-in Người dùng with no Vai trò đang dùng can only act on their own data", async () => {
     const { can } = await import("@ocop/core");
-    expect(can({ kind: "user", activeRole: null }, "user.list")).toBe(false);
-    expect(can({ kind: "user", activeRole: null }, "notification.read_own")).toBe(true);
+    for (const action of ADMIN_ONLY) expect(can({ kind: "user", activeRole: null }, action)).toBe(false);
+    for (const action of SELF) expect(can({ kind: "user", activeRole: null }, action)).toBe(true);
   });
 });

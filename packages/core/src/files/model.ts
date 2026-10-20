@@ -26,6 +26,8 @@ export interface FileRepo {
   insert(f: StoredFile): Promise<void>;
   findById(id: string): Promise<StoredFile | null>;
   update(id: string, patch: Partial<Omit<StoredFile, "id" | "ownerUserId" | "createdAt">>): Promise<void>;
+  /** Applies the patch only while the file is still in `expected`; false when another request got there first. */
+  updateIfStatus(id: string, expected: FileStatus, patch: Partial<Omit<StoredFile, "id" | "ownerUserId" | "createdAt">>): Promise<boolean>;
   listByOwner(userId: string, limit: number): Promise<StoredFile[]>;
 }
 

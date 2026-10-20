@@ -1,4 +1,4 @@
-import { ROLE_LABEL } from "@ocop/core";
+import { DomainError, ROLE_LABEL } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatVnDate } from "@/lib/format";
@@ -12,8 +12,12 @@ export const dynamic = "force-dynamic";
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const actor = await requireActor();
-  const [users, wards] = await Promise.all([app().core.identity.listUsers(actor), app().core.org.listWards()]);
-  const user = users.find((u) => u.id === id);
+  const [user, wards] = await Promise.all([
+    app()
+      .core.identity.getUser(actor, { userId: id })
+      .catch((err: unknown) => (err instanceof DomainError && err.code === "user_not_found" ? null : Promise.reject(err))),
+    app().core.org.listWards(),
+  ]);
   if (!user) notFound();
   return (
     <div className="flex flex-col gap-6">

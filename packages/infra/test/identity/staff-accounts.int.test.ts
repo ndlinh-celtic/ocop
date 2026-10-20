@@ -115,6 +115,21 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
     );
     expect(JSON.stringify(entries)).not.toContain(firstToken);
   });
+
+  it("NĐ 13/2023 viewing the user list or one Người dùng's details is audited as a personal data access", async () => {
+    const admin = await t.signInAs(ADMIN.email, ADMIN.password);
+    const users = await t.app.identity.listUsers(admin);
+    const officer = await t.app.identity.getUser(admin, { userId: officerId });
+    expect(officer).toMatchObject({ email: OFFICER.email, fullName: OFFICER.fullName });
+    const views = await t.app.audit.search(admin, { action: ["personal_data.viewed"], actorUserId: admin.userId });
+    expect(views).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ targetType: "user", targetId: officerId, metadata: { view: "user_detail" } }),
+        expect.objectContaining({ targetType: "user", targetId: null, metadata: { view: "user_list", count: users.length } }),
+      ]),
+    );
+    await expect(t.app.identity.getUser({ kind: "anonymous", ctx: requestContext() }, { userId: officerId })).rejects.toMatchObject({ code: "forbidden" });
+  });
 });
 
 describe("ADR 0001 outbox", () => {

@@ -33,6 +33,14 @@ export function auditChainRepo(db: Db): AuditChainRepo {
       const { rows } = await db.execute<{ locked: boolean }>(sql`SELECT pg_try_advisory_xact_lock(hashtext('ocop.audit.seal')) AS locked`);
       return rows[0]?.locked === true;
     },
+    async lock() {
+      await db.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ocop.audit.seal'))`);
+    },
+    async checkpointBefore(at) {
+      const { rows } = await db.execute<Row>(sql`
+        SELECT last_seq, last_hash FROM platform.audit_checkpoint WHERE created_at < ${at} ORDER BY last_seq DESC LIMIT 1`);
+      return rows[0] ? { lastSeq: Number(rows[0].last_seq), lastHash: rows[0].last_hash as string } : null;
+    },
     async lastSeal() {
       const { rows } = await db.execute<Row>(sql`SELECT * FROM platform.audit_seal ORDER BY seq DESC LIMIT 1`);
       return rows[0] ? toSeal(rows[0]) : null;

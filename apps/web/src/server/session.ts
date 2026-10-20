@@ -8,8 +8,8 @@ import { requestContext } from "./request";
 export const SESSION_COOKIE = "ocop_session";
 
 export async function setSessionCookie(token: string) {
-  const secure = new URL(app().config.APP_BASE_URL).protocol === "https:" || app().config.APP_BASE_URL.includes("localhost");
-  (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure, sameSite: "lax", path: "/" });
+  // Always Secure: browsers still accept it on http://localhost, and anywhere else must be https.
+  (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure: true, sameSite: "lax", path: "/" });
 }
 
 export async function clearSessionCookie() {

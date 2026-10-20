@@ -94,6 +94,73 @@ describe("ADR 0002 daily anchor outside the database", () => {
       await fresh.drop();
     }
   });
+
+  it("run just after midnight, it names the day that ended and covers rows from its last seconds", async () => {
+    const fresh = await createTestDatabase();
+    const a = createTestApp(fresh, { totpRequired: false });
+    try {
+      a.clock.set(new Date("2026-10-20T23:59:50+07:00"));
+      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      a.clock.set(new Date("2026-10-21T00:05:00+07:00"));
+      const anchor = await a.app.audit.anchor(); // no seal ran since the row was written
+      expect(anchor?.key).toMatch(/^anchors\/2026-10-20-/);
+      const verified = await a.app.audit.verify();
+      expect(verified).toMatchObject({ ok: true, lastSeq: anchor!.lastSeq });
+      expect(anchor!.lastSeq).toBeGreaterThan(0);
+    } finally {
+      await a.stop();
+      await fresh.drop();
+    }
+  });
+});
+
+describe("ADR 0002 verifying from a checkpoint", () => {
+  it("recomputes only the seals after the last checkpoint before the given time", async () => {
+    const fresh = await createTestDatabase();
+    const a = createTestApp(fresh, { totpRequired: false });
+    try {
+      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      a.clock.advance(seconds(31));
+      await a.app.audit.seal();
+      const afterFirst = a.clock.now();
+      a.clock.advance(minutes(1));
+      await a.signInAs(ADMIN.email, ADMIN.password);
+      a.clock.advance(seconds(31));
+      const second = await a.app.audit.seal();
+      expect(second.sealed).toBeGreaterThan(0);
+
+      const partial = await a.app.audit.verify({ since: new Date(afterFirst.getTime() + 1) });
+      expect(partial).toMatchObject({ ok: true, checked: second.sealed, lastSeq: second.lastSeq });
+    } finally {
+      await a.stop();
+      await fresh.drop();
+    }
+  });
+
+  it("refuses a checkpoint whose hash no longer matches its seal", async () => {
+    const fresh = await createTestDatabase();
+    const a = createTestApp(fresh, { totpRequired: false });
+    try {
+      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      a.clock.advance(seconds(31));
+      const first = await a.app.audit.seal();
+      const client = await fresh.admin.connect();
+      try {
+        await client.query("SET session_replication_role = replica");
+        await client.query("UPDATE platform.audit_checkpoint SET last_hash = repeat('0', 64)");
+      } finally {
+        client.release();
+      }
+      await expect(a.app.audit.verify({ since: new Date(a.clock.now().getTime() + 1) })).resolves.toMatchObject({
+        ok: false,
+        brokenAtSeq: first.lastSeq,
+        reason: "checkpoint_mismatch",
+      });
+    } finally {
+      await a.stop();
+      await fresh.drop();
+    }
+  });
 });
 
 describe("L21 audit search", () => {

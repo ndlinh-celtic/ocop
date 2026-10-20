@@ -96,7 +96,8 @@ export function completeUpload(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       // Quarantine until the scan consumer decides; nobody can download it meanwhile.
-      await tx.files.update(file.id, { status: "scanning", uploadedAt: now });
+      const moved = await tx.files.updateIfStatus(file.id, "awaiting_upload", { status: "scanning", uploadedAt: now });
+      if (!moved) throw new DomainError("already_uploaded", "Tệp đã được tải lên");
       await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "file.uploaded", targetType: "file", targetId: file.id, metadata: { size: head.size } }));
       await emit(deps, tx, { type: "files.uploaded", payload: { fileId: file.id } });
     });

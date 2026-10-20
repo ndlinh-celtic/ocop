@@ -9,7 +9,7 @@ import { bootstrapFirstAdmin } from "./identity/bootstrap";
 import { listNotifications, markAllRead, markRead, unreadCount } from "./notifications/inbox";
 import { listWards } from "./org/catalogue";
 import { authenticate, signIn, signOut } from "./identity/session";
-import { activateAccount, createStaffUser, describeActivation, listUsers, resendActivation } from "./identity/staff";
+import { activateAccount, createStaffUser, describeActivation, listUsers, getUser, resendActivation } from "./identity/staff";
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
@@ -31,6 +31,7 @@ export function createCore(deps: CoreDeps) {
       createStaffUser: createStaffUser(deps),
       resendActivation: resendActivation(deps),
       listUsers: listUsers(deps),
+      getUser: getUser(deps),
       describeActivation: describeActivation(deps),
       activateAccount: activateAccount(deps),
       grantRole: grantRole(deps),

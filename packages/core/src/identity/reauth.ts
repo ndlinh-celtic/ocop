@@ -12,7 +12,8 @@ export const REAUTH_WINDOW_MS = 5 * 60_000;
 
 export interface ReauthProof {
   at: Date;
-  method: AuthMethod;
+  /** The strongest factor of the last proof: a sign-in with password + TOTP counts as `totp`. */
+  method: "totp" | "password";
 }
 
 /**
@@ -25,7 +26,7 @@ export async function requireRecentAuth(deps: CoreDeps, tx: Tx, actor: Extract<A
   if (!session || session.revokedAt || now.getTime() - session.authenticatedAt.getTime() > REAUTH_WINDOW_MS) {
     throw new DomainError("reauth_required", "Xác thực lại để tiếp tục");
   }
-  return { at: session.authenticatedAt, method: session.authMethod };
+  return { at: session.authenticatedAt, method: session.authMethod === "password" ? "password" : "totp" };
 }
 
 export type ReauthResult = { ok: true } | { ok: false; reason: "invalid" | "totp_required" | "locked" };

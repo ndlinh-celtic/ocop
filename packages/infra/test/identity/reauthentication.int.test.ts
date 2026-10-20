@@ -25,7 +25,7 @@ describe("L20 Xác thực lại with TOTP", () => {
   it("a sensitive action right after sign-in goes through", async () => {
     t.clock.advance(minutes(1));
     const admin = await t.signInAs(ADMIN.email, ADMIN.password, secret);
-    await expect(t.app.identity.sensitiveSample(admin)).resolves.toMatchObject({ method: "password+totp" });
+    await expect(t.app.identity.sensitiveSample(admin)).resolves.toMatchObject({ method: "totp" });
   });
 
   it("after 5 minutes it asks for Xác thực lại, then goes through for another 5 minutes", async () => {
@@ -48,7 +48,7 @@ describe("L20 Xác thực lại with TOTP", () => {
     t.clock.advance(minutes(1));
     const admin = await t.signInAs(ADMIN.email, ADMIN.password, secret);
     const [entry] = await t.app.audit.search(admin, { action: ["identity.sensitive_sample"] });
-    expect(entry!.metadata).toMatchObject({ reauth: { method: expect.stringMatching(/totp/), at: expect.any(String) } });
+    expect(entry!.metadata).toMatchObject({ reauth: { method: "totp", at: expect.any(String) } });
   });
 });
 

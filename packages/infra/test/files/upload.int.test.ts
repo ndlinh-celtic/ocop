@@ -79,6 +79,18 @@ describe("L24 DC-03 direct upload and download", () => {
     await expect(t.app.files.requestDownload(admin, fileId)).rejects.toMatchObject({ code: "file_not_ready" });
   });
 
+  it("two concurrent completes of the same upload move it to scanning once", async () => {
+    const admin = await t.signInAs(ADMIN.email, ADMIN.password);
+    const data = Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(100)]);
+    const { fileId, upload } = await t.app.files.requestUpload(admin, { fileName: "doi.pdf", contentType: "application/pdf", size: data.length });
+    await browserUpload(upload, data);
+    const results = await Promise.allSettled([t.app.files.completeUpload(admin, fileId), t.app.files.completeUpload(admin, fileId)]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "already_uploaded" } });
+    const uploaded = (await t.app.audit.search(admin, { targetType: "file" })).filter((e) => e.targetId === fileId && e.action === "file.uploaded");
+    expect(uploaded).toHaveLength(1);
+  });
+
   it("only Quản trị can use the test upload, and every step is audited", async () => {
     await expect(
       t.app.files.requestUpload({ kind: "anonymous", ctx: requestContext() }, { fileName: "a.pdf", contentType: "application/pdf", size: 1 }),

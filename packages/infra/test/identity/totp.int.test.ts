@@ -102,6 +102,26 @@ describe("ADR 0003 deployment flag for mandatory TOTP", () => {
     }
   });
 
+  it("with the flag off, a Người dùng who turned TOTP on still has to enter a code", async () => {
+    const off = await createTestDatabase();
+    try {
+      const app = createTestApp(off, { totpRequired: false });
+      await app.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      const first = await app.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+      if (!first.ok) throw new Error("password step failed");
+      const { secret: own } = await app.app.identity.startTotpEnrollment(first.sessionToken, requestContext());
+      await expect(app.app.identity.confirmTotpEnrollment(first.sessionToken, await totpCode(own, app.clock.now()), requestContext())).resolves.toEqual({ ok: true });
+
+      app.clock.advance(minutes(1));
+      const next = await app.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+      expect(next).toMatchObject({ ok: true, stage: "totp_pending" });
+      if (!next.ok) throw new Error();
+      await expect(app.app.identity.authenticate(next.sessionToken, requestContext())).resolves.toBeNull();
+    } finally {
+      await off.drop();
+    }
+  });
+
   it("records the flag value each time a process starts", async () => {
     await t.app.system.recordStartup("web", requestContext());
     t.clock.advance(minutes(1));

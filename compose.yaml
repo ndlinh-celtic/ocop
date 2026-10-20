@@ -100,6 +100,9 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
       s3: { condition: service_healthy }
+      # Every upload goes through the scan, and every email through SMTP.
+      clamd: { condition: service_healthy }
+      mailpit: { condition: service_started }
 
   caddy:
     image: caddy:2-alpine
