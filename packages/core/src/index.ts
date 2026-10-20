@@ -55,6 +55,8 @@ export type {
   VersionStatus,
   VersionSummary,
   VersionTaxonomy,
+  DraftNodeRows,
+  VersionFields,
 } from "./criteria/version";
 export { assertDraft } from "./criteria/version";
 export type {
@@ -69,6 +71,9 @@ export type {
 export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue } from "./criteria/qd26-file";
 export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
 export { CriteriaValidationError } from "./criteria/publish";
+export { draftEditSchema, type DraftEdit, type EditDraftInput } from "./criteria/edit";
+export type { DraftChangeResult } from "./criteria/draft-change";
+export { DRAFT_NODE_KINDS, type DraftNodeKind, type DraftTarget, type DraftChangeAction, type DraftChangePayload } from "./criteria/draft-events";
 export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
 export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";

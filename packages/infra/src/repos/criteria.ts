@@ -1,5 +1,5 @@
-import type { CriteriaVersion, CriteriaVersionRepo, SetRows, VersionStatus } from "@ocop/core";
-import { asc, count, desc, eq, inArray } from "drizzle-orm";
+import type { CriteriaVersion, CriteriaVersionRepo, DraftNodeKind, SetRows, VersionStatus } from "@ocop/core";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { Db } from "../db/types";
 import {
@@ -22,6 +22,26 @@ const CHUNK = 500;
 async function insertAll<T extends PgTable>(db: Db, table: T, rows: T["$inferInsert"][]) {
   for (let i = 0; i < rows.length; i += CHUNK) await db.insert(table).values(rows.slice(i, i + CHUNK));
 }
+
+/** The table that stores each kind of node of the tree. */
+const NODE_TABLE = {
+  productGroup,
+  subgroup: productSubgroup,
+  set: criteriaSet,
+  exclusion: exclusionCondition,
+  part: criteriaPart,
+  section: criteriaSection,
+  criterionGroup,
+  criterion,
+  scoreLevel,
+} satisfies Record<DraftNodeKind, PgTable>;
+
+/*
+ * The node tables share `id` and `version_id`; Drizzle cannot type a query over a union of tables, so
+ * queries go through this one shape and the repo port restores the row type per kind.
+ */
+type NodeTable = typeof productGroup;
+const nodeTable = (kind: DraftNodeKind) => NODE_TABLE[kind] as unknown as NodeTable;
 
 const toVersion = (row: typeof criteriaVersion.$inferSelect): CriteriaVersion => ({ ...row, status: row.status as VersionStatus });
 
@@ -122,6 +142,32 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
 
     async delete(id) {
       await db.delete(criteriaVersion).where(eq(criteriaVersion.id, id));
+    },
+
+    async findNode(kind, id) {
+      const table = nodeTable(kind);
+      const [row] = await db.select().from(table).where(eq(table.id, id));
+      if (!row) return null;
+      const { versionId, ...rest } = row;
+      return { versionId, row: rest as never };
+    },
+
+    async updateNode(kind, id, patch) {
+      const table = nodeTable(kind);
+      await db.update(table).set(patch as Partial<NodeTable["$inferInsert"]>).where(eq(table.id, id));
+    },
+
+    async updateVersion(id, patch) {
+      await db.update(criteriaVersion).set(patch).where(eq(criteriaVersion.id, id));
+    },
+
+    async setThresholds(versionId, thresholds) {
+      for (const stars of [2, 3, 4, 5] as const) {
+        await db
+          .update(rankThreshold)
+          .set({ minScore: thresholds[stars] })
+          .where(and(eq(rankThreshold.versionId, versionId), eq(rankThreshold.stars, stars)));
+      }
     },
 
     async findSet(setId) {

@@ -20,6 +20,7 @@ const ROLE_ACTIONS = {
   "criteria.read_draft": ["admin"],
   "criteria.publish": ["admin"],
   "criteria.preview": ["admin"],
+  "criteria.edit": ["admin"],
   "criteria.copy": ["admin"],
   "criteria.delete": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;

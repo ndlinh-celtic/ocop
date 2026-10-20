@@ -1,8 +1,9 @@
 import type { CriteriaSetDetail, CriteriaSetView, StoredCriterion } from "@ocop/core";
+import type { EditSlot } from "./edit-target";
 import { StatusTag } from "./status-tag";
 
 /** Title, Cây phân loại path and review notes of a Bộ tiêu chí (L19). */
-export function CriteriaSetHeading({ view }: { view: CriteriaSetView }) {
+export function CriteriaSetHeading({ view, edit }: { view: CriteriaSetView; edit?: EditSlot }) {
   const { set } = view;
   return (
     <>
@@ -12,6 +13,7 @@ export function CriteriaSetHeading({ view }: { view: CriteriaSetView }) {
               Bộ {set.code}. {set.name}
             </h1>
             <StatusTag status={view.version.status} />
+            {edit?.({ node: "set", id: set.id, label: `Bộ ${set.code}`, values: { name: set.name, totalPoints: set.totalPoints } })}
           </div>
           <p className="text-sm text-text-2">
             {view.productGroup} › {view.subgroup} · {set.totalPoints} điểm
@@ -33,8 +35,11 @@ export function CriteriaSetHeading({ view }: { view: CriteriaSetView }) {
   );
 }
 
-/** The read-only sheet of a Bộ tiêu chí: Điều kiện loại, then Phần → Mục → (Nhóm tiêu chí) → Tiêu chí → Mức điểm. */
-export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
+/**
+ * The sheet of a Bộ tiêu chí: Điều kiện loại, then Phần → Mục → (Nhóm tiêu chí) → Tiêu chí → Mức điểm.
+ * Read-only unless `edit` is given (the admin draft page, L19 AD-03).
+ */
+export function CriteriaSetSheet({ set, edit }: { set: CriteriaSetDetail; edit?: EditSlot }) {
   return (
     <>
         <section className="rounded-lg border bg-surface p-4">
@@ -43,8 +48,11 @@ export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
             <p className="text-sm text-text-3">Phiếu không có dòng &ldquo;Hồ sơ bị loại khi…&rdquo;.</p>
           ) : (
             <ol className="list-decimal pl-5 text-sm">
-              {set.exclusionConditions.map((e) => (
-                <li key={e.id}>{e.description}</li>
+              {set.exclusionConditions.map((e, i) => (
+                <li key={e.id}>
+                  {e.description}{" "}
+                  {edit?.({ node: "exclusion", id: e.id, label: `Điều kiện loại ${i + 1}`, values: { description: e.description } })}
+                </li>
               ))}
             </ol>
           )}
@@ -56,7 +64,10 @@ export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
               <span>
                 Phần {part.code}. {part.name}
               </span>
-              <span className="shrink-0">{part.points} điểm</span>
+              <span className="flex shrink-0 items-center gap-2">
+                {part.points} điểm
+                {edit?.({ node: "part", id: part.id, label: `Phần ${part.code}`, values: { name: part.name, points: part.points } })}
+              </span>
             </h2>
             <div className="flex flex-col divide-y">
               {part.sections.map((section) => (
@@ -65,7 +76,10 @@ export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
                     <span>
                       {section.code}. {section.name}
                     </span>
-                    <span className="shrink-0 text-text-2">{section.points} điểm</span>
+                    <span className="flex shrink-0 items-center gap-2 text-text-2">
+                      {section.points} điểm
+                      {edit?.({ node: "section", id: section.id, label: `Mục ${section.code}`, values: { name: section.name, points: section.points } })}
+                    </span>
                   </h3>
                   <div className="mt-2 flex flex-col gap-3">
                     {section.items.map((item) =>
@@ -75,16 +89,19 @@ export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
                             <span>
                               {item.code} {item.name}
                             </span>
-                            <span className="shrink-0 text-text-2">{item.points} điểm</span>
+                            <span className="flex shrink-0 items-center gap-2 text-text-2">
+                              {item.points} điểm
+                              {edit?.({ node: "criterionGroup", id: item.id, label: `Nhóm tiêu chí ${item.code}`, values: { name: item.name, points: item.points } })}
+                            </span>
                           </h4>
                           <div className="mt-2 flex flex-col gap-3">
                             {item.criteria.map((c) => (
-                              <CriterionCard key={c.id} criterion={c} />
+                              <CriterionCard key={c.id} criterion={c} edit={edit} />
                             ))}
                           </div>
                         </div>
                       ) : (
-                        <CriterionCard key={item.id} criterion={item} />
+                        <CriterionCard key={item.id} criterion={item} edit={edit} />
                       ),
                     )}
                   </div>
@@ -97,14 +114,22 @@ export function CriteriaSetSheet({ set }: { set: CriteriaSetDetail }) {
   );
 }
 
-function CriterionCard({ criterion: c }: { criterion: StoredCriterion }) {
+function CriterionCard({ criterion: c, edit }: { criterion: StoredCriterion; edit?: EditSlot }) {
   return (
     <article className="rounded-md bg-surface-2 p-3 text-sm">
       <header className="flex justify-between gap-3">
         <p className="font-medium">
           {c.code} {c.name}
         </p>
-        <span className="shrink-0 text-text-2">tối đa {c.maxPoints} điểm</span>
+        <span className="flex shrink-0 items-center gap-2 text-text-2">
+          tối đa {c.maxPoints} điểm
+          {edit?.({
+            node: "criterion",
+            id: c.id,
+            label: `Tiêu chí ${c.code}`,
+            values: { code: c.code, name: c.name, requirement: c.requirement, note: c.note, maxPoints: c.maxPoints },
+          })}
+        </span>
       </header>
       {c.requirement && <p className="mt-1 text-text-2">{c.requirement}</p>}
       {c.note && <p className="mt-1 text-text-3">Ghi chú: {c.note}</p>}
@@ -116,6 +141,7 @@ function CriterionCard({ criterion: c }: { criterion: StoredCriterion }) {
             <th className="py-1 text-left font-normal">Mức điểm</th>
             <th className="w-20 py-1 text-right font-normal">Sao tối thiểu</th>
             <th className="w-14 py-1 text-right font-normal">Điểm</th>
+            {edit && <th className="w-10 py-1" aria-label="Sửa" />}
           </tr>
         </thead>
         <tbody>
@@ -137,6 +163,16 @@ function CriterionCard({ criterion: c }: { criterion: StoredCriterion }) {
                 )}
               </td>
               <td className="py-1 text-right align-top font-medium">{l.points}</td>
+              {edit && (
+                <td className="py-1 text-right align-top">
+                  {edit({
+                    node: "scoreLevel",
+                    id: l.id,
+                    label: `Mức điểm ${l.description}`,
+                    values: { description: l.description, points: l.points, minimumStar: l.minimumStar, branch: l.branch },
+                  })}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
