@@ -10,6 +10,8 @@ export type ValidationIssueCode =
   | "duplicate_criterion_code"
   | "missing_zero_level"
   | "duplicate_name"
+  | "empty_version"
+  | "empty_group"
   | "thresholds_not_increasing"
   | "threshold_exceeds_total";
 
@@ -109,6 +111,24 @@ function taxonomyIssues(rows: VersionRows): ValidationIssue[] {
   return issues;
 }
 
+/** A version with nothing to grade, or a branch of its Cây phân loại that leads to no Bộ tiêu chí. */
+function emptinessIssues(rows: VersionRows): ValidationIssue[] {
+  const at = { setId: null, setCode: null, criterionCode: null };
+  if (rows.sets.length === 0) return [{ code: "empty_version", ...at, message: "Phiên bản tiêu chí chưa có Bộ tiêu chí nào" }];
+  const issues: ValidationIssue[] = [];
+  for (const g of rows.productGroups) {
+    if (!rows.subgroups.some((s) => s.productGroupId === g.id)) {
+      issues.push({ code: "empty_group", ...at, message: `Nhóm sản phẩm "${g.name}" chưa có Phân nhóm nào` });
+    }
+  }
+  for (const sg of rows.subgroups) {
+    if (!rows.sets.some((s) => s.set.subgroupId === sg.id)) {
+      issues.push({ code: "empty_group", ...at, message: `Phân nhóm "${sg.name}" chưa có Bộ tiêu chí nào` });
+    }
+  }
+  return issues;
+}
+
 const STEPS = [2, 3, 4, 5] as const;
 
 function thresholdIssues(rows: VersionRows): ValidationIssue[] {
@@ -138,5 +158,5 @@ function thresholdIssues(rows: VersionRows): ValidationIssue[] {
  * Bộ tiêu chí and, where it applies, its mã tiêu chí (spec #16 stories 20-23). Pure: no I/O.
  */
 export function findVersionIssues(rows: VersionRows): ValidationIssue[] {
-  return [...thresholdIssues(rows), ...taxonomyIssues(rows), ...rows.sets.flatMap(setIssues)];
+  return [...thresholdIssues(rows), ...emptinessIssues(rows), ...taxonomyIssues(rows), ...rows.sets.flatMap(setIssues)];
 }

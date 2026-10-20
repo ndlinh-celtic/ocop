@@ -228,7 +228,7 @@ flowchart TD
 5. Khi mọi hồ sơ của đợt ở trạng thái cuối hoặc đã chốt, Sở "Kết thúc đợt" (Đã kết thúc).
 
 **Ngoại lệ**
-- Gia hạn đợt: Sở lùi Hạn nộp xã hoặc Hạn gửi tỉnh, ghi lý do, thông báo đối tượng liên quan; không rút ngắn hạn khi đợt đã mở. Gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp, nếu không có đợt khác đang nhận nộp.
+- Gia hạn đợt: Sở lùi Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh, ghi lý do, thông báo đối tượng liên quan; không rút ngắn hạn khi đợt đã mở. Hạn nộp xã chỉ gia hạn được khi đợt còn Đang nhận nộp, sang một ngày trong tương lai; Hạn gửi tỉnh và Hạn đánh giá tỉnh gia hạn được khi đợt Đang nhận nộp hoặc Đã đóng nộp. Đợt ở trạng thái Đã đóng nộp không mở lại.
 - Đợt đã mở không đổi được Phiên bản tiêu chí (tránh lệch giữa các hồ sơ). Quy tắc tổng hợp khóa khi đợt có phiếu chấm đầu tiên.
 - Xã chuyển hồ sơ sang đợt sau (XA-08) chỉ khi đợt sau áp dụng cùng Phiên bản tiêu chí, ghi lý do; nếu khác phiên bản, xã kết luận không đạt sơ bộ hoặc trả về chủ thể.
 

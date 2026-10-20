@@ -4,7 +4,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
-import { closeDueActorFor, closeDueInTx } from "./close-due";
+import { assertIdShape } from "../shared/ids";
 import { roundNotFound } from "./manage";
 import { roundVisibleTo } from "./read";
 import {
@@ -13,7 +13,6 @@ import {
   EXTENDABLE_DEADLINE_LABEL,
   EXTENDABLE_DEADLINES,
   isPastSubmissionDeadline,
-  roundAlreadyOpen,
   type DeadlineExtension,
   type DeadlineExtensionView,
   type ExtendableDeadline,
@@ -34,11 +33,11 @@ const FIELD = { submission: "submissionDeadline", forwarding: "forwardingDeadlin
 /**
  * L07 Gia hạn đợt (#26): Cán bộ Sở moves Hạn nộp xã, Hạn gửi tỉnh or Hạn đánh giá tỉnh later, with a reason. Only an opened
  * round that has not ended (a Nháp round is edited directly). Never shortens, and the three deadlines stay
- * in order. Extending Hạn nộp xã of a Đã đóng nộp round brings it back to Đang nhận nộp, unless another
- * round is open; the new Hạn nộp xã must then lie in the future, or the auto-close job would close it again.
+ * in order. Hạn nộp xã can only be extended while submission is still open (Đang nhận nộp and not yet past
+ * it), to a day in the future; once Đã đóng nộp a round never goes back to Đang nhận nộp (review of #29).
  */
 export function extendDeadline(deps: CoreDeps) {
-  return async (actor: Actor, input: ExtendDeadlineInput): Promise<{ extensionId: string; reopened: boolean }> => {
+  return async (actor: Actor, input: ExtendDeadlineInput): Promise<{ extensionId: string }> => {
     authorize(actor, "round.manage");
     if (!EXTENDABLE_DEADLINES.includes(input.deadline)) {
       throw new DomainError("invalid_deadline", "Chỉ gia hạn được Hạn nộp xã, Hạn gửi tỉnh hoặc Hạn đánh giá tỉnh");
@@ -51,26 +50,19 @@ export function extendDeadline(deps: CoreDeps) {
     const field = FIELD[input.deadline];
 
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const before = await tx.rounds.lock(input.roundId);
       if (!before) throw roundNotFound();
       if (before.status === "draft") throw new DomainError("round_is_draft", "Đợt đang ở trạng thái Nháp: sửa trực tiếp các mốc hạn, không cần gia hạn");
       if (before.status === "ended") throw new DomainError("round_ended", "Đợt đã kết thúc, không gia hạn được");
+      const now = deps.clock.now();
+      if (input.deadline === "submission" && (before.status !== "open_for_submission" || isPastSubmissionDeadline(before, now))) {
+        throw new DomainError("submission_closed", "Đợt đã đóng nộp: không gia hạn Hạn nộp xã được nữa và đợt không mở lại");
+      }
       const previousDeadline = before[field];
       if (newDeadline <= previousDeadline) throw new DomainError("deadline_not_later", `${label} mới phải sau ${label} hiện tại; không rút ngắn hạn`);
-      const now = deps.clock.now();
       const after: Round = { ...before, [field]: newDeadline, updatedAt: now };
       assertDeadlineOrder(after);
-
-      const reopened = input.deadline === "submission" && before.status === "submission_closed";
-      if (input.deadline === "submission" && isPastSubmissionDeadline(after, now)) {
-        throw new DomainError("deadline_passed", "Hạn nộp xã mới đã qua; chọn một ngày từ hôm nay trở đi");
-      }
-      if (reopened) {
-        await closeDueInTx(deps, tx, closeDueActorFor(actor), now);
-        const open = await tx.rounds.findOpen();
-        if (open) throw roundAlreadyOpen(open.name);
-        after.status = "open_for_submission";
-      }
       await tx.rounds.update(after);
 
       const extension: DeadlineExtension = {
@@ -82,7 +74,6 @@ export function extendDeadline(deps: CoreDeps) {
         reason,
         extendedBy: actor.userId,
         extendedAt: now,
-        reopened,
       };
       await tx.rounds.insertExtension(extension);
 
@@ -95,27 +86,14 @@ export function extendDeadline(deps: CoreDeps) {
           targetId: before.id,
           before: { [field]: previousIso },
           after: { [field]: newIso },
-          metadata: { extensionId: extension.id, deadline: input.deadline, reason, reopened },
+          metadata: { extensionId: extension.id, deadline: input.deadline, reason },
         }),
       );
       await emit(deps, tx, {
         type: "round.deadline_extended",
         payload: { roundId: before.id, extensionId: extension.id, deadline: input.deadline, previousDeadline: previousIso, newDeadline: newIso },
       });
-      if (reopened) {
-        await tx.audit.append(
-          auditEntry(actor, deps.ids.next(), now, {
-            action: "round.reopened",
-            targetType: "round",
-            targetId: before.id,
-            before: { status: before.status },
-            after: { status: after.status, submissionDeadline: newIso },
-            metadata: { extensionId: extension.id },
-          }),
-        );
-        await emit(deps, tx, { type: "round.reopened", payload: { roundId: before.id, extensionId: extension.id, submissionDeadline: newIso } });
-      }
-      return { extensionId: extension.id, reopened };
+      return { extensionId: extension.id };
     });
   };
 }
@@ -125,6 +103,7 @@ export function listDeadlineExtensions(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string }): Promise<DeadlineExtensionView[]> => {
     authorize(actor, "round.read");
     return deps.uow.run(async (tx) => {
+      assertIdShape(input.roundId, roundNotFound);
       const round = await tx.rounds.findById(input.roundId);
       if (!round || !roundVisibleTo(actor, round)) throw roundNotFound();
       return tx.rounds.listExtensions(input.roundId);

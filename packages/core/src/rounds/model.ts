@@ -103,7 +103,7 @@ export const EXTENDABLE_DEADLINE_LABEL: Record<ExtendableDeadline, string> = {
   evaluation: "Hạn đánh giá tỉnh",
 };
 
-/** One Gia hạn đợt (#26): which deadline, from when to when, why, by whom, and whether it reopened submission. */
+/** One Gia hạn đợt (#26): which deadline, from when to when, why and by whom. */
 export interface DeadlineExtension {
   id: string;
   roundId: string;
@@ -113,8 +113,6 @@ export interface DeadlineExtension {
   reason: string;
   extendedBy: string;
   extendedAt: Date;
-  /** True when it brought a Đã đóng nộp round back to Đang nhận nộp. */
-  reopened: boolean;
 }
 
 export interface DeadlineExtensionView extends DeadlineExtension {

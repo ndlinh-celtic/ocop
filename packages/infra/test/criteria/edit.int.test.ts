@@ -164,7 +164,11 @@ describe("L19 AD-03 sửa nội dung bản nháp", () => {
     expect(set.exclusionConditions.map((e) => e.description)).toEqual(["Không có giấy phép kinh doanh"]);
   });
 
-  it("makes a system-added 0-point Mức điểm Quản trị's own once it is given points", async () => {
+  it.each([
+    ["points", { points: 10 }],
+    ["description", { description: "Không có" }],
+    ["Sao tối thiểu", { minimumStar: 3 }],
+  ] as const)("makes a system-added 0-point Mức điểm Quản trị's own once its %s is edited", async (_label, changes) => {
     const a = await admin();
     const file = JSON.parse(FILE) as { bo_tieu_chi: { tieu_chi: { lua_chon: unknown[] }[] }[] };
     file.bo_tieu_chi[0]!.tieu_chi[0]!.lua_chon = [{ thu_tu: 1, mo_ta: "Đạt", diem: 100, sao_toi_thieu: null }];
@@ -175,10 +179,11 @@ describe("L19 AD-03 sửa nội dung bản nháp", () => {
       return group.kind === "group" ? group.criteria[0]!.levels : [];
     };
     const zero = (await levels()).find((l) => l.systemAdded)!;
-    await t.app.criteria.editDraft(a, { versionId, edit: { node: "scoreLevel", id: zero.id, changes: { description: "Không có" } } });
-    expect((await levels()).find((l) => l.id === zero.id)).toMatchObject({ description: "Không có", systemAdded: true });
-    await t.app.criteria.editDraft(a, { versionId, edit: { node: "scoreLevel", id: zero.id, changes: { points: 10 } } });
-    expect((await levels()).find((l) => l.id === zero.id)).toMatchObject({ points: 10, systemAdded: false });
+    // Saving the values it already has changes nothing, so it stays system-added.
+    await t.app.criteria.editDraft(a, { versionId, edit: { node: "scoreLevel", id: zero.id, changes: { description: zero.description, points: 0 } } });
+    expect((await levels()).find((l) => l.id === zero.id)).toMatchObject({ systemAdded: true });
+    await t.app.criteria.editDraft(a, { versionId, edit: { node: "scoreLevel", id: zero.id, changes } });
+    expect((await levels()).find((l) => l.id === zero.id)).toMatchObject({ ...changes, systemAdded: false });
   });
 });
 

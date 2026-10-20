@@ -303,6 +303,13 @@ describe("L19 AD-03/AD-04 kiểm tra sau mỗi thao tác", () => {
     expect(issues).toEqual([expect.objectContaining({ code: "missing_zero_level", setId: ids.set, criterionCode: "1.2" })]);
     await expect(t.app.criteria.publishVersion(a, { versionId })).rejects.toMatchObject({ code: "validation_failed" });
   });
+
+  it("reports a version left without any Bộ tiêu chí, and publishing is refused", async () => {
+    const { a, versionId, ids } = await draft();
+    const { issues } = await t.app.criteria.removeNode(a, { versionId, node: "set", id: ids.set });
+    expect(issues).toEqual([expect.objectContaining({ code: "empty_version" })]);
+    await expect(t.app.criteria.publishVersion(a, { versionId })).rejects.toMatchObject({ code: "validation_failed" });
+  });
 });
 
 describe("L19 AD-03 từ chối thao tác cấu trúc", () => {

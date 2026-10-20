@@ -2,7 +2,9 @@ import { authorize } from "../identity/policy";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
 import { assembleSet } from "./detail";
+import { setNotFound } from "./helpers";
 import { rankStoredSet, type StoredStarRank } from "./star-rank";
 
 /*
@@ -21,9 +23,10 @@ export function previewSet(deps: CoreDeps) {
   return async (actor: Actor, input: PreviewSetInput): Promise<StoredStarRank> => {
     authorize(actor, "criteria.preview");
     const { rows, thresholds } = await deps.uow.run(async (tx) => {
+      assertIdShape(input.setId, setNotFound);
       const found = await tx.criteriaVersions.findSet(input.setId);
-      if (!found) throw new DomainError("not_found", "Không tìm thấy bộ tiêu chí");
-      return { rows: found.rows, thresholds: (await tx.criteriaVersions.taxonomy(found.versionId)).thresholds };
+      if (!found) throw setNotFound();
+      return { rows: found.rows, thresholds: await tx.criteriaVersions.thresholds(found.versionId) };
     });
     const set = assembleSet(rows);
     const owner = new Map(rows.levels.map((l) => [l.id, l]));

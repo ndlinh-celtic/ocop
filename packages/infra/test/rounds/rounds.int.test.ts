@@ -282,6 +282,20 @@ describe("L07 đợt Nháp chỉ Cán bộ Sở thấy", () => {
 });
 
 describe("L07 SO-01 mở đợt khi đợt đang mở đã quá Hạn nộp xã", () => {
+  it("L02 gives no round Đang nhận nộp once its Hạn nộp xã has passed, even before the job closes it", async () => {
+    const officer = await staff();
+    const open = (await t.app.rounds.currentOpenRound(officer))!; // Hạn nộp xã 30/11/2026
+    const before = t.clock.now();
+    try {
+      t.clock.set(new Date("2026-11-30T16:59:59Z")); // the deadline second itself still counts
+      expect(await t.app.rounds.currentOpenRound(officer)).toMatchObject({ id: open.id });
+      t.clock.set(new Date("2026-11-30T17:00:00Z"));
+      expect(await t.app.rounds.currentOpenRound(officer)).toBeNull();
+    } finally {
+      t.clock.set(before);
+    }
+  });
+
   it("closes the overdue round first, as the auto-close job would, then opens the new one", async () => {
     const officer = await staff();
     const overdue = (await t.app.rounds.currentOpenRound(officer))!; // left open by "mở đợt", Hạn nộp xã 30/11/2026
@@ -309,5 +323,32 @@ describe("L07 SO-01 mở đợt khi đợt đang mở đã quá Hạn nộp xã"
     } finally {
       t.clock.set(before);
     }
+  });
+});
+
+describe("L07 mã đợt sai định dạng (từ URL hoặc biểu mẫu)", () => {
+  const BAD = "abc";
+
+  it("reports a malformed round id as not found, not a server error", async () => {
+    const officer = await staff();
+    const calls: [string, () => Promise<unknown>][] = [
+      ["getRound", () => t.app.rounds.getRound(officer, { roundId: BAD })],
+      ["updateRound", () => t.app.rounds.updateRound(officer, { roundId: BAD, ...roundInput() })],
+      ["deleteRound", () => t.app.rounds.deleteRound(officer, { roundId: BAD })],
+      ["openRound", () => t.app.rounds.openRound(officer, { roundId: BAD })],
+      ["changeGradingMode", () => t.app.rounds.changeGradingMode(officer, { roundId: BAD, gradingMode: "direct" })],
+      ["changeAggregationRule", () => t.app.rounds.changeAggregationRule(officer, { roundId: BAD, aggregation: roundInput().aggregation })],
+      ["endRound", () => t.app.rounds.endRound(officer, { roundId: BAD })],
+      ["extendDeadline", () => t.app.rounds.extendDeadline(officer, { roundId: BAD, deadline: "forwarding", newDate: "2027-01-01", reason: "Thử" })],
+      ["listDeadlineExtensions", () => t.app.rounds.listDeadlineExtensions(officer, { roundId: BAD })],
+    ];
+    for (const [name, call] of calls) {
+      await expect(call(), name).rejects.toMatchObject({ code: "not_found" });
+    }
+  });
+
+  it("refuses a malformed Phiên bản tiêu chí id as not published", async () => {
+    const officer = await staff();
+    await expect(t.app.rounds.createRound(officer, roundInput({ criteriaVersionId: BAD }))).rejects.toMatchObject({ code: "version_not_published" });
   });
 });

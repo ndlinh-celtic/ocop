@@ -283,7 +283,7 @@ export const round = roundSchema.table("round", {
   endedBy: uuid("ended_by"),
 });
 
-// Gia hạn đợt history, append-only (0013_round_deadline_extension.sql).
+// Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).
 export const deadlineExtension = roundSchema.table("deadline_extension", {
   id: uuid("id").primaryKey(),
   roundId: uuid("round_id").notNull(),
@@ -293,5 +293,4 @@ export const deadlineExtension = roundSchema.table("deadline_extension", {
   reason: text("reason").notNull(),
   extendedBy: uuid("extended_by").notNull(),
   extendedAt: ts("extended_at").notNull(),
-  reopened: boolean("reopened").notNull(),
 });

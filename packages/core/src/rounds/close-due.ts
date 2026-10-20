@@ -15,14 +15,13 @@ export function closeDueSubmissions(deps: CoreDeps) {
     deps.uow.run(async (tx) => ({ closed: await closeDueInTx(deps, tx, actor, deps.clock.now()) }));
 }
 
-/** The job's Name, recorded as the actor of a close, whether the job or openRound/extendDeadline ran it. */
+/** The job's Name, recorded as the actor of a close, whether the job or openRound ran it. */
 export const CLOSE_DUE_ACTOR = "rounds.close-due";
 
 /**
  * Closes, inside the caller's transaction, every round Đang nhận nộp whose Hạn nộp xã is before `now`, with
- * the same audit row and round.submission_closed event as the job. openRound and the reopen of extendDeadline
- * call it before the one-open rule, so a round overdue but not yet closed by the job (≤ 1 minute) does not
- * block them. Returns the closed round ids, oldest deadline first.
+ * the same audit row and round.submission_closed event as the job. openRound calls it before the one-open
+ * rule, so a round overdue but not yet closed by the job (≤ 1 minute) does not block it. Returns the closed round ids, oldest deadline first.
  */
 export async function closeDueInTx(deps: CoreDeps, tx: Tx, actor: SystemActor, now: Date): Promise<string[]> {
   const due = await tx.rounds.lockDueForClosing(now);

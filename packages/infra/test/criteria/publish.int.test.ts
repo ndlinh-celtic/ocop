@@ -159,7 +159,13 @@ describe("L19 xem phiên bản đã phát hành", () => {
     expect(listed).not.toContain(draft);
     const tree = await t.app.criteria.getVersion(member, { versionId: published });
     const setId = tree.productGroups[0]!.subgroups[0]!.sets[0]!.id;
-    expect(await t.app.criteria.getCriteriaSet(member, { setId })).toMatchObject({ version: { id: published, status: "published" }, set: { code: "1" } });
+    expect(await t.app.criteria.getCriteriaSet(member, { setId })).toMatchObject({
+      version: { id: published, status: "published" },
+      thresholds: tree.thresholds,
+      productGroup: "Nhóm thử",
+      subgroup: "Phân nhóm thử",
+      set: { code: "1" },
+    });
     await expect(t.app.criteria.getVersion(member, { versionId: draft })).rejects.toMatchObject({ code: "not_found" });
   });
 });
@@ -231,6 +237,35 @@ describe("L19 bất biến ba lớp: trigger DB", () => {
     await expect(db.app.query("DELETE FROM criteria.version WHERE id = $1", [draft])).resolves.toMatchObject({ rowCount: 1 });
     const { rows } = await db.app.query<{ n: number }>("SELECT count(*)::int AS n FROM criteria.score_level WHERE version_id = $1", [draft]);
     expect(rows[0]!.n).toBe(0);
+  });
+});
+
+describe("L19 mã sai định dạng (từ URL hoặc biểu mẫu)", () => {
+  const BAD = "abc";
+
+  it("reports a malformed version, Bộ tiêu chí or node id as not found, not a server error", async () => {
+    const a = await admin();
+    const versionId = await importDraft();
+    const calls: [string, () => Promise<unknown>][] = [
+      ["getVersion", () => t.app.criteria.getVersion(a, { versionId: BAD })],
+      ["getCriteriaSet", () => t.app.criteria.getCriteriaSet(a, { setId: BAD })],
+      ["previewSet", () => t.app.criteria.previewSet(a, { setId: BAD, levelIds: [] })],
+      ["validateVersion", () => t.app.criteria.validateVersion(a, { versionId: BAD })],
+      ["publishVersion", () => t.app.criteria.publishVersion(a, { versionId: BAD })],
+      ["copyVersion", () => t.app.criteria.copyVersion(a, { versionId: BAD })],
+      ["deleteVersion", () => t.app.criteria.deleteVersion(a, { versionId: BAD })],
+      ["editDraft version", () => t.app.criteria.editDraft(a, { versionId: BAD, edit: { node: "version", changes: { legalBasis: "Mới" } } })],
+      ["editDraft node", () => t.app.criteria.editDraft(a, { versionId, edit: { node: "criterion", id: BAD, changes: { name: "Mới" } } })],
+      ["removeNode", () => t.app.criteria.removeNode(a, { versionId, node: "criterion", id: BAD })],
+      ["moveNode", () => t.app.criteria.moveNode(a, { versionId, node: "criterion", id: BAD, direction: "up" })],
+      [
+        "addNode",
+        () => t.app.criteria.addNode(a, { versionId, addition: { node: "subgroup", parent: { node: "productGroup", id: BAD }, values: { name: "Mới" } } }),
+      ],
+    ];
+    for (const [name, call] of calls) {
+      await expect(call(), name).rejects.toMatchObject({ code: "not_found" });
+    }
   });
 });
 
