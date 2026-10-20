@@ -6,7 +6,7 @@ import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { isExpired } from "../entities/legal";
 import type { Entity } from "../entities/model";
-import { DOSSIER_STATES, dossierNotFound, rejectionOf, type Dossier, type DossierRejection, type DossierEvent, type DossierListFilter, type DossierState, type EvidenceFile, type Submission } from "./model";
+import { DOSSIER_STATES, dossierNotFound, isAwaitingNextRound, rejectionOf, type Dossier, type DossierRejection, type DossierEvent, type DossierListFilter, type DossierState, type EvidenceFile, type Submission } from "./model";
 
 export interface DossierSummary extends Dossier {
   criteriaSet: { id: string; code: string; name: string };
@@ -15,11 +15,13 @@ export interface DossierSummary extends Dossier {
   /** When it was last nộp or nộp lại; null for a Nháp never submitted. */
   submittedAt: Date | null;
   handler: { userId: string; fullName: string } | null;
+  /** Story 68: Chờ đợt sau, derived from the Hạn gửi tỉnh of its đợt at the time of reading. */
+  awaitingNextRound: boolean;
 }
 
 /** What a list of hồ sơ may be narrowed to (story 39): Chờ tiếp nhận, của tôi, or one state. */
 export interface DossierListInput {
-  filter?: "awaiting_receipt" | "mine";
+  filter?: "awaiting_receipt" | "mine" | "awaiting_next_round";
   state?: DossierState;
 }
 
@@ -60,7 +62,7 @@ function flagsOf(latest: Submission | null, entity: Entity | null, now: Date): D
   return flags;
 }
 
-async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[]): Promise<DossierSummary[]> {
+async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Date): Promise<DossierSummary[]> {
   const versions = new Map((await tx.criteriaVersions.findByIds([...new Set(dossiers.map((d) => d.criteriaVersionId))])).map((v) => [v.id, v]));
   const sets = new Map<string, { id: string; code: string; name: string }>();
   for (const id of new Set(dossiers.map((d) => d.criteriaSetId))) {
@@ -69,6 +71,11 @@ async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[]): Promise
   }
   const entities = new Map((await tx.entities.list(scope)).map((e) => [e.id, e.name]));
   const submittedAt = await tx.dossiers.lastSubmittedAt(dossiers.map((d) => d.id));
+  const rounds = new Map<string, { forwardingDeadline: Date }>();
+  for (const id of new Set(dossiers.flatMap((d) => (d.roundId ? [d.roundId] : [])))) {
+    const found = await tx.rounds.findById(id);
+    if (found) rounds.set(id, found);
+  }
   const handlers = new Map<string, string>();
   for (const id of new Set(dossiers.flatMap((d) => (d.handlerUserId ? [d.handlerUserId] : [])))) {
     handlers.set(id, (await tx.users.findById(id))?.fullName ?? "");
@@ -80,6 +87,7 @@ async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[]): Promise
     entity: { id: d.entityId, name: entities.get(d.entityId) ?? "" },
     submittedAt: submittedAt.get(d.id) ?? null,
     handler: d.handlerUserId ? { userId: d.handlerUserId, fullName: handlers.get(d.handlerUserId) ?? "" } : null,
+    awaitingNextRound: isAwaitingNextRound(d, (d.roundId && rounds.get(d.roundId)) || null, now),
   }));
 }
 
@@ -92,7 +100,7 @@ export function getDossier(deps: CoreDeps) {
       assertIdShape(input.dossierId, dossierNotFound);
       const dossier = await tx.dossiers.findById(scope, input.dossierId);
       if (!dossier) throw dossierNotFound();
-      const [summary] = await summarize(tx, scope, [dossier]);
+      const [summary] = await summarize(tx, scope, [dossier], deps.clock.now());
       // The origin is shown only while the reader still sees it.
       const origin = dossier.copiedFrom ? await tx.dossiers.findById(scope, dossier.copiedFrom) : null;
       const latest = await tx.dossiers.latestSubmission(dossier.id);
@@ -122,7 +130,9 @@ export function listDossiers(deps: CoreDeps) {
       ...(input.filter === "awaiting_receipt" ? { awaitingReceipt: true } : {}),
       ...(input.filter === "mine" ? { handlerUserId: actor.userId } : {}),
     };
-    return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter)));
+    const now = deps.clock.now();
+    if (input.filter === "awaiting_next_round") filter.awaitingNextRoundAt = now;
+    return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter), now));
   };
 }
 
