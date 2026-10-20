@@ -76,6 +76,34 @@ export async function deleteDossierAction(dossierId: string, expectedVersion: nu
   redirect(LIST);
 }
 
+/** L03 CT-09: submits the hồ sơ into the đợt Đang nhận nộp; every blocker comes back in the message. */
+export async function submitDossierAction(dossierId: string, expectedVersion: number, _prev: DossierFormState): Promise<DossierFormState> {
+  const actor = await requireActor();
+  try {
+    await app().core.dossiers.submit(actor, { dossierId, expectedVersion });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath(LIST);
+  redirect(`${LIST}/${dossierId}`);
+}
+
+const withdrawInput = z.object({ reason: z.string().trim().min(1).max(2_000) });
+
+/** L03 story 33: rút a hồ sơ the xã has not Tiếp nhận yet, with a reason. */
+export async function withdrawDossierAction(dossierId: string, expectedVersion: number, _prev: DossierFormState, form: FormData): Promise<DossierFormState> {
+  const actor = await requireActor();
+  const parsed = withdrawInput.safeParse({ reason: form.get("reason") ?? "" });
+  if (!parsed.success) return { error: "Nhập lý do rút hồ sơ" };
+  try {
+    await app().core.dossiers.withdraw(actor, { dossierId, expectedVersion, reason: parsed.data.reason });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath(LIST);
+  redirect(`${LIST}/${dossierId}`);
+}
+
 const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });
 
 /** L02 CT-05 step one: a pre-signed upload of a tệp minh chứng, quarantined until the virus scan (story 22). */

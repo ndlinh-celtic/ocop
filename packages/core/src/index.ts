@@ -170,9 +170,16 @@ export {
   type EvidenceLink,
   type ProductField,
   type ProductInfo,
+  PRODUCT_FIELD_LABEL,
+  REQUIRED_PRODUCT_FIELDS,
+  type Submission,
+  type SubmissionFileRef,
+  type SubmissionFileRole,
+  type SubmissionSnapshot,
 } from "./dossiers/model";
 export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType, type DossierRef, type TransitionRule } from "./dossiers/transitions";
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";
-export type { DossierSummary, DossierView } from "./dossiers/read";
+export type { DossierFlag, DossierSummary, DossierView } from "./dossiers/read";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
+export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";

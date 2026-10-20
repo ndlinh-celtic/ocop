@@ -190,47 +190,52 @@ export function selfAssessment(deps: CoreDeps) {
       assertIdShape(input.dossierId, dossierNotFound);
       const dossier = await tx.dossiers.findById(scope, input.dossierId);
       if (!dossier) throw dossierNotFound();
-      // One connection per transaction: read in turn rather than in parallel.
-      const rows = await setOf(tx, dossier);
-      const thresholds = await tx.criteriaVersions.thresholds(dossier.criteriaVersionId);
-      const files = await tx.dossiers.evidence(dossier.id);
-      const links = await tx.dossiers.evidenceLinks(dossier.id);
-      const entries = await tx.dossiers.criterionEntries(dossier.id);
-      const set = assembleSet(rows);
-      const entryOf = new Map(entries.map((e) => [e.criterionId, e]));
-      const levelOf = new Map(rows.levels.map((l) => [l.id, l]));
-      const fileOf = new Map(files.map((f) => [f.fileId, f]));
-      const pointsOf = (c: StoredCriterion) => {
-        const levelId = entryOf.get(c.id)?.scoreLevelId;
-        return levelId ? (levelOf.get(levelId)?.points ?? null) : null;
-      };
-
-      const criteria = set.parts.flatMap((part) =>
-        criteriaOf(part).map((c): CriterionAssessment => ({
-          criterionId: c.id,
-          code: c.code,
-          name: c.name,
-          partCode: part.code,
-          maxPoints: c.maxPoints,
-          levelId: entryOf.get(c.id)?.scoreLevelId ?? null,
-          points: pointsOf(c),
-          explanation: entryOf.get(c.id)?.explanation ?? "",
-          evidence: links.filter((l) => l.criterionId === c.id).map((l) => ({ fileId: l.fileId, fileName: fileOf.get(l.fileId)?.fileName ?? "" })),
-        })),
-      );
-      const scores = new Map(criteria.flatMap((c) => (c.points === null ? [] : [[c.criterionId, c.points] as const])));
-      const estimate = rankStoredSet({ set, thresholds, scores });
-      return {
-        dossierId: dossier.id,
-        version: dossier.version,
-        set,
-        thresholds,
-        criteria,
-        files: files.map((f) => ({ ...f, criterionIds: links.filter((l) => l.fileId === f.fileId).map((l) => l.criterionId) })),
-        estimate,
-        blocking: estimate.unmet.filter((u) => u.star === estimate.star + 1),
-        unscored: criteria.filter((c) => c.levelId === null).length,
-      };
+      return assess(tx, dossier);
     });
+  };
+}
+
+/** The self-assessment of a hồ sơ the caller has already loaded within its scope. */
+export async function assess(tx: Tx, dossier: Dossier): Promise<SelfAssessment> {
+  // One connection per transaction: read in turn rather than in parallel.
+  const rows = await setOf(tx, dossier);
+  const thresholds = await tx.criteriaVersions.thresholds(dossier.criteriaVersionId);
+  const files = await tx.dossiers.evidence(dossier.id);
+  const links = await tx.dossiers.evidenceLinks(dossier.id);
+  const entries = await tx.dossiers.criterionEntries(dossier.id);
+  const set = assembleSet(rows);
+  const entryOf = new Map(entries.map((e) => [e.criterionId, e]));
+  const levelOf = new Map(rows.levels.map((l) => [l.id, l]));
+  const fileOf = new Map(files.map((f) => [f.fileId, f]));
+  const pointsOf = (c: StoredCriterion) => {
+    const levelId = entryOf.get(c.id)?.scoreLevelId;
+    return levelId ? (levelOf.get(levelId)?.points ?? null) : null;
+  };
+
+  const criteria = set.parts.flatMap((part) =>
+    criteriaOf(part).map((c): CriterionAssessment => ({
+      criterionId: c.id,
+      code: c.code,
+      name: c.name,
+      partCode: part.code,
+      maxPoints: c.maxPoints,
+      levelId: entryOf.get(c.id)?.scoreLevelId ?? null,
+      points: pointsOf(c),
+      explanation: entryOf.get(c.id)?.explanation ?? "",
+      evidence: links.filter((l) => l.criterionId === c.id).map((l) => ({ fileId: l.fileId, fileName: fileOf.get(l.fileId)?.fileName ?? "" })),
+    })),
+  );
+  const scores = new Map(criteria.flatMap((c) => (c.points === null ? [] : [[c.criterionId, c.points] as const])));
+  const estimate = rankStoredSet({ set, thresholds, scores });
+  return {
+    dossierId: dossier.id,
+    version: dossier.version,
+    set,
+    thresholds,
+    criteria,
+    files: files.map((f) => ({ ...f, criterionIds: links.filter((l) => l.fileId === f.fileId).map((l) => l.criterionId) })),
+    estimate,
+    blocking: estimate.unmet.filter((u) => u.star === estimate.star + 1),
+    unscored: criteria.filter((c) => c.levelId === null).length,
   };
 }

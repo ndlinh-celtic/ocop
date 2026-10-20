@@ -1,7 +1,7 @@
-import type { DataScope, Dossier, DossierEvent, DossierRepo } from "@ocop/core";
+import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
 import { and, asc, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file } from "../db/schema";
+import { criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -110,6 +110,22 @@ export function dossierRepo(db: Db): DossierRepo {
           target: [criterionEntry.dossierId, criterionEntry.criterionId],
           set: { scoreLevelId: e.scoreLevelId, explanation: e.explanation, updatedAt: e.updatedAt },
         });
+    },
+    async insertSubmission(s, files) {
+      await db.insert(submission).values(s);
+      if (files.length > 0) {
+        await db
+          .insert(submissionFile)
+          .values(files.map((f) => ({ submissionId: s.id, fileId: f.fileId, role: f.role })))
+          .onConflictDoNothing();
+      }
+    },
+    async submissions(dossierId) {
+      return (await db.select().from(submission).where(eq(submission.dossierId, dossierId)).orderBy(asc(submission.number))) as Submission[];
+    },
+    async latestSubmission(dossierId) {
+      const [row] = await db.select().from(submission).where(eq(submission.dossierId, dossierId)).orderBy(desc(submission.number)).limit(1);
+      return (row as Submission | undefined) ?? null;
     },
   };
 }

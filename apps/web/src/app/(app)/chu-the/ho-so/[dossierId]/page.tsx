@@ -3,12 +3,13 @@ import { Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
-import { formatVnDateTime } from "@/lib/format";
+import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { DeleteDossierButton } from "./delete-button";
 import { ProductForm } from "./product-form";
+import { SubmitPanel, WithdrawForm } from "./submit-panel";
 import { Workbench } from "./workbench";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +17,14 @@ export const dynamic = "force-dynamic";
 const ACTION_LABEL: Record<string, string> = {
   "dossier.create": "Tạo hồ sơ",
   "dossier.delete": "Xóa hồ sơ",
+  "dossier.submit": "Nộp hồ sơ",
+  "dossier.withdraw": "Rút hồ sơ",
 };
 
 function describe(e: DossierEvent) {
   const label = ACTION_LABEL[e.action] ?? e.action;
-  return e.fromState && e.fromState !== e.toState ? `${label}: ${DOSSIER_STATE_LABEL[e.fromState]} → ${DOSSIER_STATE_LABEL[e.toState]}` : label;
+  const move = e.fromState && e.fromState !== e.toState ? `${label}: ${DOSSIER_STATE_LABEL[e.fromState]} → ${DOSSIER_STATE_LABEL[e.toState]}` : label;
+  return e.reason ? `${move}. Lý do: ${e.reason}` : move;
 }
 
 /**
@@ -37,6 +41,9 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
   ]);
   if (!dossier || !timeline || !assessment) notFound();
   const editable = can(actor, "dossier.edit", dossier);
+  const submittable = can(actor, "dossier.submit", dossier);
+  const check = submittable ? await app().core.dossiers.submissionCheck(actor, { dossierId }) : null;
+  const withdrawable = can(actor, "dossier.withdraw", dossier) && dossier.receivedAt === null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,6 +76,19 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
         </div>
       </div>
 
+      {dossier.latestSubmission && (
+        <section className="rounded-lg border bg-surface p-4 text-sm shadow-card">
+          <p>
+            Phiên bản nộp {dossier.latestSubmission.number}, nộp lúc {formatVnDateTime(dossier.latestSubmission.submittedAt)}.
+          </p>
+          {dossier.flags.map((flag) => (
+            <p key={flag.typeCode} role="status" className="mt-1 text-danger">
+              {flag.typeName} trong Phiên bản nộp đã hết hiệu lực từ sau ngày {formatIsoDate(flag.validUntil)}.
+            </p>
+          ))}
+        </section>
+      )}
+
       <section className="rounded-lg border bg-surface p-4 shadow-card">
         <h2 className="mb-3 font-semibold">Thông tin sản phẩm</h2>
         {!editable && <p className="mb-3 text-sm text-text-3">Hồ sơ đã nộp không sửa trực tiếp được.</p>}
@@ -88,6 +108,9 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
       </section>
 
       <Workbench assessment={assessment} editable={editable} />
+
+      {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} />}
+      {withdrawable && <WithdrawForm dossierId={dossier.id} version={dossier.version} />}
 
       <section className="rounded-lg border bg-surface shadow-card">
         <h2 className="border-b p-4 font-semibold">Dòng thời gian</h2>

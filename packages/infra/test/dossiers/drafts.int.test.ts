@@ -176,12 +176,12 @@ describe("L02 Phạm vi and state of a hồ sơ (stories 32, 76, 80, 81, 83)", (
   it("thông tin sản phẩm is not editable, and the hồ sơ not deletable, once it has left Nháp (story 32)", async () => {
     const a = await f.verifiedOwner();
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });
-    // Stands in for submission (#36), which will move the Nháp to Đã nộp xã through transition().
-    await db.admin.query("UPDATE dossier.dossier SET state = 'submitted_to_ward', version = version + 1 WHERE id = $1", [dossierId]);
+    await f.openRound(versionId);
+    const { version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: await f.completeDraft(a, dossierId) });
 
-    await expect(t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: 2, productName: "Sửa sau khi nộp" })).rejects.toMatchObject({ code: "invalid_state" });
-    await expect(t.app.dossiers.delete(a, { dossierId, expectedVersion: 2 })).rejects.toMatchObject({ code: "invalid_state" });
-    expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward", productName: "", version: 2 });
+    await expect(t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: version, productName: "Sửa sau khi nộp" })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(t.app.dossiers.delete(a, { dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "invalid_state" });
+    expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward", productName: PRODUCT.productName, version });
   });
 });
 

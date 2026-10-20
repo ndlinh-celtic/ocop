@@ -132,7 +132,31 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return roundId;
   }
 
-  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound };
+  /**
+   * Makes a Nháp ready for submission through the editor's own use cases: the thông tin sản phẩm of
+   * PRODUCT, and every Tiêu chí tự chấm at its lowest Mức điểm (a 0-point level is a valid pick).
+   */
+  async function completeDraft(a: UserActor, dossierId: string) {
+    let { version } = await t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: (await t.app.dossiers.get(a, { dossierId })).version, ...PRODUCT });
+    const { set } = await t.app.dossiers.selfAssessment(a, { dossierId });
+    const criteria = set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "criterion" ? [i] : i.criteria))));
+    for (const c of criteria) {
+      const lowest = [...c.levels].sort((x, y) => x.points - y.points)[0]!;
+      ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: c.id, levelId: lowest.id }));
+    }
+    return version;
+  }
+
+  /** A Chủ thể Đã xác thực with a complete Nháp on `criteriaSetId`, submitted into the đợt Đang nhận nộp. */
+  async function submitted(criteriaSetId: string) {
+    const a = await verifiedOwner();
+    const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId });
+    const expectedVersion = await completeDraft(a, dossierId);
+    const { version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion });
+    return { a, dossierId, version };
+  }
+
+  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted };
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;

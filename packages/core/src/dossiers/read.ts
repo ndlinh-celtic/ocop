@@ -4,7 +4,8 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
-import { dossierNotFound, type Dossier, type DossierEvent, type EvidenceFile } from "./model";
+import { isExpired } from "../entities/legal";
+import { dossierNotFound, type Dossier, type DossierEvent, type EvidenceFile, type Submission } from "./model";
 
 export interface DossierSummary extends Dossier {
   criteriaSet: { id: string; code: string; name: string };
@@ -15,6 +16,28 @@ export interface DossierView extends Omit<DossierSummary, "copiedFrom"> {
   /** The hồ sơ this one was copied from, as the Chủ thể knows it (story 27). */
   copiedFrom: { id: string; productName: string } | null;
   evidence: EvidenceFile[];
+  /** The newest Phiên bản nộp, which xã, tỉnh and hội đồng work on; null before the first nộp. */
+  latestSubmission: { id: string; number: number; submittedAt: Date } | null;
+  /** What needs a second look without changing the state of the hồ sơ. */
+  flags: DossierFlag[];
+}
+
+/**
+ * Story 45, ticket #36: a giấy tờ pháp lý of the newest Phiên bản nộp that has expired since. The hồ sơ
+ * keeps its state; the flag only tells the Cán bộ xã to look again.
+ */
+export interface DossierFlag {
+  kind: "legal_document_expired";
+  typeCode: string;
+  typeName: string;
+  validUntil: string;
+}
+
+function flagsOf(latest: Submission | null, now: Date): DossierFlag[] {
+  if (!latest) return [];
+  return latest.snapshot.legalDocuments
+    .filter((d) => isExpired(d, now))
+    .map((d) => ({ kind: "legal_document_expired", typeCode: d.typeCode, typeName: d.typeName, validUntil: d.validUntil! }));
 }
 
 async function summarize(tx: Tx, dossiers: Dossier[]): Promise<DossierSummary[]> {
@@ -43,10 +66,13 @@ export function getDossier(deps: CoreDeps) {
       const [summary] = await summarize(tx, [dossier]);
       // The origin is shown only while the reader still sees it.
       const origin = dossier.copiedFrom ? await tx.dossiers.findById(scope, dossier.copiedFrom) : null;
+      const latest = await tx.dossiers.latestSubmission(dossier.id);
       return {
         ...summary!,
         copiedFrom: origin && { id: origin.id, productName: origin.productName },
         evidence: await tx.dossiers.evidence(dossier.id),
+        latestSubmission: latest ? { id: latest.id, number: latest.number, submittedAt: latest.submittedAt } : null,
+        flags: flagsOf(latest, deps.clock.now()),
       };
     });
   };

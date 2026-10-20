@@ -34,6 +34,7 @@ import { revealPersonalId, updateEntity } from "./entities/profile";
 import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
+import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
@@ -149,6 +150,10 @@ export function createCore(deps: CoreDeps) {
       explainCriterion: explainCriterion(deps),
       selfAssessment: selfAssessment(deps),
       delete: deleteDossier(deps),
+      submissionCheck: submissionCheck(deps),
+      submit: submitDossier(deps),
+      withdraw: withdrawDossier(deps),
+      submissions: listSubmissions(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

@@ -1,4 +1,4 @@
-import type { DossierState } from "@ocop/core";
+import type { DossierState, SubmissionFileRole, SubmissionSnapshot } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -414,4 +414,26 @@ export const criterionEntry = dossierSchema.table(
     updatedAt: ts("updated_at").notNull(),
   },
   (t) => [primaryKey({ columns: [t.dossierId, t.criterionId] })],
+);
+
+// Phiên bản nộp (0021_submissions.sql): append-only, the DB refuses UPDATE and DELETE.
+export const submission = dossierSchema.table("submission", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  number: integer("number").notNull(),
+  roundId: uuid("round_id").notNull(),
+  wardId: uuid("ward_id").notNull(),
+  submittedAt: ts("submitted_at").notNull(),
+  submittedBy: uuid("submitted_by").notNull(),
+  snapshot: jsonb("snapshot").$type<SubmissionSnapshot>().notNull(),
+});
+
+export const submissionFile = dossierSchema.table(
+  "submission_file",
+  {
+    submissionId: uuid("submission_id").notNull(),
+    fileId: uuid("file_id").notNull(),
+    role: text("role").$type<SubmissionFileRole>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.submissionId, t.fileId, t.role] })],
 );
