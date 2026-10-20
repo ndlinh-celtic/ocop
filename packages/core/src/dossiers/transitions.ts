@@ -39,6 +39,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.withdraw",
   "dossier.receive",
   "dossier.handler.change",
+  "dossier.reject",
+  "dossier.ward_transfer",
   "dossier.checklist.assess",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
@@ -56,6 +58,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.withdrawn",
   "dossier.received",
   "dossier.handler_changed",
+  "dossier.rejected_preliminary",
+  "dossier.ward_transferred",
   "dossier.checklist_assessed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
@@ -105,6 +109,10 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
     }),
   ),
+  // L05 XA-06 (story 63): the xã loại a hồ sơ Đã nộp xã, citing an Điều kiện loại or a Lý do loại sơ bộ.
+  { action: "dossier.reject", from: "submitted_to_ward", to: "rejected_preliminary", roles: ["ward_officer"], event: "dossier.rejected_preliminary", timeline: true },
+  // L05 (story 47): Chuyển xã moves a hồ sơ Đã nộp xã to the right xã, which Tiếp nhận it afresh.
+  { action: "dossier.ward_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.ward_transferred", timeline: true },
   // L06 XA-04 (story 61): the Checklist sơ bộ of a received hồ sơ, editable until it is gửi tỉnh. Nhận xét
   // are the xã's working notes, so this is not a row of the timeline the Chủ thể reads.
   ...(["submitted_to_ward", "supplement_requested"] as const).map(

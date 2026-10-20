@@ -6,7 +6,7 @@ import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { isExpired } from "../entities/legal";
 import type { Entity } from "../entities/model";
-import { DOSSIER_STATES, dossierNotFound, type Dossier, type DossierEvent, type DossierListFilter, type DossierState, type EvidenceFile, type Submission } from "./model";
+import { DOSSIER_STATES, dossierNotFound, rejectionOf, type Dossier, type DossierRejection, type DossierEvent, type DossierListFilter, type DossierState, type EvidenceFile, type Submission } from "./model";
 
 export interface DossierSummary extends Dossier {
   criteriaSet: { id: string; code: string; name: string };
@@ -33,6 +33,8 @@ export interface DossierView extends Omit<DossierSummary, "copiedFrom"> {
   flags: DossierFlag[];
   /** Story 46: the Tiêu chí of the newest Phiên bản nộp with no minh chứng tied to them, in sheet order. */
   criteriaWithoutEvidence: { criterionId: string; code: string; name: string }[];
+  /** Why it is Không đạt sơ bộ (story 35); null in any other state. */
+  rejection: DossierRejection | null;
 }
 
 /** The thông tin Chủ thể compared with the Phiên bản nộp (story 45). */
@@ -104,6 +106,7 @@ export function getDossier(deps: CoreDeps) {
         criteriaWithoutEvidence: (latest?.snapshot.criteria ?? [])
           .filter((c) => c.evidenceFileIds.length === 0)
           .map((c) => ({ criterionId: c.criterionId, code: c.code, name: c.name })),
+        rejection: dossier.state === "rejected_preliminary" ? rejectionOf(await tx.dossiers.events(scope, dossier.id)) : null,
       };
     });
   };
