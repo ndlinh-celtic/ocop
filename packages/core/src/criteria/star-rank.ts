@@ -1,4 +1,4 @@
-import { criteriaOf, type CriteriaSet, type Criterion, type CriterionScores, type RankThresholds, type Star } from "./model";
+import { criteriaOf, type CriteriaSet, type Criterion, type CriterionScores, type RankThresholds, type ScoreLevel, type Star } from "./model";
 
 export interface StarRankInput {
   readonly set: CriteriaSet;
@@ -43,16 +43,24 @@ const THRESHOLD_STARS = [5, 4, 3, 2] as const;
 
 const starByThreshold = (total: number, thresholds: RankThresholds): Star => THRESHOLD_STARS.find((s) => total >= thresholds[s]) ?? 1;
 
+/** Float noise allowed when comparing averaged points with a Sao tối thiểu requirement (same 1e-9 as `sum`). */
+const EPS = 1e-9;
+
 /**
  * The requirements of one Tiêu chí: for each Sao tối thiểu s printed on it, reaching s stars needs the points
- * of the highest Mức điểm whose Sao tối thiểu is at most s.
+ * of the highest Mức điểm whose Sao tối thiểu is at most s. When the Tiêu chí splits into nhánh a/b, each
+ * nhánh has its own requirement (a level without a nhánh belongs to every nhánh, and a nhánh without such a
+ * level requires nothing); the score cannot tell which nhánh was chosen, so it meets s when it meets the
+ * requirement of at least one nhánh, i.e. the lowest.
  */
 function requirementsOf(criterion: Criterion): { star: Star; required: number }[] {
-  const stars = [...new Set(criterion.levels.flatMap((l) => (l.minimumStar === null ? [] : [l.minimumStar])))].sort((a, b) => a - b);
-  return stars.map((star) => ({
-    star,
-    required: Math.max(...criterion.levels.filter((l) => l.minimumStar !== null && l.minimumStar <= star).map((l) => l.points)),
-  }));
+  const { levels } = criterion;
+  const stars = [...new Set(levels.flatMap((l) => (l.minimumStar === null ? [] : [l.minimumStar])))].sort((a, b) => a - b);
+  const branches = [...new Set(levels.flatMap((l) => (l.branch === null ? [] : [l.branch])))];
+  const levelsByBranch = branches.length === 0 ? [levels] : branches.map((b) => levels.filter((l) => l.branch === null || l.branch === b));
+  const requiredIn = (branchLevels: readonly ScoreLevel[], star: Star) =>
+    Math.max(0, ...branchLevels.filter((l) => l.minimumStar !== null && l.minimumStar <= star).map((l) => l.points));
+  return stars.map((star) => ({ star, required: Math.min(...levelsByBranch.map((ls) => requiredIn(ls, star))) }));
 }
 
 /** Mean points per Tiêu chí over several score sheets; a sheet that lacks a Tiêu chí counts 0 for it. */
@@ -74,7 +82,7 @@ export function rankStars({ set, thresholds, scores }: StarRankInput): StarRank 
     .flatMap(criteriaOf)
     .flatMap((c) =>
       requirementsOf(c)
-        .filter((r) => scoreOf(c) < r.required)
+        .filter((r) => scoreOf(c) + EPS < r.required)
         .map((r) => ({ code: c.code, name: c.name, star: r.star, required: r.required, actual: scoreOf(c) })),
     )
     .sort((a, b) => a.star - b.star);
