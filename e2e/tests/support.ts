@@ -9,20 +9,22 @@ const MAILPIT = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
 interface State {
   totpSecret?: string;
-  lastStep?: number;
+  /** The last TOTP step used, per secret: a code is single-use per step and account. */
+  lastSteps?: Record<string, number>;
 }
 const readState = (): State => (existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, "utf8")) : {});
 const writeState = (s: State) => writeFileSync(STATE_FILE, JSON.stringify(s));
 
-/** A code for a step the server has not seen yet (codes are single-use per 30-second step). */
-async function freshCode(secret: string) {
-  const state = readState();
+/** A code for a step the server has not seen yet for this secret (codes are single-use per 30-second step). */
+export async function freshCode(secret: string) {
+  const last = readState().lastSteps?.[secret];
   let step = Math.floor(Date.now() / 30_000);
-  if (state.lastStep !== undefined && step <= state.lastStep) {
-    await new Promise((r) => setTimeout(r, (state.lastStep! + 1) * 30_000 - Date.now() + 500));
+  if (last !== undefined && step <= last) {
+    await new Promise((r) => setTimeout(r, (last + 1) * 30_000 - Date.now() + 500));
     step = Math.floor(Date.now() / 30_000);
   }
-  writeState({ ...state, lastStep: step });
+  const state = readState();
+  writeState({ ...state, lastSteps: { ...state.lastSteps, [secret]: step } });
   return generate({ secret, epoch: step * 30 });
 }
 
@@ -34,10 +36,7 @@ export async function signInAsAdmin(page: Page) {
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await page.waitForURL(/\/(dang-ky-totp|dang-nhap\/ma-xac-thuc)$/);
   if (page.url().endsWith("/dang-ky-totp")) {
-    const secret = (await page.getByTestId("totp-secret").textContent())!.trim();
-    writeState({ totpSecret: secret });
-    await page.getByLabel("Mã xác thực 6 số").fill(await freshCode(secret));
-    await page.getByRole("button", { name: "Bật xác thực hai lớp" }).click();
+    writeState({ ...readState(), totpSecret: await enrolTotp(page) });
   } else {
     const secret = readState().totpSecret;
     if (!secret) throw new Error("Admin has TOTP but its secret was not saved; reset the stack");
@@ -63,4 +62,34 @@ export async function latestEmail(to: string, subject: RegExp): Promise<string> 
     )
     .toBe(true);
   return text;
+}
+
+/** Enrols TOTP on /dang-ky-totp and returns the secret, for codes later (sign-in, Xác thực lại). */
+export async function enrolTotp(page: Page) {
+  await page.waitForURL(/\/dang-ky-totp$/);
+  const secret = (await page.getByTestId("totp-secret").textContent())!.trim();
+  await page.getByLabel("Mã xác thực 6 số").fill(await freshCode(secret));
+  await page.getByRole("button", { name: "Bật xác thực hai lớp" }).click();
+  return secret;
+}
+
+/** Opens the newest activation email to `email` and sets the password; activation signs the user in. */
+export async function activateFromEmail(page: Page, email: string, password: string) {
+  const text = await latestEmail(email, /Kích hoạt tài khoản/);
+  const link = /https?:\/\/\S+\/kich-hoat\?token=[\w-]+/.exec(text)![0];
+  await page.goto(link);
+  await page.getByLabel(/Mật khẩu mới/).fill(password);
+  await page.getByLabel("Nhập lại mật khẩu").fill(password);
+  await page.getByRole("button", { name: "Kích hoạt tài khoản" }).click();
+}
+
+/** A small PDF the scanner and the type check accept, as a file for an <input type="file">. */
+export function pdf(name: string) {
+  const body = `%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n${name}\n`;
+  return { name, mimeType: "application/pdf", buffer: Buffer.from(body) };
+}
+
+/** YYYY-MM-DD in giờ Việt Nam, `days` from today. */
+export function vnDate(days = 0) {
+  return new Date(Date.now() + days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
 }
