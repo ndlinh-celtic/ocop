@@ -12,6 +12,7 @@ import { roundRepo } from "./rounds";
 import { entityRepo, legalDocumentRepo } from "./entities";
 import { rateLimitRepo } from "./rate-limits";
 import { dossierRepo } from "./dossiers";
+import { supplementRepo } from "./supplements";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -33,5 +34,6 @@ export function buildRepos(db: Db): Tx {
     legalDocuments: legalDocumentRepo(db),
     rateLimits: rateLimitRepo(db),
     dossiers: dossierRepo(db),
+    supplements: supplementRepo(db),
   };
 }

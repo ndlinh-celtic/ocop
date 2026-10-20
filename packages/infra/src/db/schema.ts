@@ -1,4 +1,4 @@
-import type { ChecklistItem, ChecklistResultValue, DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot } from "@ocop/core";
+import type { ChecklistItem, ChecklistResultValue, DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -362,6 +362,7 @@ export const dossier = dossierSchema.table("dossier", {
   receivedBy: uuid("received_by"),
   handlerUserId: uuid("handler_user_id"),
   firstForwardedAt: ts("first_forwarded_at"),
+  supplementDeadline: ts("supplement_deadline"),
   copiedFrom: uuid("copied_from"),
   deletedAt: ts("deleted_at"),
   version: integer("version").notNull(),
@@ -452,3 +453,27 @@ export const submissionFile = dossierSchema.table(
   },
   (t) => [primaryKey({ columns: [t.submissionId, t.fileId, t.role] })],
 );
+
+// Yêu cầu bổ sung (0023_supplement_requests.sql).
+export const supplementRequest = dossierSchema.table("supplement_request", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  requestedBy: uuid("requested_by").notNull(),
+  requestedRole: text("requested_role").notNull(),
+  requestedAt: ts("requested_at").notNull(),
+  deadline: ts("deadline").notNull(),
+  closedAt: ts("closed_at"),
+  outcome: text("outcome").$type<SupplementOutcome>(),
+});
+
+export const supplementItem = dossierSchema.table("supplement_item", {
+  id: uuid("id").primaryKey(),
+  requestId: uuid("request_id").notNull(),
+  position: integer("position").notNull(),
+  content: text("content").notNull(),
+  criterionId: uuid("criterion_id"),
+  legalDocumentTypeCode: text("legal_document_type_code"),
+  response: text("response").notNull(),
+  respondedAt: ts("responded_at"),
+  respondedBy: uuid("responded_by"),
+});

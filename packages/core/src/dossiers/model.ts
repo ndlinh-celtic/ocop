@@ -68,6 +68,8 @@ export interface Dossier extends ProductInfo {
   handlerUserId: string | null;
   /** When it first reached Đã chuyển tỉnh: from then on the province sees it (story 78). */
   firstForwardedAt: Date | null;
+  /** Hạn bổ sung of the open yêu cầu bổ sung: set exactly while the hồ sơ is Yêu cầu bổ sung (#39). */
+  supplementDeadline: Date | null;
   copiedFrom: string | null;
   deletedAt: Date | null;
   /** Optimistic lock: every change goes through transition() and bumps it by one. */

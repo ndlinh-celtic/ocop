@@ -200,6 +200,9 @@ export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assess
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
 export type { ChecklistItemView, ChecklistResultInput, ChecklistSuggestion, DossierChecklist } from "./dossiers/checklist";
 export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";
+export type { RequestSupplementInput, SupplementItemInput, SupplementRequestView } from "./dossiers/supplement";
+export type { SupplementItem, SupplementOutcome, SupplementRepo, SupplementRequest } from "./dossiers/supplement-model";
+export { isPastSupplementDeadline } from "./dossiers/transitions";
 export {
   PRELIMINARY_REJECTION_REASON_LABEL,
   PRELIMINARY_REJECTION_REASONS,

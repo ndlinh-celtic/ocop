@@ -38,6 +38,7 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
+import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
@@ -166,6 +167,10 @@ export function createCore(deps: CoreDeps) {
       changeHandler: changeHandler(deps),
       handlers: listHandlers(deps),
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
+      requestSupplement: requestSupplement(deps),
+      respondSupplementItem: respondSupplementItem(deps),
+      supplementRequests: listSupplementRequests(deps),
+      closeUnsupplemented: closeUnsupplemented(deps),
       checklist: dossierChecklist(deps),
       assessChecklist: assessChecklist(deps),
     },

@@ -1,4 +1,4 @@
-import { can, ENTITY_KIND_LABEL, isExpired, maskPersonalId, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS } from "@ocop/core";
+import { can, ENTITY_KIND_LABEL, isExpired, isPastSupplementDeadline, maskPersonalId, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS, vnDateOf } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierFlags } from "@/components/dossiers/dossier-flags";
@@ -6,6 +6,7 @@ import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { DossierTimeline } from "@/components/dossiers/dossier-timeline";
 import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
+import { SupplementRequests } from "@/components/dossiers/supplement-requests";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -13,25 +14,31 @@ import { requireActor } from "@/server/session";
 import { ChecklistForm } from "./checklist-form";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
 import { RejectForm, TransferWardForm } from "./reject-transfer-forms";
+import { CloseUnsupplementedForm, RequestSupplementForm } from "./supplement-forms";
 
 export const dynamic = "force-dynamic";
 
 /**
  * S21 Chi tiết hồ sơ tại xã (L05 XA-01 to XA-03, stories 40 to 46): the newest Phiên bản nộp with the
  * Chủ thể and its giấy tờ as they were at nộp, what changed since, Tiêu chí without minh chứng, Tiếp
- * nhận and Cán bộ phụ trách. A hồ sơ of another xã is not found, as is one that does not exist.
+ * nhận and Cán bộ phụ trách; yêu cầu bổ sung and đóng hồ sơ quá hạn bổ sung (L04 XA-05, stories 50, 56).
+ * A hồ sơ of another xã is not found, as is one that does not exist.
  */
 export default async function WardDossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, submissions, officers, checklist] = await Promise.all([
+  const [dossier, timeline, submissions, officers, checklist, supplements] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.handlers(actor),
     app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !timeline || !submissions) notFound();
+  if (!dossier || !timeline || !submissions || !supplements) notFound();
+  const now = new Date();
+  const mayRequestSupplement = can(actor, "dossier.supplement.request", dossier) && dossier.receivedAt !== null;
+  const documentTypes = mayRequestSupplement ? (await app().core.entities.getLegalStanding(actor, { entityId: dossier.entity.id })).requirements : [];
   const latest = submissions.at(-1);
   const snapshot = latest?.snapshot;
   const names = new Map(officers.map((o) => [o.userId, o.fullName]));
@@ -99,6 +106,25 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
       {checklist && dossier.receivedAt && checklist.items.length > 0 && (
         <ChecklistForm dossierId={dossier.id} version={dossier.version} checklist={checklist} editable={can(actor, "dossier.checklist.assess", dossier)} />
       )}
+
+      {dossier.state === "supplement_requested" && dossier.supplementDeadline && !isPastSupplementDeadline(dossier, now) && (
+        <p role="status" className="rounded-lg border bg-amber-soft px-4 py-2 text-sm text-amber">
+          Đang chờ Chủ thể bổ sung, hạn đến {formatVnDateTime(dossier.supplementDeadline)}.
+        </p>
+      )}
+      {can(actor, "dossier.supplement.close", dossier) && isPastSupplementDeadline(dossier, now) && (
+        <CloseUnsupplementedForm dossierId={dossier.id} version={dossier.version} />
+      )}
+      {mayRequestSupplement && snapshot && (
+        <RequestSupplementForm
+          dossierId={dossier.id}
+          version={dossier.version}
+          today={vnDateOf(now)}
+          criteria={snapshot.criteria.map((c) => ({ id: c.criterionId, label: `${c.code} ${c.name}` }))}
+          documentTypes={documentTypes.map((d) => ({ code: d.typeCode, name: d.name }))}
+        />
+      )}
+      <SupplementRequests requests={supplements} />
 
       {snapshot && (
         <>
