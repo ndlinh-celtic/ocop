@@ -1,8 +1,9 @@
-import { can, DomainError, GRADING_MODE_LABEL, isPastSubmissionDeadline, vnDateOf } from "@ocop/core";
+import { can, GRADING_MODE_LABEL, isPastSubmissionDeadline, vnDateOf } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RoundStatusTag } from "@/components/rounds/round-status-tag";
 import { formatVnDate, formatVnDateTime } from "@/lib/format";
+import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction, endRoundAction, openRoundAction, updateRoundAction } from "../actions";
@@ -14,8 +15,6 @@ import { extendDeadlineAction } from "./extension-actions";
 import { ExtensionHistory } from "./extension-history";
 
 export const dynamic = "force-dynamic";
-
-const orNotFound = (err: unknown) => (err instanceof DomainError && err.code === "not_found" ? null : Promise.reject(err));
 
 /**
  * S82: one Đợt đánh giá. While Nháp, Cán bộ Sở edits, opens or deletes it (L07 SO-01); once opened, changes

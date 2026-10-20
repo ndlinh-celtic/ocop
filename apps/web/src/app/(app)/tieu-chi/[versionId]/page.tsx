@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { orNotFound } from "@/components/criteria/not-found";
+import { orNotFound } from "@/lib/not-found";
 import { VersionOverview } from "@/components/criteria/version-overview";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";

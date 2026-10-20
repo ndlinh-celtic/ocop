@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CriteriaSetHeading, CriteriaSetSheet } from "@/components/criteria/criteria-set-sheet";
-import { orNotFound } from "@/components/criteria/not-found";
+import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 
