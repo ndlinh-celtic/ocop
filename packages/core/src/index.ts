@@ -38,3 +38,33 @@ export {
   type Star,
 } from "./criteria/model";
 export { averageScores, rankStars, type PartTotal, type StarRank, type StarRankInput, type UnmetMinimumStar } from "./criteria/star-rank";
+export type {
+  CriteriaSetRow,
+  CriteriaVersion,
+  CriteriaVersionRepo,
+  CriterionGroupRow,
+  CriterionRow,
+  ExclusionConditionRow,
+  PartRow,
+  ProductGroupRow,
+  ScoreLevelRow,
+  SectionRow,
+  SetRows,
+  SubgroupRow,
+  VersionRows,
+  VersionStatus,
+  VersionSummary,
+  VersionTaxonomy,
+} from "./criteria/version";
+export type {
+  CriteriaSetDetail,
+  ExclusionCondition,
+  StoredCriterion,
+  StoredCriterionGroup,
+  StoredPart,
+  StoredScoreLevel,
+  StoredSection,
+} from "./criteria/detail";
+export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue } from "./criteria/qd26-file";
+export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
+export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";

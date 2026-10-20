@@ -18,7 +18,7 @@ Kiểm tra: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:int` (
 
 E2E (Playwright, trên stack Compose sạch): `docker compose down -v && docker compose up -d --build`, rồi `pnpm --filter @ocop/e2e e2e`. Lần đầu: `pnpm --filter @ocop/e2e exec playwright install chromium`.
 
-Dữ liệu mẫu: `docker compose run --rm worker pnpm --filter @ocop/infra seed:wards [tệp.csv]` (CSV `ma,ten`), `docker compose run --rm -it worker pnpm --filter @ocop/infra admin:create` (Quản trị đầu tiên).
+Dữ liệu mẫu: `docker compose run --rm worker pnpm --filter @ocop/infra seed:wards [tệp.csv]` (CSV `ma,ten`), `docker compose run --rm -it worker pnpm --filter @ocop/infra admin:create` (Quản trị đầu tiên), `docker compose run --rm worker pnpm --filter @ocop/infra seed:criteria [tệp.json]` (nhập Phiên bản tiêu chí QĐ 26 thành bản nháp; bỏ qua nếu đã có phiên bản cùng văn bản căn cứ).
 
 Bộ test tương thích S3 với nhà cung cấp thật (ghi kết quả vào phụ lục A):
 

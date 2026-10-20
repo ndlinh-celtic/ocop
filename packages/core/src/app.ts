@@ -1,5 +1,7 @@
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
+import { importVersion } from "./criteria/import";
+import { getCriteriaSet, getVersion, listVersions } from "./criteria/read";
 import { completeUpload, listFiles, requestDownload, requestUpload } from "./files/uploads";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
@@ -70,6 +72,12 @@ export function createCore(deps: CoreDeps) {
       completeUpload: completeUpload(deps),
       requestDownload: requestDownload(deps),
       list: listFiles(deps),
+    },
+    criteria: {
+      importVersion: importVersion(deps),
+      listVersions: listVersions(deps),
+      getVersion: getVersion(deps),
+      getCriteriaSet: getCriteriaSet(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

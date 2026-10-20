@@ -6,7 +6,8 @@ export type DomainEventBody =
   | { type: "identity.user.locked"; payload: { userId: string; until: string } }
   | { type: "identity.password_reset.requested"; payload: { userId: string } }
   | { type: "files.uploaded"; payload: { fileId: string } }
-  | { type: "files.blocked"; payload: { fileId: string } };
+  | { type: "files.blocked"; payload: { fileId: string } }
+  | { type: "criteria.version.imported"; payload: { versionId: string } };
 
 export type EventType = DomainEventBody["type"];
 

@@ -7,5 +7,6 @@ export { relayOutbox } from "./jobs/relay";
 export { startWorkers } from "./jobs/worker";
 export { renderingMailer, smtpTransport, type MailTransport, type OutgoingEmail } from "./mail/mailer";
 export { seedWards } from "./seed/wards";
+export { seedCriteria } from "./seed/criteria";
 export { createS3FileStore, ensureBucket, type S3Settings } from "./files/s3";
 export { clamdScanner, type ScanResult, type VirusScanner } from "./files/clamd";
