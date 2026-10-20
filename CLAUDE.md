@@ -36,7 +36,7 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 - **Drizzle ORM** + drizzle-kit migration (file SQL được review), SQL thô khi cần `FOR UPDATE`, trigger.
 - Tệp: **S3-compatible** (`@aws-sdk/client-s3` v3), upload thẳng bằng pre-signed URL, bucket `quarantine/` → quét **ClamAV** → `evidence/`.
 - Văn bản: **docxtemplater** (Word) + **Gotenberg** (DOCX/HTML → PDF); ExcelJS, archiver (ZIP stream lên S3), `qrcode`.
-- Auth: **Better Auth** (email/mật khẩu argon2id, TOTP, session DB, rate limit) sau interface `AuthPort`. Phân quyền: `can(actor, action, resource)` trong domain, dựa trên vai trò + phạm vi (`role_assignment(user, role, scope_type, scope_id)`) + trạng thái hồ sơ.
+- Auth: **tự viết trong `identity`** (ADR 0005): mật khẩu argon2id (`@node-rs/argon2`), TOTP (`otplib`), token phiên lưu hash trong DB, khóa tạm theo tài khoản; đăng nhập là use case có audit + outbox cùng transaction. Phân quyền: `can(actor, action, resource)` trong domain, dựa trên vai trò + phạm vi (`role_assignment(user, role, scope_type, scope_id)`) + trạng thái hồ sơ.
 - UI: Tailwind + shadcn/ui (Radix), TanStack Table, React Hook Form + Zod. Responsive, không app native.
 - Email: Nodemailer qua SMTP trong nước, mẫu React Email. Thông báo trong app: bảng `notification` + polling/SSE.
 - Hạ tầng: **Docker Compose trên 1 VM** (4 vCPU / 8 GB): `caddy`, `web` x2, `worker`, `gotenberg`, `clamd`, `migrate`. PostgreSQL và S3 dùng dịch vụ quản lý của nhà cung cấp. Giám sát (Loki, Prometheus, Grafana, GlitchTip, Uptime Kuma) trên VM riêng.

@@ -1,10 +1,42 @@
 # OCOP – Hệ thống đánh giá, phân hạng sản phẩm OCOP (bản một tỉnh)
 
-Repo đang ở giai đoạn thiết kế: tài liệu yêu cầu, kiến trúc và prototype giao diện. Mã nguồn ứng dụng sẽ được thêm theo thứ tự trong `CLAUDE.md`.
+Tài liệu yêu cầu, kiến trúc, prototype giao diện, và mã nguồn đang dựng theo thứ tự trong `CLAUDE.md` (bước 1: spec #1).
+
+## Chạy local
+
+Cần Node 22.12+, pnpm 10, Docker.
+
+```bash
+pnpm install
+docker compose up -d --build        # stack giống prod: caddy, web x2, worker, clamd, postgres, S3 (RustFS), mailpit
+open http://localhost:8080          # ứng dụng qua Caddy
+open http://localhost:8025          # Mailpit: xem email gửi đi
+docker compose -f compose.yaml -f compose.dev.yaml up   # dev: hot reload, một replica web
+```
+
+Kiểm tra: `pnpm lint`, `pnpm typecheck`, `pnpm test` (unit), `pnpm test:int` (Postgres và S3 thật qua Testcontainers, cần Docker).
+
+E2E (Playwright, trên stack Compose sạch): `docker compose down -v && docker compose up -d --build`, rồi `pnpm --filter @ocop/e2e e2e`. Lần đầu: `pnpm --filter @ocop/e2e exec playwright install chromium`.
+
+Dữ liệu mẫu: `docker compose run --rm worker pnpm --filter @ocop/infra seed:wards [tệp.csv]` (CSV `ma,ten`), `docker compose run --rm -it worker pnpm --filter @ocop/infra admin:create` (Quản trị đầu tiên).
+
+Bộ test tương thích S3 với nhà cung cấp thật (ghi kết quả vào phụ lục A):
+
+```bash
+S3_COMPAT_ENDPOINT=https://... S3_COMPAT_ACCESS_KEY=... S3_COMPAT_SECRET_KEY=... \
+S3_COMPAT_REGION=... S3_COMPAT_BUCKET=bucket-co-san \
+pnpm --filter @ocop/infra exec vitest run --config vitest.int.config.ts test/files/s3-compat
+```
 
 ## Cấu trúc
 
 ```
+apps/web                          Next.js (App Router): UI, route handler
+apps/worker                       Job nền (pg-boss)
+packages/core                     Domain + use case, TypeScript thuần
+packages/infra                    Adapter: Postgres, pg-boss, S3, SMTP; migration SQL trong migrations/
+packages/ui                       Thành phần giao diện dùng chung
+compose.yaml, infra/              Docker Compose, Dockerfile, Caddy, init Postgres
 CLAUDE.md                         Bối cảnh, kiến trúc đã chọn, quy tắc nghiệp vụ, giả định mở
 docs/
   tinh-nang-rut-gon.md            Danh sách tính năng (Markdown, sinh từ Excel)

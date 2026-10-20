@@ -8,3 +8,7 @@ node_modules/
 dist/
 coverage/
 ~$*.xlsx
+playwright-report/
+test-results/
+.env.local
+*.tsbuildinfo

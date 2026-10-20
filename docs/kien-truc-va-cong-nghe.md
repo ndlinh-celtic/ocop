@@ -98,7 +98,7 @@ Một ngôn ngữ (TypeScript) từ UI đến worker, khớp với hướng Next
 | ORM / truy vấn | Drizzle ORM (+ SQL thô khi cần), migration bằng drizzle-kit, kiểm soát bằng file SQL review được | Gần SQL, hỗ trợ tốt `SELECT ... FOR UPDATE`, JSONB, nhiều schema; không có engine nhị phân | Prisma (DX tốt, nhưng row lock và trigger phải viết SQL thô nhiều), Kysely |
 | CSDL | PostgreSQL 16/17 + `unaccent`, `pg_trgm`, `citext` | ACID, JSONB cho snapshot, FTS tiếng Việt không dấu, trigger bảo vệ bất biến; GreenNode có bản quản lý | Không có lý do dùng DB khác |
 | Hàng đợi job, cron | pg-boss (trên Postgres) | Job được enqueue trong cùng transaction nghiệp vụ; không thêm Redis | BullMQ + Redis khi cần thông lượng lớn |
-| Xác thực | Better Auth (email/mật khẩu, plugin TOTP, session DB, rate limit) bọc sau interface `AuthPort` | Tự host, dữ liệu trong Postgres của mình, TOTP và xác thực lại có sẵn; mật khẩu argon2id | Keycloak khi làm VNeID/SSO (nặng cho 1 VM ở giai đoạn này) |
+| Xác thực | Tự viết trong `identity` (ADR 0005): argon2id qua `@node-rs/argon2`, TOTP qua `otplib`, phiên DB lưu hash token | Khóa tạm theo tài khoản, hết phiên theo Vai trò, audit cùng transaction; Better Auth không đáp ứng được mà không vá nhiều | Better Auth (đã cân nhắc, xem ADR 0005); Keycloak khi làm VNeID/SSO |
 | Phân quyền | Policy tự viết trong domain: `can(actor, action, resource)` dựa trên vai trò + phạm vi + trạng thái | Quy tắc phụ thuộc trạng thái (ẩn điểm trước khi chốt, Tổ tư vấn không chốt được) khó diễn tả bằng thư viện; test dạng bảng | CASL; Postgres RLS làm lớp phòng thủ thứ hai (sau) |
 | Tệp | S3-compatible qua `@aws-sdk/client-s3` v3, pre-signed PUT/GET, multipart | Theo phụ lục A: GreenNode vStorage, FPT, Viettel đều công bố S3 API | MinIO tự host nếu nhà cung cấp không đạt kiểm thử |
 | Quét mã độc | ClamAV (container `clamd`) quét sau upload | Tệp từ chủ thể là nguồn không tin cậy, lại được cán bộ mở | Dịch vụ quét của nhà cung cấp cloud nếu có |
@@ -178,7 +178,7 @@ Cộng lại khoảng 5 đến 6 GB khi cao điểm, nên chọn **4 vCPU / 8 GB
 
 ### 6.2 Môi trường và quy trình phát hành
 
-1. Ba môi trường: `dev` (local, Postgres + MinIO trong Compose), `staging` (VM nhỏ, dữ liệu giả), `prod`. Staging dùng cùng nhà cung cấp S3 với prod để bắt lỗi tương thích sớm.
+1. Ba môi trường: `dev` (local, Postgres + S3 RustFS trong Compose; MinIO đã ngừng phát hành image cộng đồng), `staging` (VM nhỏ, dữ liệu giả), `prod`. Staging dùng cùng nhà cung cấp S3 với prod để bắt lỗi tương thích sớm.
 2. Pipeline: lint, typecheck, unit test, integration test (Testcontainers), build image có tag theo commit, quét Trivy, đẩy lên registry, deploy staging tự động, E2E Playwright trên staging, deploy prod bằng thao tác duyệt tay.
 3. Migration kiểu expand/contract để rollback ứng dụng mà không rollback schema.
 4. Secret (khóa DB, S3, SMTP, HMAC QR, khóa mã hóa TOTP) nằm trong file env chỉ root đọc được hoặc secret manager của nhà cung cấp nếu có; không commit.
