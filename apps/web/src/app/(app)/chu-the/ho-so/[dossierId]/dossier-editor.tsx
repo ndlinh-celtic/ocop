@@ -15,6 +15,7 @@ import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { DeleteDossierButton } from "./delete-button";
+import { DossierVersionProvider } from "./dossier-version";
 import { ProductForm } from "./product-form";
 import { SubmitPanel, WithdrawForm } from "./submit-panel";
 import { SupplementAnswerForm } from "./supplement-answer";
@@ -98,26 +99,27 @@ export async function DossierEditor({ actor, dossierId, onBehalf, back, notice }
         }
       />
 
-      <section className="rounded-lg border bg-surface p-4 shadow-card">
-        <h2 className="mb-3 font-semibold">Thông tin sản phẩm</h2>
-        {!editable && <p className="mb-3 text-sm text-text-3">Hồ sơ đã nộp không sửa trực tiếp được.</p>}
-        <ProductForm
-          dossierId={dossier.id}
-          version={dossier.version}
-          editable={editable}
-          onBehalf={onBehalf}
-          initial={{
-            productName: dossier.productName,
-            description: dossier.description,
-            ingredients: dossier.ingredients,
-            process: dossier.process,
-            packaging: dossier.packaging,
-            qualityDeclaration: dossier.qualityDeclaration,
-          }}
-        />
-      </section>
+      <DossierVersionProvider version={dossier.version}>
+        <section className="rounded-lg border bg-surface p-4 shadow-card">
+          <h2 className="mb-3 font-semibold">Thông tin sản phẩm</h2>
+          {!editable && <p className="mb-3 text-sm text-text-3">Hồ sơ đã nộp không sửa trực tiếp được.</p>}
+          <ProductForm
+            dossierId={dossier.id}
+            editable={editable}
+            onBehalf={onBehalf}
+            initial={{
+              productName: dossier.productName,
+              description: dossier.description,
+              ingredients: dossier.ingredients,
+              process: dossier.process,
+              packaging: dossier.packaging,
+              qualityDeclaration: dossier.qualityDeclaration,
+            }}
+          />
+        </section>
 
-      <Workbench assessment={assessment} editable={editable} onBehalf={onBehalf} />
+        <Workbench assessment={assessment} editable={editable} onBehalf={onBehalf} />
+      </DossierVersionProvider>
 
       {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} resubmission={resubmission} onBehalf={onBehalf} />}
       {withdrawable && <WithdrawForm dossierId={dossier.id} version={dossier.version} />}
