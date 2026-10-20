@@ -27,6 +27,15 @@ export default async function CriteriaVersionPage({ params }: { params: Promise<
         <StatusTag status={version.status} />
         {check && <PublishButton versionId={version.id} disabled={check.issues.length > 0} />}
       </div>
+      {version.copiedFrom && (
+        <p className="text-sm text-text-2">
+          Sao chép từ{" "}
+          <Link href={`/quan-tri/bo-tieu-chi/${version.copiedFrom}`} className="text-brand underline-offset-2 hover:underline">
+            một phiên bản khác
+          </Link>{" "}
+          (chỉ để tra cứu; phiên bản nguồn có thể đã bị xóa).
+        </p>
+      )}
       {check && <ValidationIssues versionId={version.id} issues={check.issues} />}
       <VersionOverview version={version} setHref={(setId) => `/quan-tri/bo-tieu-chi/${version.id}/bo/${setId}`} />
     </div>

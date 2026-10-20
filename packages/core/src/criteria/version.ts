@@ -160,6 +160,8 @@ export interface CriteriaVersionRepo {
   loadRows(versionId: string): Promise<VersionRows>;
   /** draft → published; the DB refuses any later change to the version (#19). */
   markPublished(id: string, at: Date, by: string): Promise<void>;
+  /** Deletes a draft with its whole tree (cascade); the DB refuses a published one. */
+  delete(id: string): Promise<void>;
 }
 
 /** Domain layer of the immutability (ADR 0006): only a draft may change. Every write use case calls it. */
