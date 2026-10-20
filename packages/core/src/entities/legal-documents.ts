@@ -46,6 +46,34 @@ export function getLegalStanding(deps: CoreDeps) {
   };
 }
 
+/**
+ * A short-lived link to the file of one giấy tờ pháp lý, current or replaced, for whoever may read the
+ * Chủ thể: the Chủ thể itself, or a Cán bộ xã checking it (story 44). Out of Phạm vi is not found.
+ */
+export function downloadLegalDocument(deps: CoreDeps) {
+  return async (actor: Actor, input: { entityId: string; documentId: string }): Promise<{ url: string; expiresAt: Date }> => {
+    authorize(actor, "entity.read");
+    const scope = dataScopeOf(actor);
+    return deps.uow.run(async (tx) => {
+      assertIdShape(input.entityId, entityNotFound);
+      const doc = (await tx.legalDocuments.list(scope, input.entityId)).find((d) => d.id === input.documentId);
+      if (!doc) throw legalDocumentNotFound();
+      const file = await tx.files.findById(doc.fileId);
+      if (!file || file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
+      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
+          action: "file.download_issued",
+          targetType: "file",
+          targetId: file.id,
+          metadata: { entityId: doc.entityId, documentId: doc.id },
+        }),
+      );
+      return { url: get.url, expiresAt: get.expiresAt };
+    });
+  };
+}
+
 export interface AddLegalDocumentInput {
   entityId: string;
   typeCode: string;

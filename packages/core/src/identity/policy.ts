@@ -26,12 +26,15 @@ const ROLE_ACTIONS = {
   // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
   "round.manage": ["province_officer"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
-  "entity.read": ["entity_owner"],
+  "entity.read": ["entity_owner", "ward_officer"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).
   "entity.update": ["entity_owner"],
   "entity.legal_document.manage": ["entity_owner"],
   // The full số định danh cá nhân, audited as a personal data access (story 13).
-  "entity.personal_id.reveal": ["entity_owner"],
+  "entity.personal_id.reveal": ["entity_owner", "ward_officer"],
+  // L01 (stories 11, 12): a Cán bộ xã creates a Chủ thể of their xã and changes its Người dùng đại diện's email.
+  "entity.create": ["ward_officer"],
+  "entity.representative_email.change": ["ward_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
