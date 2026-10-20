@@ -9,6 +9,8 @@ export type DomainEventBody =
   | { type: "files.blocked"; payload: { fileId: string } }
   | { type: "criteria.version.imported"; payload: { versionId: string } }
   | { type: "criteria.version.published"; payload: { versionId: string } }
+  | { type: "criteria.version.copied"; payload: { versionId: string; copiedFrom: string } }
+  | { type: "criteria.version.deleted"; payload: { versionId: string } }
   | { type: "round.created"; payload: { roundId: string } }
   | { type: "round.updated"; payload: { roundId: string } }
   | { type: "round.deleted"; payload: { roundId: string } }

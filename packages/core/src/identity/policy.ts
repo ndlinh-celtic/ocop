@@ -20,6 +20,8 @@ const ROLE_ACTIONS = {
   "criteria.read_draft": ["admin"],
   "criteria.publish": ["admin"],
   "criteria.preview": ["admin"],
+  "criteria.copy": ["admin"],
+  "criteria.delete": ["admin"],
   // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
   "round.manage": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;

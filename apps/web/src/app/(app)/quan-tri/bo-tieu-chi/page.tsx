@@ -5,6 +5,7 @@ import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { ImportForm } from "./import-form";
+import { VersionRowActions } from "./version-row-actions";
 import { formatIsoDate, StatusTag } from "@/components/criteria/status-tag";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,9 @@ export default async function CriteriaVersionsPage() {
           Bước nhập chỉ tạo bản nháp. Soát bản nháp (đặc biệt các chỗ trong sheet &ldquo;Cần rà soát&rdquo;) trước khi phát hành.
         </p>
         <ImportForm />
+        <p className="mt-3 text-sm text-text-2">
+          Hoặc bấm &ldquo;Sao chép&rdquo; trên một phiên bản bên dưới (kể cả đã phát hành) để tạo bản nháp mới rồi hiệu chỉnh.
+        </p>
       </section>
       {versions.length === 0 ? (
         <EmptyState icon={ListTree} title="Chưa có phiên bản tiêu chí">
@@ -38,6 +42,7 @@ export default async function CriteriaVersionsPage() {
                 <th className="px-4 py-2">Số bộ tiêu chí</th>
                 <th className="px-4 py-2">Trạng thái</th>
                 <th className="px-4 py-2">Tạo lúc</th>
+                <th className="px-4 py-2 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -55,6 +60,9 @@ export default async function CriteriaVersionsPage() {
                     <StatusTag status={v.status} />
                   </td>
                   <td className="px-4 py-2">{formatVnDateTime(v.createdAt)}</td>
+                  <td className="px-4 py-2 text-right">
+                    <VersionRowActions versionId={v.id} legalBasis={v.legalBasis} status={v.status} />
+                  </td>
                 </tr>
               ))}
             </tbody>

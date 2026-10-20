@@ -1,5 +1,6 @@
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
+import { copyVersion, deleteVersion } from "./criteria/copy";
 import { importVersion } from "./criteria/import";
 import { publishVersion, validateVersion } from "./criteria/publish";
 import { previewSet } from "./criteria/preview";
@@ -85,6 +86,8 @@ export function createCore(deps: CoreDeps) {
       validateVersion: validateVersion(deps),
       publishVersion: publishVersion(deps),
       previewSet: previewSet(deps),
+      copyVersion: copyVersion(deps),
+      deleteVersion: deleteVersion(deps),
     },
     rounds: {
       createRound: createRound(deps),
