@@ -39,7 +39,8 @@ async function ownFile(tx: Tx, actor: Actor, fileId: string): Promise<StoredFile
   if (actor.kind !== "user") throw forbidden();
   assertIdShape(fileId, fileNotFound);
   const file = await tx.files.findById(fileId);
-  if (!file || file.ownerUserId !== actor.userId) throw fileNotFound();
+  // A generated văn bản is read through the module that holds it, never through the uploader's flow.
+  if (!file || file.ownerUserId !== actor.userId || file.purpose === "generated_document") throw fileNotFound();
   authorize(actor, UPLOAD_ACTION[file.purpose]);
   return file;
 }

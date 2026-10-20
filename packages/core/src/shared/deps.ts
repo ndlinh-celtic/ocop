@@ -1,3 +1,4 @@
+import type { DocumentRenderer } from "../documents/renderer";
 import type { FileStore } from "../files/file-store";
 import type { FileInspector } from "../files/inspection";
 import { DEFAULT_ALLOWED_TYPES } from "../files/model";
@@ -60,6 +61,8 @@ export interface CoreDeps {
   /** The bucket that receives daily audit anchors (ADR 0002); ideally with Object Lock. */
   anchorStore: FileStore;
   inspector: FileInspector;
+  /** Fills the Word templates of the văn bản the system generates (#37). */
+  documents: DocumentRenderer;
   settings: CoreSettings;
   /** Phiếu chấm and hồ sơ of a Đợt đánh giá, as the rounds module sees them (#27). */
   roundActivity: RoundActivity;

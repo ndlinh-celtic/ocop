@@ -160,7 +160,7 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
         },
       ],
       selfScore: { total: 0, star: 1 },
-      documents: { registrationForm: null, selfAssessmentReport: null },
+      documents: { registrationForm: expect.any(String), selfAssessmentReport: expect.any(String) },
     });
   });
 

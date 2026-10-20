@@ -32,6 +32,7 @@ import { registerEntity } from "./entities/register";
 import { addLegalDocument, downloadLegalDocument, getLegalStanding } from "./entities/legal-documents";
 import { revealPersonalId, updateEntity } from "./entities/profile";
 import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
+import { downloadSubmissionDocument } from "./dossiers/documents";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
@@ -154,6 +155,7 @@ export function createCore(deps: CoreDeps) {
       submit: submitDossier(deps),
       withdraw: withdrawDossier(deps),
       submissions: listSubmissions(deps),
+      downloadSubmissionDocument: downloadSubmissionDocument(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

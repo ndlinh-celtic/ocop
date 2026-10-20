@@ -3,6 +3,7 @@ import { Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
+import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -77,10 +78,11 @@ export default async function DossierPage({ params }: { params: Promise<{ dossie
       </div>
 
       {dossier.latestSubmission && (
-        <section className="rounded-lg border bg-surface p-4 text-sm shadow-card">
+        <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
           <p>
             Phiên bản nộp {dossier.latestSubmission.number}, nộp lúc {formatVnDateTime(dossier.latestSubmission.submittedAt)}.
           </p>
+          <SubmissionDocuments dossierId={dossier.id} submissionNumber={dossier.latestSubmission.number} />
           {dossier.flags.map((flag) => (
             <p key={flag.typeCode} role="status" className="mt-1 text-danger">
               {flag.typeName} trong Phiên bản nộp đã hết hiệu lực từ sau ngày {formatIsoDate(flag.validUntil)}.
