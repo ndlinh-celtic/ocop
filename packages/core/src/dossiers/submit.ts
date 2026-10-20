@@ -8,6 +8,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
+import { generateSubmissionDocuments } from "./documents";
 import { lockDossier } from "./edit";
 import {
   dossierNotFound,
@@ -169,7 +170,7 @@ async function snapshotOf(tx: Tx, dossier: Dossier, c: Conditions): Promise<Subm
       evidenceFileIds: assessment.files.filter((f) => linked.get(f.fileId)?.includes(cr.criterionId)).map((f) => f.fileId),
     })),
     selfScore: { total: assessment.estimate.total, star: assessment.estimate.star },
-    // #37 generates the Phiếu đăng ký and Báo cáo tự đánh giá here, before the Phiên bản nộp is written.
+    // Set by submitDossier once the văn bản are generated from this very snapshot.
     documents: { registrationForm: null, selfAssessmentReport: null },
   };
 }
@@ -207,7 +208,16 @@ export function submitDossier(deps: CoreDeps) {
         metadata: { submissionNumber: number, roundId: c.round?.id ?? null, wardId: c.entity.wardId },
       });
       if (c.blockers.length > 0 || !c.round) throw new SubmissionBlockedError(c.blockers);
-      const snapshot = await snapshotOf(tx, before, c);
+      const frozen = await snapshotOf(tx, before, c);
+      const ward = await tx.wards.findById(c.entity.wardId);
+      const documents = await generateSubmissionDocuments(deps, tx, actor, frozen, {
+        dossierId: before.id,
+        number,
+        submittedAt: now,
+        roundName: c.round.name,
+        wardName: ward?.name ?? "",
+      });
+      const snapshot: SubmissionSnapshot = { ...frozen, documents };
       const submission: Submission = {
         id: deps.ids.next(),
         dossierId: after.id,

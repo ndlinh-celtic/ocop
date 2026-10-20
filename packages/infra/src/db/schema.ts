@@ -1,4 +1,4 @@
-import type { DossierState, SubmissionFileRole, SubmissionSnapshot } from "@ocop/core";
+import type { DossierState, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -123,7 +123,7 @@ export const notification = platform.table("notification", {
 export const file = platform.table("file", {
   id: uuid("id").primaryKey(),
   ownerUserId: uuid("owner_user_id").notNull(),
-  purpose: text("purpose").$type<"test_upload" | "legal_document" | "evidence">().notNull(),
+  purpose: text("purpose").$type<StoredFilePurpose>().notNull(),
   storageKey: text("storage_key").notNull(),
   fileName: text("file_name").notNull(),
   declaredType: text("declared_type").notNull(),
