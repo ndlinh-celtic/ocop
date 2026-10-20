@@ -8,7 +8,9 @@ export type DomainEventBody =
   | { type: "files.uploaded"; payload: { fileId: string } }
   | { type: "files.blocked"; payload: { fileId: string } }
   | { type: "criteria.version.imported"; payload: { versionId: string } }
-  | { type: "criteria.version.published"; payload: { versionId: string } };
+  | { type: "criteria.version.published"; payload: { versionId: string } }
+  | { type: "criteria.version.copied"; payload: { versionId: string; copiedFrom: string } }
+  | { type: "criteria.version.deleted"; payload: { versionId: string } };
 
 export type EventType = DomainEventBody["type"];
 

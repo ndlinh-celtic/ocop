@@ -120,6 +120,10 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
       await db.update(criteriaVersion).set({ status: "published", publishedAt: at, publishedBy: by }).where(eq(criteriaVersion.id, id));
     },
 
+    async delete(id) {
+      await db.delete(criteriaVersion).where(eq(criteriaVersion.id, id));
+    },
+
     async findSet(setId) {
       const [set] = await db.select().from(criteriaSet).where(eq(criteriaSet.id, setId));
       if (!set) return null;
