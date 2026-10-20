@@ -49,6 +49,8 @@ const ROLE_ACTIONS = {
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],
+  // Cấu hình chung toàn hệ thống, such as the mốc nhắc hạn (story 37).
+  "system.settings.manage": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

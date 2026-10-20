@@ -14,6 +14,8 @@ import type { LegalDocumentRepo } from "../entities/legal";
 import type { RateLimitRepo } from "../platform/rate-limit";
 import type { DossierRepo } from "../dossiers/model";
 import type { SupplementRepo } from "../dossiers/supplement-model";
+import type { ReminderRepo } from "../dossiers/reminder-model";
+import type { SystemSettingRepo } from "../system/settings-model";
 
 /** Everything a use case can touch inside one database transaction. */
 export interface Tx {
@@ -36,6 +38,8 @@ export interface Tx {
   rateLimits: RateLimitRepo;
   dossiers: DossierRepo;
   supplements: SupplementRepo;
+  reminders: ReminderRepo;
+  systemSettings: SystemSettingRepo;
 }
 
 export interface UnitOfWork {

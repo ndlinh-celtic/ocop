@@ -1,5 +1,6 @@
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
 import type { DossierState } from "../dossiers/model";
+import type { ReminderPayload } from "../dossiers/reminder-model";
 import type { DossierEventType } from "../dossiers/transitions";
 import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
@@ -35,6 +36,8 @@ export type DomainEventBody =
   | { type: "entity.updated"; payload: { entityId: string } }
   | { type: "entity.ward_changed"; payload: { entityId: string; fromWardId: string; toWardId: string } }
   | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
+  | { type: "system.setting_changed"; payload: { key: string } }
+  | { type: "dossier.reminder_due"; payload: ReminderPayload }
   | { type: DossierEventType; payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState } };
 
 export type EventType = DomainEventBody["type"];

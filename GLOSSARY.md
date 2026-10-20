@@ -62,6 +62,10 @@ _Avoid_: Hạn nộp của xã
 Mốc dự kiến tỉnh hoàn thành đánh giá các hồ sơ của đợt; chỉ để nhắc việc.
 _Avoid_: Hạn chốt
 
+**Mốc nhắc hạn**:
+Số ngày trước một hạn (Hạn nộp xã, hạn bổ sung, Hạn gửi tỉnh) mà hệ thống nhắc người liên quan; cấu hình chung toàn hệ thống do Quản trị đặt (mặc định 30, 14, 7, 1). Mỗi mốc chỉ nhắc một lần cho mỗi đối tượng.
+_Avoid_: Lịch nhắc, mốc hạn (là chính các hạn)
+
 **Chế độ chấm**:
 Cách hội đồng chấm hồ sơ trong một Đợt đánh giá: chấm trực tiếp, hoặc dựa trên Tổ tư vấn.
 _Avoid_: Hình thức chấm, chế độ kết hợp (đã bỏ)

@@ -36,6 +36,12 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
   await boss.work("rounds.close-due", async () => {
     await core.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
   });
+  // L03 CT-12: nhắc hạn by calendar day in Vietnam. Hourly in office hours so a missed run catches up the
+  // same day; each mốc goes out once however often it runs.
+  await boss.schedule("dossiers.due-reminders", "0 8-20 * * *", null, { tz });
+  await boss.work("dossiers.due-reminders", async () => {
+    await core.dossiers.sendDueReminders(systemActor("dossiers.due-reminders"));
+  });
 
   let running = true;
   let timer: NodeJS.Timeout | undefined;

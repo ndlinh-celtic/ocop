@@ -28,6 +28,8 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
+import { reminderMilestones, setReminderMilestones } from "./system/settings";
+import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
 import { addLegalDocument, downloadLegalDocument, getLegalStanding } from "./entities/legal-documents";
@@ -179,9 +181,12 @@ export function createCore(deps: CoreDeps) {
       wardReport: wardReportStatus(deps),
       downloadSignedWardReport: downloadSignedWardReport(deps),
       forwardToProvince: forwardToProvince(deps),
+      sendDueReminders: sendDueReminders(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
+      reminderMilestones: reminderMilestones(deps),
+      setReminderMilestones: setReminderMilestones(deps),
     },
   };
 }
