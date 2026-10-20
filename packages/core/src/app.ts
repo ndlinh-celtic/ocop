@@ -27,6 +27,8 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
+import { getEntity, listEntities } from "./entities/read";
+import { registerEntity } from "./entities/register";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -112,6 +114,11 @@ export function createCore(deps: CoreDeps) {
       closeDueSubmissions: closeDueSubmissions(deps),
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
+    },
+    entities: {
+      register: registerEntity(deps),
+      getEntity: getEntity(deps),
+      listEntities: listEntities(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

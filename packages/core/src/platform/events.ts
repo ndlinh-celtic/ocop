@@ -26,7 +26,8 @@ export type DomainEventBody =
     }
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
-  | { type: "round.ended"; payload: { roundId: string } };
+  | { type: "round.ended"; payload: { roundId: string } }
+  | { type: "entity.registered"; payload: { entityId: string; userId: string } };
 
 export type EventType = DomainEventBody["type"];
 

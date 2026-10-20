@@ -8,6 +8,7 @@ export const platform = pgSchema("platform");
 export const org = pgSchema("org");
 export const criteria = pgSchema("criteria");
 export const roundSchema = pgSchema("round");
+export const entitySchema = pgSchema("entity");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -293,4 +294,26 @@ export const deadlineExtension = roundSchema.table("deadline_extension", {
   reason: text("reason").notNull(),
   extendedBy: uuid("extended_by").notNull(),
   extendedAt: ts("extended_at").notNull(),
+});
+
+export const entity = entitySchema.table("entity", {
+  id: uuid("id").primaryKey(),
+  kind: text("kind").$type<"enterprise" | "cooperative" | "household">().notNull(),
+  name: text("name").notNull(),
+  identifierFingerprint: text("identifier_fingerprint").notNull(),
+  taxCode: text("tax_code"),
+  personalIdSealed: text("personal_id_sealed"),
+  personalIdLast4: text("personal_id_last4"),
+  address: text("address").notNull(),
+  representativeName: text("representative_name").notNull(),
+  phone: text("phone").notNull(),
+  wardId: uuid("ward_id").notNull(),
+  createdAt: ts("created_at").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+});
+
+export const rateLimitHit = platform.table("rate_limit_hit", {
+  bucket: text("bucket").notNull(),
+  subjectHash: text("subject_hash").notNull(),
+  occurredAt: ts("occurred_at").notNull(),
 });

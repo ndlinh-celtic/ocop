@@ -123,3 +123,19 @@ export type { RoundInput } from "./rounds/manage";
 export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
+export { dataScopeOf, type DataScope } from "./identity/scope";
+export {
+  assertIdentifierShape,
+  ENTITY_KIND_LABEL,
+  ENTITY_KINDS,
+  entityNotFound,
+  maskPersonalId,
+  normalizeIdentifier,
+  type Entity,
+  type EntityKind,
+  type EntityRepo,
+} from "./entities/model";
+export type { EntityView } from "./entities/read";
+export type { RegisterEntityInput } from "./entities/register";
+export type { RateLimit, RateLimitRepo } from "./platform/rate-limit";
+export { consumeRateLimit } from "./platform/throttle";

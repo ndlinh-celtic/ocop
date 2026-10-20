@@ -25,6 +25,8 @@ const ROLE_ACTIONS = {
   "criteria.delete": ["admin"],
   // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
   "round.manage": ["province_officer"],
+  // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
+  "entity.read": ["entity_owner"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
