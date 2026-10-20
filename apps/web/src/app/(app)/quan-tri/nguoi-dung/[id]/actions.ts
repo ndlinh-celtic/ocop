@@ -32,6 +32,6 @@ export async function grantRoleAction(userId: string, _prev: GrantState, form: F
 }
 
 export async function revokeRoleAction(userId: string, assignmentId: string) {
-  await app().core.identity.revokeRole(await requireActor(), assignmentId);
+  await app().core.identity.revokeRole(await requireActor(), { assignmentId });
   revalidatePath(`/quan-tri/nguoi-dung/${userId}`);
 }

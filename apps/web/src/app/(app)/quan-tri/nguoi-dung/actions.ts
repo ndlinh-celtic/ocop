@@ -28,6 +28,6 @@ export async function createUserAction(_prev: CreateUserState, form: FormData): 
 
 export async function resendActivationAction(userId: string) {
   const actor = await requireActor();
-  await app().core.identity.resendActivation(actor, userId);
+  await app().core.identity.resendActivation(actor, { userId });
   revalidatePath("/quan-tri/nguoi-dung");
 }

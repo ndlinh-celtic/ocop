@@ -81,8 +81,9 @@ export function requestUpload(deps: CoreDeps) {
 
 /** The browser reports the upload finished; storage must hold exactly the declared size. */
 export function completeUpload(deps: CoreDeps) {
-  return async (actor: Actor, fileId: string, parts?: { partNumber: number; etag: string }[]) => {
+  return async (actor: Actor, input: { fileId: string; parts?: { partNumber: number; etag: string }[] }) => {
     authorize(actor, "file.test_upload");
+    const { fileId, parts } = input;
     const file = await deps.uow.run((tx) => tx.files.findById(fileId));
     if (!file || file.ownerUserId !== actor.userId) throw new DomainError("not_found", "Không tìm thấy tệp");
     if (file.status !== "awaiting_upload") throw new DomainError("already_uploaded", "Tệp đã được tải lên");
@@ -106,8 +107,9 @@ export function completeUpload(deps: CoreDeps) {
 
 /** A short-lived download link, only for a file that is clean and that the actor may see. */
 export function requestDownload(deps: CoreDeps) {
-  return async (actor: Actor, fileId: string) => {
+  return async (actor: Actor, input: { fileId: string }) => {
     authorize(actor, "file.test_upload");
+    const { fileId } = input;
     return deps.uow.run(async (tx) => {
       const file = await tx.files.findById(fileId);
       if (!file || file.ownerUserId !== actor.userId) throw new DomainError("not_found", "Không tìm thấy tệp");

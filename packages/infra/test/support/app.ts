@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { CONSUMER_NAMES, type Clock, type Core, type RequestContext, type UserActor } from "@ocop/core";
+import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type RequestContext, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
 import type { ScanResult, VirusScanner } from "../../src/files/clamd";
@@ -76,6 +76,9 @@ export const requestContext = (over: Partial<RequestContext> = {}): RequestConte
   ...over,
 });
 
+/** A visitor with no session, as the sign-in, activation and password-reset use cases see them. */
+export const anonymous = (over: Partial<RequestContext> = {}) => anonymousActor(requestContext(over));
+
 /** The code an authenticator app would show for `secret` at `at`. */
 export const totpCode = (secret: string, at: Date) => generate({ secret, epoch: Math.floor(at.getTime() / 1000) });
 
@@ -149,7 +152,7 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
           work += jobs.length;
           for (const job of jobs) {
             try {
-              await app.platform.handleEvent(queue, job.data.eventId);
+              await app.platform.handleEvent(systemActor(queue), { consumer: queue, eventId: job.data.eventId });
               await b.complete(queue, job.id);
             } catch (err) {
               await b.fail(queue, job.id, { message: (err as Error).message });
@@ -167,16 +170,16 @@ export function createTestApp(db: TestDatabase, opts: { clock?: FakeClock; totpR
       return (await this.signInWithToken(email, password, totpSecret)).actor;
     },
     async signInWithToken(email, password, totpSecret) {
-      const result = await app.identity.signIn({ email, password }, requestContext());
+      const result = await app.identity.signIn(anonymous(), { email, password });
       if (!result.ok) throw new Error(`sign-in failed for ${email}: ${result.reason}`);
       if (result.stage === "totp_pending") {
         if (!totpSecret) throw new Error(`${email} has TOTP; pass its secret`);
-        const step = await app.identity.verifySignInTotp(result.sessionToken, await totpCode(totpSecret, clock.now()), requestContext());
+        const step = await app.identity.verifySignInTotp(anonymous(), { sessionToken: result.sessionToken, code: await totpCode(totpSecret, clock.now()) });
         if (!step.ok) throw new Error(`TOTP step failed for ${email}: ${step.reason}`);
       } else if (result.stage === "totp_enrollment") {
         throw new Error(`${email} must enrol TOTP first`);
       }
-      const actor = await app.identity.authenticate(result.sessionToken, requestContext());
+      const actor = await app.identity.authenticate(anonymous(), { sessionToken: result.sessionToken });
       if (!actor) throw new Error("fresh session did not authenticate");
       return { actor, token: result.sessionToken };
     },

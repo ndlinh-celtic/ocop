@@ -109,8 +109,9 @@ export function grantRole(deps: CoreDeps) {
 }
 
 export function revokeRole(deps: CoreDeps) {
-  return async (actor: Actor, assignmentId: string) => {
+  return async (actor: Actor, input: { assignmentId: string }) => {
     authorize(actor, "role.revoke");
+    const { assignmentId } = input;
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const a = await tx.roleAssignments.findById(assignmentId);

@@ -33,3 +33,8 @@ export interface SystemActor {
 }
 
 export type Actor = UserActor | AnonymousActor | SystemActor;
+
+export const anonymousActor = (ctx: RequestContext): AnonymousActor => ({ kind: "anonymous", ctx });
+
+/** A job or command; its request id says which, for the audit trail. */
+export const systemActor = (name: string, ctx: RequestContext = { requestId: `job:${name}` }): SystemActor => ({ kind: "system", name, ctx });

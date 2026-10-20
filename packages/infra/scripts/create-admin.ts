@@ -5,7 +5,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { createInterface } from "node:readline/promises";
-import { DomainError } from "@ocop/core";
+import { DomainError, systemActor } from "@ocop/core";
 import { createApp } from "../src/app";
 import { loadConfig } from "../src/config";
 import { createPool } from "../src/db/pool";
@@ -24,8 +24,8 @@ const config = loadConfig();
 const pool = createPool(config.DATABASE_URL, 1);
 try {
   const { userId } = await createApp(pool, config).identity.bootstrapFirstAdmin(
+    systemActor("bootstrap", { requestId: randomUUID(), userAgent: "cli:admin:create" }),
     { email, fullName, password },
-    { requestId: randomUUID(), userAgent: "cli:admin:create" },
   );
   console.log(`Đã tạo Quản trị ${email} (${userId}). Đăng nhập để đăng ký TOTP.`);
 } catch (err) {

@@ -1,6 +1,6 @@
 import { auditEntry } from "../audit/audit";
 import { emit } from "../platform/emit";
-import type { Actor, RequestContext } from "../shared/context";
+import type { Actor, AnonymousActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import type { Tx } from "../shared/uow";
@@ -56,7 +56,8 @@ export function createStaffUser(deps: CoreDeps) {
 
 /** Sends a fresh activation link; the consumer voids the previous one. */
 export function resendActivation(deps: CoreDeps) {
-  return async (actor: Actor, userId: string) => {
+  return async (actor: Actor, input: { userId: string }) => {
+    const { userId } = input;
     authorize(actor, "user.resend_activation");
     return deps.uow.run(async (tx) => {
       const user = await tx.users.findById(userId);
@@ -127,9 +128,9 @@ export function getUser(deps: CoreDeps) {
 
 /** For the activation page: whose link this is, or null when it cannot be used. */
 export function describeActivation(deps: CoreDeps) {
-  return (token: string) =>
+  return (_anonymous: AnonymousActor, input: { token: string }) =>
     deps.uow.run(async (tx) => {
-      const t = await tx.oneTimeTokens.findByHash(hashToken(token));
+      const t = await tx.oneTimeTokens.findByHash(hashToken(input.token));
       if (!t || t.purpose !== "activation" || !isUsable(t, deps.clock.now())) return null;
       const user = await tx.users.findById(t.userId);
       return user ? { fullName: user.fullName, email: user.email } : null;
@@ -139,7 +140,8 @@ export function describeActivation(deps: CoreDeps) {
 export type ActivationResult = { ok: true } | { ok: false; reason: "invalid_link" };
 
 export function activateAccount(deps: CoreDeps) {
-  return async (input: { token: string; password: string }, ctx: RequestContext): Promise<ActivationResult> => {
+  return async (anonymous: AnonymousActor, input: { token: string; password: string }): Promise<ActivationResult> => {
+    const { ctx } = anonymous;
     assertPasswordAcceptable(input.password);
     const passwordHash = await deps.hasher.hash(input.password);
     return deps.uow.run(async (tx) => {

@@ -1,5 +1,5 @@
 import { auditEntry } from "../audit/audit";
-import type { RequestContext, UserActor } from "../shared/context";
+import type { AnonymousActor, RequestContext, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { hashToken, newToken } from "../shared/tokens";
 import type { Tx } from "../shared/uow";
@@ -44,9 +44,9 @@ export function signIn(deps: CoreDeps) {
   let dummyHash: Promise<string> | undefined;
   const dummy = () => (dummyHash ??= deps.hasher.hash("ocop-timing-equaliser"));
 
-  return async (input: SignInInput, ctx: RequestContext): Promise<SignInResult> => {
+  return async (anonymous: AnonymousActor, input: SignInInput): Promise<SignInResult> => {
     const email = input.email.trim();
-    const anonymous = { kind: "anonymous" as const, ctx };
+    const { ctx } = anonymous;
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const user = await tx.users.findByEmail(email);
@@ -169,8 +169,10 @@ export async function loadActor(tx: Tx, token: string, at: Date, ctx: RequestCon
   };
 }
 
+/** Resolves the request's actor: the signed-in Người dùng behind the session token, or null. */
 export function authenticate(deps: CoreDeps) {
-  return (token: string, ctx: RequestContext) => deps.uow.run((tx) => loadActor(tx, token, deps.clock.now(), ctx, deps.settings));
+  return (anonymous: AnonymousActor, input: { sessionToken: string }) =>
+    deps.uow.run((tx) => loadActor(tx, input.sessionToken, deps.clock.now(), anonymous.ctx, deps.settings));
 }
 
 export function signOut(deps: CoreDeps) {

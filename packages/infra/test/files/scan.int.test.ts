@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, EICAR, requestContext, type TestApp, type TestDatabase } from "../support";
+import { createTestApp, createTestDatabase, EICAR, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -10,7 +10,7 @@ const PNG = Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000
 beforeAll(async () => {
   db = await createTestDatabase();
   t = createTestApp(db, { totpRequired: false });
-  await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+  await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
 });
 afterAll(async () => {
   await t.stop();
@@ -22,7 +22,7 @@ async function upload(fileName: string, contentType: string, data: Buffer) {
   const { fileId, upload } = await t.app.files.requestUpload(admin, { fileName, contentType, size: data.length });
   if (upload.kind !== "single") throw new Error("expected single upload");
   await fetch(upload.url, { method: "PUT", headers: upload.headers, body: data });
-  await t.app.files.completeUpload(admin, fileId);
+  await t.app.files.completeUpload(admin, { fileId });
   return { admin, fileId };
 }
 
@@ -36,7 +36,7 @@ describe("L24 DC-03 quarantine and virus scan", () => {
     const data = Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(5000)]);
     const { admin, fileId } = await upload("Biên bản.pdf", "application/pdf", data);
     await expect(status(fileId)).resolves.toMatchObject({ status: "scanning" });
-    await expect(t.app.files.requestDownload(admin, fileId)).rejects.toMatchObject({ code: "file_not_ready" });
+    await expect(t.app.files.requestDownload(admin, { fileId })).rejects.toMatchObject({ code: "file_not_ready" });
 
     await t.drainJobs();
     await expect(status(fileId)).resolves.toMatchObject({
@@ -44,14 +44,14 @@ describe("L24 DC-03 quarantine and virus scan", () => {
       detectedType: "application/pdf",
       sha256: createHash("sha256").update(data).digest("hex"),
     });
-    await expect(t.app.files.requestDownload(admin, fileId)).resolves.toMatchObject({ url: expect.any(String) });
+    await expect(t.app.files.requestDownload(admin, { fileId })).resolves.toMatchObject({ url: expect.any(String) });
   });
 
   it("blocks a file with malware, never serves it, and tells the uploader", async () => {
     const { admin, fileId } = await upload("hoso.pdf", "application/pdf", Buffer.from(EICAR));
     await t.drainJobs();
     await expect(status(fileId)).resolves.toMatchObject({ status: "blocked", blockReason: expect.stringMatching(/mã độc/i) });
-    await expect(t.app.files.requestDownload(admin, fileId)).rejects.toMatchObject({ code: "file_not_ready" });
+    await expect(t.app.files.requestDownload(admin, { fileId })).rejects.toMatchObject({ code: "file_not_ready" });
     const [n] = await t.app.notifications.list(admin);
     expect(n).toMatchObject({ kind: "file_blocked", title: expect.stringContaining("hoso.pdf") });
   });

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, requestContext, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, requestContext, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -15,37 +15,37 @@ const ADMIN = { email: "Admin@Tinh.gov.vn", fullName: "Nguyễn Văn Quản", pa
 
 describe("L20 AD-01 first admin and password sign-in", () => {
   it("creates the first Quản trị once; a second bootstrap is refused", async () => {
-    await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+    await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
     await expect(
-      t.app.identity.bootstrapFirstAdmin({ ...ADMIN, email: "other@tinh.gov.vn" }, requestContext()),
+      t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), { ...ADMIN, email: "other@tinh.gov.vn" }),
     ).rejects.toMatchObject({ code: "admin_already_exists" });
   });
 
   it("signs in with email in any letter case and the right password, and the session authenticates", async () => {
-    const result = await t.app.identity.signIn({ email: "admin@tinh.gov.vn", password: ADMIN.password }, requestContext());
+    const result = await t.app.identity.signIn(anonymous(), { email: "admin@tinh.gov.vn", password: ADMIN.password });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const actor = await t.app.identity.authenticate(result.sessionToken, requestContext());
+    const actor = await t.app.identity.authenticate(anonymous(), { sessionToken: result.sessionToken });
     expect(actor).toMatchObject({ kind: "user", fullName: ADMIN.fullName, activeRole: "admin" });
   });
 
   it("rejects a wrong password and an unknown email with the same reason", async () => {
-    const wrong = await t.app.identity.signIn({ email: ADMIN.email, password: "sai-mat-khau-roi" }, requestContext());
-    const unknown = await t.app.identity.signIn({ email: "nobody@tinh.gov.vn", password: ADMIN.password }, requestContext());
+    const wrong = await t.app.identity.signIn(anonymous(), { email: ADMIN.email, password: "sai-mat-khau-roi" });
+    const unknown = await t.app.identity.signIn(anonymous(), { email: "nobody@tinh.gov.vn", password: ADMIN.password });
     expect(wrong).toEqual({ ok: false, reason: "invalid_credentials" });
     expect(unknown).toEqual({ ok: false, reason: "invalid_credentials" });
   });
 
   it("does not authenticate a made-up token", async () => {
-    await expect(t.app.identity.authenticate("not-a-real-token", requestContext())).resolves.toBeNull();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: "not-a-real-token" })).resolves.toBeNull();
   });
 
   it("signing out revokes the session", async () => {
-    const result = await t.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+    const result = await t.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
     if (!result.ok) throw new Error("sign-in failed");
-    const actor = await t.app.identity.authenticate(result.sessionToken, requestContext());
+    const actor = await t.app.identity.authenticate(anonymous(), { sessionToken: result.sessionToken });
     await t.app.identity.signOut(actor!);
-    await expect(t.app.identity.authenticate(result.sessionToken, requestContext())).resolves.toBeNull();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: result.sessionToken })).resolves.toBeNull();
   });
 });
 

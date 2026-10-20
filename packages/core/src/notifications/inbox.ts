@@ -18,8 +18,9 @@ export function unreadCount(deps: CoreDeps) {
 }
 
 export function markRead(deps: CoreDeps) {
-  return async (actor: Actor, id: string) => {
+  return async (actor: Actor, input: { id: string }) => {
     authorize(actor, "notification.read_own");
+    const { id } = input;
     return deps.uow.run(async (tx) => {
       if (!(await tx.notifications.markRead(actor.userId, id, deps.clock.now()))) {
         throw new DomainError("not_found", "Không tìm thấy thông báo");

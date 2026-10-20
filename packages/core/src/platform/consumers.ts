@@ -1,3 +1,4 @@
+import type { SystemActor } from "../shared/context";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
@@ -52,8 +53,9 @@ export const consumersFor = (type: EventType): ConsumerName[] =>
 
 /** Runs one consumer for one event, at most once per committed transaction. */
 export function handleEvent(deps: CoreDeps) {
-  return (consumer: ConsumerName, eventId: string) =>
+  return (_system: SystemActor, input: { consumer: ConsumerName; eventId: string }) =>
     deps.uow.run(async (tx) => {
+      const { consumer, eventId } = input;
       const event = await tx.outbox.get(eventId);
       if (!event) throw new DomainError("event_not_found", `Event ${eventId} not in outbox`);
       if (!(await tx.processedEvents.markIfNew(eventId, consumer, deps.clock.now()))) return "skipped" as const;

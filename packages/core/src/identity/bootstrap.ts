@@ -1,5 +1,5 @@
 import { auditEntry } from "../audit/audit";
-import type { RequestContext } from "../shared/context";
+import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertPasswordAcceptable } from "./password";
@@ -15,7 +15,7 @@ export interface BootstrapAdminInput {
  * and no public "create admin" page; once any Quản trị exists this refuses.
  */
 export function bootstrapFirstAdmin(deps: CoreDeps) {
-  return async (input: BootstrapAdminInput, ctx: RequestContext) => {
+  return async (system: SystemActor, input: BootstrapAdminInput) => {
     assertPasswordAcceptable(input.password);
     const passwordHash = await deps.hasher.hash(input.password);
     return deps.uow.run(async (tx) => {
@@ -51,7 +51,6 @@ export function bootstrapFirstAdmin(deps: CoreDeps) {
         grantedBy: null,
         createdAt: now,
       });
-      const system = { kind: "system" as const, name: "bootstrap", ctx };
       await tx.audit.append(
         auditEntry(system, deps.ids.next(), now, {
           action: "identity.admin.bootstrapped",

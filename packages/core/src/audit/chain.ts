@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { auditEntry, type AuditEntry } from "./audit";
 import type { AuditSeal } from "./chain-repo";
 import { authorize } from "../identity/policy";
-import type { Actor } from "../shared/context";
+import { systemActor, type Actor, type SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 
 export const GENESIS_HASH = createHash("sha256").update("ocop-audit-genesis").digest("hex");
@@ -26,14 +26,12 @@ export function chainHash(prevHash: string, row: AuditEntry): string {
   return createHash("sha256").update(prevHash).update("\n").update(canonical(row)).digest("hex");
 }
 
-const system = (name: string) => ({ kind: "system" as const, name, ctx: { requestId: `job:${name}` } });
-
 /**
  * Worker job, every minute: seals the rows that are old enough, in the order it finds them.
  * Another sealer holding the lock makes it skip, unless `wait` is set.
  */
 export function sealAuditBatch(deps: CoreDeps) {
-  return (opts: { wait?: boolean } = {}) =>
+  return (_system: SystemActor, opts: { wait?: boolean } = {}) =>
     deps.uow.run(async (tx) => {
       if (opts.wait) await tx.auditChain.lock();
       else if (!(await tx.auditChain.tryLock())) return { sealed: 0, lastSeq: 0, lastHash: GENESIS_HASH, skipped: true };
@@ -65,7 +63,7 @@ export type ChainVerification =
  * after checking that the checkpoint still agrees with its seal.
  */
 export function verifyAuditChain(deps: CoreDeps) {
-  return async (opts: { since?: Date } = {}): Promise<ChainVerification> => {
+  return async (system: SystemActor, opts: { since?: Date } = {}): Promise<ChainVerification> => {
     let prev = GENESIS_HASH;
     let expectedSeq = 1;
     let checked = 0;
@@ -98,7 +96,7 @@ export function verifyAuditChain(deps: CoreDeps) {
     const broken = result;
     console.error(JSON.stringify({ level: "error", msg: "audit chain broken", ...broken }));
     await deps.uow.run((tx) =>
-      tx.audit.append(auditEntry(system("audit.verify"), deps.ids.next(), deps.clock.now(), { action: "audit.chain.broken", metadata: { ...broken } })),
+      tx.audit.append(auditEntry(system, deps.ids.next(), deps.clock.now(), { action: "audit.chain.broken", metadata: { ...broken } })),
     );
     return broken;
   };
@@ -114,8 +112,8 @@ const DAY_MS = 24 * 3_600_000;
  */
 export function anchorAuditChain(deps: CoreDeps) {
   const seal = sealAuditBatch(deps);
-  return async () => {
-    while ((await seal({ wait: true })).sealed === BATCH);
+  return async (system: SystemActor) => {
+    while ((await seal(system, { wait: true })).sealed === BATCH);
     const last = await deps.uow.run((tx) => tx.auditChain.lastSeal());
     if (!last) return null;
     const now = deps.clock.now();
@@ -123,7 +121,7 @@ export function anchorAuditChain(deps: CoreDeps) {
     const body = JSON.stringify({ lastSeq: last.seq, lastHash: last.hash, sealedAt: last.sealedAt.toISOString(), anchoredAt: now.toISOString() });
     await deps.anchorStore.put(key, body, "application/json");
     await deps.uow.run((tx) =>
-      tx.audit.append(auditEntry(system("audit.anchor"), deps.ids.next(), now, { action: "audit.anchored", metadata: { key, lastSeq: last.seq, lastHash: last.hash } })),
+      tx.audit.append(auditEntry(system, deps.ids.next(), now, { action: "audit.anchored", metadata: { key, lastSeq: last.seq, lastHash: last.hash } })),
     );
     return { key, lastSeq: last.seq, lastHash: last.hash };
   };
@@ -134,6 +132,6 @@ export function verifyAuditChainAsAdmin(deps: CoreDeps) {
   const verify = verifyAuditChain(deps);
   return async (actor: Actor) => {
     authorize(actor, "audit.search");
-    return verify();
+    return verify(systemActor("audit.verify", actor.ctx));
   };
 }

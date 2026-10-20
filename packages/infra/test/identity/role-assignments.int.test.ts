@@ -1,7 +1,7 @@
 import { ROLES, type Role } from "@ocop/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { seedWards } from "../../src/seed/wards";
-import { createTestApp, createTestDatabase, minutes, requestContext, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, minutes, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -15,7 +15,7 @@ let otherWardId: string;
 beforeAll(async () => {
   db = await createTestDatabase();
   t = createTestApp(db, { totpRequired: false });
-  await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+  await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
   await seedWards(db.app, WARDS_CSV);
   const wards = await t.app.org.listWards();
   wardId = wards.find((w) => w.code === "00001")!.id;
@@ -32,7 +32,7 @@ async function activeOfficer(email: string, fullName: string) {
   const { userId } = await t.app.identity.createStaffUser(admin, { email, fullName });
   await t.drainJobs();
   const token = /kich-hoat\?token=([\w-]+)/.exec(t.mailbox.to(email).at(-1)!.text)![1]!;
-  await t.app.identity.activateAccount({ token, password: PASSWORD }, requestContext());
+  await t.app.identity.activateAccount(anonymous(), { token, password: PASSWORD });
   return userId;
 }
 
@@ -61,7 +61,7 @@ describe("L20 AD-01 Phân vai", () => {
     await expect(t.app.notifications.unreadCount(officer)).resolves.toBe(1);
     const [n] = await t.app.notifications.list(officer);
     expect(n).toMatchObject({ title: expect.stringMatching(/Cán bộ xã/), readAt: null });
-    await t.app.notifications.markRead(officer, n!.id);
+    await t.app.notifications.markRead(officer, { id: n!.id });
     await expect(t.app.notifications.unreadCount(officer)).resolves.toBe(0);
   });
 
@@ -69,7 +69,7 @@ describe("L20 AD-01 Phân vai", () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const officer = await t.signInAs("xa@tinh.gov.vn", PASSWORD);
     const [n] = await t.app.notifications.list(officer);
-    await expect(t.app.notifications.markRead(admin, n!.id)).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.notifications.markRead(admin, { id: n!.id })).rejects.toMatchObject({ code: "not_found" });
     await expect(t.app.notifications.list(admin)).resolves.toEqual([]);
   });
 
@@ -105,9 +105,9 @@ describe("L20 AD-01 Phân vai", () => {
     const { token } = await t.signInWithToken("xa@tinh.gov.vn", PASSWORD);
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     t.clock.advance(minutes(1));
-    await t.app.identity.revokeRole(admin, assignmentId);
+    await t.app.identity.revokeRole(admin, { assignmentId });
 
-    await expect(t.app.identity.authenticate(token, requestContext())).resolves.toBeNull();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: token })).resolves.toBeNull();
     const again = await t.signInAs("xa@tinh.gov.vn", PASSWORD);
     expect(again.activeRole).toBeNull();
     const users = await t.app.identity.listUsers(admin);
@@ -120,21 +120,21 @@ describe("L20 AD-01 Phân vai", () => {
     const userId = await activeOfficer("xa.khongtotp@tinh.gov.vn", "Lê Văn Xã");
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     await strict.app.identity.grantRole(admin, { userId, role: "ward_officer", scopeId: wardId });
-    const r = await strict.app.identity.signIn({ email: "xa.khongtotp@tinh.gov.vn", password: PASSWORD }, requestContext());
+    const r = await strict.app.identity.signIn(anonymous(), { email: "xa.khongtotp@tinh.gov.vn", password: PASSWORD });
     expect(r).toMatchObject({ ok: true, stage: "full" });
   });
 
   it("granting a Vai trò that needs TOTP to someone without it signs them out, so the next sign-in enrols", async () => {
     const strict = createTestApp(db, { totpRequired: true, clock: t.clock });
     const userId = await activeOfficer("so@tinh.gov.vn", "Đỗ Thị Sở");
-    const before = await strict.app.identity.signIn({ email: "so@tinh.gov.vn", password: PASSWORD }, requestContext());
+    const before = await strict.app.identity.signIn(anonymous(), { email: "so@tinh.gov.vn", password: PASSWORD });
     expect(before).toMatchObject({ stage: "full" });
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     // The flag is a deployment setting shared by every process, so grant through the strict app too.
     await strict.app.identity.grantRole(admin, { userId, role: "province_officer", scopeId: null });
     if (!before.ok) throw new Error();
-    await expect(strict.app.identity.authenticate(before.sessionToken, requestContext())).resolves.toBeNull();
-    const after = await strict.app.identity.signIn({ email: "so@tinh.gov.vn", password: PASSWORD }, requestContext());
+    await expect(strict.app.identity.authenticate(anonymous(), { sessionToken: before.sessionToken })).resolves.toBeNull();
+    const after = await strict.app.identity.signIn(anonymous(), { email: "so@tinh.gov.vn", password: PASSWORD });
     expect(after).toMatchObject({ stage: "totp_enrollment" });
   });
 

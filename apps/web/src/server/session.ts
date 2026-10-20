@@ -3,7 +3,7 @@ import type { UserActor } from "@ocop/core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { app } from "./app";
-import { requestContext } from "./request";
+import { anonymous } from "./request";
 
 export const SESSION_COOKIE = "ocop_session";
 
@@ -20,7 +20,7 @@ export async function clearSessionCookie() {
 export async function currentActor(): Promise<UserActor | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return app().core.identity.authenticate(token, await requestContext());
+  return app().core.identity.authenticate(await anonymous(), { sessionToken: token });
 }
 
 export async function sessionToken(): Promise<string | undefined> {

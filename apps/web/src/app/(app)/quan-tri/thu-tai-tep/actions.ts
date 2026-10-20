@@ -21,7 +21,7 @@ export async function requestUploadAction(input: z.infer<typeof fileInput>): Pro
 export async function completeUploadAction(fileId: string, parts?: { partNumber: number; etag: string }[]): Promise<{ error?: string }> {
   const actor = await requireActor();
   try {
-    await app().core.files.completeUpload(actor, fileId, parts);
+    await app().core.files.completeUpload(actor, { fileId, parts });
   } catch (err) {
     return { error: domainMessage(err) };
   }
@@ -32,7 +32,7 @@ export async function completeUploadAction(fileId: string, parts?: { partNumber:
 export async function downloadAction(fileId: string): Promise<{ url?: string; error?: string }> {
   const actor = await requireActor();
   try {
-    return { url: (await app().core.files.requestDownload(actor, fileId)).url };
+    return { url: (await app().core.files.requestDownload(actor, { fileId })).url };
   } catch (err) {
     return { error: domainMessage(err) };
   }

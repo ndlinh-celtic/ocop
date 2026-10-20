@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { CodeForm } from "@/components/code-form";
 import { app } from "@/server/app";
-import { requestContext } from "@/server/request";
+import { anonymous } from "@/server/request";
 import { sessionToken } from "@/server/session";
 import { confirmEnrollmentAction } from "./actions";
 
@@ -15,7 +15,7 @@ export default async function TotpEnrollmentPage() {
   if (!token) redirect("/dang-nhap");
   let enrollment: { secret: string; otpauthUri: string };
   try {
-    enrollment = await app().core.identity.startTotpEnrollment(token, await requestContext());
+    enrollment = await app().core.identity.startTotpEnrollment(await anonymous(), { sessionToken: token });
   } catch (err) {
     if (err instanceof DomainError && err.code === "totp_already_enabled") redirect("/");
     redirect("/dang-nhap");

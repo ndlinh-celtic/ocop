@@ -12,6 +12,6 @@ export async function signOutAction() {
 }
 
 export async function switchRoleAction(assignmentId: string) {
-  await app().core.identity.switchActiveRole(await requireActor(), assignmentId);
+  await app().core.identity.switchActiveRole(await requireActor(), { assignmentId });
   redirect("/");
 }

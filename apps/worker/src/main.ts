@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { checkDatabase, createApp, createBoss, createPool, ensureBucket, loadConfig, s3SettingsFrom, startWorkers } from "@ocop/infra";
+import { systemActor } from "@ocop/core";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);
@@ -14,7 +15,7 @@ if (process.env.S3_AUTO_CREATE_BUCKETS === "true" && s3) {
   // Browsers never touch the anchor bucket: no CORS.
   await ensureBucket(s3, config.S3_BUCKET_AUDIT_ANCHOR, { corsOrigins: [] });
 }
-await core.system.recordStartup("worker", { requestId: randomUUID(), userAgent: "process:worker" });
+await core.system.recordStartup(systemActor("worker", { requestId: randomUUID(), userAgent: "process:worker" }), { process: "worker" });
 
 const boss = createBoss(config.DATABASE_URL);
 boss.on("error", (err) => console.error("pg-boss error", err));

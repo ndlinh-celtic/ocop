@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, minutes, requestContext, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, minutes, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -8,7 +8,7 @@ const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: 
 beforeAll(async () => {
   db = await createTestDatabase();
   t = createTestApp(db, { totpRequired: false });
-  await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+  await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
 });
 afterAll(async () => {
   await t.stop();
@@ -20,13 +20,13 @@ const seconds = (n: number) => n * 1000;
 describe("ADR 0002 sealing the audit log", () => {
   it("seals only rows older than 30 seconds, in batches, each with a checkpoint", async () => {
     await t.signInAs(ADMIN.email, ADMIN.password);
-    await expect(t.app.audit.seal()).resolves.toMatchObject({ sealed: 0 });
+    await expect(t.app.audit.seal(systemActor("audit.seal"))).resolves.toMatchObject({ sealed: 0 });
     t.clock.advance(seconds(31));
     await t.signInAs(ADMIN.email, ADMIN.password); // a fresh row, still inside the window
-    const first = await t.app.audit.seal();
+    const first = await t.app.audit.seal(systemActor("audit.seal"));
     expect(first.sealed).toBeGreaterThanOrEqual(2);
     t.clock.advance(seconds(31));
-    const second = await t.app.audit.seal();
+    const second = await t.app.audit.seal(systemActor("audit.seal"));
     expect(second.sealed).toBeGreaterThanOrEqual(1);
     expect(second.lastSeq).toBe(first.lastSeq + second.sealed);
   });
@@ -34,17 +34,17 @@ describe("ADR 0002 sealing the audit log", () => {
   it("a row that commits late, with an earlier timestamp, is sealed in the next batch rather than skipped", async () => {
     const now = t.clock.now();
     t.clock.set(new Date(now.getTime() - minutes(10)));
-    await t.app.identity.signIn({ email: ADMIN.email, password: "sai-mat-khau-day" }, requestContext()); // stamped 10 minutes ago
+    await t.app.identity.signIn(anonymous(), { email: ADMIN.email, password: "sai-mat-khau-day" }); // stamped 10 minutes ago
     t.clock.set(now);
-    const batch = await t.app.audit.seal();
+    const batch = await t.app.audit.seal(systemActor("audit.seal"));
     expect(batch.sealed).toBeGreaterThanOrEqual(1);
-    await expect(t.app.audit.verify()).resolves.toMatchObject({ ok: true });
+    await expect(t.app.audit.verify(systemActor("audit.verify"))).resolves.toMatchObject({ ok: true });
   });
 
   it("verification passes for an untouched chain and pinpoints a rewritten row", async () => {
     t.clock.advance(seconds(31));
-    await t.app.audit.seal();
-    const ok = await t.app.audit.verify();
+    await t.app.audit.seal(systemActor("audit.seal"));
+    const ok = await t.app.audit.verify(systemActor("audit.verify"));
     expect(ok).toMatchObject({ ok: true });
     expect(ok.checked).toBeGreaterThan(3);
 
@@ -55,11 +55,11 @@ describe("ADR 0002 sealing the audit log", () => {
       const { rows } = await client.query("SELECT s.seq, s.audit_id FROM platform.audit_seal s ORDER BY s.seq LIMIT 1 OFFSET 2");
       const edit = await client.query("UPDATE platform.audit_log SET action = action || '.edited' WHERE id = $1", [rows[0].audit_id]);
       expect(edit.rowCount).toBe(1);
-      const broken = await t.app.audit.verify();
+      const broken = await t.app.audit.verify(systemActor("audit.verify"));
       expect(broken).toMatchObject({ ok: false, brokenAtSeq: Number(rows[0].seq), reason: "hash_mismatch" });
 
       await client.query("DELETE FROM platform.audit_log WHERE id = $1", [rows[0].audit_id]);
-      await expect(t.app.audit.verify()).resolves.toMatchObject({ ok: false, brokenAtSeq: Number(rows[0].seq), reason: "row_missing" });
+      await expect(t.app.audit.verify(systemActor("audit.verify"))).resolves.toMatchObject({ ok: false, brokenAtSeq: Number(rows[0].seq), reason: "row_missing" });
     } finally {
       client.release();
     }
@@ -82,10 +82,10 @@ describe("ADR 0002 daily anchor outside the database", () => {
     const fresh = await createTestDatabase();
     const a = createTestApp(fresh, { totpRequired: false });
     try {
-      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      await a.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
       a.clock.advance(seconds(31));
-      const sealed = await a.app.audit.seal();
-      const anchor = await a.app.audit.anchor();
+      const sealed = await a.app.audit.seal(systemActor("audit.seal"));
+      const anchor = await a.app.audit.anchor(systemActor("audit.anchor"));
       expect(anchor).toMatchObject({ lastSeq: sealed.lastSeq, lastHash: sealed.lastHash, key: expect.stringMatching(/^anchors\/\d{4}-\d{2}-\d{2}/) });
       const stored = JSON.parse(await a.readAnchor(anchor!.key));
       expect(stored).toMatchObject({ lastSeq: sealed.lastSeq, lastHash: sealed.lastHash });
@@ -100,11 +100,11 @@ describe("ADR 0002 daily anchor outside the database", () => {
     const a = createTestApp(fresh, { totpRequired: false });
     try {
       a.clock.set(new Date("2026-10-20T23:59:50+07:00"));
-      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      await a.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
       a.clock.set(new Date("2026-10-21T00:05:00+07:00"));
-      const anchor = await a.app.audit.anchor(); // no seal ran since the row was written
+      const anchor = await a.app.audit.anchor(systemActor("audit.anchor")); // no seal ran since the row was written
       expect(anchor?.key).toMatch(/^anchors\/2026-10-20-/);
-      const verified = await a.app.audit.verify();
+      const verified = await a.app.audit.verify(systemActor("audit.verify"));
       expect(verified).toMatchObject({ ok: true, lastSeq: anchor!.lastSeq });
       expect(anchor!.lastSeq).toBeGreaterThan(0);
     } finally {
@@ -119,17 +119,17 @@ describe("ADR 0002 verifying from a checkpoint", () => {
     const fresh = await createTestDatabase();
     const a = createTestApp(fresh, { totpRequired: false });
     try {
-      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      await a.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
       a.clock.advance(seconds(31));
-      await a.app.audit.seal();
+      await a.app.audit.seal(systemActor("audit.seal"));
       const afterFirst = a.clock.now();
       a.clock.advance(minutes(1));
       await a.signInAs(ADMIN.email, ADMIN.password);
       a.clock.advance(seconds(31));
-      const second = await a.app.audit.seal();
+      const second = await a.app.audit.seal(systemActor("audit.seal"));
       expect(second.sealed).toBeGreaterThan(0);
 
-      const partial = await a.app.audit.verify({ since: new Date(afterFirst.getTime() + 1) });
+      const partial = await a.app.audit.verify(systemActor("audit.verify"), { since: new Date(afterFirst.getTime() + 1) });
       expect(partial).toMatchObject({ ok: true, checked: second.sealed, lastSeq: second.lastSeq });
     } finally {
       await a.stop();
@@ -141,9 +141,9 @@ describe("ADR 0002 verifying from a checkpoint", () => {
     const fresh = await createTestDatabase();
     const a = createTestApp(fresh, { totpRequired: false });
     try {
-      await a.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+      await a.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
       a.clock.advance(seconds(31));
-      const first = await a.app.audit.seal();
+      const first = await a.app.audit.seal(systemActor("audit.seal"));
       const client = await fresh.admin.connect();
       try {
         await client.query("SET session_replication_role = replica");
@@ -151,7 +151,7 @@ describe("ADR 0002 verifying from a checkpoint", () => {
       } finally {
         client.release();
       }
-      await expect(a.app.audit.verify({ since: new Date(a.clock.now().getTime() + 1) })).resolves.toMatchObject({
+      await expect(a.app.audit.verify(systemActor("audit.verify"), { since: new Date(a.clock.now().getTime() + 1) })).resolves.toMatchObject({
         ok: false,
         brokenAtSeq: first.lastSeq,
         reason: "checkpoint_mismatch",

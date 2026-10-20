@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
-import { requestContext } from "@/server/request";
+import { anonymous } from "@/server/request";
 
 export interface ResetState {
   error?: string;
@@ -19,7 +19,7 @@ export async function resetPasswordAction(token: string, _prev: ResetState, form
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Nhập mật khẩu" };
   let result;
   try {
-    result = await app().core.identity.resetPassword({ token, password: parsed.data.password }, await requestContext());
+    result = await app().core.identity.resetPassword(await anonymous(), { token, password: parsed.data.password });
   } catch (err) {
     return { error: domainMessage(err) };
   }

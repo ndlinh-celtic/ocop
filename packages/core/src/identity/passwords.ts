@@ -2,7 +2,7 @@ import { auditEntry } from "../audit/audit";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { emit } from "../platform/emit";
 import { sendEmail } from "../platform/send-email";
-import type { Actor, RequestContext } from "../shared/context";
+import type { Actor, AnonymousActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { hashToken, newToken } from "../shared/tokens";
@@ -13,11 +13,11 @@ import { isUsable } from "./tokens";
 
 /** Always resolves the same way, so the form does not reveal which emails have accounts. */
 export function requestPasswordReset(deps: CoreDeps) {
-  return (email: string, ctx: RequestContext): Promise<void> =>
+  return (anonymous: AnonymousActor, input: { email: string }): Promise<void> =>
     deps.uow.run(async (tx) => {
       const now = deps.clock.now();
+      const email = input.email;
       const user = await tx.users.findByEmail(email.trim());
-      const anonymous = { kind: "anonymous" as const, ctx };
       await tx.audit.append(
         auditEntry(anonymous, deps.ids.next(), now, {
           action: "identity.password_reset.requested",
@@ -67,7 +67,8 @@ export async function emailAccountLocked(c: ConsumerContext): Promise<void> {
 }
 
 export function resetPassword(deps: CoreDeps) {
-  return async (input: { token: string; password: string }, ctx: RequestContext): Promise<{ ok: true } | { ok: false; reason: "invalid_link" }> => {
+  return async (anonymous: AnonymousActor, input: { token: string; password: string }): Promise<{ ok: true } | { ok: false; reason: "invalid_link" }> => {
+    const { ctx } = anonymous;
     assertPasswordAcceptable(input.password);
     const passwordHash = await deps.hasher.hash(input.password);
     return deps.uow.run(async (tx) => {

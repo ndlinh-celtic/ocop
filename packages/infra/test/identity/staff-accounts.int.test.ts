@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, hours, requestContext, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, hours, systemActor, type TestApp, type TestDatabase } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -9,7 +9,7 @@ const OFFICER = { email: "canbo.xa@tinh.gov.vn", fullName: "Trần Thị Xã" };
 beforeAll(async () => {
   db = await createTestDatabase();
   t = createTestApp(db, { totpRequired: false });
-  await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+  await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
 });
 afterAll(async () => {
   await t.stop();
@@ -24,7 +24,7 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
 
   it("only a Quản trị can create an account", async () => {
     await expect(
-      t.app.identity.createStaffUser({ kind: "anonymous", ctx: requestContext() }, OFFICER),
+      t.app.identity.createStaffUser(anonymous(), OFFICER),
     ).rejects.toMatchObject({ code: "forbidden" });
   });
 
@@ -59,14 +59,14 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
 
   it("resending the link invalidates the previous one", async () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
-    await t.app.identity.resendActivation(admin, officerId);
+    await t.app.identity.resendActivation(admin, { userId: officerId });
     await t.drainJobs();
     const mail = t.mailbox.to(OFFICER.email);
     expect(mail).toHaveLength(2);
     const secondToken = linkToken(mail[1]!.text)!;
     expect(secondToken).not.toBe(firstToken);
 
-    await expect(t.app.identity.activateAccount({ token: firstToken, password: "mat-khau-can-bo-1" }, requestContext())).resolves.toEqual({
+    await expect(t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "mat-khau-can-bo-1" })).resolves.toEqual({
       ok: false,
       reason: "invalid_link",
     });
@@ -74,14 +74,14 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
   });
 
   it("rejects a password that is too short", async () => {
-    await expect(t.app.identity.activateAccount({ token: firstToken, password: "ngan" }, requestContext())).rejects.toMatchObject({
+    await expect(t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "ngan" })).rejects.toMatchObject({
       code: "password_too_short",
     });
   });
 
   it("the officer sets a password with the link, then signs in", async () => {
-    await expect(t.app.identity.describeActivation(firstToken)).resolves.toMatchObject({ fullName: OFFICER.fullName });
-    await expect(t.app.identity.activateAccount({ token: firstToken, password: "mat-khau-can-bo-1" }, requestContext())).resolves.toEqual({
+    await expect(t.app.identity.describeActivation(anonymous(), { token: firstToken })).resolves.toMatchObject({ fullName: OFFICER.fullName });
+    await expect(t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "mat-khau-can-bo-1" })).resolves.toEqual({
       ok: true,
     });
     const officer = await t.signInAs(OFFICER.email, "mat-khau-can-bo-1");
@@ -89,7 +89,7 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
   });
 
   it("a used link cannot be used again", async () => {
-    await expect(t.app.identity.activateAccount({ token: firstToken, password: "mat-khau-khac-123" }, requestContext())).resolves.toEqual({
+    await expect(t.app.identity.activateAccount(anonymous(), { token: firstToken, password: "mat-khau-khac-123" })).resolves.toEqual({
       ok: false,
       reason: "invalid_link",
     });
@@ -101,7 +101,7 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
     await t.drainJobs();
     const token = linkToken(t.mailbox.to("cham@tinh.gov.vn")[0]!.text)!;
     t.clock.advance(hours(72) + 1000);
-    await expect(t.app.identity.activateAccount({ token, password: "mat-khau-can-bo-2" }, requestContext())).resolves.toEqual({
+    await expect(t.app.identity.activateAccount(anonymous(), { token, password: "mat-khau-can-bo-2" })).resolves.toEqual({
       ok: false,
       reason: "invalid_link",
     });
@@ -128,7 +128,7 @@ describe("L20 AD-01 Quản trị creates staff accounts", () => {
         expect.objectContaining({ targetType: "user", targetId: null, metadata: { view: "user_list", count: users.length } }),
       ]),
     );
-    await expect(t.app.identity.getUser({ kind: "anonymous", ctx: requestContext() }, { userId: officerId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.identity.getUser(anonymous(), { userId: officerId })).rejects.toMatchObject({ code: "forbidden" });
   });
 });
 

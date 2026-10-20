@@ -31,8 +31,9 @@ export function myAssignments(deps: CoreDeps) {
 
 /** Sets the Vai trò đang dùng of the current session; every later check uses it. */
 export function switchActiveRole(deps: CoreDeps) {
-  return async (actor: Actor, assignmentId: string) => {
+  return async (actor: Actor, input: { assignmentId: string }) => {
     authorize(actor, "role.switch_own");
+    const { assignmentId } = input;
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const a = await tx.roleAssignments.findById(assignmentId);

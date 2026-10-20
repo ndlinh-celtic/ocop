@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
-import { requestContext } from "@/server/request";
+import { anonymous } from "@/server/request";
 
 export interface ActivateState {
   error?: string;
@@ -19,7 +19,7 @@ export async function activateAction(token: string, _prev: ActivateState, form: 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Nhập mật khẩu" };
   let result;
   try {
-    result = await app().core.identity.activateAccount({ token, password: parsed.data.password }, await requestContext());
+    result = await app().core.identity.activateAccount(await anonymous(), { token, password: parsed.data.password });
   } catch (err) {
     return { error: domainMessage(err) };
   }

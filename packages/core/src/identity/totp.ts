@@ -1,5 +1,5 @@
 import { auditEntry } from "../audit/audit";
-import type { RequestContext } from "../shared/context";
+import type { AnonymousActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { clearFailures, isLocked, registerFailure } from "./lockout";
@@ -11,10 +11,12 @@ const ISSUER_LABEL = "OCOP";
 
 /** Second step of sign-in for a Người dùng who has TOTP. */
 export function verifySignInTotp(deps: CoreDeps) {
-  return (sessionToken: string, code: string, ctx: RequestContext): Promise<TotpStepResult> =>
+  return (anonymous: AnonymousActor, input: { sessionToken: string; code: string }): Promise<TotpStepResult> =>
     deps.uow.run(async (tx) => {
+      const { ctx } = anonymous;
+      const code = input.code;
       const now = deps.clock.now();
-      const loaded = await loadPendingSession(tx, sessionToken, now, ["totp_pending"]);
+      const loaded = await loadPendingSession(tx, input.sessionToken, now, ["totp_pending"]);
       if (loaded === "expired") return { ok: false, reason: "expired" };
       if (!loaded || !loaded.user.totpSecretEnc) return { ok: false, reason: "invalid_code" };
       const { session, user } = loaded;
@@ -48,10 +50,10 @@ export function verifySignInTotp(deps: CoreDeps) {
  * Người dùng opts in. Returns the secret once, for the QR code; it is stored sealed.
  */
 export function startTotpEnrollment(deps: CoreDeps) {
-  return (sessionToken: string, _ctx: RequestContext) =>
+  return (_anonymous: AnonymousActor, input: { sessionToken: string }) =>
     deps.uow.run(async (tx) => {
       const now = deps.clock.now();
-      const loaded = await loadPendingSession(tx, sessionToken, now, ["totp_enrollment", "full"]);
+      const loaded = await loadPendingSession(tx, input.sessionToken, now, ["totp_enrollment", "full"]);
       if (!loaded || loaded === "expired") throw new DomainError("session_invalid", "Phiên đăng nhập đã hết hạn");
       if (loaded.user.totpEnabledAt) throw new DomainError("totp_already_enabled", "Tài khoản đã bật xác thực hai lớp");
       const secret = deps.totp.generateSecret();
@@ -62,10 +64,12 @@ export function startTotpEnrollment(deps: CoreDeps) {
 
 /** Confirms enrolment with a first valid code; a forced-enrolment session becomes usable. */
 export function confirmTotpEnrollment(deps: CoreDeps) {
-  return (sessionToken: string, code: string, ctx: RequestContext): Promise<TotpStepResult> =>
+  return (anonymous: AnonymousActor, input: { sessionToken: string; code: string }): Promise<TotpStepResult> =>
     deps.uow.run(async (tx) => {
+      const { ctx } = anonymous;
+      const code = input.code;
       const now = deps.clock.now();
-      const loaded = await loadPendingSession(tx, sessionToken, now, ["totp_enrollment", "full"]);
+      const loaded = await loadPendingSession(tx, input.sessionToken, now, ["totp_enrollment", "full"]);
       if (loaded === "expired") return { ok: false, reason: "expired" };
       if (!loaded || !loaded.user.totpPendingSecretEnc) return { ok: false, reason: "invalid_code" };
       const { session, user } = loaded;
@@ -99,9 +103,9 @@ export function confirmTotpEnrollment(deps: CoreDeps) {
 
 /** What the TOTP pages need to render for an unfinished session. */
 export function pendingSignIn(deps: CoreDeps) {
-  return (sessionToken: string) =>
+  return (_anonymous: AnonymousActor, input: { sessionToken: string }) =>
     deps.uow.run(async (tx) => {
-      const loaded = await loadPendingSession(tx, sessionToken, deps.clock.now(), ["totp_pending", "totp_enrollment"]);
+      const loaded = await loadPendingSession(tx, input.sessionToken, deps.clock.now(), ["totp_pending", "totp_enrollment"]);
       if (!loaded || loaded === "expired") return null;
       return { stage: loaded.session.stage, email: loaded.user.email };
     });

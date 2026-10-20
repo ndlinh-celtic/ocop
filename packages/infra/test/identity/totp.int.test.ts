@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, minutes, requestContext, totpCode, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, minutes, requestContext, systemActor, type TestApp, type TestDatabase, totpCode } from "../support";
 
 let db: TestDatabase;
 let t: TestApp;
@@ -9,12 +9,12 @@ const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: 
 beforeAll(async () => {
   db = await createTestDatabase();
   t = createTestApp(db);
-  await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+  await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
 });
 afterAll(() => db.drop());
 
 async function passwordStep() {
-  const r = await t.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+  const r = await t.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
   if (!r.ok) throw new Error("password step failed");
   return r;
 }
@@ -24,40 +24,40 @@ describe("L20 DC-09 TOTP for roles that require it", () => {
   it("a Quản trị without TOTP must enroll before the session is usable", async () => {
     const r = await passwordStep();
     expect(r.stage).toBe("totp_enrollment");
-    await expect(t.app.identity.authenticate(r.sessionToken, requestContext())).resolves.toBeNull();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: r.sessionToken })).resolves.toBeNull();
 
-    const enrollment = await t.app.identity.startTotpEnrollment(r.sessionToken, requestContext());
+    const enrollment = await t.app.identity.startTotpEnrollment(anonymous(), { sessionToken: r.sessionToken });
     expect(enrollment.otpauthUri).toMatch(/^otpauth:\/\/totp\/.*admin%40tinh\.gov\.vn/);
     secret = enrollment.secret;
 
-    await expect(t.app.identity.confirmTotpEnrollment(r.sessionToken, "000000", requestContext())).resolves.toEqual({
+    await expect(t.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: r.sessionToken, code: "000000" })).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });
-    const confirmed = await t.app.identity.confirmTotpEnrollment(r.sessionToken, await totpCode(secret, t.clock.now()), requestContext());
+    const confirmed = await t.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) });
     expect(confirmed).toEqual({ ok: true });
-    await expect(t.app.identity.authenticate(r.sessionToken, requestContext())).resolves.toMatchObject({ activeRole: "admin" });
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: r.sessionToken })).resolves.toMatchObject({ activeRole: "admin" });
   });
 
   it("after enrolling, sign-in asks for a code and only a valid one completes it", async () => {
     t.clock.advance(minutes(1));
     const r = await passwordStep();
     expect(r.stage).toBe("totp_pending");
-    await expect(t.app.identity.authenticate(r.sessionToken, requestContext())).resolves.toBeNull();
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: r.sessionToken })).resolves.toBeNull();
 
-    await expect(t.app.identity.verifySignInTotp(r.sessionToken, "123456", requestContext())).resolves.toEqual({
+    await expect(t.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: "123456" })).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });
-    const ok = await t.app.identity.verifySignInTotp(r.sessionToken, await totpCode(secret, t.clock.now()), requestContext());
+    const ok = await t.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) });
     expect(ok).toEqual({ ok: true });
-    await expect(t.app.identity.authenticate(r.sessionToken, requestContext())).resolves.toMatchObject({ kind: "user" });
+    await expect(t.app.identity.authenticate(anonymous(), { sessionToken: r.sessionToken })).resolves.toMatchObject({ kind: "user" });
   });
 
   it("a code that was already used cannot be used again", async () => {
     const code = await totpCode(secret, t.clock.now());
     const r = await passwordStep();
-    await expect(t.app.identity.verifySignInTotp(r.sessionToken, code, requestContext())).resolves.toEqual({
+    await expect(t.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code })).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });
@@ -67,7 +67,7 @@ describe("L20 DC-09 TOTP for roles that require it", () => {
     t.clock.advance(minutes(1));
     const r = await passwordStep();
     t.clock.advance(minutes(5) + 1000);
-    await expect(t.app.identity.verifySignInTotp(r.sessionToken, await totpCode(secret, t.clock.now()), requestContext())).resolves.toEqual({
+    await expect(t.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) })).resolves.toEqual({
       ok: false,
       reason: "expired",
     });
@@ -94,8 +94,8 @@ describe("ADR 0003 deployment flag for mandatory TOTP", () => {
     const off = await createTestDatabase();
     try {
       const app = createTestApp(off, { totpRequired: false });
-      await app.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
-      const r = await app.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+      await app.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
+      const r = await app.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
       expect(r).toMatchObject({ ok: true, stage: "full" });
     } finally {
       await off.drop();
@@ -106,24 +106,24 @@ describe("ADR 0003 deployment flag for mandatory TOTP", () => {
     const off = await createTestDatabase();
     try {
       const app = createTestApp(off, { totpRequired: false });
-      await app.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
-      const first = await app.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+      await app.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
+      const first = await app.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
       if (!first.ok) throw new Error("password step failed");
-      const { secret: own } = await app.app.identity.startTotpEnrollment(first.sessionToken, requestContext());
-      await expect(app.app.identity.confirmTotpEnrollment(first.sessionToken, await totpCode(own, app.clock.now()), requestContext())).resolves.toEqual({ ok: true });
+      const { secret: own } = await app.app.identity.startTotpEnrollment(anonymous(), { sessionToken: first.sessionToken });
+      await expect(app.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: first.sessionToken, code: await totpCode(own, app.clock.now()) })).resolves.toEqual({ ok: true });
 
       app.clock.advance(minutes(1));
-      const next = await app.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+      const next = await app.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
       expect(next).toMatchObject({ ok: true, stage: "totp_pending" });
       if (!next.ok) throw new Error();
-      await expect(app.app.identity.authenticate(next.sessionToken, requestContext())).resolves.toBeNull();
+      await expect(app.app.identity.authenticate(anonymous(), { sessionToken: next.sessionToken })).resolves.toBeNull();
     } finally {
       await off.drop();
     }
   });
 
   it("records the flag value each time a process starts", async () => {
-    await t.app.system.recordStartup("web", requestContext());
+    await t.app.system.recordStartup(systemActor("web", requestContext()), { process: "web" });
     t.clock.advance(minutes(1));
     const admin = await t.signInAs(ADMIN.email, ADMIN.password, secret);
     const [entry] = await t.app.audit.search(admin, { action: ["system.started"] });

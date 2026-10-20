@@ -1,11 +1,12 @@
 import { app } from "@/server/app";
+import { anonymous } from "@/server/request";
 import { ActivateForm } from "./activate-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function ActivatePage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;
-  const who = token ? await app().core.identity.describeActivation(token) : null;
+  const who = token ? await app().core.identity.describeActivation(await anonymous(), { token }) : null;
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-lg border bg-surface p-6 shadow-sm">

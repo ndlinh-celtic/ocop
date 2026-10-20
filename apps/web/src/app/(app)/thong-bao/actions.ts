@@ -5,7 +5,7 @@ import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 
 export async function markReadAction(id: string) {
-  await app().core.notifications.markRead(await requireActor(), id);
+  await app().core.notifications.markRead(await requireActor(), { id });
   revalidatePath("/", "layout");
 }
 

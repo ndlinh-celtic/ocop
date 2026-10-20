@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, createTestDatabase, minutes, requestContext, totpCode, type TestApp, type TestDatabase } from "../support";
+import { anonymous, createTestApp, createTestDatabase, minutes, systemActor, type TestApp, type TestDatabase, totpCode } from "../support";
 
 const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: "mat-khau-quan-tri-1" };
 
@@ -11,11 +11,11 @@ describe("L20 Xác thực lại with TOTP", () => {
   beforeAll(async () => {
     db = await createTestDatabase();
     t = createTestApp(db, { totpRequired: true });
-    await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
-    const r = await t.app.identity.signIn({ email: ADMIN.email, password: ADMIN.password }, requestContext());
+    await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
+    const r = await t.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
     if (!r.ok) throw new Error();
-    ({ secret } = await t.app.identity.startTotpEnrollment(r.sessionToken, requestContext()));
-    await t.app.identity.confirmTotpEnrollment(r.sessionToken, await totpCode(secret, t.clock.now()), requestContext());
+    ({ secret } = await t.app.identity.startTotpEnrollment(anonymous(), { sessionToken: r.sessionToken }));
+    await t.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) });
   });
   afterAll(async () => {
     await t.stop();
@@ -59,7 +59,7 @@ describe("ADR 0003 Xác thực lại by password when TOTP is not mandatory", ()
   beforeAll(async () => {
     db = await createTestDatabase();
     t = createTestApp(db, { totpRequired: false });
-    await t.app.identity.bootstrapFirstAdmin(ADMIN, requestContext());
+    await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
   });
   afterAll(async () => {
     await t.stop();
