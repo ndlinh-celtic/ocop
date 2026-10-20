@@ -105,16 +105,15 @@ stateDiagram-v2
 **Chức năng:** CT-03, CT-05, CT-06 · **Tác nhân:** Chủ thể · **Đợt 1**
 
 **Luồng chính**
-1. Chủ thể tạo hồ sơ sản phẩm, chọn một trong 6 nhóm OCOP.
-2. Hệ thống tải bộ tiêu chí của nhóm đó ở phiên bản đang hiệu lực.
+1. Chủ thể tạo hồ sơ sản phẩm, chọn một Bộ tiêu chí theo cây Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí của Phiên bản tiêu chí áp dụng: phiên bản của đợt đang nhận nộp, nếu không có đợt mở thì phiên bản phát hành mới nhất. Hệ thống báo rõ Bộ tiêu chí và văn bản căn cứ không đổi được sau khi tạo.
+2. Hệ thống tải Bộ tiêu chí đã chọn; hồ sơ gắn cố định với bộ này.
 3. Chủ thể nhập thông tin sản phẩm: tên, mô tả, nguyên liệu, quy trình, bao bì, công bố chất lượng.
 4. Với mỗi tiêu chí, chủ thể tải lên minh chứng và ghi giải trình. Một tệp có thể gắn với nhiều tiêu chí.
-5. Chủ thể bấm "Tự chấm điểm thử": chọn mức điểm từng tiêu chí; hệ thống cộng điểm nhóm A, B, C, tổng và ước lượng số sao theo ngưỡng đang cấu hình.
+5. Chủ thể bấm "Tự chấm điểm thử": chọn một Mức điểm cho từng tiêu chí; hệ thống cộng điểm Phần A, B, C, tổng và ước lượng Hạng sao theo Ngưỡng hạng và Sao tối thiểu (xem L19).
 6. Hệ thống tự lưu nháp; hồ sơ giữ trạng thái "Nháp" đến khi nộp.
 
 **Ngoại lệ**
-- Đổi nhóm sản phẩm khi đã có minh chứng: cảnh báo bộ tiêu chí thay đổi, giữ minh chứng, yêu cầu gắn lại.
-- Phiên bản tiêu chí đổi khi hồ sơ còn nháp: hiển thị khác biệt và hỏi chuyển sang phiên bản mới.
+- Muốn đổi Bộ tiêu chí, hoặc đợt đang mở áp dụng phiên bản khác: tạo hồ sơ mới. Thao tác "Sao chép sang hồ sơ mới" chép thông tin sản phẩm và tệp minh chứng (vào kho minh chứng chưa gắn tiêu chí, chủ thể gắn lại); không chép điểm tự chấm và giải trình theo tiêu chí. Hồ sơ mới chỉ ghi "sao chép từ hồ sơ X" để tra cứu.
 - Tiêu chí chưa có minh chứng: vẫn chấm thử được nhưng đánh dấu "chưa có minh chứng".
 
 **Quy tắc:** điểm tự chấm chỉ mang tính tham khảo, giao diện ghi rõ; không dùng làm điểm chính thức.
@@ -124,7 +123,7 @@ stateDiagram-v2
 ### L03. Nộp hồ sơ, theo dõi trạng thái và nhắc hạn
 **Chức năng:** CT-09, CT-10, CT-12 · **Tác nhân:** Chủ thể, hệ thống · **Đợt 1**
 
-**Tiền điều kiện:** đợt đang mở (L07); hồ sơ đủ trường bắt buộc.
+**Tiền điều kiện:** có đợt Đang nhận nộp (L07) áp dụng đúng Phiên bản tiêu chí của hồ sơ; hồ sơ đủ trường bắt buộc.
 
 **Luồng chính**
 1. Chủ thể bấm "Nộp hồ sơ"; hệ thống kiểm tra trường bắt buộc và minh chứng tối thiểu.
@@ -145,7 +144,7 @@ flowchart TD
 ```
 
 **Ngoại lệ**
-- Hết hạn nộp: hồ sơ giữ ở "Nháp", có thể nộp vào đợt kế tiếp.
+- Hết hạn nộp: hồ sơ giữ ở "Nháp", nộp được vào đợt kế tiếp nếu đợt đó áp dụng cùng Phiên bản tiêu chí; nếu khác, hồ sơ hiển thị "Không nộp được vào đợt hiện tại: khác phiên bản tiêu chí" kèm nút tạo hồ sơ mới (L02).
 - Rút hồ sơ trước khi xã xử lý: trạng thái "Đã rút", ghi lý do.
 
 **Dữ liệu ghi nhận:** phiên bản hồ sơ, thời điểm nộp, lịch sử trạng thái, lịch nhắc.
@@ -222,17 +221,18 @@ flowchart TD
 **Chức năng:** SO-01, AD-06 · **Tác nhân:** Sở NN&MT, quản trị · **Đợt 1**
 
 **Luồng chính**
-1. Sở NN&MT tạo đợt: tên, năm, hạn nộp của xã, hạn đánh giá của tỉnh, chế độ chấm (trực tiếp hoặc dựa trên Tổ tư vấn), phiên bản tiêu chí áp dụng.
-2. Hệ thống kiểm tra hạn hợp lệ và không chồng lấn đợt khác.
-3. Sở bấm "Mở đợt"; hệ thống thông báo các xã và chủ thể.
-4. Đến hạn, hệ thống tự "Đóng đợt nộp"; chỉ còn xử lý hồ sơ đã nộp.
-5. Sau khi hội đồng chốt toàn bộ hồ sơ, Sở "Kết thúc đợt".
+1. Sở NN&MT tạo đợt (trạng thái Nháp): tên, năm, ba mốc hạn (Hạn nộp xã: chủ thể nộp về xã; Hạn gửi tỉnh: xã đề xuất lên tỉnh; Hạn đánh giá tỉnh: chỉ để nhắc việc), chế độ chấm ban đầu (trực tiếp hoặc dựa trên Tổ tư vấn), Phiên bản tiêu chí đã phát hành, Quy tắc tổng hợp.
+2. Hệ thống kiểm tra thứ tự các mốc hạn và tại mỗi thời điểm có tối đa một đợt Đang nhận nộp (nhiều đợt có thể cùng ở Đã đóng nộp).
+3. Sở bấm "Mở đợt" (Đang nhận nộp); hệ thống thông báo các xã và chủ thể.
+4. Qua Hạn nộp xã, hệ thống tự chuyển đợt sang Đã đóng nộp; chỉ còn xử lý hồ sơ đã nộp. Qua Hạn gửi tỉnh, xã không đề xuất thêm hồ sơ của đợt.
+5. Khi mọi hồ sơ của đợt ở trạng thái cuối hoặc đã chốt, Sở "Kết thúc đợt" (Đã kết thúc).
 
 **Ngoại lệ**
-- Gia hạn đợt: ghi lý do, thông báo đối tượng liên quan.
-- Đợt đã mở không đổi được phiên bản tiêu chí (tránh lệch giữa các hồ sơ).
+- Gia hạn đợt: Sở lùi Hạn nộp xã hoặc Hạn gửi tỉnh, ghi lý do, thông báo đối tượng liên quan; không rút ngắn hạn khi đợt đã mở. Gia hạn Hạn nộp xã của đợt Đã đóng nộp đưa đợt về Đang nhận nộp, nếu không có đợt khác đang nhận nộp.
+- Đợt đã mở không đổi được Phiên bản tiêu chí (tránh lệch giữa các hồ sơ). Quy tắc tổng hợp khóa khi đợt có phiếu chấm đầu tiên.
+- Xã chuyển hồ sơ sang đợt sau (XA-08) chỉ khi đợt sau áp dụng cùng Phiên bản tiêu chí, ghi lý do; nếu khác phiên bản, xã kết luận không đạt sơ bộ hoặc trả về chủ thể.
 
-**Danh mục (quản trị):** nhóm sản phẩm, danh sách xã/phường của tỉnh, đợt đánh giá. Danh sách xã/phường có lịch sử sáp nhập để hồ sơ cũ vẫn truy được tên đơn vị cũ.
+**Danh mục (quản trị):** danh sách xã/phường của tỉnh, có lịch sử sáp nhập để hồ sơ cũ vẫn truy được tên đơn vị cũ. Nhóm sản phẩm không phải danh mục quản trị: cây phân loại nằm trong Phiên bản tiêu chí (L19, ADR 0006).
 
 ---
 
@@ -254,9 +254,9 @@ flowchart TD
 
 **Luồng chính**
 1. Sở lập danh sách đề xuất thành viên Hội đồng và thành viên Tổ tư vấn (chuyên môn, đơn vị).
-2. Chủ tịch UBND tỉnh quyết định thành lập Hội đồng và Tổ tư vấn (theo QĐ 1489/QĐ-TTg); hệ thống lưu quyết định, chủ tịch và thư ký hội đồng, thành viên Tổ tư vấn (tải quyết định lên như tệp).
+2. Chủ tịch UBND tỉnh quyết định thành lập Hội đồng và Tổ tư vấn (theo QĐ 26/2026/QĐ-TTg, thay thế QĐ 1489/QĐ-TTg); hệ thống lưu quyết định, chủ tịch và thư ký hội đồng, thành viên Tổ tư vấn (tải quyết định lên như tệp).
 3. Quản trị tạo tài khoản, gán vai trò thành viên và bật 2FA (L20).
-4. Thư ký chọn chế độ chấm của đợt: trực tiếp hoặc dựa trên Tổ tư vấn (HD-06).
+4. Thư ký xác nhận hoặc đổi chế độ chấm của đợt do Sở đặt ban đầu: trực tiếp hoặc dựa trên Tổ tư vấn (HD-06).
 5. Thư ký phân công Tổ tư vấn phụ trách hồ sơ (HD-03) và thành viên cho từng hồ sơ (HD-02); hệ thống kiểm tra số thành viên tối thiểu theo cấu hình.
 6. Thành viên và Tổ tư vấn nhận thông báo.
 
@@ -271,7 +271,7 @@ flowchart TD
 
 **Ngoại lệ**
 - Thành viên có xung đột lợi ích: khai báo bằng văn bản; thư ký thay người phân công và ghi lý do vào hồ sơ.
-- Đổi chế độ chấm khi đã có phiếu: không cho phép; chỉ đổi được trước khi bắt đầu chấm.
+- Đổi chế độ chấm khi đợt đã có phiếu chấm: không cho phép; chỉ đổi được trước phiếu đầu tiên của đợt, có audit.
 
 **Quy tắc:** số thành viên chấm mỗi hồ sơ và điều kiện hợp lệ của hội đồng lấy từ cấu hình, cần đối chiếu quy chế.
 
@@ -490,17 +490,18 @@ Bộ NN&MT không dùng hệ thống. Hệ thống chỉ cung cấp công cụ x
 **Chức năng:** AD-03, AD-04, AD-05 · **Tác nhân:** Quản trị nghiệp vụ · **Đợt 1**
 
 **Luồng chính**
-1. Quản trị tạo phiên bản tiêu chí mới (sao chép từ phiên bản cũ hoặc tạo trống): ghi văn bản căn cứ và ngày hiệu lực.
-2. Với mỗi nhóm sản phẩm, định nghĩa cấu trúc: phần (A, B, C), tiêu chí, điểm tối đa, mô tả, minh chứng yêu cầu (AD-05).
-3. Cấu hình ngưỡng hạng (ví dụ 50, 70, 90) và quy tắc tính điểm tổng hợp.
-4. Hệ thống kiểm tra tổng điểm tối đa và không có tiêu chí trùng.
-5. Quản trị chạy thử với hồ sơ mẫu, sau đó "Phát hành phiên bản" (AD-04).
+1. Quản trị tạo Phiên bản tiêu chí mới (bản nháp) bằng cách nhập tệp theo định dạng `docs/tieu-chi/ocop_tieu_chi_qd26_2026.json`, hoặc sao chép một phiên bản cũ rồi hiệu chỉnh; ghi văn bản căn cứ và ngày hiệu lực (chỉ để ghi nhận). Các phiên bản không có quan hệ kế thừa.
+2. Phiên bản chứa cây phân loại Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí (QĐ 26: 6 nhóm, 26 bộ). Mỗi Bộ tiêu chí gồm Phần (A, B, C) → Mục → Nhóm tiêu chí (tùy chọn) → Tiêu chí → Mức điểm; mỗi Mức điểm có mô tả, điểm, Sao tối thiểu (nếu có) và nhãn nhánh a/b (nếu tiêu chí chia trường hợp); Bộ tiêu chí có danh sách Điều kiện loại (AD-05). Tiêu chí "một dòng" trên phiếu được nhập thành hai mức 0 và điểm tối đa. Mức "Không đáp ứng, 0 điểm" luôn có sẵn cho mọi tiêu chí.
+3. Cấu hình Ngưỡng hạng cho 2 đến 5 sao (QĐ 26: 30, 50, 70, 90).
+4. Quản trị soát và sửa bản nháp trong trình soạn (AD-03); hệ thống kiểm tra tổng Tiêu chí → Mục → Phần → tổng điểm của bộ, và không có mã tiêu chí trùng.
+5. Quản trị xem trước bằng cách chọn mức cho một Bộ tiêu chí và xem tổng điểm, Hạng sao (không lưu hồ sơ mẫu); sau đó Xác thực lại và "Phát hành phiên bản" (AD-04).
 6. Đợt mới (L07) chọn phiên bản đã phát hành.
 
 **Quy tắc**
-- Phiên bản đã phát hành là bất biến; thay đổi phải tạo phiên bản mới.
-- Phiếu chấm lưu snapshot phiên bản tiêu chí và điểm tại thời điểm chấm.
-- Mỗi nhóm sản phẩm có thể có bộ tiêu chí riêng (ví dụ du lịch cộng đồng).
+- Phiên bản đã phát hành là bất biến; thay đổi (kể cả sửa lỗi bóc tách) phải tạo phiên bản mới, có thể cùng văn bản căn cứ.
+- Phiếu chấm tham chiếu Mức điểm của phiên bản đã phát hành; không lưu snapshot riêng từng phiếu. Snapshot toàn bộ phiếu chỉ lưu khi chốt điểm (HD-08).
+- Hạng sao = hạng thấp hơn giữa hạng theo Ngưỡng hạng của điểm và hạng cao nhất mà mọi yêu cầu Sao tối thiểu đều đạt. Yêu cầu cho hạng s ở một tiêu chí: điểm ≥ điểm của mức có Sao tối thiểu ≤ s cao nhất. Khi nhiều thành viên chấm, so bằng điểm trung bình của tiêu chí. Dưới 3 sao là không đạt; hạng 1 đến 5 sao luôn được lưu.
+- Điều kiện loại không được hệ thống tự đánh giá; người loại hồ sơ viện dẫn một Điều kiện loại và ghi lý do. Ghi chú kiểu "không đánh giá các bước tiếp theo" chỉ hiển thị.
 
 ---
 
@@ -618,7 +619,7 @@ flowchart TD
 
 ## Phụ lục B. Điểm cần xác nhận
 
-1. Phân bổ điểm Phần A, B, C và ngưỡng từng hạng theo phụ lục QĐ 26/2026/QĐ-TTg.
+1. Mức "Không đáp ứng, 0 điểm" do hệ thống tự thêm cho tiêu chí mà phiếu QĐ 26 không có mức 0; so Sao tối thiểu bằng điểm trung bình tiêu chí khi nhiều thành viên chấm. (Phân bổ A/B/C = 40/25/35 và Ngưỡng hạng 30/50/70/90 đã đối chiếu QĐ 26/2026/QĐ-TTg.)
 2. Mốc thời gian các đợt ở cấp xã và tỉnh.
 3. Vai trò và thẩm quyền của Tổ tư vấn (thành lập cùng Hội đồng theo QĐ 1489); báo cáo của Tổ tư vấn có bắt buộc trước khi Hội đồng họp hay không, và nếu bắt buộc thì chế độ chấm trực tiếp còn dùng được không.
 4. Quy chế hội đồng: số thành viên chấm mỗi hồ sơ, điều kiện hợp lệ khi họp, trách nhiệm điểm xác nhận, thành viên có được thấy điểm của nhau trước khi chốt hay không.
