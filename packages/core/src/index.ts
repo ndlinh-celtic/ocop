@@ -107,6 +107,7 @@ export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
 export {
   AGGREGATION_METHODS,
+  DEFAULT_CHECKLIST,
   endOfVnDay,
   EXTENDABLE_DEADLINE_LABEL,
   EXTENDABLE_DEADLINES,
@@ -119,6 +120,7 @@ export {
   vnDateOf,
   type AggregationMethod,
   type AggregationRule,
+  type ChecklistItem,
   type DeadlineExtension,
   type DeadlineExtensionView,
   type ExtendableDeadline,
@@ -128,6 +130,7 @@ export {
   type RoundStatus,
 } from "./rounds/model";
 export type { RoundInput } from "./rounds/manage";
+export type { ChecklistItemInput } from "./rounds/checklist";
 export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
@@ -164,6 +167,8 @@ export type { AddLegalDocumentInput, LegalDocumentView, LegalStandingView } from
 export type { RateLimit, RateLimitRepo } from "./platform/rate-limit";
 export { consumeRateLimit } from "./platform/throttle";
 export {
+  CHECKLIST_RESULT_LABEL,
+  CHECKLIST_RESULTS,
   DOSSIER_STATE_LABEL,
   DOSSIER_STATES,
   dossierNotFound,
@@ -173,6 +178,8 @@ export {
   type DossierEvent,
   type DossierRepo,
   type DossierState,
+  type ChecklistResult,
+  type ChecklistResultValue,
   type CriterionEntry,
   type EvidenceFile,
   type EvidenceLink,
@@ -191,4 +198,5 @@ export type { UpdateProductInput } from "./dossiers/edit";
 export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
+export type { ChecklistItemView, ChecklistResultInput, ChecklistSuggestion, DossierChecklist } from "./dossiers/checklist";
 export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";

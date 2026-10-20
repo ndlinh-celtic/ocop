@@ -20,7 +20,7 @@ let criteriaSetId: string;
 
 type Who = "Chủ thể A" | "Chủ thể B" | "Cán bộ xã X" | "Cán bộ xã Y" | "Người dùng hai Phân vai, đang là Chủ thể C" | "Người dùng hai Phân vai, đang là Cán bộ xã X";
 type State = "Nháp" | "Đã nộp xã" | "Đã nộp xã, đã Tiếp nhận";
-type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A";
+type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A" | "đánh giá Checklist sơ bộ";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "already_received" | "not_received";
 
 const actors = {} as Record<Who, UserActor>;
@@ -38,6 +38,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Chủ thể A", "rút", "Đã nộp xã, đã Tiếp nhận", "already_received"],
   ["Chủ thể A", "Tiếp nhận", "Đã nộp xã", "forbidden"],
   ["Chủ thể A", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "forbidden"],
+  ["Chủ thể A", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "forbidden"],
   ["Chủ thể B", "đọc hồ sơ", "Đã nộp xã", "not_found"],
   ["Chủ thể B", "thấy trong danh sách", "Đã nộp xã", "not_found"],
   ["Chủ thể B", "rút", "Đã nộp xã", "not_found"],
@@ -52,6 +53,8 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã X", "Tiếp nhận", "Đã nộp xã, đã Tiếp nhận", "already_received"],
   ["Cán bộ xã X", "đổi Cán bộ phụ trách", "Đã nộp xã", "not_received"],
   ["Cán bộ xã X", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "allowed"],
+  ["Cán bộ xã X", "đánh giá Checklist sơ bộ", "Đã nộp xã", "not_received"],
+  ["Cán bộ xã X", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "allowed"],
   ["Cán bộ xã X", "sửa thông tin", "Đã nộp xã", "forbidden"],
   ["Cán bộ xã X", "rút", "Đã nộp xã", "forbidden"],
   ["Cán bộ xã X", "đọc Chủ thể A", "Đã nộp xã", "allowed"],
@@ -61,6 +64,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã Y", "dòng thời gian", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "Tiếp nhận", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "đổi Cán bộ phụ trách", "Đã nộp xã, đã Tiếp nhận", "not_found"],
+  ["Cán bộ xã Y", "đánh giá Checklist sơ bộ", "Đã nộp xã, đã Tiếp nhận", "not_found"],
   ["Cán bộ xã Y", "đọc Chủ thể A", "Đã nộp xã", "not_found"],
   ["Cán bộ xã Y", "đọc hồ sơ pháp lý của A", "Đã nộp xã", "not_found"],
   // The Phạm vi follows the Vai trò đang dùng, never another Phân vai of the same person (story 82).
@@ -107,6 +111,10 @@ async function attempt(actor: UserActor, action: Action, d: { dossierId: string;
       return void (await t.app.entities.getEntity(actor, { entityId }));
     case "đọc hồ sơ pháp lý của A":
       return void (await t.app.entities.getLegalStanding(actor, { entityId }));
+    case "đánh giá Checklist sơ bộ": {
+      const [item] = (await t.app.dossiers.checklist(ownerA, { dossierId })).items;
+      return void (await t.app.dossiers.assessChecklist(actor, { dossierId, expectedVersion, results: [{ itemCode: item!.code, result: "pass" }] }));
+    }
   }
 }
 

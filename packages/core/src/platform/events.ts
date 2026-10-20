@@ -29,6 +29,7 @@ export type DomainEventBody =
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
   | { type: "round.ended"; payload: { roundId: string } }
+  | { type: "round.checklist_configured"; payload: { roundId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
   | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
   | { type: "entity.updated"; payload: { entityId: string } }

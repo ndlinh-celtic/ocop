@@ -20,6 +20,7 @@ import { activateAccount, createStaffUser, describeActivation, listUsers, getUse
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
+import { configureChecklist } from "./rounds/checklist";
 import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
@@ -37,6 +38,7 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
+import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
@@ -124,6 +126,7 @@ export function createCore(deps: CoreDeps) {
       closeDueSubmissions: closeDueSubmissions(deps),
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
+      configureChecklist: configureChecklist(deps),
     },
     entities: {
       register: registerEntity(deps),
@@ -160,6 +163,8 @@ export function createCore(deps: CoreDeps) {
       changeHandler: changeHandler(deps),
       handlers: listHandlers(deps),
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
+      checklist: dossierChecklist(deps),
+      assessChecklist: assessChecklist(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

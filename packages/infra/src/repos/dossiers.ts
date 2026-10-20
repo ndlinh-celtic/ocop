@@ -1,7 +1,7 @@
 import type { DataScope, Dossier, DossierEvent, DossierRepo, Submission } from "@ocop/core";
 import { and, asc, desc, eq, inArray, isNull, max, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
+import { checklistResult, criterionEntry, dossier, dossierEvent, evidenceFile, evidenceLink, file, submission, submissionFile } from "../db/schema";
 
 /**
  * The reader's DataScope as a WHERE clause on hồ sơ (#14): rows outside it are never loaded, and a
@@ -104,6 +104,18 @@ export function dossierRepo(db: Db): DossierRepo {
         .select({ fileId: evidenceLink.fileId, criterionId: evidenceLink.criterionId })
         .from(evidenceLink)
         .where(eq(evidenceLink.dossierId, dossierId));
+    },
+    async checklistResults(dossierId) {
+      return db.select().from(checklistResult).where(eq(checklistResult.dossierId, dossierId));
+    },
+    async saveChecklistResult(r) {
+      await db
+        .insert(checklistResult)
+        .values(r)
+        .onConflictDoUpdate({
+          target: [checklistResult.dossierId, checklistResult.itemCode],
+          set: { result: r.result, comment: r.comment, assessedAt: r.assessedAt, assessedBy: r.assessedBy },
+        });
     },
     async criterionEntries(dossierId) {
       return db.select().from(criterionEntry).where(eq(criterionEntry.dossierId, dossierId));

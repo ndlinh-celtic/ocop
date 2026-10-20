@@ -9,6 +9,7 @@ import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { ChecklistForm } from "./checklist-form";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +22,12 @@ export const dynamic = "force-dynamic";
 export default async function WardDossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, submissions, officers] = await Promise.all([
+  const [dossier, timeline, submissions, officers, checklist] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.handlers(actor),
+    app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !timeline || !submissions) notFound();
   const latest = submissions.at(-1);
@@ -81,6 +83,10 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           <h2 className="mb-3 font-semibold">Cán bộ phụ trách</h2>
           <ChangeHandlerForm dossierId={dossier.id} version={dossier.version} officers={officers} current={dossier.handlerUserId} />
         </section>
+      )}
+      {/* L06 XA-04: assessed once Tiếp nhận, editable until gửi tỉnh; read-only afterwards. */}
+      {checklist && dossier.receivedAt && checklist.items.length > 0 && (
+        <ChecklistForm dossierId={dossier.id} version={dossier.version} checklist={checklist} editable={can(actor, "dossier.checklist.assess", dossier)} />
       )}
 
       {snapshot && (
