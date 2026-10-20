@@ -24,3 +24,102 @@ export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
 export type { AuditChainRepo, AuditSeal } from "./audit/chain-repo";
+export {
+  criteriaOf,
+  STARS,
+  type CriteriaSet,
+  type Criterion,
+  type CriterionGroup,
+  type CriterionScores,
+  type Part,
+  type RankThresholds,
+  type ScoreLevel,
+  type Section,
+  type Star,
+} from "./criteria/model";
+export {
+  averageScores,
+  rankStars,
+  rankStoredSet,
+  type PartTotal,
+  type StarRank,
+  type StarRankInput,
+  type StoredStarRank,
+  type StoredStarRankInput,
+  type StoredUnmetMinimumStar,
+  type UnmetMinimumStar,
+} from "./criteria/star-rank";
+export type {
+  CriteriaSetRow,
+  CriteriaVersion,
+  CriteriaVersionRepo,
+  CriterionGroupRow,
+  CriterionRow,
+  ExclusionConditionRow,
+  PartRow,
+  ProductGroupRow,
+  ScoreLevelRow,
+  SectionRow,
+  SetRows,
+  SubgroupRow,
+  VersionRows,
+  VersionStatus,
+  VersionSummary,
+  VersionTaxonomy,
+  DraftNodeRows,
+  VersionFields,
+} from "./criteria/version";
+export { assertDraft } from "./criteria/version";
+export type {
+  CriteriaSetDetail,
+  ExclusionCondition,
+  StoredCriterion,
+  StoredCriterionGroup,
+  StoredPart,
+  StoredScoreLevel,
+  StoredSection,
+} from "./criteria/detail";
+export { CriteriaImportError, QD26_THRESHOLDS, splitExclusions, type ImportIssue } from "./criteria/qd26-file";
+export { MAX_IMPORT_BYTES, type ImportVersionInput } from "./criteria/import";
+export { CriteriaValidationError } from "./criteria/publish";
+export { draftEditSchema, type DraftEdit, type EditDraftInput } from "./criteria/edit";
+export type { DraftChangeResult } from "./criteria/draft-change";
+export {
+  nodeAdditionSchema,
+  type AddNodeInput,
+  type AddNodeResult,
+  type MoveDirection,
+  type MoveNodeInput,
+  type NodeAddition,
+  type RemoveNodeInput,
+} from "./criteria/structure";
+export { DRAFT_NODE_KINDS, type DraftNodeKind, type DraftTarget, type DraftChangeAction, type DraftChangePayload } from "./criteria/draft-events";
+export { findVersionIssues, type ValidationIssue, type ValidationIssueCode } from "./criteria/validation";
+export type { PreviewSetInput } from "./criteria/preview";
+export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
+export {
+  AGGREGATION_METHODS,
+  endOfVnDay,
+  EXTENDABLE_DEADLINE_LABEL,
+  EXTENDABLE_DEADLINES,
+  GRADING_MODE_LABEL,
+  GRADING_MODES,
+  isPastSubmissionDeadline,
+  ROUND_STATUS_LABEL,
+  ROUND_STATUSES,
+  roundAlreadyOpen,
+  vnDateOf,
+  type AggregationMethod,
+  type AggregationRule,
+  type DeadlineExtension,
+  type DeadlineExtensionView,
+  type ExtendableDeadline,
+  type GradingMode,
+  type Round,
+  type RoundRepo,
+  type RoundStatus,
+} from "./rounds/model";
+export type { RoundInput } from "./rounds/manage";
+export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
+export type { ExtendDeadlineInput } from "./rounds/extension";
+export type { RoundDetail, RoundView } from "./rounds/read";

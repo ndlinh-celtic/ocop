@@ -2,11 +2,13 @@ import type { Tx } from "@ocop/core";
 import type { Db } from "../db/types";
 import { auditRepo } from "./audit";
 import { auditChainRepo } from "./audit-chain";
+import { criteriaVersionRepo } from "./criteria";
 import { fileRepo } from "./files";
 import { oneTimeTokenRepo, roleAssignmentRepo, sessionRepo, userRepo } from "./identity";
 import { notificationRepo } from "./notifications";
 import { wardRepo } from "./org";
 import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform";
+import { roundRepo } from "./rounds";
 
 export function buildRepos(db: Db): Tx {
   return {
@@ -22,5 +24,7 @@ export function buildRepos(db: Db): Tx {
     processedEvents: processedEventsRepo(db),
     emailDeliveries: emailDeliveriesRepo(db),
     files: fileRepo(db),
+    criteriaVersions: criteriaVersionRepo(db),
+    rounds: roundRepo(db),
   };
 }

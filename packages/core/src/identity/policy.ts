@@ -15,10 +15,20 @@ const ROLE_ACTIONS = {
   "audit.search": ["admin"],
   "delivery.list": ["admin"],
   "file.test_upload": ["admin"],
+  // Phiên bản tiêu chí (spec #16): only Quản trị writes them or sees drafts.
+  "criteria.import": ["admin"],
+  "criteria.read_draft": ["admin"],
+  "criteria.publish": ["admin"],
+  "criteria.preview": ["admin"],
+  "criteria.edit": ["admin"],
+  "criteria.copy": ["admin"],
+  "criteria.delete": ["admin"],
+  // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
+  "round.manage": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
-const SELF_ACTIONS = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own", "reauth.own"] as const;
+const SELF_ACTIONS = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own", "reauth.own", "criteria.read_published", "round.read"] as const;
 
 export type Action = keyof typeof ROLE_ACTIONS | (typeof SELF_ACTIONS)[number];
 

@@ -1,11 +1,13 @@
 import type { AuditLog } from "../audit/audit";
 import type { AuditChainRepo } from "../audit/chain-repo";
+import type { CriteriaVersionRepo } from "../criteria/version";
 import type { FileRepo } from "../files/model";
 import type { RoleAssignmentRepo, SessionRepo, UserRepo } from "../identity/repos";
 import type { OneTimeTokenRepo } from "../identity/tokens";
 import type { NotificationRepo } from "../notifications/notification";
 import type { WardRepo } from "../org/ward";
 import type { Outbox, ProcessedEvents } from "../platform/events";
+import type { RoundRepo } from "../rounds/model";
 import type { EmailDeliveries } from "../platform/mail";
 
 /** Everything a use case can touch inside one database transaction. */
@@ -22,6 +24,8 @@ export interface Tx {
   processedEvents: ProcessedEvents;
   emailDeliveries: EmailDeliveries;
   files: FileRepo;
+  criteriaVersions: CriteriaVersionRepo;
+  rounds: RoundRepo;
 }
 
 export interface UnitOfWork {

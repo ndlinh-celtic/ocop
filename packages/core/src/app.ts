@@ -1,5 +1,12 @@
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
+import { editDraft } from "./criteria/edit";
+import { addNode, moveNode, removeNode } from "./criteria/structure";
+import { copyVersion, deleteVersion } from "./criteria/copy";
+import { importVersion } from "./criteria/import";
+import { publishVersion, validateVersion } from "./criteria/publish";
+import { previewSet } from "./criteria/preview";
+import { getCriteriaSet, getVersion, listVersions } from "./criteria/read";
 import { completeUpload, listFiles, requestDownload, requestUpload } from "./files/uploads";
 import { hasTotp, myAssignments, switchActiveRole } from "./identity/active-role";
 import { grantRole, revokeRole } from "./identity/assignments";
@@ -13,6 +20,11 @@ import { activateAccount, createStaffUser, describeActivation, listUsers, getUse
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
+import { closeDueSubmissions } from "./rounds/close-due";
+import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
+import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
+import { createRound, deleteRound, openRound, updateRound } from "./rounds/manage";
+import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
 
@@ -70,6 +82,36 @@ export function createCore(deps: CoreDeps) {
       completeUpload: completeUpload(deps),
       requestDownload: requestDownload(deps),
       list: listFiles(deps),
+    },
+    criteria: {
+      importVersion: importVersion(deps),
+      listVersions: listVersions(deps),
+      getVersion: getVersion(deps),
+      getCriteriaSet: getCriteriaSet(deps),
+      validateVersion: validateVersion(deps),
+      publishVersion: publishVersion(deps),
+      previewSet: previewSet(deps),
+      editDraft: editDraft(deps),
+      addNode: addNode(deps),
+      removeNode: removeNode(deps),
+      moveNode: moveNode(deps),
+      copyVersion: copyVersion(deps),
+      deleteVersion: deleteVersion(deps),
+    },
+    rounds: {
+      createRound: createRound(deps),
+      updateRound: updateRound(deps),
+      deleteRound: deleteRound(deps),
+      openRound: openRound(deps),
+      changeGradingMode: changeGradingMode(deps),
+      changeAggregationRule: changeAggregationRule(deps),
+      endRound: endRound(deps),
+      listRounds: listRounds(deps),
+      getRound: getRound(deps),
+      currentOpenRound: currentOpenRound(deps),
+      closeDueSubmissions: closeDueSubmissions(deps),
+      extendDeadline: extendDeadline(deps),
+      listDeadlineExtensions: listDeadlineExtensions(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

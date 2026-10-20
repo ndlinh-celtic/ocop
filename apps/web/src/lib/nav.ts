@@ -41,6 +41,8 @@ const COMMON: NavItem[] = [
   { href: "/tai-khoan", label: "Thông tin cá nhân", icon: CircleUser, ready: true },
 ];
 const STATS: NavItem = { href: "/thong-ke", label: "Thống kê", icon: ChartColumn, ready: false };
+/** Published Phiên bản tiêu chí, read-only; Quản trị reaches them under /quan-tri/bo-tieu-chi. */
+const CRITERIA: NavItem = { href: "/tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: true };
 
 /** Menu per Vai trò, following the prototype (design/prototype/src/core.js, O.MENUS). */
 export const NAV: Record<Role, NavItem[]> = {
@@ -48,6 +50,7 @@ export const NAV: Record<Role, NavItem[]> = {
     HOME,
     { href: "/chu-the/ho-so", label: "Hồ sơ của tôi", icon: FolderOpen, ready: false },
     { href: "/chu-the/phap-ly", label: "Hồ sơ pháp lý", icon: FileBadge, ready: false },
+    CRITERIA,
     ...COMMON,
   ],
   ward_officer: [
@@ -55,14 +58,16 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/xa/ho-so", label: "Hồ sơ tại xã", icon: FolderOpen, ready: false },
     { href: "/xa/gui-len-tinh", label: "Gửi lên tỉnh", icon: Send, ready: false },
     STATS,
+    CRITERIA,
     ...COMMON,
   ],
   province_officer: [
     HOME,
-    { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: false },
+    { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: true },
     { href: "/so/ho-so", label: "Hồ sơ toàn tỉnh", icon: FolderOpen, ready: false },
     { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: false },
     STATS,
+    CRITERIA,
     ...COMMON,
   ],
   council_chair: [
@@ -70,6 +75,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/hoi-dong", label: "Hội đồng", icon: Users, ready: false },
     { href: "/hoi-dong/tien-do", label: "Tiến độ chấm", icon: ListChecks, ready: false },
     { href: "/hoi-dong/van-ban", label: "Văn bản", icon: FileText, ready: false },
+    CRITERIA,
     ...COMMON,
   ],
   council_secretary: [
@@ -80,24 +86,27 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/hoi-dong/chot-diem", label: "Chốt điểm", icon: Lock, ready: false },
     { href: "/hoi-dong/van-ban", label: "Văn bản", icon: FileText, ready: false },
     { href: "/hoi-dong/chung-nhan", label: "Chứng nhận", icon: Award, ready: false },
+    CRITERIA,
     ...COMMON,
   ],
   council_member: [
     HOME,
     { href: "/thanh-vien/ho-so", label: "Hồ sơ được phân công", icon: ClipboardList, ready: false },
     { href: "/thanh-vien/diem-tong-hop", label: "Điểm tổng hợp", icon: Table2, ready: false },
+    CRITERIA,
     ...COMMON,
   ],
   advisory_member: [
     HOME,
     { href: "/to-tu-van/hang-doi", label: "Hàng đợi thẩm định", icon: Inbox, ready: false },
     { href: "/to-tu-van/sao-chep", label: "Sao chép sang phiếu chấm", icon: Copy, ready: false },
+    CRITERIA,
     ...COMMON,
   ],
   admin: [
     HOME,
     { href: "/quan-tri/nguoi-dung", label: "Người dùng và phân vai", icon: UsersRound, ready: true },
-    { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: false },
+    { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: true },
     { href: "/quan-tri/danh-muc", label: "Danh mục", icon: Library, ready: false },
     { href: "/quan-tri/nhat-ky", label: "Nhật ký", icon: ScrollText, ready: true },
     { href: "/quan-tri/thu-tai-tep", label: "Thử tải tệp", icon: Upload, ready: true },

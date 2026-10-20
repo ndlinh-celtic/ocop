@@ -1,3 +1,6 @@
+import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
+import type { ExtendableDeadline, GradingMode } from "../rounds/model";
+
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
   | { type: "identity.user.created"; payload: { userId: string } }
@@ -6,7 +9,24 @@ export type DomainEventBody =
   | { type: "identity.user.locked"; payload: { userId: string; until: string } }
   | { type: "identity.password_reset.requested"; payload: { userId: string } }
   | { type: "files.uploaded"; payload: { fileId: string } }
-  | { type: "files.blocked"; payload: { fileId: string } };
+  | { type: "files.blocked"; payload: { fileId: string } }
+  | { type: "criteria.version.imported"; payload: { versionId: string } }
+  | { type: "criteria.version.published"; payload: { versionId: string } }
+  | { type: "criteria.version.copied"; payload: { versionId: string; copiedFrom: string } }
+  | { type: "criteria.version.deleted"; payload: { versionId: string } }
+  | { type: DraftChangeAction; payload: DraftChangePayload }
+  | { type: "round.created"; payload: { roundId: string } }
+  | { type: "round.updated"; payload: { roundId: string } }
+  | { type: "round.deleted"; payload: { roundId: string } }
+  | { type: "round.opened"; payload: { roundId: string; criteriaVersionId: string; submissionDeadline: string } }
+  | { type: "round.submission_closed"; payload: { roundId: string; submissionDeadline: string; closedAt: string } }
+  | {
+      type: "round.deadline_extended";
+      payload: { roundId: string; extensionId: string; deadline: ExtendableDeadline; previousDeadline: string; newDeadline: string };
+    }
+  | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
+  | { type: "round.aggregation_changed"; payload: { roundId: string } }
+  | { type: "round.ended"; payload: { roundId: string } };
 
 export type EventType = DomainEventBody["type"];
 

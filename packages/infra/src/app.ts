@@ -1,4 +1,4 @@
-import { createCore, DEFAULT_SETTINGS, type Clock, type Core, type CoreSettings, type IdGen, type Mailer, type PasswordHasher } from "@ocop/core";
+import { createCore, DEFAULT_SETTINGS, placeholderRoundActivity, type Clock, type Core, type CoreSettings, type IdGen, type Mailer, type PasswordHasher, type RoundActivity } from "@ocop/core";
 import type { Pool } from "pg";
 import { argon2Hasher } from "./adapters/argon2";
 import { aesGcmSecretBox } from "./adapters/secret-box";
@@ -20,6 +20,8 @@ export interface AppOverrides {
   files?: FileStore;
   anchorStore?: FileStore;
   scanner?: VirusScanner;
+  /** Tests stand in for phiếu chấm and hồ sơ; the placeholder answers until steps 3-4 build them. */
+  roundActivity?: RoundActivity;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -120,5 +122,6 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     anchorStore: overrides.anchorStore ?? (s3 ? createS3FileStore(s3, config.S3_BUCKET_AUDIT_ANCHOR ?? "ocop-audit-anchor") : unconfigured),
     inspector: createFileInspector(files, overrides.scanner ?? clamdScanner({ host: config.CLAMD_HOST ?? "clamd", port: config.CLAMD_PORT ?? 3310 })),
     settings,
+    roundActivity: overrides.roundActivity ?? placeholderRoundActivity,
   });
 }

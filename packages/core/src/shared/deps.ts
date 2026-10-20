@@ -3,6 +3,7 @@ import type { FileInspector } from "../files/inspection";
 import { DEFAULT_ALLOWED_TYPES } from "../files/model";
 import type { Mailer } from "../platform/mail";
 import type { Clock, IdGen, PasswordHasher, SecretBox, TotpService } from "./ports";
+import type { RoundActivity } from "../rounds/activity";
 import type { UnitOfWork } from "./uow";
 
 /** Deployment settings the rules depend on (ADR 0003). */
@@ -57,4 +58,6 @@ export interface CoreDeps {
   anchorStore: FileStore;
   inspector: FileInspector;
   settings: CoreSettings;
+  /** Phiếu chấm and hồ sơ of a Đợt đánh giá, as the rounds module sees them (#27). */
+  roundActivity: RoundActivity;
 }

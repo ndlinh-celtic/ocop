@@ -1,4 +1,4 @@
-import { bigint, integer, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -6,6 +6,8 @@ const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" 
 export const identity = pgSchema("identity");
 export const platform = pgSchema("platform");
 export const org = pgSchema("org");
+export const criteria = pgSchema("criteria");
+export const roundSchema = pgSchema("round");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -132,4 +134,163 @@ export const file = platform.table("file", {
   createdAt: ts("created_at").notNull(),
   uploadedAt: ts("uploaded_at"),
   scannedAt: ts("scanned_at"),
+});
+
+// Phiên bản tiêu chí (0010_criteria.sql). Points are numeric(7,2), read as JS numbers.
+const pts = (name: string) => numeric(name, { precision: 7, scale: 2, mode: "number" });
+
+export const criteriaVersion = criteria.table("version", {
+  id: uuid("id").primaryKey(),
+  legalBasis: text("legal_basis").notNull(),
+  issuedOn: date("issued_on", { mode: "string" }).notNull(),
+  effectiveOn: date("effective_on", { mode: "string" }).notNull(),
+  status: text("status").$type<"draft" | "published">().notNull(),
+  createdAt: ts("created_at").notNull(),
+  createdBy: uuid("created_by"),
+  publishedAt: ts("published_at"),
+  publishedBy: uuid("published_by"),
+  copiedFrom: uuid("copied_from"),
+});
+
+export const rankThreshold = criteria.table(
+  "rank_threshold",
+  {
+    versionId: uuid("version_id").notNull(),
+    stars: smallint("stars").$type<2 | 3 | 4 | 5>().notNull(),
+    minScore: pts("min_score").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.versionId, t.stars] })],
+);
+
+export const productGroup = criteria.table("product_group", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  name: text("name").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const productSubgroup = criteria.table("product_subgroup", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  productGroupId: uuid("product_group_id").notNull(),
+  name: text("name").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const criteriaSet = criteria.table("criteria_set", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  subgroupId: uuid("subgroup_id").notNull(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  totalPoints: pts("total_points").notNull(),
+  headerNote: text("header_note").notNull(),
+  footerNote: text("footer_note").notNull(),
+  extractionNote: text("extraction_note").notNull(),
+  sourcePages: integer("source_pages").array().notNull(),
+  position: integer("position").notNull(),
+});
+
+export const exclusionCondition = criteria.table("exclusion_condition", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  description: text("description").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const criteriaPart = criteria.table("part", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  points: pts("points").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const criteriaSection = criteria.table("section", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  partId: uuid("part_id").notNull(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  points: pts("points").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const criterionGroup = criteria.table("criterion_group", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  sectionId: uuid("section_id").notNull(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  points: pts("points").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const criterion = criteria.table("criterion", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  sectionId: uuid("section_id").notNull(),
+  groupId: uuid("group_id"),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  requirement: text("requirement").notNull(),
+  maxPoints: pts("max_points").notNull(),
+  note: text("note").notNull(),
+  extractionNote: text("extraction_note").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const scoreLevel = criteria.table("score_level", {
+  id: uuid("id").primaryKey(),
+  versionId: uuid("version_id").notNull(),
+  setId: uuid("set_id").notNull(),
+  criterionId: uuid("criterion_id").notNull(),
+  description: text("description").notNull(),
+  points: pts("points").notNull(),
+  minimumStar: smallint("min_star").$type<1 | 2 | 3 | 4 | 5>(),
+  branch: text("branch"),
+  systemAdded: boolean("system_added").notNull(),
+  position: integer("position").notNull(),
+});
+
+// Đợt đánh giá (0012_rounds.sql).
+export const round = roundSchema.table("round", {
+  id: uuid("id").primaryKey(),
+  name: text("name").notNull(),
+  year: smallint("year").notNull(),
+  status: text("status").$type<"draft" | "open_for_submission" | "submission_closed" | "ended">().notNull(),
+  criteriaVersionId: uuid("criteria_version_id").notNull(),
+  submissionDeadline: ts("submission_deadline").notNull(),
+  forwardingDeadline: ts("forwarding_deadline").notNull(),
+  evaluationDeadline: ts("evaluation_deadline").notNull(),
+  gradingMode: text("grading_mode").$type<"direct" | "advisory_based">().notNull(),
+  aggregationMethod: text("aggregation_method").$type<"mean">().notNull(),
+  minGraders: smallint("min_graders").notNull(),
+  deviationFlagPoints: pts("deviation_flag_points").notNull(),
+  createdAt: ts("created_at").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+  openedAt: ts("opened_at"),
+  openedBy: uuid("opened_by"),
+  submissionClosedAt: ts("submission_closed_at"),
+  endedAt: ts("ended_at"),
+  endedBy: uuid("ended_by"),
+});
+
+// Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).
+export const deadlineExtension = roundSchema.table("deadline_extension", {
+  id: uuid("id").primaryKey(),
+  roundId: uuid("round_id").notNull(),
+  deadline: text("deadline").$type<"submission" | "forwarding" | "evaluation">().notNull(),
+  previousDeadline: ts("previous_deadline").notNull(),
+  newDeadline: ts("new_deadline").notNull(),
+  reason: text("reason").notNull(),
+  extendedBy: uuid("extended_by").notNull(),
+  extendedAt: ts("extended_at").notNull(),
 });
