@@ -51,7 +51,7 @@ Tài liệu bàn giao cho bước thiết kế giao diện (Claude Design). Mô 
 | Vai trò | Người dùng điển hình | Thiết bị chính | Mục tiêu chính |
 |---|---|---|---|
 | Chủ thể | Chủ doanh nghiệp, giám đốc HTX, chủ hộ | Điện thoại, máy tính | Lập hồ sơ, nộp, bổ sung, nhận kết quả |
-| Cán bộ xã, lãnh đạo xã | Cán bộ văn phòng, chủ tịch xã | Máy tính, điện thoại | Tiếp nhận, kiểm tra, đánh giá sơ bộ, gửi tỉnh |
+| Cán bộ xã | Cán bộ văn phòng, công chức nông nghiệp xã | Máy tính, điện thoại | Tiếp nhận, kiểm tra, đánh giá sơ bộ, gửi tỉnh |
 | Cán bộ Sở | Chuyên viên Sở NN&MT | Máy tính | Quản lý đợt, tiếp nhận, theo dõi, xuất hồ sơ 5 sao, báo cáo |
 | Thư ký hội đồng, chủ tịch hội đồng | Lãnh đạo Sở, thư ký | Máy tính | Lập hội đồng, phân công, chốt điểm, cấp giấy chứng nhận |
 | Thành viên Tổ tư vấn, Tổ trưởng Tổ tư vấn | Chuyên viên thẩm định | Máy tính màn hình lớn | Thẩm định, chấm đề xuất, phát hành, sao chép |
@@ -541,7 +541,7 @@ Mỗi màn hình gồm: mục đích, bố cục, thành phần chính, trạng 
 **Chức năng:** AD-01, AD-02, DC-09 · **Luồng:** L20
 - **Mục đích:** tạo tài khoản cán bộ, gán vai trò và phạm vi.
 - **Bố cục:** bảng tài khoản với bộ lọc; ngăn chi tiết bên phải.
-- **Thành phần:** bảng (họ tên, đơn vị, vai trò, phạm vi, trạng thái, 2FA); ngăn chi tiết có: thông tin, danh sách vai trò (chủ thể, cán bộ xã, lãnh đạo xã, cán bộ Sở, thư ký, chủ tịch hội đồng, Tổ tư vấn, Tổ trưởng Tổ tư vấn, thành viên, quản trị) gán nhiều vai trò, phạm vi dữ liệu (xã/phường, tỉnh, đợt), cấu hình riêng cho vai trò Tổ tư vấn (quyền sao chép dữ liệu, quy tắc không ghi đè phiếu đã chỉnh hoặc đã xác nhận); nút Khóa tài khoản, Đặt lại mật khẩu, Đặt lại 2FA; lịch sử cấp quyền.
+- **Thành phần:** bảng (họ tên, đơn vị, vai trò, phạm vi, trạng thái, 2FA); ngăn chi tiết có: thông tin, danh sách vai trò (chủ thể, cán bộ xã, cán bộ Sở, thư ký, chủ tịch hội đồng, Tổ tư vấn, Tổ trưởng Tổ tư vấn, thành viên, quản trị) gán nhiều vai trò, phạm vi dữ liệu (xã/phường, tỉnh, đợt), cấu hình riêng cho vai trò Tổ tư vấn (quyền sao chép dữ liệu, quy tắc không ghi đè phiếu đã chỉnh hoặc đã xác nhận); nút Khóa tài khoản, Đặt lại mật khẩu, Đặt lại 2FA; lịch sử cấp quyền.
 - **Trạng thái:** cảnh báo khi gán vai trò xung đột (một người vừa là thành viên Tổ tư vấn vừa là thành viên chấm cùng hồ sơ); tài khoản hội đồng và quản trị chưa bật 2FA được đánh dấu.
 
 #### S71. Danh sách phiên bản bộ tiêu chí
@@ -634,7 +634,7 @@ Số điểm tối đa của từng phần (40, 25, 35) là số liệu tạm d�
 
 1. Phân bổ điểm Phần A, B, C và ngưỡng từng hạng (ảnh hưởng S14, S15, S43, S72).
 2. Quy chế hội đồng: số thành viên chấm mỗi hồ sơ, thành viên có xem điểm của nhau trước khi chốt hay không (S42, S43, S63).
-3. Vai trò và thẩm quyền của Tổ tư vấn (thành lập cùng Hội đồng theo QĐ 1489; báo cáo của Tổ tư vấn có bắt buộc trước khi Hội đồng họp hay không); tổ trưởng có phát hành riêng hay mọi cán bộ đều phát hành được (S50 đến S53).
+3. Vai trò và thẩm quyền của Tổ tư vấn (thành lập cùng Hội đồng theo QĐ 1489; báo cáo của Tổ tư vấn có bắt buộc trước khi Hội đồng họp hay không); tổ trưởng có phát hành riêng hay mọi cán bộ đều phát hành được (S50 đến S53). Tổ trưởng Tổ tư vấn chưa có trong 8 Vai trò của glossary; chốt ở bước 4 xem là Vai trò riêng hay thuộc tính của Phân công.
 4. Quy trình ký số văn bản: ký ngoài hệ thống rồi tải lên (S25, S44, S45) hay tích hợp sau này.
 5. Có yêu cầu nội dung cam kết ở bước nộp hồ sơ không (S16).
 6. Phạm vi quản lý mẫu văn bản trong hệ thống (S73).
