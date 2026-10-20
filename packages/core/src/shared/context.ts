@@ -17,6 +17,12 @@ export interface UserActor {
   activeRole: Role | null;
   activeAssignmentId: string | null;
   activeScope: { type: ScopeType; id: string | null } | null;
+  /**
+   * Nhập hộ (L01): the Chủ thể a Cán bộ xã acts for, by id. Set only through `onBehalfOf()`; the Phạm vi
+   * then narrows to that Chủ thể while it is đăng ký ở xã of the officer, and only the `*_on_behalf`
+   * actions are allowed, audited as the officer with `onBehalfOf`.
+   */
+  onBehalfOf?: string;
   ctx: RequestContext;
 }
 

@@ -107,7 +107,17 @@ export interface DossierListFilter {
   /** Đã nộp xã and not yet Tiếp nhận: "Chờ tiếp nhận" (story 39). */
   awaitingReceipt?: boolean;
   handlerUserId?: string;
+  /** Chờ đợt sau at this instant: Đã nộp xã, and the Hạn gửi tỉnh of its đợt is before it (story 68). */
+  awaitingNextRoundAt?: Date;
 }
+
+/**
+ * Story 68: "Chờ đợt sau" is derived, not a state. A hồ sơ still Đã nộp xã once the Hạn gửi tỉnh of its
+ * đợt has passed can no longer be gửi tỉnh in that đợt; it stays at the xã until chuyển đợt (XA-08).
+ * The last second of the Hạn gửi tỉnh still counts, as it does for gửi tỉnh.
+ */
+export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardingDeadline: Date } | null, now: Date) =>
+  d.state === "submitted_to_ward" && round !== null && now > round.forwardingDeadline;
 
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.

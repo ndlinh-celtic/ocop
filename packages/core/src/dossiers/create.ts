@@ -50,10 +50,10 @@ export function creationOptions(deps: CoreDeps) {
   };
 }
 
-/** The Chủ thể of the actor, which must be Đã xác thực now to start a hồ sơ (story 15). */
+/** The Chủ thể of the actor (or the one it acts for, L01 Nhập hộ), which must be Đã xác thực now to start a hồ sơ (story 15). */
 async function verifiedEntity(tx: Tx, actor: UserActor, now: Date) {
   const scope = dataScopeOf(actor);
-  if (scope.kind !== "entity") throw entityNotFound();
+  if (scope.kind !== "entity" && scope.kind !== "on_behalf") throw entityNotFound();
   const entity = await tx.entities.findById(scope, scope.entityId);
   if (!entity) throw entityNotFound();
   const [types, documents] = await Promise.all([tx.legalDocuments.types(), tx.legalDocuments.list(scope, entity.id)]);

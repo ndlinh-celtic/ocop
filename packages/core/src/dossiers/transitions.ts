@@ -21,12 +21,17 @@ export interface TransitionRule {
   guard?: (d: Dossier, now: Date) => DomainError | null;
   /** Whether the move is a row of the timeline (story 34). Autosaving a Nháp is not. */
   timeline: boolean;
+  /**
+   * L01 Nhập hộ (story 72): a Cán bộ xã may also take it for the Chủ thể, through onBehalfOf(), as the
+   * action `<action>_on_behalf`. Such a move is always a row of the timeline (story 74).
+   */
+  onBehalf?: true;
 }
 
 /** What policy needs of a hồ sơ: its state and what decides whose Phạm vi covers it. */
 export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt">;
 
-/** Actions on an existing hồ sơ; their audit action is the same string. */
+/** Actions on an existing hồ sơ; their audit action is the same string, with `_on_behalf` for Nhập hộ. */
 export const DOSSIER_ACTIONS = [
   "dossier.edit",
   "dossier.evidence.add",
@@ -45,6 +50,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.supplement.close",
   "dossier.reject",
   "dossier.ward_transfer",
+  "dossier.round_transfer",
   "dossier.checklist.assess",
   "dossier.ward_report.attach",
   "dossier.forward",
@@ -70,6 +76,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.closed_unsupplemented",
   "dossier.rejected_preliminary",
   "dossier.ward_transferred",
+  "dossier.round_transferred",
   "dossier.checklist_assessed",
   "dossier.ward_report_attached",
   "dossier.forwarded",
@@ -89,12 +96,12 @@ export const TRANSITIONS: readonly TransitionRule[] = [
         ["dossier.self_score", "dossier.self_scored"],
         ["dossier.explain", "dossier.explained"],
       ] as const
-    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["entity_owner"], event, timeline: false })),
+    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["entity_owner"], event, timeline: false, onBehalf: true })),
   ),
   // Story 26: a Nháp, which by this table has never been submitted, may be deleted.
   { action: "dossier.delete", from: "draft", to: "draft", roles: ["entity_owner"], event: "dossier.deleted", timeline: true },
   // L03 CT-09: nộp into the đợt Đang nhận nộp; the conditions of story 29 are checked by submitDossier.
-  { action: "dossier.submit", from: "draft", to: "submitted_to_ward", roles: ["entity_owner"], event: "dossier.submitted", timeline: true },
+  { action: "dossier.submit", from: "draft", to: "submitted_to_ward", roles: ["entity_owner"], event: "dossier.submitted", timeline: true, onBehalf: true },
   // Story 33: rút, only while the xã has not Tiếp nhận the hồ sơ.
   {
     action: "dossier.withdraw",
@@ -145,6 +152,7 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["entity_owner"],
     event: "dossier.supplement_answered",
     timeline: false,
+    onBehalf: true,
   },
   // L04 CT-11 (stories 52 to 54): nộp lại while the hạn bổ sung lasts, even after the Hạn nộp xã; the
   // hồ sơ keeps its Tiếp nhận and Cán bộ phụ trách.
@@ -155,6 +163,7 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["entity_owner"],
     event: "dossier.resubmitted",
     timeline: true,
+    onBehalf: true,
     guard: (d, now) => (isPastSupplementDeadline(d, now) ? supplementDeadlinePassed() : null),
   },
   // L04 XA-05 (story 56): once the hạn bổ sung has passed, the xã closes the hồ sơ as Không đạt sơ bộ.
@@ -172,6 +181,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   { action: "dossier.reject", from: "submitted_to_ward", to: "rejected_preliminary", roles: ["ward_officer"], event: "dossier.rejected_preliminary", timeline: true },
   // L05 (story 47): Chuyển xã moves a hồ sơ Đã nộp xã to the right xã, which Tiếp nhận it afresh.
   { action: "dossier.ward_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.ward_transferred", timeline: true },
+  // L06 XA-08 (story 69): chuyển đợt moves a hồ sơ Đã nộp xã into a later đợt of the same Phiên bản tiêu
+  // chí; which đợt may take it is checked by transferRound, which knows the đợt.
+  { action: "dossier.round_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.round_transferred", timeline: true },
   // L06 XA-04 (story 61): the Checklist sơ bộ of a received hồ sơ, editable until it is gửi tỉnh. Nhận xét
   // are the xã's working notes, so this is not a row of the timeline the Chủ thể reads.
   ...(["submitted_to_ward", "supplement_requested"] as const).map(
@@ -214,6 +226,18 @@ export const isPastSupplementDeadline = (d: Pick<Dossier, "supplementDeadline">,
 
 export const supplementDeadlinePassed = () => new DomainError("supplement_deadline_passed", "Đã quá hạn bổ sung nên không nộp lại được");
 
+/**
+ * Whether the actor's Vai trò đang dùng may take a row: one of its `roles`, or, under Nhập hộ, a row
+ * marked `onBehalf` and only as a Cán bộ xã.
+ */
+export function ruleAllows(rule: TransitionRule, actor: { activeRole: Role | null; onBehalfOf?: string }): boolean {
+  if (!actor.activeRole) return false;
+  return actor.onBehalfOf !== undefined ? rule.onBehalf === true && actor.activeRole === "ward_officer" : rule.roles.includes(actor.activeRole);
+}
+
+/** The audit and timeline action of a move: `<action>_on_behalf` under Nhập hộ (story 73). */
+export const recordedAction = (action: string, actor: { onBehalfOf?: string }) => (actor.onBehalfOf !== undefined ? `${action}_on_behalf` : action);
+
 /** The rule for `action` from the hồ sơ's current state, if the table has one. */
 export const ruleFor = (action: DossierAction, state: DossierState) => TRANSITIONS.find((r) => r.action === action && r.from === state);
 
@@ -228,6 +252,10 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
     case "ward":
       // The xã the hồ sơ was submitted to (or moved to by Chuyển xã); a Nháp belongs to no xã yet.
       return d.wardId === scope.wardId;
+    case "on_behalf":
+      // Every hồ sơ of the Chủ thể. Its xã đăng ký is not on the hồ sơ: the repository checks it when it
+      // loads the row, and a row in hand was loaded within this scope.
+      return d.entityId === scope.entityId;
     case "none":
       return false;
     default: {

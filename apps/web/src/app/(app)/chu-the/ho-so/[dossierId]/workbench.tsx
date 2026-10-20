@@ -34,7 +34,7 @@ const stars = (n: number) => "★".repeat(n);
  * thử of one hồ sơ. Every write carries the version it last saw; the page then reloads its data, and a
  * write refused because the hồ sơ changed meanwhile asks the Chủ thể to reload rather than overwrite.
  */
-export function Workbench({ assessment, editable }: { assessment: SelfAssessment; editable: boolean }) {
+export function Workbench({ assessment, editable, onBehalf }: { assessment: SelfAssessment; editable: boolean; /** Nhập hộ (L01). */ onBehalf?: string }) {
   const router = useRouter();
   const { dossierId } = assessment;
   const [version, setVersion] = useState(assessment.version);
@@ -78,7 +78,7 @@ export function Workbench({ assessment, editable }: { assessment: SelfAssessment
       <section className="rounded-lg border bg-surface shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
           <h2 className="font-semibold">Kho minh chứng</h2>
-          {editable && <EvidenceUploader disabled={disabled} upload={(add) => run(add)} dossierId={dossierId} />}
+          {editable && <EvidenceUploader disabled={disabled} upload={(add) => run(add)} dossierId={dossierId} onBehalf={onBehalf} />}
         </div>
         <RefreshWhileScanning active={assessment.files.some((f) => f.status === "scanning")} />
         {assessment.files.length === 0 ? (
@@ -99,7 +99,7 @@ export function Workbench({ assessment, editable }: { assessment: SelfAssessment
                       disabled={disabled}
                       onClick={() => {
                         if (window.confirm(`Gỡ "${file.fileName}" khỏi hồ sơ? Tệp cũng được gỡ khỏi mọi tiêu chí đã gắn.`))
-                          void run((v) => removeEvidenceAction({ dossierId, expectedVersion: v, fileId: file.fileId }));
+                          void run((v) => removeEvidenceAction({ dossierId, onBehalf, expectedVersion: v, fileId: file.fileId }));
                       }}
                       className="flex items-center gap-1 text-danger disabled:opacity-60"
                     >
@@ -122,7 +122,7 @@ export function Workbench({ assessment, editable }: { assessment: SelfAssessment
                       onSubmit={(e) => {
                         e.preventDefault();
                         const criterionIds = new FormData(e.currentTarget).getAll("criterionId").map(String);
-                        void run((v) => linkEvidenceAction({ dossierId, expectedVersion: v, fileId: file.fileId, criterionIds }));
+                        void run((v) => linkEvidenceAction({ dossierId, onBehalf, expectedVersion: v, fileId: file.fileId, criterionIds }));
                       }}
                     >
                       <div className="grid gap-1 sm:grid-cols-2">
@@ -184,7 +184,7 @@ export function Workbench({ assessment, editable }: { assessment: SelfAssessment
                         <select
                           value={c.levelId ?? ""}
                           disabled={disabled}
-                          onChange={(e) => void run((v) => selfScoreAction({ dossierId, expectedVersion: v, criterionId: c.criterionId, levelId: e.target.value || null }))}
+                          onChange={(e) => void run((v) => selfScoreAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, levelId: e.target.value || null }))}
                           className="rounded-lg border border-line-strong bg-surface px-3 py-2 disabled:opacity-70"
                         >
                           <option value="">Chưa chọn</option>
@@ -201,7 +201,7 @@ export function Workbench({ assessment, editable }: { assessment: SelfAssessment
                         key={`${c.criterionId}:${c.explanation}`}
                         initial={c.explanation}
                         disabled={disabled}
-                        save={(explanation) => run((v) => explainCriterionAction({ dossierId, expectedVersion: v, criterionId: c.criterionId, explanation }))}
+                        save={(explanation) => run((v) => explainCriterionAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, explanation }))}
                       />
                     </li>
                   );
@@ -290,7 +290,17 @@ function Explanation({ initial, disabled, save }: { initial: string; disabled: b
 }
 
 /** Uploads a tệp minh chứng straight to storage, then puts it into the kho (story 20); the scan runs after. */
-function EvidenceUploader({ dossierId, disabled, upload }: { dossierId: string; disabled: boolean; upload: (add: (v: number) => Promise<SaveResult>) => Promise<boolean> }) {
+function EvidenceUploader({
+  dossierId,
+  onBehalf,
+  disabled,
+  upload,
+}: {
+  dossierId: string;
+  onBehalf: string | undefined;
+  disabled: boolean;
+  upload: (add: (v: number) => Promise<SaveResult>) => Promise<boolean>;
+}) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string>();
 
@@ -302,10 +312,10 @@ function EvidenceUploader({ dossierId, disabled, upload }: { dossierId: string; 
     setError(undefined);
     setProgress(0);
     try {
-      const req = await requestEvidenceUploadAction({ fileName: file.name, contentType: file.type || "application/octet-stream", size: file.size });
+      const req = await requestEvidenceUploadAction({ fileName: file.name, contentType: file.type || "application/octet-stream", size: file.size, onBehalf });
       if ("error" in req) throw new Error(req.error);
       const parts = await sendToStorage(file, req.upload, setProgress);
-      if (await upload((v) => addEvidenceAction({ dossierId, expectedVersion: v, fileId: req.fileId, parts }))) formEl.reset();
+      if (await upload((v) => addEvidenceAction({ dossierId, onBehalf, expectedVersion: v, fileId: req.fileId, parts }))) formEl.reset();
     } catch (err) {
       setError((err as Error).message);
     } finally {

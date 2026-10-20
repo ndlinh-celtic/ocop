@@ -16,6 +16,7 @@ import { requireActor } from "@/server/session";
 import { ChecklistForm } from "./checklist-form";
 import { ChangeHandlerForm, ReceiveForm } from "./handler-forms";
 import { RejectForm, TransferWardForm } from "./reject-transfer-forms";
+import { TransferRoundForm } from "./round-transfer-form";
 import { CloseUnsupplementedForm, RequestSupplementForm } from "./supplement-forms";
 
 export const dynamic = "force-dynamic";
@@ -50,9 +51,11 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   // L05 XA-06 and Chuyển xã (stories 47, 63): what loại may cite, and where the hồ sơ may go.
   const rejectable = can(actor, "dossier.reject", dossier);
   const transferable = can(actor, "dossier.ward_transfer", dossier);
-  const [exclusions, wards] = await Promise.all([
+  const [exclusions, wards, rounds] = await Promise.all([
     rejectable ? app().core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id }).then((v) => v.set.exclusionConditions) : [],
     transferable ? app().core.org.listWards().then((all) => all.filter((w) => w.id !== dossier.wardId)) : [],
+    // L06 XA-08 (story 69): the đợt that may take the hồ sơ.
+    can(actor, "dossier.round_transfer", dossier) ? app().core.dossiers.roundTransferTargets(actor, { dossierId }) : [],
   ]);
 
   return (
@@ -92,6 +95,11 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           dossier.state === "submitted_to_ward" && <p className="font-medium text-amber">Chờ tiếp nhận.</p>
         )}
         <DossierFlags flags={dossier.flags} />
+        {dossier.awaitingNextRound && (
+          <p role="status" className="font-medium text-amber">
+            Chờ đợt sau: đã quá Hạn gửi tỉnh của đợt nên hồ sơ không gửi tỉnh được trong đợt này. Chuyển hồ sơ sang đợt sau để tiếp tục.
+          </p>
+        )}
       </section>
 
       {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
@@ -261,6 +269,7 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
 
       {rejectable && <RejectForm dossierId={dossier.id} version={dossier.version} exclusions={exclusions} />}
       {transferable && <TransferWardForm dossierId={dossier.id} version={dossier.version} wards={wards} />}
+      {can(actor, "dossier.round_transfer", dossier) && <TransferRoundForm dossierId={dossier.id} version={dossier.version} rounds={rounds} />}
 
       <DossierTimeline events={timeline} names={names} />
     </div>

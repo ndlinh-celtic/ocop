@@ -4,6 +4,7 @@ import type { SubmissionBlocker } from "@ocop/core";
 import { Send, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
+import { dossierHome } from "@/lib/dossier-paths";
 import { submitDossierAction, withdrawDossierAction, type DossierFormState } from "../actions";
 
 /**
@@ -11,9 +12,22 @@ import { submitDossierAction, withdrawDossierAction, type DossierFormState } fro
  * submits it into the đợt Đang nhận nộp after confirmation. With `resubmission` (L04 CT-11) it nộp lại a
  * hồ sơ Yêu cầu bổ sung as the next Phiên bản nộp.
  */
-export function SubmitPanel({ dossierId, version, blockers, resubmission = false }: { dossierId: string; version: number; blockers: SubmissionBlocker[]; resubmission?: boolean }) {
+export function SubmitPanel({
+  dossierId,
+  version,
+  blockers,
+  resubmission = false,
+  onBehalf,
+}: {
+  dossierId: string;
+  version: number;
+  blockers: SubmissionBlocker[];
+  resubmission?: boolean;
+  /** Nhập hộ (L01): the Chủ thể the Cán bộ xã nộp for. */
+  onBehalf?: string;
+}) {
   const verb = resubmission ? "Nộp lại hồ sơ" : "Nộp hồ sơ";
-  const [state, action, pending] = useActionState<DossierFormState, FormData>(submitDossierAction.bind(null, dossierId, version), {});
+  const [state, action, pending] = useActionState<DossierFormState, FormData>(submitDossierAction.bind(null, dossierId, version, onBehalf), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
       <h2 className="mb-2 font-semibold">{verb}</h2>
@@ -27,7 +41,7 @@ export function SubmitPanel({ dossierId, version, blockers, resubmission = false
                 {b.code === "round_version_mismatch" && (
                   <>
                     {" "}
-                    <Link href={`/chu-the/ho-so/moi?tu=${dossierId}`} className="text-brand underline-offset-2 hover:underline">
+                    <Link href={`${dossierHome(onBehalf)}/moi?tu=${dossierId}`} className="text-brand underline-offset-2 hover:underline">
                       Tạo hồ sơ mới từ hồ sơ này
                     </Link>
                   </>
