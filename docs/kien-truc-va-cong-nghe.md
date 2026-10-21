@@ -12,7 +12,7 @@ Lý do chính: bài toán là **workflow nghiệp vụ có trạng thái, phân 
 
 Những tính năng quyết định kiến trúc:
 
-- **Vòng đời hồ sơ 14 trạng thái** (L01 đến L17) với hai chế độ chấm: trực tiếp và dựa trên Tổ tư vấn (HD-06).
+- **Vòng đời hồ sơ 15 trạng thái** (L01 đến L17) với hai chế độ chấm: trực tiếp và dựa trên Tổ tư vấn (HD-06).
 - **Bộ tiêu chí có phiên bản, cấu hình được, riêng theo nhóm sản phẩm** (AD-03, AD-04, AD-05); phiếu chấm phải gắn snapshot phiên bản.
 - **Sao chép dữ liệu Tổ tư vấn sang phiếu thành viên** có nhãn nguồn, lưu giá trị gốc, không ghi đè phiếu đã chỉnh (TM-08, TM-09, TV-03, TV-04, AD-09).
 - **Khóa bất biến**: báo cáo Tổ tư vấn đã phát hành, phiếu đã xác nhận, điểm đã chốt (TM-07, TV-05, HD-08).
@@ -118,7 +118,7 @@ Phần lớn hệ thống là CRUD có phân quyền. Sáu chỗ dưới đây c
 
 ### 5.1 State machine hồ sơ
 
-- Khai báo bảng chuyển trạng thái dạng dữ liệu: `{from, to, action, guard, roles}`, lấy đúng 14 trạng thái ở mục 1.2 của tài liệu luồng xử lý. Không cần XState; một map có kiểu là đủ và test được toàn bộ bằng bảng.
+- Khai báo bảng chuyển trạng thái dạng dữ liệu: `{from, to, action, guard, roles}`, lấy đúng 15 trạng thái ở mục 1.2 của tài liệu luồng xử lý. Không cần XState; một map có kiểu là đủ và test được toàn bộ bằng bảng.
 - Mọi chuyển trạng thái đi qua một hàm `transition()` duy nhất: cập nhật `dossier.status` với optimistic lock (`version`), ghi `dossier_event` (ai, khi nào, từ, sang, lý do), ghi `outbox` cho thông báo. Tất cả trong một transaction.
 - Chế độ chấm là thuộc tính của đợt và bị khóa khi có phiếu đầu tiên (L09). Guard của nhánh "Đã chuyển tỉnh → Tổ tư vấn thẩm định / Thành viên xem xét" đọc giá trị này.
 - Ngưỡng 3/4/5 sao không viết cứng: đọc từ `rank_threshold` của phiên bản tiêu chí mà đợt đang dùng.

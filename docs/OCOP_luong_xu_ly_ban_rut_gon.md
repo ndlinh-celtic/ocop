@@ -47,6 +47,7 @@ stateDiagram-v2
     state "Đã nộp xã" as NopXa
     state "Yêu cầu bổ sung" as BoSung
     state "Không đạt sơ bộ" as KhongDatSB
+    state "Đã rút" as DaRut
     state "Đã chuyển tỉnh" as ChuyenTinh
     state "Tổ tư vấn thẩm định" as ThamMuu
     state "Đã phát hành báo cáo Tổ tư vấn" as PhatHanh
@@ -63,6 +64,8 @@ stateDiagram-v2
     NopXa --> BoSung: Xã yêu cầu bổ sung
     BoSung --> NopXa: Chủ thể nộp lại
     NopXa --> KhongDatSB: Xã loại
+    NopXa --> DaRut: Chủ thể rút (xã chưa tiếp nhận)
+    BoSung --> KhongDatSB: Quá hạn bổ sung, lý do Không bổ sung
     NopXa --> ChuyenTinh: Xã đề xuất
     ChuyenTinh --> BoSung: Sở trả về xã
     ChuyenTinh --> ThamMuu: Chế độ dựa trên Tổ tư vấn
@@ -78,6 +81,8 @@ stateDiagram-v2
     GuiBo --> CN34: Bộ trả về, Sở chuyển về công nhận cấp tỉnh
     GuiBo --> DaDong: Sở đóng hồ sơ
 ```
+
+Vòng đời có 15 trạng thái: 14 trạng thái gốc và **Đã rút** (ADR 0007). Tiếp nhận, đổi cán bộ phụ trách, chuyển xã và chuyển đợt không phải trạng thái; chúng là sự kiện trên hồ sơ ở "Đã nộp xã".
 
 ## 2. Nhóm Chủ thể OCOP
 
@@ -145,7 +150,7 @@ flowchart TD
 
 **Ngoại lệ**
 - Hết hạn nộp: hồ sơ giữ ở "Nháp", nộp được vào đợt kế tiếp nếu đợt đó áp dụng cùng Phiên bản tiêu chí; nếu khác, hồ sơ hiển thị "Không nộp được vào đợt hiện tại: khác phiên bản tiêu chí" kèm nút tạo hồ sơ mới (L02).
-- Rút hồ sơ trước khi xã xử lý: trạng thái "Đã rút", ghi lý do.
+- Rút hồ sơ khi xã chưa tiếp nhận: trạng thái "Đã rút", ghi lý do.
 
 **Dữ liệu ghi nhận:** phiên bản hồ sơ, thời điểm nộp, lịch sử trạng thái, lịch nhắc.
 
@@ -162,58 +167,58 @@ flowchart TD
 5. Hồ sơ quay về "Đã nộp xã"; người yêu cầu nhận thông báo.
 
 **Ngoại lệ**
-- Quá hạn bổ sung: hệ thống nhắc, sau đó cho phép cán bộ đóng hồ sơ với lý do "Không bổ sung".
+- Quá hạn bổ sung: hệ thống nhắc, sau đó cho phép cán bộ đóng hồ sơ về "Không đạt sơ bộ" với lý do "Không bổ sung".
 - Hồ sơ đã ở tỉnh: chỉ Sở trả về xã, tránh nhiều đầu mối yêu cầu cùng lúc.
 
 **Dữ liệu ghi nhận:** danh sách yêu cầu, phản hồi từng mục, các phiên bản hồ sơ.
 
 ## 3. Nhóm UBND xã/phường
 
-### L05. Tiếp nhận, kiểm tra và phân công
-**Chức năng:** XA-01, XA-02, XA-03 · **Tác nhân:** Lãnh đạo xã, cán bộ xã · **Đợt 1**
+### L05. Tiếp nhận, kiểm tra và chỉ định cán bộ phụ trách
+**Chức năng:** XA-01, XA-02, XA-03 · **Tác nhân:** Cán bộ xã · **Đợt 1**
 
 **Luồng chính**
 1. Hồ sơ mới nộp hiện trong danh sách "Chờ tiếp nhận" của xã, ghi ngày nhận.
-2. Lãnh đạo hoặc văn thư phân công cán bộ xử lý.
+2. Cán bộ xã tiếp nhận hồ sơ và chỉ định cán bộ phụ trách (mặc định là chính mình). Mọi cán bộ xã của xã đều xem và xử lý được hồ sơ; cán bộ phụ trách là người nhận việc và thông báo.
 3. Cán bộ kiểm tra tính hợp lệ của chủ thể (đúng địa bàn, đúng đối tượng) và tính đầy đủ tài liệu theo danh mục.
 4. Cán bộ chọn một trong ba kết quả: chuyển sang đánh giá sơ bộ, yêu cầu bổ sung (L04), hoặc loại kèm lý do.
 
 **Ngoại lệ**
 - Hồ sơ không thuộc địa bàn: chuyển sang xã đúng hoặc trả chủ thể, ghi lý do.
-- Cán bộ nghỉ hoặc quá tải: lãnh đạo phân công lại, hệ thống ghi lịch sử.
+- Cán bộ nghỉ hoặc quá tải: cán bộ xã đổi cán bộ phụ trách, hệ thống ghi lịch sử.
 
 **Dữ liệu ghi nhận:** ngày nhận, người phụ trách, kết quả kiểm tra, lý do loại.
 
 ---
 
-### L06. Đánh giá sơ bộ, lập biên bản và gửi lên tỉnh
-**Chức năng:** XA-04, XA-07, XA-08 · **Tác nhân:** Cán bộ xã, lãnh đạo xã · **Đợt 1**
+### L06. Đánh giá sơ bộ, lập báo cáo đánh giá cấp xã và gửi lên tỉnh
+**Chức năng:** XA-04, XA-07, XA-08 · **Tác nhân:** Cán bộ xã · **Đợt 1**
 
 **Luồng chính**
-1. Cán bộ mở checklist sơ bộ: nguồn gốc nguyên liệu, lao động địa phương, bản sắc văn hóa và trí tuệ bản địa.
+1. Cán bộ mở checklist sơ bộ của đợt (mặc định: tính pháp lý; tính hợp lệ của phiếu đăng ký và báo cáo tự đánh giá; nguồn gốc nguyên liệu địa phương và quy mô sản xuất; lao động địa phương; bản sắc văn hóa và trí tuệ bản địa).
 2. Với mỗi mục, chọn đạt, không đạt hoặc cần xác minh, kèm nhận xét.
 3. Hệ thống tổng hợp và đề xuất "Đủ điều kiện chuyển tỉnh" hoặc "Chưa đủ".
-4. Cán bộ lập biên bản đánh giá sơ bộ và văn bản đề xuất từ mẫu Word; hệ thống điền sẵn thông tin chủ thể và sản phẩm.
-5. Lãnh đạo xã xem, ký số ngoài hệ thống rồi tải bản đã ký lên (hoặc duyệt nội bộ nếu cơ quan chấp nhận).
-6. Lãnh đạo chọn đợt gửi (theo hạn gửi tỉnh đang cấu hình); hệ thống chuyển "Đã chuyển tỉnh", đính kèm toàn bộ tài liệu, thông báo Sở và chủ thể.
+4. Cán bộ lập báo cáo đánh giá cấp xã cho hồ sơ từ mẫu Word (mỗi hồ sơ một báo cáo); hệ thống điền sẵn thông tin chủ thể, sản phẩm và kết quả checklist.
+5. Cán bộ trình lãnh đạo UBND xã ký số ngoài hệ thống rồi tải bản đã ký lên; chưa có bản đã ký thì không gửi tỉnh được. Lãnh đạo xã không phải người dùng của hệ thống.
+6. Cán bộ gửi hồ sơ lên tỉnh trong hạn gửi tỉnh của đợt; hệ thống chuyển "Đã chuyển tỉnh", đính kèm toàn bộ tài liệu, thông báo Sở và chủ thể.
 
 ```mermaid
 flowchart TD
     A["Cán bộ xã mở checklist sơ bộ"] --> B["Đánh giá từng mục, ghi nhận xét"]
     B --> C{"Đủ điều kiện"}
     C -->|"Không"| D["Loại hoặc yêu cầu bổ sung"]
-    C -->|"Có"| E["Lập biên bản và văn bản đề xuất"]
-    E --> F["Lãnh đạo xã duyệt, ký số ngoài hệ thống"]
+    C -->|"Có"| E["Lập báo cáo đánh giá cấp xã"]
+    E --> F["Trình lãnh đạo xã ký số ngoài hệ thống, tải bản đã ký lên"]
     F --> G{"Còn trong hạn gửi tỉnh"}
-    G -->|"Có"| H["Chọn đợt, gửi lên tỉnh"]
-    G -->|"Không"| I["Chuyển sang đợt kế tiếp"]
+    G -->|"Có"| H["Gửi lên tỉnh"]
+    G -->|"Không"| I["Chờ đợt sau, cán bộ chuyển sang đợt cùng phiên bản tiêu chí"]
 ```
 
 **Ngoại lệ**
-- Quá hạn gửi của đợt: chuyển sang đợt kế tiếp, thông báo chủ thể.
+- Quá hạn gửi của đợt: hồ sơ ở lại "Đã nộp xã" với nhãn "Chờ đợt sau"; khi có đợt cùng phiên bản tiêu chí, cán bộ chuyển hồ sơ sang đợt đó kèm lý do, thông báo chủ thể.
 - Phát hiện sai sót sau khi gửi: xã đề nghị Sở trả về (ghi lý do) trước khi thẩm định bắt đầu.
 
-**Dữ liệu ghi nhận:** kết quả checklist, biên bản (PDF hoặc Word, kèm bản đã ký), đợt gửi, thời điểm gửi.
+**Dữ liệu ghi nhận:** kết quả checklist, báo cáo đánh giá cấp xã (bản Word sinh ra và bản PDF đã ký), đợt gửi, thời điểm gửi.
 
 ## 4. Nhóm cấp tỉnh
 

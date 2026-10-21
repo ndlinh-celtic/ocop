@@ -1,4 +1,6 @@
 import type { SystemActor } from "../shared/context";
+import { emailDossierEvent, NOTICE_EVENTS, notifyDossierEvent } from "../dossiers/notices";
+import { emailReminder, notifyReminder } from "../dossiers/reminders";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
@@ -42,6 +44,24 @@ export const CONSUMERS = {
   "notifications.file-blocked": {
     events: ["files.blocked"],
     handle: notifyFileBlocked,
+  },
+  // Story 86: who hears of what happens to a hồ sơ (dossiers/notices.ts).
+  "notifications.dossier": {
+    events: NOTICE_EVENTS,
+    handle: notifyDossierEvent,
+  },
+  "dossiers.notice-email": {
+    events: NOTICE_EVENTS,
+    handle: emailDossierEvent,
+  },
+  // L03 CT-12 (dossiers/reminders.ts): nhắc hạn, in the app and by email.
+  "notifications.dossier-reminder": {
+    events: ["dossier.reminder_due"],
+    handle: notifyReminder,
+  },
+  "dossiers.reminder-email": {
+    events: ["dossier.reminder_due"],
+    handle: emailReminder,
   },
 } as const satisfies Record<string, Consumer>;
 

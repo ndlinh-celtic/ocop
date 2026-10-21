@@ -1,4 +1,7 @@
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
+import type { DossierState } from "../dossiers/model";
+import type { ReminderPayload } from "../dossiers/reminder-model";
+import type { DossierEventType } from "../dossiers/transitions";
 import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
@@ -26,7 +29,20 @@ export type DomainEventBody =
     }
   | { type: "round.grading_mode_changed"; payload: { roundId: string; from: GradingMode; to: GradingMode } }
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
-  | { type: "round.ended"; payload: { roundId: string } };
+  | { type: "round.ended"; payload: { roundId: string } }
+  | { type: "round.checklist_configured"; payload: { roundId: string } }
+  | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
+  | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
+  | { type: "entity.updated"; payload: { entityId: string } }
+  | { type: "entity.ward_changed"; payload: { entityId: string; fromWardId: string; toWardId: string } }
+  | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
+  | { type: "system.setting_changed"; payload: { key: string } }
+  | { type: "dossier.reminder_due"; payload: ReminderPayload }
+  | {
+      type: DossierEventType;
+      /** `actorUserId`: who made the move; absent on events recorded before it was added. */
+      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string };
+    };
 
 export type EventType = DomainEventBody["type"];
 

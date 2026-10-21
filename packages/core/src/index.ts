@@ -1,7 +1,7 @@
 export { createCore, type Core } from "./app";
 export type { Clock, IdGen, PasswordHasher, SecretBox, TotpCheck, TotpService } from "./shared/ports";
 export { DEFAULT_SETTINGS, type CoreDeps, type CoreSettings } from "./shared/deps";
-export type { Tx, UnitOfWork } from "./shared/uow";
+export type { Repos, Tx, UnitOfWork } from "./shared/uow";
 export { anonymousActor, systemActor, type Actor, type AnonymousActor, type RequestContext, type SystemActor, type UserActor } from "./shared/context";
 export { DomainError } from "./shared/errors";
 export type { AuditEntry, AuditFilter, AuditLog } from "./audit/audit";
@@ -19,7 +19,16 @@ export type { Ward, WardRepo } from "./org/ward";
 export type { Notification, NotificationRepo } from "./notifications/notification";
 export { REAUTH_WINDOW_MS, requireRecentAuth, type ReauthProof, type ReauthResult } from "./identity/reauth";
 export type { FileStore, PresignedRequest } from "./files/file-store";
-export { DEFAULT_ALLOWED_TYPES, type FileRepo, type FileStatus, type StoredFile } from "./files/model";
+export { DEFAULT_ALLOWED_TYPES, FILE_PURPOSES, type FilePurpose, type FileRepo, type FileStatus, type StoredFile, type StoredFilePurpose } from "./files/model";
+export {
+  DOCX_TYPE,
+  type DocumentRenderer,
+  type DocumentTemplate,
+  type DocumentTemplates,
+  type RegistrationFormData,
+  type SelfAssessmentReportData,
+  type WardReportData,
+} from "./documents/renderer";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
@@ -99,6 +108,7 @@ export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
 export {
   AGGREGATION_METHODS,
+  DEFAULT_CHECKLIST,
   endOfVnDay,
   EXTENDABLE_DEADLINE_LABEL,
   EXTENDABLE_DEADLINES,
@@ -111,6 +121,7 @@ export {
   vnDateOf,
   type AggregationMethod,
   type AggregationRule,
+  type ChecklistItem,
   type DeadlineExtension,
   type DeadlineExtensionView,
   type ExtendableDeadline,
@@ -120,6 +131,95 @@ export {
   type RoundStatus,
 } from "./rounds/model";
 export type { RoundInput } from "./rounds/manage";
-export { placeholderRoundActivity, type RoundActivity } from "./rounds/activity";
+export type { ChecklistItemInput } from "./rounds/checklist";
+export { roundActivity, type RoundActivity } from "./rounds/activity";
 export type { ExtendDeadlineInput } from "./rounds/extension";
 export type { RoundDetail, RoundView } from "./rounds/read";
+export { dataScopeOf, type DataScope } from "./identity/scope";
+export { onBehalfOf } from "./identity/on-behalf";
+export {
+  assertIdentifierShape,
+  ENTITY_KIND_LABEL,
+  ENTITY_KINDS,
+  entityNotFound,
+  maskPersonalId,
+  normalizeIdentifier,
+  parseDetails,
+  type Entity,
+  type EntityDetails,
+  type EntityKind,
+  type EntityRepo,
+} from "./entities/model";
+export type { EntityDetailView, EntityView } from "./entities/read";
+export type { NewEntityInput, RegisterEntityInput } from "./entities/register";
+export type { UpdateEntityInput } from "./entities/profile";
+export {
+  isExpired,
+  legalDocumentNotFound,
+  legalStanding,
+  type LegalDocument,
+  type LegalDocumentRecord,
+  type LegalDocumentRepo,
+  type LegalDocumentType,
+  type LegalStanding,
+  type Requirement,
+  type RequirementState,
+} from "./entities/legal";
+export type { AddLegalDocumentInput, LegalDocumentView, LegalStandingView } from "./entities/legal-documents";
+export type { RateLimit, RateLimitRepo } from "./platform/rate-limit";
+export { consumeRateLimit } from "./platform/throttle";
+export {
+  CHECKLIST_RESULT_LABEL,
+  CHECKLIST_RESULTS,
+  DOSSIER_STATE_LABEL,
+  DOSSIER_STATES,
+  dossierNotFound,
+  EMPTY_PRODUCT,
+  PRODUCT_FIELDS,
+  type Dossier,
+  type DossierEvent,
+  type DossierRepo,
+  type DossierState,
+  type ChecklistResult,
+  type ChecklistResultValue,
+  type CriterionEntry,
+  type EvidenceFile,
+  type EvidenceLink,
+  type ProductField,
+  type ProductInfo,
+  PRODUCT_FIELD_LABEL,
+  REQUIRED_PRODUCT_FIELDS,
+  type Submission,
+  type SubmissionFileRef,
+  type SubmissionFileRole,
+  type SubmissionSnapshot,
+  type WardReport,
+} from "./dossiers/model";
+export type { WardReportStatus } from "./dossiers/ward-report";
+export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType, type DossierRef, type TransitionRule } from "./dossiers/transitions";
+export type { CreationOptions } from "./dossiers/create";
+export type { UpdateProductInput } from "./dossiers/edit";
+export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
+export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
+export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
+export type { ChecklistItemView, ChecklistResultInput, ChecklistSuggestion, DossierChecklist } from "./dossiers/checklist";
+export { SUBMISSION_DOCUMENTS, type SubmissionDocument } from "./dossiers/documents";
+export type { RequestSupplementInput, SupplementItemInput, SupplementRequestView } from "./dossiers/supplement";
+export type { SupplementItem, SupplementOutcome, SupplementRepo, SupplementRequest } from "./dossiers/supplement-model";
+export { isPastSupplementDeadline } from "./dossiers/transitions";
+export {
+  PRELIMINARY_REJECTION_REASON_LABEL,
+  PRELIMINARY_REJECTION_REASONS,
+  rejectionOf,
+  type DossierRejection,
+  type PreliminaryRejectionReason,
+  type RejectionGround,
+} from "./dossiers/model";
+export type { RejectInput } from "./dossiers/reject-transfer";
+// #44: the province's view of hồ sơ, the Sở trả về and the đề nghị trả về of the xã.
+export { FINISHED_STATES, type ReturnRequest } from "./dossiers/model";
+export type { ReturnRequestView } from "./dossiers/return-request";
+export type { DossierOverviewRow } from "./dossiers/read";
+export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
+export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
+export type { SystemSettingRepo } from "./system/settings-model";

@@ -25,8 +25,13 @@ export interface TotpService {
   verify(secret: string, code: string, at: Date, afterStep: number | null): Promise<TotpCheck>;
 }
 
-/** Authenticated encryption for secrets stored at rest (TOTP secrets). */
+/** Authenticated encryption for secrets stored at rest (TOTP secrets, số định danh cá nhân). */
 export interface SecretBox {
   seal(plain: string): string;
   open(sealed: string): string;
+  /**
+   * A keyed, deterministic hash (HMAC) for equality checks on low-entropy personal data (CCCD, IP
+   * addresses) without storing it readable: unlike a plain hash it cannot be reversed by enumeration.
+   */
+  fingerprint(plain: string): string;
 }

@@ -40,16 +40,16 @@
   const n1 = (v) => fmt(v, Number.isInteger(v) ? 0 : 1);
   const hdr = (h) => `<div class="row s8">${O.chip(h.st)}<span class="tag">${esc(h.nhom)}</span><span class="tag">${esc(D.dot.ten)}</span></div>`;
 
-  /* ======= thông tin hồ sơ, minh chứng, biên bản xã (dùng chung S51, S61) ======= */
+  /* ======= thông tin hồ sơ, minh chứng, báo cáo đánh giá cấp xã (dùng chung S51, S61) ======= */
   const infoPanel = (h) => O.dl([
     ['Mã hồ sơ', h.ma], ['Sản phẩm', esc(h.sp)], ['Nhóm sản phẩm', esc(h.nhom)], ['Chủ thể', esc(h.ct)], ['Xã/phường', esc(h.xa)],
     ['Người đại diện', 'Nguyễn Thị Sáu · 0918 ••• 247'], ['Ngày xã chuyển tỉnh', '05/05/2026'], ['Đợt', esc(D.dot.ten)],
     ['Mô tả', 'Cá linh non mùa nước nổi, ướp muối và phơi khô theo cách truyền thống của vùng Đồng Tháp Mười. Đóng gói hút chân không 250 g và 500 g.'],
   ]);
   const evidencePanel = () => PARTS.map((p) => `<div class="stack s8"><h4 class="muted">${p.name}</h4>${D.tieuchi.filter((t) => t.part === p.id).map((t) => { const fs = evFiles(t); return `<div class="row top nowrap" style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="crit-code">${t.code}</span><div class="stack s8" style="flex:1;min-width:0;gap:6px"><span class="small strong">${esc(t.name)}</span><div class="row s8">${fs.length ? fs.map(O.fileChip).join('') : O.tag('Thiếu minh chứng', 'orange', 'file-warning')}</div></div></div>`; }).join('')}</div>`).join('<div style="height:14px"></div>');
-  const xaPanel = () => `<div class="stack s12">${O.banner({ tone: 'green', icon: 'landmark', title: 'UBND Xã An Phú kết luận: Đủ điều kiện chuyển tỉnh', text: 'Biên bản số 14/BB-UBND ngày 03/05/2026, người ký: Chủ tịch UBND xã.' })}
-    ${[['Nguồn gốc nguyên liệu', 'Đạt', 'green', 'Cá linh thu mua tại địa phương, có sổ ghi chép.'], ['Lao động địa phương', 'Đạt', 'green', '18 lao động thường trú tại xã.'], ['Bản sắc văn hóa và trí tuệ bản địa', 'Cần xác minh', 'orange', 'Cần đối chiếu tư liệu về nghề làm mắm truyền thống của hộ.']].map(([n, r, tone, c], i) => `<div class="card tight"><div class="row between"><b>${i + 1}. ${n}</b>${O.tag(r, tone)}</div><p class="small muted" style="margin-top:6px">${c}</p></div>`).join('')}
-    ${O.file({ name: 'Bien-ban-so-bo-xa-An-Phu.pdf', size: '410 KB', type: 'pdf', crit: 'Đã ký' })}</div>`;
+  const xaPanel = () => `<div class="stack s12">${O.banner({ tone: 'green', icon: 'landmark', title: 'UBND Xã An Phú kết luận: Đủ điều kiện chuyển tỉnh', text: 'Báo cáo đánh giá cấp xã số 14/BC-UBND ngày 03/05/2026, người ký: Chủ tịch UBND xã.' })}
+    ${[['Tính pháp lý', 'Đạt', 'green', 'GPKD và giấy chứng nhận ATTP còn hiệu lực.'], ['Phiếu đăng ký và Báo cáo tự đánh giá', 'Đạt', 'green', 'Thông tin khớp hồ sơ.'], ['Nguồn gốc nguyên liệu địa phương và quy mô sản xuất', 'Đạt', 'green', 'Cá linh thu mua tại địa phương, có sổ ghi chép.'], ['Lao động địa phương', 'Đạt', 'green', '18 lao động thường trú tại xã.'], ['Bản sắc văn hóa và trí tuệ bản địa', 'Cần xác minh', 'orange', 'Cần đối chiếu tư liệu về nghề làm mắm truyền thống của hộ.']].map(([n, r, tone, c], i) => `<div class="card tight"><div class="row between"><b>${i + 1}. ${n}</b>${O.tag(r, tone)}</div><p class="small muted" style="margin-top:6px">${c}</p></div>`).join('')}
+    ${O.file({ name: 'Bao-cao-danh-gia-xa-An-Phu.pdf', size: '410 KB', type: 'pdf', crit: 'Đã ký' })}</div>`;
 
   /* ======= S50 Hàng đợi thẩm định ======= */
   const Q = [
@@ -114,7 +114,7 @@
       const h = O.hs('HS-2026-0123');
       const t = sumBy((x) => s51[x.code].v);
       const scoredN = D.tieuchi.filter((x) => s51[x.code].v !== '').length;
-      const doc = `<section class="card">${O.tabs([['info', 'Thông tin hồ sơ'], ['ev', 'Minh chứng', D.tieuchi.reduce((a, x) => a + x.ev, 0)], ['xa', 'Biên bản sơ bộ của xã']], { info: infoPanel(h), ev: evidencePanel(), xa: xaPanel() }, { active: 'ev', style: 'line' })}</section>`;
+      const doc = `<section class="card">${O.tabs([['info', 'Thông tin hồ sơ'], ['ev', 'Minh chứng', D.tieuchi.reduce((a, x) => a + x.ev, 0)], ['xa', 'Báo cáo đánh giá cấp xã']], { info: infoPanel(h), ev: evidencePanel(), xa: xaPanel() }, { active: 'ev', style: 'line' })}</section>`;
       const form = `<div class="stack">
         ${PARTS.map((p) => `<div><div class="part-head"><h3>${p.name}</h3><span class="pt"><span data-pt="${p.id}">${t[p.id]}</span> / ${p.max}</span></div>${D.tieuchi.filter((x) => x.part === p.id).map(s51Crit).join('')}</div>`).join('')}
         <div class="scorebar"><div><div class="tiny muted">Tổng điểm đề xuất</div><div class="total"><span data-tot>${t.T}</span><small> / 100</small></div></div>

@@ -3,7 +3,8 @@ export type EmailMessage =
   | { to: string; template: "activation"; data: { fullName: string; link: string; expiresAt: Date } }
   | { to: string; template: "role_granted"; data: { fullName: string; roleLabel: string; scopeLabel: string; link: string } }
   | { to: string; template: "account_locked"; data: { fullName: string; until: Date; resetLink: string } }
-  | { to: string; template: "password_reset"; data: { fullName: string; link: string; expiresAt: Date } };
+  | { to: string; template: "password_reset"; data: { fullName: string; link: string; expiresAt: Date } }
+  | { to: string; template: "dossier_notice"; data: { fullName: string; subject: string; line: string; link: string } };
 
 export interface Mailer {
   send(message: EmailMessage): Promise<void>;
@@ -25,4 +26,6 @@ export interface EmailDelivery {
 export interface EmailDeliveries {
   record(d: EmailDelivery): Promise<void>;
   list(filter: { to?: string; limit?: number }): Promise<EmailDelivery[]>;
+  /** Whether a delivery of this event by this consumer to this recipient was recorded as sent. */
+  wasSent(eventId: string, consumer: string, recipient: string): Promise<boolean>;
 }

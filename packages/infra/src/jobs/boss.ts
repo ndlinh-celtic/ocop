@@ -5,7 +5,7 @@ import { PgBoss } from "pg-boss";
 export const BOSS_SCHEMA = "pgboss";
 
 /** Every queue the worker consumes: one per outbox consumer. Created by the migrator so the app role never needs DDL. */
-export const QUEUES = ["system.ping", ...CONSUMER_NAMES, "audit.seal", "audit.verify", "audit.anchor", "rounds.close-due"] as const;
+export const QUEUES = ["system.ping", ...CONSUMER_NAMES, "audit.seal", "audit.verify", "audit.anchor", "rounds.close-due", "dossiers.due-reminders"] as const;
 export type QueueName = (typeof QUEUES)[number];
 
 /** L23 step 4: failed jobs retry with backoff, up to about an hour in total. */

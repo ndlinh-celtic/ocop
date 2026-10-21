@@ -1,5 +1,5 @@
 import "server-only";
-import type { UserActor } from "@ocop/core";
+import { onBehalfOf, type UserActor } from "@ocop/core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { app } from "./app";
@@ -31,4 +31,13 @@ export async function requireActor(): Promise<UserActor> {
   const actor = await currentActor();
   if (!actor) redirect("/dang-nhap");
   return actor;
+}
+
+/**
+ * The signed-in actor, or under Nhập hộ (L01) that Cán bộ xã acting for Chủ thể `onBehalf`. The core
+ * decides whether they may: only a Cán bộ xã, only for a Chủ thể đăng ký ở xã mình.
+ */
+export async function requireActorFor(onBehalf: string | undefined): Promise<UserActor> {
+  const actor = await requireActor();
+  return onBehalf ? onBehalfOf(actor, onBehalf) : actor;
 }

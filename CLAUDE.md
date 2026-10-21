@@ -17,7 +17,7 @@ Phần mềm **đánh giá, phân hạng sản phẩm OCOP** (Mỗi xã một s�
 | File | Nội dung |
 | --- | --- |
 | `docs/tinh-nang-rut-gon.md` | Danh sách 65 tính năng (mã CT/XA/SO/HD/TV/TM/AD/CK/DC), đợt, luồng; sheet hoãn/cắt; ghi chú cloud. Sinh từ `docs/yeu-cau/OCOP_tinh_nang_rut_gon.xlsx` |
-| `docs/OCOP_luong_xu_ly_ban_rut_gon.md` | Luồng xử lý L01 đến L25, **vòng đời 14 trạng thái hồ sơ** (mục 1.2), phụ lục cloud và điểm cần xác nhận |
+| `docs/OCOP_luong_xu_ly_ban_rut_gon.md` | Luồng xử lý L01 đến L25, **vòng đời 15 trạng thái hồ sơ** (mục 1.2), phụ lục cloud và điểm cần xác nhận |
 | `docs/OCOP_mo_ta_man_hinh_ban_rut_gon.md` | Mô tả ~50 màn hình (S01 đến S92), vai trò, điều hướng, thành phần UI dùng chung |
 | `docs/tieu-chi/` | Bộ tiêu chí QĐ 26/2026/QĐ-TTg bóc tách từ bản scan: `ocop_tieu_chi_qd26_2026.json` (dữ liệu seed) và bản Excel có sheet "Cần rà soát" |
 | `docs/kien-truc-va-cong-nghe.md` | Kiến trúc và lựa chọn công nghệ (đã chốt hướng, xem dưới) |
@@ -45,7 +45,7 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 
 ## Quy tắc nghiệp vụ cốt lõi (không được làm sai)
 
-- **State machine hồ sơ**: bảng chuyển trạng thái dạng dữ liệu `{from, to, action, guard, roles}` theo đúng 14 trạng thái ở luồng xử lý mục 1.2. Mọi chuyển trạng thái đi qua một hàm `transition()`: optimistic lock (`version`), ghi `dossier_event`, ghi outbox, trong một transaction.
+- **State machine hồ sơ**: bảng chuyển trạng thái dạng dữ liệu `{from, to, action, guard, roles}` theo đúng 15 trạng thái ở luồng xử lý mục 1.2 (14 gốc + Đã rút, ADR 0007). Mọi chuyển trạng thái đi qua một hàm `transition()`: optimistic lock (`version`), ghi `dossier_event`, ghi outbox, trong một transaction.
 - **Bộ tiêu chí có phiên bản** (L19, ADR 0006): `criteria_version` draft → published (bất biến sau publish) chứa cây Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí; mỗi bộ gồm Phần A/B/C → Mục → Nhóm tiêu chí (tùy chọn) → Tiêu chí → Mức điểm (điểm, Sao tối thiểu, nhãn nhánh). Phiếu chấm gắn FK tới Mức điểm của phiên bản đã publish. Trigger chặn UPDATE/DELETE trên phiên bản đã publish. Hồ sơ gắn cố định với một Bộ tiêu chí từ lúc tạo.
 - **Hạng sao** = min(hạng theo Ngưỡng hạng của điểm, hạng cao nhất mà mọi Sao tối thiểu đều đạt); luôn lưu 1 đến 5 sao, dưới 3 sao là không đạt.
 - **Sao chép dữ liệu Tổ tư vấn** sang phiếu thành viên (L12): phiếu `prefilled` thì cập nhật; `edited`/`confirmed`/`locked` thì bỏ qua và báo lại. Lưu `source`, `advisory_version_id`, `advisory_value_original`, `adjust_reason`. Điều chỉnh khác giá trị gốc mà thiếu lý do thì từ chối (TV-04).

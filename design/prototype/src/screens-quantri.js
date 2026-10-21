@@ -27,7 +27,7 @@
   .qt-tree-wrap { max-height: 640px; overflow-y:auto; margin: 0 -8px; padding: 0 4px; }
   </style>`);
 
-  const ROLE_LIST = ['Chủ thể', 'Cán bộ xã', 'Lãnh đạo xã', 'Cán bộ Sở', 'Thư ký', 'Chủ tịch hội đồng', 'Tổ tư vấn', 'Tổ trưởng Tổ tư vấn', 'Thành viên', 'Quản trị'];
+  const ROLE_LIST = ['Chủ thể', 'Cán bộ xã', 'Cán bộ Sở', 'Thư ký', 'Chủ tịch hội đồng', 'Tổ tư vấn', 'Tổ trưởng Tổ tư vấn', 'Thành viên', 'Quản trị'];
   const sel = (id, opts, label) => `<div class="field"><label for="${id}">${label}</label><select class="select" id="${id}">${opts.map((o) => `<option>${esc(o)}</option>`).join('')}</select></div>`;
   const sw = (id, title, sub, on = true, dis = false) => `<div class="qt-sw"><div class="tx"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</div><label class="switch"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''} aria-label="${esc(title)}"><span></span></label></div>`;
 
@@ -41,7 +41,7 @@
     { ten: 'Hoàng Thị E', dv: 'Chi cục PTNT', vt: ['Tổ trưởng Tổ tư vấn', 'Tổ tư vấn'], pv: 'Đợt 2026', tt: 'on', tfa: true, email: 'e.ht@ccptnt.tinhmau.gov.vn' },
     { ten: 'Vũ Văn F', dv: 'Trung tâm Khuyến nông', vt: ['Tổ tư vấn', 'Thành viên'], pv: 'Đợt 2026', tt: 'on', tfa: true, conflict: true, email: 'f.vv@ttkn.tinhmau.gov.vn' },
     { ten: 'Ngô Bảo Ngọc', dv: 'UBND Xã An Phú', vt: ['Cán bộ xã'], pv: 'Xã An Phú', tt: 'on', tfa: false, email: 'ngoc.nb@anphu.tinhmau.gov.vn' },
-    { ten: 'Huỳnh Văn Tài', dv: 'UBND Xã Bình Thạnh', vt: ['Lãnh đạo xã'], pv: 'Xã Bình Thạnh', tt: 'lock', tfa: false, email: 'tai.hv@binhthanh.tinhmau.gov.vn' },
+    { ten: 'Huỳnh Văn Tài', dv: 'UBND Xã Bình Thạnh', vt: ['Cán bộ xã'], pv: 'Xã Bình Thạnh', tt: 'lock', tfa: false, email: 'tai.hv@binhthanh.tinhmau.gov.vn' },
     { ten: 'Đỗ Minh Quân', dv: 'Trung tâm CNTT', vt: ['Quản trị'], pv: 'Toàn hệ thống', tt: 'on', tfa: true, email: 'quan.dm@cntt.tinhmau.gov.vn' },
   ];
   const needs2fa = (u) => u.vt.some((r) => ['Chủ tịch hội đồng', 'Thư ký', 'Thành viên', 'Tổ tư vấn', 'Tổ trưởng Tổ tư vấn', 'Quản trị'].includes(r));
@@ -262,7 +262,7 @@
     ['27109', 'Xã Long Điền', '01/07/2025', ''], ['27112', 'Xã Phú Hữu', '01/07/2025', 'Xã Phú Hữu, Xã Phú Mỹ (sáp nhập)'],
   ];
   const TPL = [
-    ['Biên bản đánh giá sơ bộ', 'Biên bản sơ bộ', 'v3', true, 'docx'], ['Văn bản đề xuất của UBND xã', 'Văn bản đề xuất', 'v2', true, 'docx'], ['Bảng tổng hợp điểm', 'Bảng tổng hợp', 'v2', true, 'xlsx'],
+    ['Phiếu đăng ký', 'Phiếu đăng ký', 'v1', true, 'docx'], ['Báo cáo tự đánh giá', 'Báo cáo tự đánh giá', 'v1', true, 'docx'], ['Báo cáo đánh giá cấp xã', 'Báo cáo đánh giá cấp xã', 'v3', true, 'docx'], ['Bảng tổng hợp điểm', 'Bảng tổng hợp', 'v2', true, 'xlsx'],
     ['Biên bản họp hội đồng', 'Biên bản họp', 'v1', true, 'docx'], ['Quyết định công nhận', 'Quyết định', 'v4', true, 'docx'], ['Giấy chứng nhận OCOP', 'Giấy chứng nhận', 'v2', true, 'pdf'], ['Thư thông báo kết quả', 'Thư kết quả', 'v1', false, 'docx'],
   ];
   const FIELDS = ['ten_san_pham', 'ma_ho_so', 'ten_chu_the', 'xa_phuong', 'nhom_san_pham', 'diem_tong', 'diem_phan_a', 'diem_phan_b', 'diem_phan_c', 'hang_sao', 'so_hieu', 'ngay_cap', 'ten_dot'];

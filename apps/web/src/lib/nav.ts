@@ -1,7 +1,9 @@
 import type { Role } from "@ocop/core";
 import {
   Award,
+  Building2,
   Bell,
+  BellRing,
   CalendarRange,
   ChartColumn,
   CircleUser,
@@ -48,14 +50,15 @@ const CRITERIA: NavItem = { href: "/tieu-chi", label: "Bộ tiêu chí", icon: L
 export const NAV: Record<Role, NavItem[]> = {
   entity_owner: [
     HOME,
-    { href: "/chu-the/ho-so", label: "Hồ sơ của tôi", icon: FolderOpen, ready: false },
-    { href: "/chu-the/phap-ly", label: "Hồ sơ pháp lý", icon: FileBadge, ready: false },
+    { href: "/chu-the/ho-so", label: "Hồ sơ của tôi", icon: FolderOpen, ready: true },
+    { href: "/chu-the/phap-ly", label: "Hồ sơ pháp lý", icon: FileBadge, ready: true },
     CRITERIA,
     ...COMMON,
   ],
   ward_officer: [
     HOME,
-    { href: "/xa/ho-so", label: "Hồ sơ tại xã", icon: FolderOpen, ready: false },
+    { href: "/xa/ho-so", label: "Hồ sơ tại xã", icon: FolderOpen, ready: true },
+    { href: "/xa/chu-the", label: "Chủ thể", icon: Building2, ready: true },
     { href: "/xa/gui-len-tinh", label: "Gửi lên tỉnh", icon: Send, ready: false },
     STATS,
     CRITERIA,
@@ -64,7 +67,7 @@ export const NAV: Record<Role, NavItem[]> = {
   province_officer: [
     HOME,
     { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: true },
-    { href: "/so/ho-so", label: "Hồ sơ toàn tỉnh", icon: FolderOpen, ready: false },
+    { href: "/so/ho-so", label: "Hồ sơ toàn tỉnh", icon: FolderOpen, ready: true },
     { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: false },
     STATS,
     CRITERIA,
@@ -108,6 +111,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/quan-tri/nguoi-dung", label: "Người dùng và phân vai", icon: UsersRound, ready: true },
     { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: true },
     { href: "/quan-tri/danh-muc", label: "Danh mục", icon: Library, ready: false },
+    { href: "/quan-tri/nhac-han", label: "Mốc nhắc hạn", icon: BellRing, ready: true },
     { href: "/quan-tri/nhat-ky", label: "Nhật ký", icon: ScrollText, ready: true },
     { href: "/quan-tri/thu-tai-tep", label: "Thử tải tệp", icon: Upload, ready: true },
     ...COMMON,

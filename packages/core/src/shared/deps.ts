@@ -1,3 +1,4 @@
+import type { DocumentRenderer } from "../documents/renderer";
 import type { FileStore } from "../files/file-store";
 import type { FileInspector } from "../files/inspection";
 import { DEFAULT_ALLOWED_TYPES } from "../files/model";
@@ -20,6 +21,8 @@ export interface CoreSettings {
     maxLifetimeMs: number;
   };
   passwordResetTtlMs: number;
+  /** Public Chủ thể registration attempts allowed per client address and window. */
+  registrationRateLimit: { max: number; windowMs: number };
   files: {
     maxBytes: number;
     allowedTypes: Record<string, string[]>;
@@ -35,6 +38,7 @@ export const DEFAULT_SETTINGS: Omit<CoreSettings, "totpRequired" | "appBaseUrl">
   lockout: { maxFailures: 5, windowMs: 15 * 60_000, lockMs: 15 * 60_000 },
   session: { idleStrictMs: 30 * 60_000, idleRelaxedMs: 8 * 3_600_000, maxLifetimeMs: 12 * 3_600_000 },
   passwordResetTtlMs: 3_600_000,
+  registrationRateLimit: { max: 5, windowMs: 3_600_000 },
   files: {
     maxBytes: 100 * 1024 * 1024,
     allowedTypes: DEFAULT_ALLOWED_TYPES,
@@ -57,6 +61,8 @@ export interface CoreDeps {
   /** The bucket that receives daily audit anchors (ADR 0002); ideally with Object Lock. */
   anchorStore: FileStore;
   inspector: FileInspector;
+  /** Fills the Word templates of the văn bản the system generates (#37). */
+  documents: DocumentRenderer;
   settings: CoreSettings;
   /** Phiếu chấm and hồ sơ of a Đợt đánh giá, as the rounds module sees them (#27). */
   roundActivity: RoundActivity;

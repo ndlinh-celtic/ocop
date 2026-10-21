@@ -20,6 +20,7 @@ import { activateAccount, createStaffUser, describeActivation, listUsers, getUse
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
+import { configureChecklist } from "./rounds/checklist";
 import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
@@ -27,6 +28,26 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
+import { reminderMilestones, setReminderMilestones } from "./system/settings";
+import { sendDueReminders } from "./dossiers/reminders";
+import { getEntity, listEntities } from "./entities/read";
+import { registerEntity } from "./entities/register";
+import { addLegalDocument, downloadLegalDocument, getLegalStanding } from "./entities/legal-documents";
+import { revealPersonalId, updateEntity } from "./entities/profile";
+import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
+import { downloadSubmissionDocument } from "./dossiers/documents";
+import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
+import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
+import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
+import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
+import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
+import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
+import { roundTransferTargets, transferRound } from "./dossiers/round-transfer";
+import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
+import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
+import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
+import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -112,9 +133,68 @@ export function createCore(deps: CoreDeps) {
       closeDueSubmissions: closeDueSubmissions(deps),
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
+      configureChecklist: configureChecklist(deps),
+    },
+    entities: {
+      register: registerEntity(deps),
+      getEntity: getEntity(deps),
+      listEntities: listEntities(deps),
+      getLegalStanding: getLegalStanding(deps),
+      addLegalDocument: addLegalDocument(deps),
+      downloadLegalDocument: downloadLegalDocument(deps),
+      updateEntity: updateEntity(deps),
+      revealPersonalId: revealPersonalId(deps),
+      createEntity: createEntity(deps),
+      changeRepresentativeEmail: changeRepresentativeEmail(deps),
+    },
+    dossiers: {
+      creationOptions: creationOptions(deps),
+      create: createDossier(deps),
+      copy: copyDossier(deps),
+      get: getDossier(deps),
+      list: listDossiers(deps),
+      timeline: dossierTimeline(deps),
+      updateProduct: updateProduct(deps),
+      addEvidenceFile: addEvidenceFile(deps),
+      removeEvidenceFile: removeEvidenceFile(deps),
+      linkEvidence: linkEvidence(deps),
+      selfScore: selfScore(deps),
+      explainCriterion: explainCriterion(deps),
+      selfAssessment: selfAssessment(deps),
+      delete: deleteDossier(deps),
+      submissionCheck: submissionCheck(deps),
+      submit: submitDossier(deps),
+      withdraw: withdrawDossier(deps),
+      submissions: listSubmissions(deps),
+      receive: receiveDossier(deps),
+      reject: rejectDossier(deps),
+      transferWard: transferWard(deps),
+      transferRound: transferRound(deps),
+      roundTransferTargets: roundTransferTargets(deps),
+      changeHandler: changeHandler(deps),
+      handlers: listHandlers(deps),
+      downloadSubmissionDocument: downloadSubmissionDocument(deps),
+      requestSupplement: requestSupplement(deps),
+      returnFromProvince: returnFromProvince(deps),
+      requestReturn: requestReturn(deps),
+      returnRequests: listReturnRequests(deps),
+      respondSupplementItem: respondSupplementItem(deps),
+      supplementRequests: listSupplementRequests(deps),
+      closeUnsupplemented: closeUnsupplemented(deps),
+      checklist: dossierChecklist(deps),
+      assessChecklist: assessChecklist(deps),
+      generateWardReport: generateWardReport(deps),
+      attachSignedWardReport: attachSignedWardReport(deps),
+      wardReport: wardReportStatus(deps),
+      downloadSignedWardReport: downloadSignedWardReport(deps),
+      forwardToProvince: forwardToProvince(deps),
+      provinceOverview: provinceOverview(deps),
+      sendDueReminders: sendDueReminders(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
+      reminderMilestones: reminderMilestones(deps),
+      setReminderMilestones: setReminderMilestones(deps),
     },
   };
 }

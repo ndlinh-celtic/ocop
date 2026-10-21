@@ -1,7 +1,7 @@
 import type { AnonymousActor, SystemActor, UserActor } from "../shared/context";
 
 /** The part of an actor an audit row needs; lets a use case audit before it has a full UserActor. */
-export type AuditActor = Pick<UserActor, "kind" | "userId" | "activeRole" | "ctx"> | AnonymousActor | SystemActor;
+export type AuditActor = Pick<UserActor, "kind" | "userId" | "activeRole" | "onBehalfOf" | "ctx"> | AnonymousActor | SystemActor;
 
 /** One append-only audit row (L21). `before`/`after` hold the changed values, never secrets. */
 export interface AuditEntry {
@@ -36,8 +36,12 @@ export interface AuditLog {
 
 export type AuditInput = Pick<AuditEntry, "action"> & Partial<Omit<AuditEntry, "id" | "occurredAt" | "actorUserId" | "actorRole" | "requestId" | "ip">>;
 
-/** Fills who/when/where from the actor so call sites only say what happened. */
+/**
+ * Fills who/when/where from the actor so call sites only say what happened. Under Nhập hộ the actor is
+ * the Cán bộ xã and `metadata.onBehalfOf` names the Chủ thể (story 73).
+ */
 export function auditEntry(actor: AuditActor, id: string, at: Date, input: AuditInput): AuditEntry {
+  const onBehalfOf = actor.kind === "user" ? actor.onBehalfOf : undefined;
   return {
     id,
     occurredAt: at,
@@ -48,7 +52,7 @@ export function auditEntry(actor: AuditActor, id: string, at: Date, input: Audit
     targetId: input.targetId ?? null,
     before: input.before ?? null,
     after: input.after ?? null,
-    metadata: input.metadata ?? {},
+    metadata: onBehalfOf === undefined ? (input.metadata ?? {}) : { ...input.metadata, onBehalfOf },
     requestId: actor.ctx.requestId,
     ip: actor.ctx.ip ?? null,
   };

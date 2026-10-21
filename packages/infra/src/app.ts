@@ -1,4 +1,16 @@
-import { createCore, DEFAULT_SETTINGS, placeholderRoundActivity, type Clock, type Core, type CoreSettings, type IdGen, type Mailer, type PasswordHasher, type RoundActivity } from "@ocop/core";
+import {
+  createCore,
+  DEFAULT_SETTINGS,
+  roundActivity,
+  type Clock,
+  type Core,
+  type CoreSettings,
+  type DocumentRenderer,
+  type IdGen,
+  type Mailer,
+  type PasswordHasher,
+  type RoundActivity,
+} from "@ocop/core";
 import type { Pool } from "pg";
 import { argon2Hasher } from "./adapters/argon2";
 import { aesGcmSecretBox } from "./adapters/secret-box";
@@ -6,6 +18,7 @@ import { systemClock, uuidV7Gen } from "./adapters/system";
 import { otplibTotp } from "./adapters/totp";
 import type { Config } from "./config";
 import { PgUnitOfWork } from "./db/uow";
+import { docxRenderer } from "./documents/docx";
 import { clamdScanner, type VirusScanner } from "./files/clamd";
 import { createFileInspector } from "./files/inspector";
 import { createS3FileStore } from "./files/s3";
@@ -22,6 +35,7 @@ export interface AppOverrides {
   scanner?: VirusScanner;
   /** Tests stand in for phiếu chấm and hồ sơ; the placeholder answers until steps 3-4 build them. */
   roundActivity?: RoundActivity;
+  documents?: DocumentRenderer;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -72,6 +86,7 @@ export function settingsFrom(config: AppConfig): CoreSettings {
       maxLifetimeMs: config.SESSION_MAX_HOURS ? config.SESSION_MAX_HOURS * 60 * MIN : d.session.maxLifetimeMs,
     },
     passwordResetTtlMs: config.PASSWORD_RESET_MINUTES ? config.PASSWORD_RESET_MINUTES * MIN : d.passwordResetTtlMs,
+    registrationRateLimit: d.registrationRateLimit,
     files: { ...d.files, maxBytes: config.FILE_MAX_MB ? config.FILE_MAX_MB * 1024 * 1024 : d.files.maxBytes },
   };
 }
@@ -121,7 +136,8 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     files,
     anchorStore: overrides.anchorStore ?? (s3 ? createS3FileStore(s3, config.S3_BUCKET_AUDIT_ANCHOR ?? "ocop-audit-anchor") : unconfigured),
     inspector: createFileInspector(files, overrides.scanner ?? clamdScanner({ host: config.CLAMD_HOST ?? "clamd", port: config.CLAMD_PORT ?? 3310 })),
+    documents: overrides.documents ?? docxRenderer(),
     settings,
-    roundActivity: overrides.roundActivity ?? placeholderRoundActivity,
+    roundActivity: overrides.roundActivity ?? roundActivity,
   });
 }

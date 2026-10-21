@@ -14,7 +14,8 @@
     "migrate": "tsx scripts/migrate.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "seed:wards": "tsx scripts/seed-wards.ts",
-    "seed:criteria": "tsx scripts/seed-criteria.ts"
+    "seed:criteria": "tsx scripts/seed-criteria.ts",
+    "templates:embed": "tsx scripts/embed-templates.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
@@ -23,12 +24,14 @@
     "@ocop/core": "workspace:*",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.1",
+    "docxtemplater": "^3.71.1",
     "drizzle-orm": "^0.45.4",
     "file-type": "^22.2.0",
     "nodemailer": "^8",
     "otplib": "^13.5.0",
     "pg": "^8.23.1",
     "pg-boss": "^12.38.0",
+    "pizzip": "^3.3.0",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "uuid": "^14.0.3",

@@ -4,10 +4,16 @@
  */
 export type FileStatus = "awaiting_upload" | "scanning" | "clean" | "blocked";
 
+/** What a file is for; it decides which Vai trò may upload it (see `uploads.ts`). */
+export const FILE_PURPOSES = ["test_upload", "legal_document", "evidence", "signed_ward_report"] as const;
+export type FilePurpose = (typeof FILE_PURPOSES)[number];
+/** Every purpose a stored file may have: the uploadable ones, and văn bản the server generates (#37). */
+export type StoredFilePurpose = FilePurpose | "generated_document";
+
 export interface StoredFile {
   id: string;
   ownerUserId: string;
-  purpose: "test_upload";
+  purpose: StoredFilePurpose;
   storageKey: string;
   fileName: string;
   declaredType: string;

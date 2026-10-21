@@ -45,6 +45,14 @@ export function roleAssignmentRepo(db: Db): RoleAssignmentRepo {
       const rows = await db.select().from(roleAssignment).where(eq(roleAssignment.userId, userId)).orderBy(roleAssignment.createdAt);
       return rows.map(toAssignment);
     },
+    async listForScope(role, scopeType, scopeId) {
+      const rows = await db
+        .select()
+        .from(roleAssignment)
+        .where(and(eq(roleAssignment.role, role), eq(roleAssignment.scopeType, scopeType), scopeId === null ? isNull(roleAssignment.scopeId) : eq(roleAssignment.scopeId, scopeId)))
+        .orderBy(roleAssignment.createdAt);
+      return rows.map(toAssignment);
+    },
     async end(id, validTo) {
       await db.update(roleAssignment).set({ validTo }).where(eq(roleAssignment.id, id));
     },

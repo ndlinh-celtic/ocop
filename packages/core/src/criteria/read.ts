@@ -5,7 +5,7 @@ import { assertIdShape } from "../shared/ids";
 import { assembleSet, type CriteriaSetDetail } from "./detail";
 import { byPosition, setNotFound, versionNotFound } from "./helpers";
 import type { RankThresholds } from "./model";
-import type { CriteriaVersion, VersionSummary } from "./version";
+import type { CriteriaVersion, VersionSummary, VersionTaxonomy } from "./version";
 
 /*
  * Reading Phiên bản tiêu chí: any signed-in Người dùng sees published versions; only Quản trị sees drafts
@@ -47,6 +47,25 @@ export interface CriteriaSetView {
   set: CriteriaSetDetail;
 }
 
+/** Cây phân loại of a version: Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí, in display order. */
+export function taxonomyTree(t: VersionTaxonomy): TaxonomyGroup[] {
+  return byPosition(t.productGroups).map((g) => ({
+    id: g.id,
+    name: g.name,
+    subgroups: byPosition(t.subgroups.filter((s) => s.productGroupId === g.id)).map((s) => ({
+      id: s.id,
+      name: s.name,
+      sets: byPosition(t.sets.filter((b) => b.subgroupId === s.id)).map((b) => ({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+        totalPoints: b.totalPoints,
+        criterionCount: b.criterionCount,
+      })),
+    })),
+  }));
+}
+
 const visible = (actor: Actor, v: CriteriaVersion) => v.status === "published" || can(actor, "criteria.read_draft");
 
 export function listVersions(deps: CoreDeps) {
@@ -68,21 +87,7 @@ export function getVersion(deps: CoreDeps) {
       return {
         ...version,
         thresholds: t.thresholds,
-        productGroups: byPosition(t.productGroups).map((g) => ({
-          id: g.id,
-          name: g.name,
-          subgroups: byPosition(t.subgroups.filter((s) => s.productGroupId === g.id)).map((s) => ({
-            id: s.id,
-            name: s.name,
-            sets: byPosition(t.sets.filter((b) => b.subgroupId === s.id)).map((b) => ({
-              id: b.id,
-              code: b.code,
-              name: b.name,
-              totalPoints: b.totalPoints,
-              criterionCount: b.criterionCount,
-            })),
-          })),
-        })),
+        productGroups: taxonomyTree(t),
       };
     });
   };

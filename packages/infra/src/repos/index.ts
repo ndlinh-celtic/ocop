@@ -1,4 +1,4 @@
-import type { Tx } from "@ocop/core";
+import type { Repos } from "@ocop/core";
 import type { Db } from "../db/types";
 import { auditRepo } from "./audit";
 import { auditChainRepo } from "./audit-chain";
@@ -9,8 +9,13 @@ import { notificationRepo } from "./notifications";
 import { wardRepo } from "./org";
 import { emailDeliveriesRepo, outboxRepo, processedEventsRepo } from "./platform";
 import { roundRepo } from "./rounds";
+import { entityRepo, legalDocumentRepo } from "./entities";
+import { rateLimitRepo } from "./rate-limits";
+import { dossierRepo } from "./dossiers";
+import { supplementRepo } from "./supplements";
+import { reminderRepo, systemSettingRepo } from "./reminders";
 
-export function buildRepos(db: Db): Tx {
+export function buildRepos(db: Db): Repos {
   return {
     users: userRepo(db),
     roleAssignments: roleAssignmentRepo(db),
@@ -26,5 +31,12 @@ export function buildRepos(db: Db): Tx {
     files: fileRepo(db),
     criteriaVersions: criteriaVersionRepo(db),
     rounds: roundRepo(db),
+    entities: entityRepo(db),
+    legalDocuments: legalDocumentRepo(db),
+    rateLimits: rateLimitRepo(db),
+    dossiers: dossierRepo(db),
+    supplements: supplementRepo(db),
+    reminders: reminderRepo(db),
+    systemSettings: systemSettingRepo(db),
   };
 }
