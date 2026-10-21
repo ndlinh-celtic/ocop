@@ -268,7 +268,8 @@ async function issued() {
   const { version } = await issue(leader, d);
   return { ...d, version };
 }
-async function reissue(actor: UserActor, d: { dossierId: string; version: number }, reason: string, picks = { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20 } }) {
+type Picks = Record<string, { points: number; basis?: string }>;
+async function reissue(actor: UserActor, d: { dossierId: string; version: number }, reason: string, picks: Picks = { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20 } }) {
   return t.app.scoring.reissueAdvisoryReport(actor, {
     dossierId: d.dossierId,
     expectedVersion: d.version,
@@ -303,7 +304,7 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
     expect(JSON.stringify(timeline)).not.toContain("Sửa điểm tiêu chí 1.1");
 
     await t.drainJobs();
-    const notices = (await t.app.notifications.list(A.members[0]!)).filter((n) => n.kind === "dossier_advisory_report_issued" && n.link.includes(d.dossierId));
+    const notices = (await t.app.notifications.list(A.members[0]!)).filter((n) => n.kind === "dossier_advisory_report_issued" && n.link?.includes(d.dossierId));
     expect(notices).toHaveLength(2);
   });
 

@@ -10,6 +10,13 @@ import type { Star } from "../criteria/model";
 export const EVIDENCE_ASSESSMENTS = ["sufficient", "missing", "invalid", "needs_verification"] as const;
 export type EvidenceAssessment = (typeof EVIDENCE_ASSESSMENTS)[number];
 
+export const EVIDENCE_ASSESSMENT_LABEL: Record<EvidenceAssessment, string> = {
+  sufficient: "Đủ minh chứng",
+  missing: "Thiếu minh chứng",
+  invalid: "Minh chứng không hợp lệ",
+  needs_verification: "Cần xác minh",
+};
+
 /** What the Tổ tư vấn writes for one Tiêu chí; every field may stay empty in the nháp. */
 export interface AdvisoryReportLine {
   criterionId: string;

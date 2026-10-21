@@ -231,6 +231,7 @@ export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "
 export type { StartGradingInput } from "./councils/grading";
 export {
   EVIDENCE_ASSESSMENTS,
+  EVIDENCE_ASSESSMENT_LABEL,
   type AdvisoryReportDraft,
   type AdvisoryReportLine,
   type AdvisoryReportRepo,
