@@ -159,6 +159,9 @@ export interface DossierListFilter {
 export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardingDeadline: Date } | null, now: Date) =>
   d.state === "submitted_to_ward" && round !== null && now > round.forwardingDeadline;
 
+/** What the narrow lookup of DossierRepo.stateRow loads: the mã and state, and what a transition records. */
+export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId">;
+
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.
  * Out-of-scope rows come back as absent.
@@ -172,6 +175,13 @@ export interface DossierRepo {
   lock(scope: DataScope, id: string): Promise<Dossier | null>;
   /** Writes every mutable field, only while the stored version is still `expectedVersion`; false otherwise. */
   update(d: Dossier, expectedVersion: number): Promise<boolean>;
+  /**
+   * The narrow lookup of a Vai trò with no DataScope over hồ sơ (Mở khóa sau chốt, spec #49): by id or mã, no Phạm vi
+   * and nothing of the hồ sơ's content; locked FOR UPDATE when `lock`.
+   */
+  stateRow(by: { id: string } | { code: string }, lock?: boolean): Promise<DossierStateRow | null>;
+  /** Moves a hồ sơ loaded by stateRow: state, version + 1 and updated_at only, while the version is still `expectedVersion`. */
+  updateState(id: string, expectedVersion: number, state: DossierState, updatedAt: Date): Promise<boolean>;
   /** Newest first, narrowed by `filter` in the same query. */
   list(scope: DataScope, filter?: DossierListFilter): Promise<Dossier[]>;
   /**

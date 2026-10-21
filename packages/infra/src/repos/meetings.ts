@@ -1,7 +1,7 @@
 import type { AggregateResult, AggregateResultRepo, MeetingRepo } from "@ocop/core";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { aggregateResult, meeting, meetingDossier } from "../db/schema";
+import { aggregateResult, meeting, meetingDossier, unlockRequest } from "../db/schema";
 
 /** Phiên họp (#60): the DB keeps one pending row per hồ sơ and fixes the row of a hồ sơ chốt. */
 export function meetingRepo(db: Db): MeetingRepo {
@@ -72,6 +72,20 @@ export function aggregateResultRepo(db: Db): AggregateResultRepo {
     },
     async list(dossierId) {
       return db.select().from(aggregateResult).where(eq(aggregateResult.dossierId, dossierId)).orderBy(asc(aggregateResult.n));
+    },
+    async supersede(resultId, at, unlockId) {
+      const rows = await db
+        .update(aggregateResult)
+        .set({ supersededAt: at, supersededByUnlock: unlockId })
+        .where(and(eq(aggregateResult.id, resultId), isNull(aggregateResult.supersededAt)))
+        .returning({ id: aggregateResult.id });
+      return rows.length === 1;
+    },
+    async insertUnlock(u) {
+      await db.insert(unlockRequest).values(u);
+    },
+    async unlocks(dossierId) {
+      return db.select().from(unlockRequest).where(eq(unlockRequest.dossierId, dossierId)).orderBy(asc(unlockRequest.unlockedAt), asc(unlockRequest.id));
     },
   };
 }

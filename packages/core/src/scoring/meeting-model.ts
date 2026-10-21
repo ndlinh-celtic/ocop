@@ -118,4 +118,26 @@ export interface AggregateResultRepo {
   current(dossierId: string): Promise<AggregateResult | null>;
   /** Every kết quả chốt of a hồ sơ, n ascending. */
   list(dossierId: string): Promise<AggregateResult[]>;
+  /** Marks a kết quả hiện hành superseded by a Mở khóa (#63); false when it already was. */
+  supersede(resultId: string, at: Date, unlockId: string): Promise<boolean>;
+  /** Appends a Mở khóa sau chốt request; the DB refuses any later change. */
+  insertUnlock(u: UnlockRequest): Promise<void>;
+  /** The Mở khóa sau chốt requests of a hồ sơ, oldest first. */
+  unlocks(dossierId: string): Promise<UnlockRequest[]>;
+}
+
+/**
+ * Mở khóa sau chốt (L15, #63, ADR 0008): Quản trị's record of why the kết quả `resultId` was superseded: the
+ * văn bản yêu cầu of the Hội đồng, who asked (as written on it) and the lý do.
+ */
+export interface UnlockRequest {
+  id: string;
+  dossierId: string;
+  resultId: string;
+  requestFileId: string;
+  requestedBy: string;
+  reason: string;
+  unlockedBy: string;
+  unlockedAt: Date;
+  reauthMethod: "totp" | "password";
 }

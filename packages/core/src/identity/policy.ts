@@ -73,6 +73,10 @@ const ROLE_ACTIONS = {
   "scoring.finalize": ["council_chair", "council_secretary"],
   // L15 HD-05 (stories 102 to 106): Trả phiếu before chốt, and the phiếu bị thay thế it leaves behind.
   "scoring.sheet.return": ["council_chair", "council_secretary"],
+  // L15 Mở khóa sau chốt (#63 stories 127 to 132): Quản trị alone, on the Hội đồng's văn bản yêu cầu; it reads no
+  // hồ sơ or điểm. The Chủ tịch and Thư ký read every kết quả chốt of a hồ sơ, superseded ones too.
+  "scoring.unlock": ["admin"],
+  "scoring.result.read": ["council_chair", "council_secretary"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

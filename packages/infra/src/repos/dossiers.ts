@@ -109,6 +109,22 @@ export function dossierRepo(db: Db): DossierRepo {
         .for("update");
       return (row as Dossier | undefined) ?? null;
     },
+    async stateRow(by, lock = false) {
+      const q = db
+        .select({ id: dossier.id, code: dossier.code, state: dossier.state, version: dossier.version, entityId: dossier.entityId })
+        .from(dossier)
+        .where(and(isNull(dossier.deletedAt), "id" in by ? eq(dossier.id, by.id) : eq(dossier.code, by.code)));
+      const [row] = lock ? await q.for("update") : await q;
+      return row ?? null;
+    },
+    async updateState(id, expectedVersion, state, updatedAt) {
+      const updated = await db
+        .update(dossier)
+        .set({ state, version: expectedVersion + 1, updatedAt })
+        .where(and(eq(dossier.id, id), eq(dossier.version, expectedVersion)))
+        .returning({ id: dossier.id });
+      return updated.length === 1;
+    },
     async update(d, expectedVersion) {
       const {
         id: _id,

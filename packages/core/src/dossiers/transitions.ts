@@ -26,6 +26,12 @@ export interface TransitionRule {
    * action `<action>_on_behalf`. Such a move is always a row of the timeline (story 74).
    */
   onBehalf?: true;
+  /**
+   * Mở khóa sau chốt (spec #49): the row of a Vai trò with no DataScope over hồ sơ (Quản trị). Its use case loads the
+   * hồ sơ through the narrow DossierRepo.stateRow and moves it with transitionByLookup; transition() and can() never
+   * pass it, since that Vai trò's Phạm vi covers no hồ sơ.
+   */
+  lookup?: true;
 }
 
 /** What policy needs of a hồ sơ: its state and what decides whose Phạm vi covers it. */
@@ -72,6 +78,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.score_sheet.return_unready",
   "dossier.assignment.replace",
   "dossier.advisory_return_request",
+  "dossier.unlock",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -112,6 +119,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.score_finalized",
   "dossier.score_sheet_returned",
   "dossier.advisory_return_requested",
+  "dossier.unlocked",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -380,6 +388,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     event: "dossier.score_finalized",
     timeline: true,
   },
+  // L15 Mở khóa sau chốt (stories 127 to 131, ADR 0008): Quản trị takes a hồ sơ Đã chốt điểm back to Sẵn sàng chốt on
+  // the Hội đồng's văn bản yêu cầu; unlockFinalized supersedes the kết quả. Off the Chủ thể's timeline (spec #49).
+  { action: "dossier.unlock", from: "score_finalized", to: "member_confirmed", roles: ["admin"], event: "dossier.unlocked", timeline: false, lookup: true },
   // L15 HD-05 (stories 102 to 105): Trả phiếu by the Chủ tịch or Thư ký before chốt. The one that leaves the phiếu
   // đã xác nhận below người chấm tối thiểu takes the hồ sơ back to Thành viên xem xét, its own action because ruleFor
   // looks a row up by action and state; returnScoreSheet picks it. Off the Chủ thể's timeline (story 137).

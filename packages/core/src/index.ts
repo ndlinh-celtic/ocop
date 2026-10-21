@@ -180,6 +180,7 @@ export {
   type DossierEvent,
   type DossierRepo,
   type DossierState,
+  type DossierStateRow,
   type ChecklistResult,
   type ChecklistResultValue,
   type CriterionEntry,
@@ -263,7 +264,8 @@ export {
 export { scoresVisibility, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
 export type { AggregateOnlyView, FinalizedResultView } from "./scoring/read";
-export { MEETING_STATES, type AggregateResult, type AggregateResultRepo, type FinalizedSnapshot, type Meeting, type MeetingDossier, type MeetingRepo, type MeetingState, type SnapshotGrader } from "./scoring/meeting-model";
+export { MEETING_STATES, type AggregateResult, type AggregateResultRepo, type FinalizedSnapshot, type Meeting, type MeetingDossier, type MeetingRepo, type MeetingState, type SnapshotGrader, type UnlockRequest } from "./scoring/meeting-model";
 export type { CreateMeetingInput, MeetingDossierView, MeetingSummary, MeetingView } from "./scoring/meetings";
 export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
 export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";
+export { type FinalizedResultSummary, type UnlockInput, type UnlockTarget, type UnlockView } from "./scoring/unlock";
