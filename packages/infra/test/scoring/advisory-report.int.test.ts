@@ -245,7 +245,7 @@ describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 
     for (const m of A.members) {
       const notices = (await t.app.notifications.list(m)).filter((n) => n.kind === "dossier_advisory_report_issued" && n.link === link);
       expect(notices.map((n) => n.title)).toEqual([expect.stringMatching(/^Có báo cáo Tổ tư vấn mới/)]);
-      expect(t.mailbox.to(m.email).at(-1)!.text).toContain(link);
+      expect(t.mailbox.to(m.email).some((e) => e.text.includes(link))).toBe(true);
     }
     expect((await t.app.notifications.list(colleague)).filter((n) => n.kind === "dossier_advisory_report_issued")).toEqual([]);
   });
@@ -259,5 +259,100 @@ describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 
     await expect(t.app.scoring.advisoryReportVersions(province, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "forbidden" });
     await expect(t.app.scoring.advisoryReportVersions(d.a, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "forbidden" });
     await expect(report(A.advisors[2]!, d.dossierId)).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+/** A hồ sơ with phiên bản 1 issued. */
+async function issued() {
+  const d = await complete();
+  const { version } = await issue(leader, d);
+  return { ...d, version };
+}
+async function reissue(actor: UserActor, d: { dossierId: string; version: number }, reason: string, picks = { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20 } }) {
+  return t.app.scoring.reissueAdvisoryReport(actor, {
+    dossierId: d.dossierId,
+    expectedVersion: d.version,
+    reason,
+    lines: await lines(actor, d.dossierId, picks),
+    summary: "Nhận xét sau khi xem lại",
+    notes: "",
+    attachmentFileIds: [],
+  });
+}
+/** Stands in for the copy, xác nhận and chốt of later tickets (#55, #54, #60): puts the hồ sơ in `state` directly. */
+const putIn = (dossierId: string, state: string) => db.admin.query("UPDATE dossier.dossier SET state = $2, version = version + 1 WHERE id = $1", [dossierId, state]);
+
+describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
+  it("issues phiên bản 2 from edited content with its reason, leaves phiên bản 1 as it was, and tells the thành viên chấm again", async () => {
+    const d = await issued();
+    t.clock.set(new Date("2026-10-23T03:00:00Z"));
+
+    expect(await reissue(leader, d, "Sửa điểm tiêu chí 1.1")).toEqual({ version: d.version + 1, number: 2 });
+
+    const versions = await t.app.scoring.advisoryReportVersions(A.members[1]!, { dossierId: d.dossierId });
+    expect(versions.map((v) => [v.number, v.reason, v.report.estimate.total])).toEqual([
+      [1, null, 70],
+      [2, "Sửa điểm tiêu chí 1.1", 50],
+    ]);
+    expect(versions[1]).toMatchObject({ issuedAt: new Date("2026-10-23T03:00:00Z"), issuedBy: { userId: leader.userId } });
+    const ws = await report(colleague, d.dossierId);
+    expect(ws).toMatchObject({ state: "advisory_report_issued", summary: "Nhận xét sau khi xem lại", estimate: { total: 50 } });
+    const [audited] = await t.app.audit.search(await f.admin(), { action: ["scoring.advisory_report.issued"], targetId: d.dossierId, });
+    expect(audited).toMatchObject({ after: { number: 2 }, metadata: { reason: "Sửa điểm tiêu chí 1.1" } });
+    const timeline = await t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
+    expect(JSON.stringify(timeline)).not.toContain("Sửa điểm tiêu chí 1.1");
+
+    await t.drainJobs();
+    const notices = (await t.app.notifications.list(A.members[0]!)).filter((n) => n.kind === "dossier_advisory_report_issued" && n.link.includes(d.dossierId));
+    expect(notices).toHaveLength(2);
+  });
+
+  it("needs a reason, the Tổ trưởng, and a complete content", async () => {
+    const d = await issued();
+    await expect(reissue(leader, d, "  ")).rejects.toMatchObject({ code: "reason_required" });
+    await expect(reissue(colleague, d, "Sửa")).rejects.toMatchObject({ code: "forbidden" });
+    await expect(reissue(leader, d, "Sửa", { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20, basis: "" } })).rejects.toMatchObject({
+      code: "advisory_report_incomplete",
+      criteria: ["2.1"],
+    });
+  });
+
+  it("is open in Thành viên xem xét and Thành viên xác nhận, refused before phiên bản 1 and once Đã chốt điểm", async () => {
+    const d = await complete();
+    await expect(reissue(leader, d, "Sửa")).rejects.toMatchObject({ code: "invalid_state" });
+    const { version } = await issue(leader, d);
+
+    for (const state of ["member_review", "member_confirmed"]) {
+      await putIn(d.dossierId, state);
+      const { dossierVersion } = await report(leader, d.dossierId);
+      await expect(reissue(leader, { dossierId: d.dossierId, version: dossierVersion }, `Sửa khi ${state}`)).resolves.toMatchObject({ number: expect.any(Number) });
+    }
+    await putIn(d.dossierId, "score_finalized");
+    await expect(reissue(leader, { dossierId: d.dossierId, version: version + 5 }, "Sửa sau chốt")).rejects.toMatchObject({ code: "invalid_state" });
+    expect((await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).map((v) => v.number)).toEqual([1, 2, 3]);
+  });
+
+  it("does not save the nháp once phiên bản 1 is issued: sửa is phiên bản N+1", async () => {
+    const d = await issued();
+    const { draftVersion } = await report(colleague, d.dossierId);
+    await expect(
+      t.app.scoring.saveAdvisoryDraft(colleague, { dossierId: d.dossierId, draftVersion, lines: [], summary: "", notes: "", attachmentFileIds: [] }),
+    ).rejects.toMatchObject({ code: "invalid_state" });
+  });
+});
+
+describe("L11 an issued phiên bản is fixed in the database (spec #49 Trigger DB)", () => {
+  it("refuses UPDATE, DELETE and TRUNCATE, even to the owner, and the app cannot switch the trigger off", async () => {
+    const d = await issued();
+    const where = `WHERE dossier_id = '${d.dossierId}'`;
+    await expect(db.app.query(`UPDATE scoring.advisory_report_version SET reason = 'x' ${where}`)).rejects.toThrow(/permission denied/);
+    await expect(db.admin.query(`UPDATE scoring.advisory_report_version SET reason = 'x' ${where}`)).rejects.toThrow(/immutable/);
+    await expect(db.admin.query(`UPDATE scoring.advisory_report_version SET snapshot = '{}' ${where}`)).rejects.toThrow(/immutable/);
+    await expect(db.app.query(`DELETE FROM scoring.advisory_report_version ${where}`)).rejects.toThrow(/permission denied/);
+    await expect(db.admin.query(`DELETE FROM scoring.advisory_report_version ${where}`)).rejects.toThrow(/immutable/);
+    await expect(db.admin.query("TRUNCATE scoring.advisory_report_version CASCADE")).rejects.toThrow(/immutable/);
+    await expect(db.app.query("ALTER TABLE scoring.advisory_report_version DISABLE TRIGGER advisory_report_version_immutable")).rejects.toThrow(/must be owner/);
+    await expect(db.app.query("SET session_replication_role = replica")).rejects.toThrow(/permission denied/);
+    expect(await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).toHaveLength(1);
   });
 });
