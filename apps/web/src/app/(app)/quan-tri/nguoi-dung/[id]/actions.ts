@@ -16,11 +16,16 @@ const input = z.object({
   role: z.enum(ROLES as unknown as [Role, ...Role[]]),
   scopeId: z.string().uuid().or(z.literal("")).transform((v) => v || null),
   validFrom: z.string().optional().transform((v) => (v ? new Date(`${v}T00:00:00+07:00`) : undefined)),
+  // The Phân vai ends at the start of the day after the chosen date, Vietnam time: that date still counts.
+  validTo: z
+    .string()
+    .optional()
+    .transform((v) => (v ? new Date(new Date(`${v}T00:00:00+07:00`).getTime() + 86_400_000) : null)),
 });
 
 export async function grantRoleAction(userId: string, _prev: GrantState, form: FormData): Promise<GrantState> {
   const actor = await requireActor();
-  const parsed = input.safeParse({ role: form.get("role"), scopeId: form.get("scopeId") ?? "", validFrom: form.get("validFrom") || undefined });
+  const parsed = input.safeParse({ role: form.get("role"), scopeId: form.get("scopeId") ?? "", validFrom: form.get("validFrom") || undefined, validTo: form.get("validTo") || undefined });
   if (!parsed.success) return { error: "Chọn vai trò và phạm vi" };
   try {
     await app().core.identity.grantRole(actor, { userId, ...parsed.data });

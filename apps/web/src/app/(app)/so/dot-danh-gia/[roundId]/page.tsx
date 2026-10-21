@@ -6,7 +6,8 @@ import { formatVnDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction, endRoundAction, openRoundAction, updateRoundAction } from "../actions";
+import { assignCouncilAction, changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction, endRoundAction, openRoundAction, updateRoundAction } from "../actions";
+import { CouncilPicker } from "./council-picker";
 import { RoundActionButton } from "../round-buttons";
 import { RoundConfigForms } from "../round-config-form";
 import { RoundForm } from "../round-form";
@@ -36,6 +37,9 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
   // L07 Gia hạn đợt: an opened round that has not ended.
   const extendable = manager && (round.status === "open_for_submission" || round.status === "submission_closed");
   const extensions = round.status === "draft" ? [] : await app().core.rounds.listDeadlineExtensions(actor, { roundId });
+  // L09 HD-01 story 10: the Hội đồng is gán in any Trạng thái đợt, until the first Giao chấm.
+  const assignsCouncil = can(actor, "round.council.assign") && round.status !== "ended";
+  const councils = assignsCouncil && !round.gradingConfigLocked ? await app().core.councils.list(actor) : [];
   const versions = editable ? (await app().core.criteria.listVersions(actor)).filter((v) => v.status === "published") : [];
   const facts: [string, string][] = [
     ["Năm", String(round.year)],
@@ -44,6 +48,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
     ["Hạn đánh giá tỉnh", formatVnDate(round.evaluationDeadline)],
     ["Phiên bản tiêu chí", round.criteriaVersion.legalBasis],
     ["Chế độ chấm", GRADING_MODE_LABEL[round.gradingMode]],
+    ["Hội đồng", round.council?.name ?? "Chưa gán"],
     [
       "Quy tắc tổng hợp",
       `Trung bình cộng, tối thiểu ${round.aggregation.minGraders} người chấm, cờ chênh lệch từ ${round.aggregation.deviationFlagPoints} điểm`,
@@ -89,6 +94,24 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           ))}
         </dl>
       </section>
+      {assignsCouncil && (
+        <section className="rounded-lg border bg-surface p-4">
+          <h2 className="font-medium">Hội đồng đánh giá</h2>
+          {round.gradingConfigLocked ? (
+            <p className="mt-1 text-sm text-text-2">Đợt đã có hồ sơ được Giao chấm, nên không đổi được hội đồng: Phân công và phiếu chấm thuộc hội đồng này.</p>
+          ) : (
+            <>
+              {!round.council && (
+                <p role="status" className="mt-1 text-sm text-warning">
+                  Đợt chưa có hội đồng. Gán hội đồng trước khi Tiếp nhận tại tỉnh các hồ sơ của đợt.
+                </p>
+              )}
+              <p className="mb-3 mt-1 text-sm text-text-2">Đổi được cho đến lần Giao chấm đầu tiên của đợt.</p>
+              <CouncilPicker action={assignCouncilAction.bind(null, round.id)} councils={councils.map((c) => ({ id: c.id, name: c.name }))} current={round.council?.id ?? null} />
+            </>
+          )}
+        </section>
+      )}
       {configurable && (
         <section className="rounded-lg border bg-surface p-4">
           <h2 className="font-medium">Đổi cấu hình chấm</h2>

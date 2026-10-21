@@ -150,3 +150,19 @@ export async function endRoundAction(roundId: string, _prev: RoundActionState, _
   revalidateRound(roundId);
   return {};
 }
+
+const councilForm = z.object({ councilId: z.string().min(1) });
+
+/** L09 HD-01 story 10: gán the Hội đồng responsible for the round, until its first Giao chấm. */
+export async function assignCouncilAction(roundId: string, _prev: RoundFormState, form: FormData): Promise<RoundFormState> {
+  const actor = await requireActor();
+  const parsed = councilForm.safeParse({ councilId: form.get("councilId") });
+  if (!parsed.success) return { error: "Chọn hội đồng" };
+  try {
+    await app().core.rounds.assignCouncil(actor, { roundId, ...parsed.data });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidateRound(roundId);
+  return { saved: true };
+}
