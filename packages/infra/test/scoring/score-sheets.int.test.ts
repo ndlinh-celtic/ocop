@@ -235,4 +235,16 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     expect(rows.some((r) => r.actorUserId === m(0).userId)).toBe(true);
     await expect(w.t.app.entities.getEntity(m(3), { entityId: dossier.entityId })).rejects.toMatchObject({ code: "not_found" });
   });
+
+  it("lets the thành viên read the newest Phiên bản nộp and its văn bản (story 80)", async () => {
+    const d = await w.graded([m(0), m(1)]);
+    const [latest] = (await w.t.app.dossiers.submissions(m(0), { dossierId: d.dossierId })).slice(-1);
+
+    const doc = await w.t.app.dossiers.downloadSubmissionDocument(m(0), { dossierId: d.dossierId, submissionNumber: latest!.number, document: "self_assessment_report" });
+
+    expect(doc.url).toMatch(/^http/);
+    await expect(
+      w.t.app.dossiers.downloadSubmissionDocument(m(3), { dossierId: d.dossierId, submissionNumber: latest!.number, document: "self_assessment_report" }),
+    ).rejects.toMatchObject({ code: "not_found" });
+  });
 });

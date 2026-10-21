@@ -68,7 +68,7 @@ const ROLE_ACTIONS = {
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
-  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer"],
+  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer", "council_member"],
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],

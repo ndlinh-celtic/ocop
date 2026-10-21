@@ -77,7 +77,7 @@ export const NAV: Record<Role, NavItem[]> = {
   council_chair: [
     HOME,
     { href: "/hoi-dong", label: "Hội đồng", icon: Users, ready: false },
-    { href: "/hoi-dong/tien-do", label: "Tiến độ chấm", icon: ListChecks, ready: false },
+    { href: "/hoi-dong/tien-do", label: "Tiến độ chấm", icon: ListChecks, ready: true },
     { href: "/hoi-dong/van-ban", label: "Văn bản", icon: FileText, ready: false },
     CRITERIA,
     ...COMMON,
@@ -86,7 +86,7 @@ export const NAV: Record<Role, NavItem[]> = {
     HOME,
     { href: "/hoi-dong", label: "Hội đồng", icon: Users, ready: false },
     { href: "/hoi-dong/phan-cong", label: "Phân công", icon: GitFork, ready: true },
-    { href: "/hoi-dong/tien-do", label: "Tiến độ chấm", icon: ListChecks, ready: false },
+    { href: "/hoi-dong/tien-do", label: "Tiến độ chấm", icon: ListChecks, ready: true },
     { href: "/hoi-dong/chot-diem", label: "Chốt điểm", icon: Lock, ready: false },
     { href: "/hoi-dong/van-ban", label: "Văn bản", icon: FileText, ready: false },
     { href: "/hoi-dong/chung-nhan", label: "Chứng nhận", icon: Award, ready: false },

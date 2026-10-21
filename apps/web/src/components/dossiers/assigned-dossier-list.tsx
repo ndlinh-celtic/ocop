@@ -1,5 +1,6 @@
 import type { DossierSummary } from "@ocop/core";
 import { ClipboardList } from "lucide-react";
+import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { formatVnDateTime } from "@/lib/format";
 import { DossierStateTag } from "./dossier-state-tag";
@@ -8,7 +9,19 @@ import { DossierStateTag } from "./dossier-state-tag";
  * The hồ sơ a thành viên chấm or Thành viên Tổ tư vấn has a Phân công in force on (L09 HD-06, stories 41, 78,
  * 79), in its minimal form: what the DataScope `assigned` lets them see, from Giao chấm on.
  */
-export function AssignedDossierList({ dossiers, empty }: { dossiers: DossierSummary[]; empty: string }) {
+export function AssignedDossierList({
+  dossiers,
+  empty,
+  href,
+  sheetState,
+}: {
+  dossiers: DossierSummary[];
+  empty: string;
+  /** Where a row opens (S61 for a thành viên chấm, #54). */
+  href?: (dossierId: string) => string;
+  /** The reader's own Phiếu chấm state by hồ sơ, shown as a column (story 78). */
+  sheetState?: Record<string, string>;
+}) {
   if (dossiers.length === 0) {
     return (
       <EmptyState icon={ClipboardList} title="Chưa có hồ sơ được giao">
@@ -27,12 +40,21 @@ export function AssignedDossierList({ dossiers, empty }: { dossiers: DossierSumm
             <th className="px-3 py-2">Đợt</th>
             <th className="px-3 py-2">Trạng thái</th>
             <th className="px-3 py-2">Giao chấm</th>
+            {sheetState && <th className="px-3 py-2">Phiếu của tôi</th>}
           </tr>
         </thead>
         <tbody>
           {dossiers.map((d) => (
             <tr key={d.id} className="border-b last:border-0" data-testid="assigned-dossier">
-              <td className="px-3 py-2 font-mono whitespace-nowrap">{d.code}</td>
+              <td className="px-3 py-2 font-mono whitespace-nowrap">
+                {href ? (
+                  <Link href={href(d.id)} className="text-brand underline">
+                    {d.code}
+                  </Link>
+                ) : (
+                  d.code
+                )}
+              </td>
               <td className="px-3 py-2">
                 <div className="font-medium">{d.productName || "(Chưa đặt tên sản phẩm)"}</div>
                 <div className="text-xs text-text-3">{d.entity.name}</div>
@@ -43,6 +65,7 @@ export function AssignedDossierList({ dossiers, empty }: { dossiers: DossierSumm
                 <DossierStateTag state={d.state} />
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-text-2">{d.gradingStartedAt ? formatVnDateTime(d.gradingStartedAt) : "—"}</td>
+              {sheetState && <td className="px-3 py-2 whitespace-nowrap">{sheetState[d.id] ?? "—"}</td>}
             </tr>
           ))}
         </tbody>
