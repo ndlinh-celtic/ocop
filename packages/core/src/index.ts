@@ -226,3 +226,5 @@ export type { SystemSettingRepo } from "./system/settings-model";
 export type { Council, CouncilRepo } from "./councils/model";
 export type { CouncilInput } from "./councils/manage";
 export { COUNCIL_ROLES, type CouncilDetail, type CouncilMember, type CouncilRole } from "./councils/read";
+export { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind, type AssignmentRepo } from "./councils/assignment-model";
+export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "./councils/assignments";

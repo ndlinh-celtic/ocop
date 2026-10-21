@@ -1,4 +1,4 @@
-import type { ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type { AssignmentKind, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -300,6 +300,20 @@ export const council = councilSchema.table("council", {
   createdAt: ts("created_at").notNull(),
   createdBy: uuid("created_by").notNull(),
   updatedAt: ts("updated_at").notNull(),
+});
+
+// Phân công (0030_assignments.sql).
+export const assignment = councilSchema.table("assignment", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  kind: text("kind").$type<AssignmentKind>().notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: ts("created_at").notNull(),
+  effectiveAt: ts("effective_at"),
+  replacedAt: ts("replaced_at"),
+  replacedBy: uuid("replaced_by"),
+  replaceReason: text("replace_reason"),
 });
 
 // Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).

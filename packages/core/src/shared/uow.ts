@@ -17,6 +17,7 @@ import type { SupplementRepo } from "../dossiers/supplement-model";
 import type { ReminderRepo } from "../dossiers/reminder-model";
 import type { SystemSettingRepo } from "../system/settings-model";
 import type { CouncilRepo } from "../councils/model";
+import type { AssignmentRepo } from "../councils/assignment-model";
 
 /** The repositories of one database transaction. */
 export interface Repos {
@@ -42,6 +43,7 @@ export interface Repos {
   reminders: ReminderRepo;
   systemSettings: SystemSettingRepo;
   councils: CouncilRepo;
+  assignments: AssignmentRepo;
 }
 
 /** Everything a use case can touch inside one database transaction. */

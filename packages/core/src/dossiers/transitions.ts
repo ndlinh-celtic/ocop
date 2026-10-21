@@ -29,7 +29,7 @@ export interface TransitionRule {
 }
 
 /** What policy needs of a hồ sơ: its state and what decides whose Phạm vi covers it. */
-export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt">;
+export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt" | "firstProvinceReceivedAt" | "councilId" | "readerAssignment">;
 
 /** Actions on an existing hồ sơ; their audit action is the same string, with `_on_behalf` for Nhập hộ. */
 export const DOSSIER_ACTIONS = [
@@ -57,6 +57,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.province_return",
   "dossier.return_request",
   "dossier.province_receive",
+  "dossier.assignment.edit",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -86,6 +87,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.returned_by_province",
   "dossier.return_requested",
   "dossier.province_received",
+  "dossier.assignment_changed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -266,6 +268,18 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     guard: (d) =>
       d.provinceReceivedAt === null ? null : new DomainError("already_province_received", "Hồ sơ đã được tiếp nhận tại tỉnh trong lượt gửi tỉnh này"),
   },
+  // L09 HD-02 (stories 25 to 29): the Thư ký writes the Phân công nháp of a hồ sơ Tiếp nhận tại tỉnh in this
+  // lượt; who may be chosen is checked by editAssignments, which knows the Hội đồng. Not on the timeline the
+  // Chủ thể reads (story 137).
+  {
+    action: "dossier.assignment.edit",
+    from: "forwarded_to_province",
+    to: "forwarded_to_province",
+    roles: ["council_secretary"],
+    event: "dossier.assignment_changed",
+    timeline: false,
+    guard: (d) => (d.provinceReceivedAt !== null ? null : new DomainError("not_province_received", "Hồ sơ chưa được tiếp nhận tại tỉnh trong lượt gửi tỉnh này")),
+  },
 ];
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */
@@ -308,6 +322,12 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
       // xã đăng ký is not on the hồ sơ: the repository checks it when it loads the row, and a row in hand
       // was loaded within this scope.
       return d.entityId === scope.entityId && (d.wardId === null || d.wardId === scope.wardId);
+    case "council":
+      // The đợt is the Hội đồng's, and the hồ sơ has been Tiếp nhận tại tỉnh at least once (story 24).
+      return d.councilId === scope.councilId && d.firstProvinceReceivedAt !== null;
+    case "assigned":
+      // The reader's own Phân công in force, of the kind of their Vai trò, loaded with the row (stories 41, 79).
+      return d.councilId === scope.councilId && d.readerAssignment === scope.as;
     case "none":
       return false;
     default: {

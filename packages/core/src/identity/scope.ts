@@ -1,3 +1,4 @@
+import type { AssignmentKind } from "../councils/assignment-model";
 import type { Actor } from "../shared/context";
 
 /**
@@ -8,7 +9,7 @@ import type { Actor } from "../shared/context";
  * they rely on the use case having loaded that hồ sơ through a scoped lookup first.
  *
  * Branches arrive with the modules that need them: `ward` (Cán bộ xã) and `province` (Cán bộ Sở, only what
- * has reached the province) in step 3, `council` and `assigned` in step 4. Adding one is a new member here,
+ * has reached the province) in step 3, `council` (Chủ tịch, Thư ký) and `assigned` (Thành viên, Tổ tư vấn) in step 4. Adding one is a new member here,
  * a new case in `dataScopeOf`, and a new case in each repository's exhaustive switch: nothing is restructured.
  */
 export type DataScope =
@@ -21,6 +22,17 @@ export type DataScope =
    * (no xã yet) or one whose xã is `wardId`, so a hồ sơ Chuyển xã elsewhere is out (story 49).
    */
   | { kind: "on_behalf"; entityId: string; wardId: string }
+  /**
+   * Chủ tịch, Thư ký hội đồng (spec #49 story 24): the hồ sơ of the đợt gán to Hội đồng `councilId`, from
+   * their first Tiếp nhận tại tỉnh on, even after a Sở trả về.
+   */
+  | { kind: "council"; councilId: string }
+  /**
+   * Thành viên hội đồng (`as: "member"`), Thành viên Tổ tư vấn (`as: "advisory"`): the hồ sơ of a đợt of
+   * Hội đồng `councilId` on which `userId` has a Phân công of that kind in force (Giao chấm given, not
+   * replaced). A Phân công nháp shows nothing (stories 41, 79).
+   */
+  | { kind: "assigned"; userId: string; councilId: string; as: AssignmentKind }
   | { kind: "none" };
 
 const NONE: DataScope = { kind: "none" };
@@ -45,6 +57,13 @@ export function dataScopeOf(actor: Actor): DataScope {
       return type === "ward" && id ? { kind: "ward", wardId: id } : NONE;
     case "province_officer":
       return type === "province" ? { kind: "province" } : NONE;
+    case "council_chair":
+    case "council_secretary":
+      return type === "council" && id ? { kind: "council", councilId: id } : NONE;
+    case "council_member":
+      return type === "council" && id ? { kind: "assigned", userId: actor.userId, councilId: id, as: "member" } : NONE;
+    case "advisory_member":
+      return type === "council" && id ? { kind: "assigned", userId: actor.userId, councilId: id, as: "advisory" } : NONE;
     default:
       return NONE;
   }
