@@ -60,6 +60,8 @@ export const NOTICE_EVENTS = [
   "dossier.return_requested",
   "dossier.grading_started",
   "dossier.members_confirmed",
+  "council.assignment.replaced",
+  "council.assignment.added",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -306,6 +308,37 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
       return [
         notice(await usersOf("advisory"), "thẩm định (Tổ tư vấn)", "/to-tu-van/hang-doi"),
         notice(await usersOf("member"), "chấm điểm", "/thanh-vien/ho-so"),
+      ];
+    }
+    // L09 HD-03 (stories 38, 39): the person replaced loses the hồ sơ, so their notice names only its mã;
+    // the newcomer hears like a Giao chấm.
+    case "council.assignment.replaced":
+    case "council.assignment.added": {
+      const { kind, replacedUserId, newUserId } = event.payload;
+      const active = async (id: string | null) => {
+        const u = id ? await tx.users.findById(id) : null;
+        return u?.status === "active" ? [u] : [];
+      };
+      const role = kind === "advisory" ? "thẩm định (Tổ tư vấn)" : "chấm điểm";
+      return [
+        {
+          recipients: await active(replacedUserId),
+          kind: "dossier_assignment_replaced",
+          title: `Anh/chị không còn phụ trách hồ sơ ${dossier.code}`,
+          body: `Thư ký hội đồng đã thay người ${role} hồ sơ ${dossier.code}. Anh/chị không còn xem được hồ sơ này.`,
+          emailSubject: "Anh/chị không còn phụ trách một hồ sơ OCOP",
+          emailLine: "Thư ký hội đồng đã thay anh/chị khỏi Phân công một hồ sơ OCOP.",
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : "/thanh-vien/ho-so",
+        },
+        {
+          recipients: await active(newUserId),
+          kind: "dossier_assigned",
+          title: `Anh/chị được Phân công hồ sơ: ${product}`,
+          body: `Anh/chị được Phân công ${role} hồ sơ ${dossier.code}.`,
+          emailSubject: "Anh/chị được Phân công một hồ sơ OCOP",
+          emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : `/thanh-vien/ho-so/${dossier.id}`,
+        },
       ];
     }
     // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.

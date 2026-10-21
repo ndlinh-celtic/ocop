@@ -29,4 +29,8 @@ export interface AssignmentRepo {
   deleteDrafts(ids: readonly string[]): Promise<void>;
   /** Giao chấm: sets `effectiveAt` on the current nháp rows of a hồ sơ; returns the ids of those it changed. */
   takeEffect(dossierId: string, at: Date): Promise<string[]>;
+  /** Thay thế (#55): marks a current Phân công in force replaced; false when it is not current or not in force. */
+  markReplaced(id: string, at: Date, by: string, reason: string): Promise<boolean>;
+  /** The replaced Phân công of a hồ sơ already loaded within scope, oldest replacement first. */
+  replaced(dossierId: string): Promise<Assignment[]>;
 }
