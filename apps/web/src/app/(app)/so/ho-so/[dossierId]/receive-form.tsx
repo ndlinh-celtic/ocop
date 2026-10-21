@@ -2,11 +2,18 @@
 
 import { Inbox } from "lucide-react";
 import { useActionState } from "react";
+import { useFlash } from "@/components/flash";
 import { receiveAtProvinceAction, type ProvinceDossierFormState } from "../actions";
 
 /** L08 SO-02 (stories 12, 15): Tiếp nhận tại tỉnh, after the quick check above it. */
 export function ProvinceReceiveForm({ dossierId, version, councilMissing }: { dossierId: string; version: number; councilMissing: boolean }) {
-  const [state, action, pending] = useActionState<ProvinceDossierFormState, FormData>(receiveAtProvinceAction.bind(null, dossierId, version), {});
+  const flash = useFlash();
+  // The form goes once the hồ sơ is received, so the success message is a flash outside it.
+  const [state, action, pending] = useActionState<ProvinceDossierFormState, FormData>(async (prev) => {
+    const result = await receiveAtProvinceAction(dossierId, version, prev);
+    if (result.saved) flash("Đã tiếp nhận hồ sơ tại tỉnh.");
+    return result;
+  }, {});
   return (
     <form action={action} className="flex flex-col gap-2">
       {councilMissing && (
@@ -24,11 +31,6 @@ export function ProvinceReceiveForm({ dossierId, version, councilMissing }: { do
       {state.error && (
         <p role="alert" className="text-sm text-danger">
           {state.error}
-        </p>
-      )}
-      {state.saved && (
-        <p role="status" className="text-sm text-brand">
-          Đã tiếp nhận hồ sơ tại tỉnh.
         </p>
       )}
     </form>

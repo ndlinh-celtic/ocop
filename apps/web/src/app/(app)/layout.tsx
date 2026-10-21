@@ -1,5 +1,6 @@
 import { ROLE_LABEL } from "@ocop/core";
 import { LogOut } from "lucide-react";
+import { FlashProvider } from "@/components/flash";
 import { NotificationBell } from "@/components/notification-bell";
 import { AppShell } from "@/components/shell/app-shell";
 import { RoleSwitcher } from "@/components/shell/role-switcher";
@@ -35,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </>
       }
     >
-      {children}
+      <FlashProvider>{children}</FlashProvider>
     </AppShell>
   );
 }

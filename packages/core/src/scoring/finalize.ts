@@ -1,3 +1,4 @@
+import { isMemberInForce } from "../councils/assignment-model";
 import { createHash } from "node:crypto";
 import { auditEntry } from "../audit/audit";
 import { lockDossier } from "../dossiers/edit";
@@ -50,19 +51,18 @@ export function finalizeDossier(deps: CoreDeps) {
 
       // Story 118: a phiếu of a Phân công in force not confirmed by now is Vắng.
       const now = deps.clock.now();
-      const inForce = new Set((await tx.assignments.current(before.id)).filter((a) => a.kind === "member" && a.effectiveAt !== null).map((a) => a.id));
+      const inForce = new Set((await tx.assignments.current(before.id)).filter(isMemberInForce).map((a) => a.id));
       for (const sheet of await tx.scoreSheets.current(before.id)) {
         if (sheet.state !== "draft" || !inForce.has(sheet.assignmentId)) continue;
         if (!(await tx.scoreSheets.update({ ...sheet, state: "absent", version: sheet.version + 1, updatedAt: now }, sheet.version))) {
-          throw new DomainError("version_conflict", "Phiếu chấm vừa thay đổi, vui lòng tải lại");
+          throw versionConflict();
         }
       }
 
-      const { thresholds, graders, sheets, aggregation, aggregate } = await aggregateOf(tx, before);
+      const { thresholds, graded, aggregation, aggregate } = await aggregateOf(tx, before);
       const round = before.roundId ? await tx.rounds.findById(before.roundId) : null;
       const advisory = (await tx.advisoryReports.versions(before.id)).at(-1) ?? null;
-      const snapshotGraders: SnapshotGrader[] = graders.map((g, i) => {
-        const sheet = sheets[i] ?? null;
+      const snapshotGraders: SnapshotGrader[] = graded.map(({ grader: g, sheet }) => {
         return {
           userId: g.userId,
           fullName: g.fullName,

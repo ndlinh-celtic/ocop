@@ -17,6 +17,11 @@ export interface ScoreSheet {
   reauthMethod: "totp" | "password" | null;
   supersededBy: string | null;
   supersededReason: string | null;
+  /**
+   * Dựa trên Tổ tư vấn (spec #49 HD-03): a Phiếu chấm trống opened for a thành viên chấm added or replaced once
+   * the hồ sơ is past the first sao chép waits for the next one; no lưu or xác nhận until a sao chép writes into it.
+   */
+  awaitingCopy: boolean;
   version: number;
   createdAt: Date;
   updatedAt: Date;
@@ -50,7 +55,7 @@ export interface ScoreSheetRepo {
   /** Inserts or replaces one dòng with its files (the database refuses it unless the phiếu is draft). */
   saveLine(line: ScoreSheetLine): Promise<void>;
   /**
-   * Trả phiếu (ADR 0008): marks a confirmed or absent phiếu superseded by `supersededBy` (inserted later in the same
+   * Trả phiếu, or thay a Vắng (ADR 0008): marks a confirmed or absent phiếu superseded by `supersededBy` (inserted in the same
    * transaction), changing nothing else; false when it is no longer confirmed or absent.
    */
   supersede(id: string, supersededBy: string, reason: string): Promise<boolean>;

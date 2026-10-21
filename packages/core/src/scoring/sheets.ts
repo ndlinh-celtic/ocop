@@ -1,4 +1,5 @@
-import type { Assignment } from "../councils/assignment-model";
+import { ownUpload } from "../files/attach";
+import { isMemberInForce, type Assignment } from "../councils/assignment-model";
 import { lockDossier } from "../dossiers/edit";
 import { versionConflict, type Dossier, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -25,7 +26,7 @@ const MAX_COMMENT = 10_000;
 
 /** The Phân công thành viên chấm of the reader on the hồ sơ, in force, and its Phiếu chấm not superseded. */
 export async function ownSheet(tx: Tx, actor: UserActor, dossierId: string): Promise<{ assignment: Assignment | null; sheet: ScoreSheet | null }> {
-  const assignment = (await tx.assignments.current(dossierId)).find((a) => a.userId === actor.userId && a.kind === "member" && a.effectiveAt !== null) ?? null;
+  const assignment = (await tx.assignments.current(dossierId)).find((a) => a.userId === actor.userId && isMemberInForce(a)) ?? null;
   const sheet = assignment ? ((await tx.scoreSheets.current(dossierId)).find((s) => s.assignmentId === assignment.id) ?? null) : null;
   return { assignment, sheet };
 }
@@ -42,6 +43,9 @@ function writable(sheet: ScoreSheet | null, expectedVersion: number): ScoreSheet
   if (!sheet) throw new DomainError("score_sheet_not_found", "Anh/chị chưa có Phiếu chấm cho hồ sơ này");
   if (sheet.state !== "draft") throw new DomainError("score_sheet_confirmed", "Phiếu chấm đã xác nhận nên không sửa được nữa");
   if (sheet.version !== expectedVersion) throw versionConflict();
+  if (sheet.awaitingCopy) {
+    throw new DomainError("score_sheet_awaiting_copy", "Phiếu chấm đang chờ Tổ tư vấn sao chép dữ liệu nên chưa lưu hoặc xác nhận được");
+  }
   return sheet;
 }
 
@@ -126,10 +130,7 @@ export function saveScoreSheet(deps: CoreDeps) {
 
 /** A bằng chứng kiểm tra the reader uploaded, not refused by the scan (it may still be scanning). */
 async function assertEvidence(tx: Tx, actor: UserActor, fileId: unknown) {
-  const file = isUuid(fileId) ? await tx.files.findById(fileId) : null;
-  if (!file || file.ownerUserId !== actor.userId || file.purpose !== "grading_evidence") throw new DomainError("file_not_found", "Không tìm thấy tệp");
-  if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa tải lên xong");
-  if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp bị chặn vì không qua được kiểm tra virus");
+  await ownUpload(tx, actor, fileId, "grading_evidence", () => new DomainError("file_not_found", "Không tìm thấy tệp"));
 }
 
 const adjustReasonRequired = (codes: string[]) =>
@@ -137,6 +138,8 @@ const adjustReasonRequired = (codes: string[]) =>
 
 /** Story 90: xác nhận refused while Tiêu chí have no Mức điểm; `criteria` lists their mã. */
 export class ScoreSheetIncompleteError extends DomainError {
+  static override readonly brand = "ScoreSheetIncompleteError";
+
   constructor(readonly criteria: readonly string[]) {
     super("score_sheet_incomplete", `Còn Tiêu chí chưa có Mức điểm: ${criteria.join(", ")}`);
   }
@@ -155,7 +158,7 @@ export function confirmScoreSheet(deps: CoreDeps) {
       const before = await lockDossier(tx, actor, input.dossierId);
       const { sheet } = await ownSheet(tx, actor, before.id);
       const proof = await requireRecentAuth(deps, tx, actor);
-      const inForce = new Set((await tx.assignments.current(before.id)).filter((a) => a.kind === "member" && a.effectiveAt !== null).map((a) => a.id));
+      const inForce = new Set((await tx.assignments.current(before.id)).filter(isMemberInForce).map((a) => a.id));
       const confirmed = (await tx.scoreSheets.current(before.id)).filter((s) => s.state === "confirmed" && inForce.has(s.assignmentId)).length;
       // A hồ sơ in member_review has a đợt.
       const round = before.roundId ? await tx.rounds.findById(before.roundId) : null;

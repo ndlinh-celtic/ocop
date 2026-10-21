@@ -1,3 +1,4 @@
+import { isMemberInForce } from "../councils/assignment-model";
 import { lockDossier } from "../dossiers/edit";
 import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -70,6 +71,8 @@ export interface AdvisoryCopyPlan {
 
 /** A refusal for one hồ sơ of the lô, naming it (spec #49: one conflict rolls the lô back and says which). */
 export class AdvisoryCopyRefused extends DomainError {
+  static override readonly brand = "AdvisoryCopyRefused";
+
   constructor(
     readonly dossierId: string,
     readonly dossierCode: string | null,
@@ -126,7 +129,7 @@ async function planOf(tx: Tx, dossier: Dossier, scope: AdvisoryCopyScope, adviso
   const inScope = order.filter((c) => wanted === "all" || wanted.includes(c.code));
   const proposed = new Map(version.snapshot.lines.map((l) => [l.criterionId, l]));
 
-  const members = (await tx.assignments.current(dossier.id)).filter((a) => a.kind === "member" && a.effectiveAt !== null);
+  const members = (await tx.assignments.current(dossier.id)).filter(isMemberInForce);
   const chosen = scope.recipients === "all" ? members : members.filter((a) => (scope.recipients as string[]).includes(a.userId));
   if (chosen.length === 0) throw new DomainError("recipient_not_assigned", "Không có thành viên chấm nào được chọn trong Phân công của hồ sơ");
   const sheets = await tx.scoreSheets.current(dossier.id);
@@ -197,8 +200,7 @@ async function forDossier<T>(dossierId: string, fn: (named: (d: Dossier) => void
   try {
     return await fn((d) => (code = d.code));
   } catch (err) {
-    // DomainError's brand makes `instanceof` true for every subclass, so tell a refusal already named by its field.
-    if (err instanceof DomainError && !("dossierId" in err)) throw new AdvisoryCopyRefused(dossierId, code, err);
+    if (err instanceof DomainError && !(err instanceof AdvisoryCopyRefused)) throw new AdvisoryCopyRefused(dossierId, code, err);
     throw err;
   }
 }
@@ -267,7 +269,7 @@ export function copyAdvisory(deps: CoreDeps) {
           for (const w of writes) {
             for (const line of w.lines) await tx.scoreSheets.saveLine({ ...line, updatedAt: now });
             // A thành viên's form open meanwhile gets a version conflict rather than writing over the sao chép.
-            if (!(await tx.scoreSheets.update({ ...w.sheet, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version))) throw versionConflict();
+            if (!(await tx.scoreSheets.update({ ...w.sheet, awaitingCopy: false, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version))) throw versionConflict();
           }
           return { ...plan, version: after.version, state: after.state };
         });
@@ -318,7 +320,7 @@ export function advisoryCopyBoard(deps: CoreDeps) {
           }
         }
         const members = [];
-        for (const a of (await tx.assignments.current(dossier.id)).filter((x) => x.kind === "member" && x.effectiveAt !== null)) {
+        for (const a of (await tx.assignments.current(dossier.id)).filter(isMemberInForce)) {
           members.push({ userId: a.userId, fullName: (await tx.users.findById(a.userId))?.fullName ?? "", sheet: sheets.find((s) => s.assignmentId === a.id)?.state ?? null });
         }
         out.push({

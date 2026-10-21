@@ -21,11 +21,11 @@ export async function publishVersionAction(versionId: string) {
       revalidatePath("/tieu-chi", "layout");
       return { published: true, publishedAt: publishedAt.toISOString() };
     } catch (err) {
+      if (err instanceof DomainError && err.code === "reauth_required") throw err; // withReauth asks for the proof
       if (err instanceof CriteriaValidationError) {
         revalidatePath(`/quan-tri/bo-tieu-chi/${id}`);
         return { published: false, error: err.message };
       }
-      if (err instanceof DomainError && err.code === "reauth_required") throw err; // withReauth asks for the proof
       return { published: false, error: domainMessage(err) };
     }
   });

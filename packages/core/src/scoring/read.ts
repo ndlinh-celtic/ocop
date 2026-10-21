@@ -1,3 +1,4 @@
+import { isMemberInForce } from "../councils/assignment-model";
 import type { CriteriaSetDetail } from "../criteria/detail";
 import { assembleSet } from "../criteria/detail";
 import type { RankThresholds } from "../criteria/model";
@@ -97,7 +98,7 @@ export interface OwnSheetView {
   kind: "own_sheet";
   dossierId: string;
   /** Null when the reader has no Phiếu chấm (not yet given one). */
-  sheet: Pick<ScoreSheet, "id" | "state" | "attempt" | "version" | "confirmedAt" | "reauthMethod"> | null;
+  sheet: Pick<ScoreSheet, "id" | "state" | "attempt" | "version" | "confirmedAt" | "reauthMethod" | "awaitingCopy"> | null;
   set: CriteriaSetDetail;
   thresholds: RankThresholds;
   criteria: SheetCriterion[];
@@ -209,7 +210,7 @@ export function readDossierScores(deps: CoreDeps) {
 
 /** Each thành viên chấm in force with their phiếu (not superseded), by name. */
 export async function gradersOf(tx: Tx, dossierId: string): Promise<{ progress: GraderProgress; sheet: ScoreSheet | null }[]> {
-  const members = (await tx.assignments.current(dossierId)).filter((a) => a.kind === "member" && a.effectiveAt !== null);
+  const members = (await tx.assignments.current(dossierId)).filter(isMemberInForce);
   const sheets = await tx.scoreSheets.current(dossierId);
   const rows: { progress: GraderProgress; sheet: ScoreSheet | null }[] = [];
   for (const a of members) {
@@ -237,13 +238,11 @@ export async function aggregateOf(tx: Tx, dossier: Dossier) {
   const aggregation = { minGraders: round?.aggregation.minGraders ?? 0, deviationFlagPoints: round?.aggregation.deviationFlagPoints ?? 0 };
   const order = sheetOrder(rows);
   const pointsOf = new Map(order.flatMap((c) => c.levels.map((l) => [l.id, l.points] as const)));
-  const graders: GraderScores[] = [];
-  const sheets: (ScoreSheet | null)[] = [];
+  const graded: { grader: GraderScores; sheet: ScoreSheet | null }[] = [];
   const counted: Map<string, number>[] = [];
   for (const { progress, sheet } of await gradersOf(tx, dossier.id)) {
-    sheets.push(sheet);
     if (sheet?.state !== "confirmed") {
-      graders.push({ ...progress, total: null, lines: null });
+      graded.push({ grader: { ...progress, total: null, lines: null }, sheet });
       continue;
     }
     const byCriterion = new Map((await tx.scoreSheets.lines(sheet.id)).map((l) => [l.criterionId, l]));
@@ -255,10 +254,10 @@ export async function aggregateOf(tx: Tx, dossier: Dossier) {
     });
     const scores = new Map(lines.map((l) => [l.criterionId, l.points]));
     counted.push(scores);
-    graders.push({ ...progress, total: rankStoredSet({ set, thresholds, scores }).total, lines });
+    graded.push({ grader: { ...progress, total: rankStoredSet({ set, thresholds, scores }).total, lines }, sheet });
   }
   const aggregate = aggregateScores({ set, thresholds, sheets: counted, deviationFlagPoints: aggregation.deviationFlagPoints });
-  return { set, thresholds, order, graders, sheets, aggregation, aggregate };
+  return { set, thresholds, order, graders: graded.map((g) => g.grader), graded, aggregation, aggregate };
 }
 
 async function fullView(tx: Tx, dossier: Dossier): Promise<FullScoresView> {
@@ -359,7 +358,7 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
   return {
     kind: "own_sheet",
     dossierId: dossier.id,
-    sheet: sheet && { id: sheet.id, state: sheet.state, attempt: sheet.attempt, version: sheet.version, confirmedAt: sheet.confirmedAt, reauthMethod: sheet.reauthMethod },
+    sheet: sheet && { id: sheet.id, state: sheet.state, attempt: sheet.attempt, version: sheet.version, confirmedAt: sheet.confirmedAt, reauthMethod: sheet.reauthMethod, awaitingCopy: sheet.awaitingCopy },
     set,
     thresholds,
     criteria,

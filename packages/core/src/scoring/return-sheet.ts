@@ -1,3 +1,4 @@
+import { isMemberInForce } from "../councils/assignment-model";
 import { lockDossier } from "../dossiers/edit";
 import { dossierNotFound, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -37,7 +38,7 @@ export function returnScoreSheet(deps: CoreDeps) {
     if (reason.length > MAX_REASON) throw new DomainError("field_too_long", "Lý do quá dài");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
-      const inForce = (await tx.assignments.current(before.id)).filter((a) => a.kind === "member" && a.effectiveAt !== null);
+      const inForce = (await tx.assignments.current(before.id)).filter(isMemberInForce);
       const counted = (await tx.scoreSheets.current(before.id)).filter((s) => inForce.some((a) => a.id === s.assignmentId));
       const sheet = counted.find((s) => s.id === input.sheetId) ?? null;
       const left = counted.filter((s) => s.state === "confirmed" && s.id !== sheet?.id).length;
@@ -70,6 +71,7 @@ export function returnScoreSheet(deps: CoreDeps) {
         reauthMethod: null,
         supersededBy: null,
         supersededReason: null,
+        awaitingCopy: sheet.awaitingCopy,
         version: 1,
         createdAt: now,
         updatedAt: now,

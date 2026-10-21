@@ -1,4 +1,5 @@
 import { authorize } from "../identity/policy";
+import { ROLES, SCOPE_OF_ROLE } from "../identity/roles";
 import { dataScopeOf, type DataScope } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -176,10 +177,15 @@ export function dossierTimeline(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       assertIdShape(input.dossierId, dossierNotFound);
       if (!(await tx.dossiers.findById(scope, input.dossierId))) throw dossierNotFound();
-      return tx.dossiers.events(scope, input.dossierId);
+      const events = await tx.dossiers.events(scope, input.dossierId);
+      // Spec #49 (story 137): the Chủ thể sees the Hội đồng's milestones, never who in the Hội đồng took them.
+      if (scope.kind !== "entity") return events;
+      return events.map((e) => (e.actorRole !== null && COUNCIL_ROLES.has(e.actorRole) ? { ...e, actorUserId: null, actorRole: null } : e));
     });
   };
 }
+
+const COUNCIL_ROLES: ReadonlySet<string> = new Set(ROLES.filter((r) => SCOPE_OF_ROLE[r] === "council"));
 
 /** One cell of the số liệu tổng hợp: how many hồ sơ of a xã are in a state. */
 export interface DossierOverviewRow {

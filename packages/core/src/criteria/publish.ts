@@ -13,6 +13,8 @@ import { assertDraft } from "./version";
 
 /** Publishing was refused because the check still finds problems; `issues` lists all of them. */
 export class CriteriaValidationError extends DomainError {
+  static override readonly brand = "CriteriaValidationError";
+
   constructor(readonly issues: ValidationIssue[]) {
     super("validation_failed", `Phiên bản tiêu chí còn ${issues.length} lỗi kiểm tra, chưa phát hành được`);
     this.name = "CriteriaValidationError";

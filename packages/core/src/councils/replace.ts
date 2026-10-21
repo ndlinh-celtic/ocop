@@ -10,7 +10,7 @@ import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind } from "./assignment-model";
-import { checkEligible, eligibleOf } from "./assignments";
+import { checkEligible, conflictOfRoles, eligibleOf } from "./assignments";
 import { openScoreSheets } from "./grading";
 
 /*
@@ -79,17 +79,19 @@ export function replaceAssignment(deps: CoreDeps) {
       if (!old) throw new DomainError("assignment_not_found", "Người này không có Phân công đang hiệu lực trên hồ sơ");
       await checkNewcomer(deps, tx, before, current, input.newUserId, old.kind, now);
 
-      // Story 35: a phiếu đã xác nhận is never dropped quietly.
+      // Story 35: a phiếu đã xác nhận is never dropped quietly. A Vắng never xác nhận one, so is replaceable (after a Mở khóa).
       const sheet = old.kind === "member" ? (await tx.scoreSheets.current(before.id)).find((s) => s.assignmentId === old.id) : undefined;
-      if (sheet && sheet.state !== "draft") {
+      if (sheet && sheet.state === "confirmed") {
         throw new DomainError("assignment_sheet_confirmed", "Thành viên đã xác nhận Phiếu chấm nên không thay được");
       }
       if (!(await tx.assignments.markReplaced(old.id, now, actor.userId, reason))) throw new Error(`assignment ${old.id} changed under a lock`);
-      const created = await insertInForce(deps, tx, actor, before.id, input.newUserId, old.kind, now);
+      const created = await insertInForce(deps, tx, actor, before, input.newUserId, old.kind, now);
       if (sheet) {
-        const newSheet = created.scoreSheetIds[0] ?? null;
+        const newSheet = created.scoreSheetIds[0]!;
         const superseded = { ...sheet, state: "superseded" as const, supersededBy: newSheet, supersededReason: reason, version: sheet.version + 1, updatedAt: now };
-        if (!(await tx.scoreSheets.update(superseded, sheet.version))) throw new Error(`score sheet ${sheet.id} changed under a lock`);
+        // A nháp is written like any draft; a phiếu Vắng changes only its state and supersession (ADR 0008).
+        const done = sheet.state === "draft" ? await tx.scoreSheets.update(superseded, sheet.version) : await tx.scoreSheets.supersede(sheet.id, newSheet, reason);
+        if (!done) throw new Error(`score sheet ${sheet.id} changed under a lock`);
       }
       await emit(deps, tx, {
         type: "council.assignment.replaced",
@@ -116,7 +118,7 @@ export function addAssignment(deps: CoreDeps) {
         metadata: { kind: input.kind, replacedUserId: null, newUserId: input.userId },
       });
       await checkNewcomer(deps, tx, before, current, input.userId, input.kind, now);
-      await insertInForce(deps, tx, actor, before.id, input.userId, input.kind, now);
+      await insertInForce(deps, tx, actor, before, input.userId, input.kind, now);
       await emit(deps, tx, {
         type: "council.assignment.added",
         payload: { dossierId: before.id, entityId: before.entityId, kind: input.kind, replacedUserId: null, newUserId: input.userId },
@@ -161,13 +163,14 @@ async function begin(tx: Tx, actor: UserActor, dossierId: string) {
   return { before, current: await tx.assignments.current(before.id) };
 }
 
-/** The newcomer: not on the hồ sơ yet in any role (story 28), holding the Phân vai, and no Tổ tư vấn in chấm trực tiếp. */
+/**
+ * The newcomer: never Phân công on the hồ sơ in the other role, even if replaced since (story 28), not on it now,
+ * holding the Phân vai, and no Tổ tư vấn in chấm trực tiếp.
+ */
 async function checkNewcomer(deps: CoreDeps, tx: Tx, dossier: Dossier, current: Assignment[], userId: string, kind: AssignmentKind, now: Date) {
-  const existing = current.find((a) => a.userId === userId);
-  if (existing && existing.kind !== kind) {
-    throw new DomainError("conflict_of_roles", "Một người không thể vừa là Thành viên Tổ tư vấn vừa là thành viên chấm của cùng một hồ sơ");
-  }
-  if (existing) throw new DomainError("already_assigned", "Người này đã được Phân công trên hồ sơ");
+  const everOnIt = [...current, ...(await tx.assignments.replaced(dossier.id))].filter((a) => a.userId === userId);
+  if (everOnIt.some((a) => a.kind !== kind)) throw conflictOfRoles();
+  if (current.some((a) => a.userId === userId)) throw new DomainError("already_assigned", "Người này đã được Phân công trên hồ sơ");
   if (kind === "advisory") {
     const round = (await tx.rounds.findById(dossier.roundId!))!;
     if (round.gradingMode !== "advisory_based") {
@@ -177,10 +180,10 @@ async function checkNewcomer(deps: CoreDeps, tx: Tx, dossier: Dossier, current: 
   checkEligible(await eligibleOf(tx, dossier.councilId!, now), kind === "member" ? [userId] : [], kind === "advisory" ? [userId] : []);
 }
 
-async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, userId: string, kind: AssignmentKind, now: Date) {
+async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier, userId: string, kind: AssignmentKind, now: Date) {
   const a: Assignment = {
     id: deps.ids.next(),
-    dossierId,
+    dossierId: dossier.id,
     userId,
     kind,
     createdBy: actor.userId,
@@ -191,6 +194,8 @@ async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId
     replaceReason: null,
   };
   await tx.assignments.insert(a);
-  const scoreSheetIds = kind === "member" ? await openScoreSheets(deps, tx, dossierId, [a.id], now) : [];
+  // Dựa trên Tổ tư vấn, past the first sao chép: the Phiếu chấm trống waits for the next one.
+  const awaitingCopy = kind === "member" && (dossier.state === "member_review" || dossier.state === "member_confirmed") && (await tx.rounds.findById(dossier.roundId!))!.gradingMode === "advisory_based";
+  const scoreSheetIds = kind === "member" ? await openScoreSheets(deps, tx, dossier.id, [a.id], now, awaitingCopy) : [];
   return { assignmentId: a.id, scoreSheetIds };
 }

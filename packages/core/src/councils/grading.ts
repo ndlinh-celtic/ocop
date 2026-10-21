@@ -96,8 +96,11 @@ export function startGrading(deps: CoreDeps) {
   };
 }
 
-/** A Phiếu chấm trống for each Phân công thành viên chấm that has no current one yet (a Giao chấm again keeps them). */
-export async function openScoreSheets(deps: CoreDeps, tx: Tx, dossierId: string, assignmentIds: string[], now: Date): Promise<string[]> {
+/**
+ * A Phiếu chấm trống for each Phân công thành viên chấm that has no current one yet (a Giao chấm again keeps them);
+ * `awaitingCopy` when it must wait for the next sao chép from the Tổ tư vấn.
+ */
+export async function openScoreSheets(deps: CoreDeps, tx: Tx, dossierId: string, assignmentIds: string[], now: Date, awaitingCopy = false): Promise<string[]> {
   const have = new Set((await tx.scoreSheets.current(dossierId)).map((s) => s.assignmentId));
   const opened: string[] = [];
   for (const assignmentId of assignmentIds) {
@@ -112,6 +115,7 @@ export async function openScoreSheets(deps: CoreDeps, tx: Tx, dossierId: string,
       reauthMethod: null,
       supersededBy: null,
       supersededReason: null,
+      awaitingCopy,
       version: 1,
       createdAt: now,
       updatedAt: now,

@@ -21,6 +21,9 @@ export interface Assignment {
   replaceReason: string | null;
 }
 
+/** A Phân công thành viên chấm in force: Giao chấm gave it effect (replaced ones are not `current`). */
+export const isMemberInForce = (a: Assignment): boolean => a.kind === "member" && a.effectiveAt !== null;
+
 export interface AssignmentRepo {
   /** The current (not replaced) Phân công of a hồ sơ already loaded within scope, oldest first. */
   current(dossierId: string): Promise<Assignment[]>;

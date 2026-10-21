@@ -50,9 +50,7 @@ export function editAssignments(deps: CoreDeps) {
     if (dossiers.length === 0) throw new DomainError("dossiers_required", "Chọn ít nhất một hồ sơ để phân công");
     const members = unique(input.members);
     const advisors = unique(input.advisors);
-    if (members.some((id) => advisors.includes(id))) {
-      throw new DomainError("conflict_of_roles", "Một người không thể vừa là Thành viên Tổ tư vấn vừa là thành viên chấm của cùng một hồ sơ");
-    }
+    if (members.some((id) => advisors.includes(id))) throw conflictOfRoles();
     const desired = new Map<string, AssignmentKind>([...members.map((id) => [id, "member"] as const), ...advisors.map((id) => [id, "advisory"] as const)]);
 
     return deps.uow.run(async (tx) => {
@@ -98,7 +96,12 @@ export function checkEligible(eligible: { member: Set<string>; advisory: Set<str
   }
 }
 
+export const conflictOfRoles = () =>
+  new DomainError("conflict_of_roles", "Một người không thể vừa là Thành viên Tổ tư vấn vừa là thành viên chấm của cùng một hồ sơ");
+
 async function replaceDrafts(deps: CoreDeps, tx: Tx, by: string, dossierId: string, desired: Map<string, AssignmentKind>, now: Date) {
+  // Story 28: a Phân công replaced earlier still counts; one person never holds both roles on a hồ sơ.
+  if ((await tx.assignments.replaced(dossierId)).some((a) => desired.has(a.userId) && desired.get(a.userId) !== a.kind)) throw conflictOfRoles();
   const current = await tx.assignments.current(dossierId);
   const kept = new Set<string>();
   const drop: string[] = [];
