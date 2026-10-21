@@ -19,6 +19,8 @@ const ACTION_LABEL: Record<string, string> = {
   // L09 HD-06 (story 137): the milestone only; who is Phân công never shows here.
   "dossier.grading.start_advisory": "Hội đồng giao thẩm định",
   "dossier.grading.start_direct": "Hội đồng giao chấm",
+  // L15 HD-08 (story 137): chốt điểm, without the points.
+  "dossier.finalize": "Hội đồng chốt điểm",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

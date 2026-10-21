@@ -1,17 +1,21 @@
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
-import { AggregateTable } from "@/components/scoring/aggregate-table";
+import { AggregateTable, formatPoints } from "@/components/scoring/aggregate-table";
+import { formatIsoDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { FinalizeButton } from "./finalize-button";
 
 export const dynamic = "force-dynamic";
 
 /**
- * S43 Tổng hợp điểm (L15 HD-04, HD-05; stories 98 to 101), before chốt: the phiếu đã xác nhận of each thành viên
- * chấm side by side with the điểm tổng hợp, the Hạng sao and the Cờ chênh lệch. Before Sẵn sàng chốt the read model
- * gives progress only, so the page says so and shows no points.
+ * S43 Tổng hợp điểm và chốt (L15 HD-04, HD-05, HD-08; stories 98 to 101, 116 to 119): the phiếu đã xác nhận of each
+ * thành viên chấm side by side with the điểm tổng hợp, the Hạng sao and the Cờ chênh lệch, and the Chốt điểm button
+ * once the hồ sơ is Sẵn sàng chốt in an open Phiên họp. Before Sẵn sàng chốt the read model gives progress only, so
+ * the page says so and shows no points; after chốt a lock banner names who chốt and when, and the table is the kết quả.
  */
 export default async function AggregatePage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
@@ -21,6 +25,7 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
     app().core.scoring.readDossierScores(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "progress_only")) notFound();
+  const meeting = scores.kind === "full" && !scores.result ? await app().core.scoring.meetingOf(actor, { dossierId }) : null;
   const ready = (await app().core.scoring.gradingProgress(actor)).filter((r) => r.state === "member_confirmed").map((r) => r.dossierId);
   const at = ready.indexOf(dossierId);
   const prev = at > 0 ? ready[at - 1] : undefined;
@@ -58,6 +63,50 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
         )}
       </div>
 
+      {scores.kind === "full" && scores.result && (
+        <section role="status" className="flex flex-col gap-1 rounded-lg border border-line-strong bg-surface-2 px-4 py-3 text-sm" data-testid="finalized">
+          <p className="flex items-center gap-2 font-medium">
+            <Lock className="size-4" aria-hidden /> Đã chốt điểm{scores.result.n > 1 && ` (lần ${scores.result.n})`}: {scores.aggregate.star} sao, {formatPoints(scores.aggregate.total)}{" "}
+            điểm
+          </p>
+          <p className="text-text-2">
+            {scores.result.finalizedBy.fullName} chốt lúc {formatVnDateTime(scores.result.finalizedAt)}, xác thực lại bằng{" "}
+            {scores.result.reauthMethod === "totp" ? "mã TOTP" : "mật khẩu"}. Điểm đã khóa, không sửa được trên giao diện.
+          </p>
+          {scores.result.absent.length > 0 && <p className="text-text-2">Vắng: {scores.result.absent.map((a) => a.fullName).join(", ")}.</p>}
+          <p className="font-mono text-xs break-all text-text-3">SHA-256 {scores.result.sha256}</p>
+        </section>
+      )}
+      {scores.kind === "full" && !scores.result && scores.dossierState === "member_confirmed" && (
+        <section className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-surface px-4 py-3 shadow-card">
+          <p className="text-sm text-text-2">
+            {meeting ? (
+              <>
+                Thuộc Phiên họp{" "}
+                <Link href={`/hoi-dong/van-ban/${meeting.id}`} className="text-brand">
+                  {meeting.title}
+                </Link>{" "}
+                ngày {formatIsoDate(meeting.heldOn)} tại {meeting.location}.
+              </>
+            ) : (
+              <>
+                Hồ sơ chưa thuộc Phiên họp nào đang mở.{" "}
+                <Link href="/hoi-dong/van-ban" className="text-brand">
+                  Lập hoặc chọn Phiên họp
+                </Link>
+                .
+              </>
+            )}
+          </p>
+          <FinalizeButton
+            dossierId={dossierId}
+            version={scores.dossierVersion}
+            star={scores.aggregate.star}
+            total={formatPoints(scores.aggregate.total)}
+            blockedReason={meeting ? null : "Thêm hồ sơ vào một Phiên họp đang mở trước khi chốt."}
+          />
+        </section>
+      )}
       {scores.kind === "full" ? (
         <AggregateTable view={scores} />
       ) : (
