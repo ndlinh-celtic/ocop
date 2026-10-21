@@ -16,6 +16,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   signed_ward_report: "dossier.ward_report.upload",
   council_decision: "council.manage",
   advisory_attachment: "dossier.advisory_report.upload",
+  grading_evidence: "scoring.evidence.upload",
 };
 
 /** Purposes that accept fewer types than the deployment allows: a signed Báo cáo đánh giá cấp xã is a PDF (story 65). */

@@ -65,6 +65,10 @@ CREATE TRIGGER advisory_report_version_immutable BEFORE UPDATE OR DELETE ON scor
 CREATE TRIGGER advisory_report_version_no_truncate BEFORE TRUNCATE ON scoring.advisory_report_version
   FOR EACH STATEMENT EXECUTE FUNCTION scoring.refuse_advisory_version_change();
 
+-- L12: a dòng chấm copied from the Tổ tư vấn names the phiên bản it came from (0032 left the column without a key).
+ALTER TABLE scoring.score_sheet_line ADD CONSTRAINT score_sheet_line_advisory_version_fkey
+  FOREIGN KEY (advisory_version_id) REFERENCES scoring.advisory_report_version (id);
+
 GRANT SELECT, INSERT, UPDATE ON scoring.advisory_report_draft TO ocop_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON scoring.advisory_report_line TO ocop_app;
 GRANT SELECT, INSERT ON scoring.advisory_report_version TO ocop_app;

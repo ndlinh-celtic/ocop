@@ -60,6 +60,7 @@ export const NOTICE_EVENTS = [
   "dossier.return_requested",
   "dossier.grading_started",
   "dossier.advisory_report_issued",
+  "dossier.members_confirmed",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -321,6 +322,25 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           emailSubject: "Có báo cáo Tổ tư vấn mới",
           emailLine: "Tổ tư vấn vừa phát hành báo cáo cho một hồ sơ OCOP anh/chị được Phân công chấm.",
           link: `/thanh-vien/ho-so/${dossier.id}/bao-cao-to-tu-van`,
+        },
+      ];
+    }
+    // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.
+    case "dossier.members_confirmed": {
+      if (!dossier.councilId) return [];
+      const recipients = [
+        ...(await activeHolders(tx, "council_chair", "council", dossier.councilId, now)),
+        ...(await activeHolders(tx, "council_secretary", "council", dossier.councilId, now)),
+      ];
+      return [
+        {
+          recipients: [...new Map(recipients.map((u) => [u.id, u])).values()],
+          kind: "dossier_members_confirmed",
+          title: `Hồ sơ Sẵn sàng chốt: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã đủ số phiếu đã xác nhận theo Quy tắc tổng hợp.`,
+          emailSubject: "Một hồ sơ OCOP đã Sẵn sàng chốt",
+          emailLine: "Một hồ sơ OCOP của Hội đồng đã đủ số phiếu đã xác nhận để đưa vào Phiên họp.",
+          link: "/hoi-dong/tien-do",
         },
       ];
     }

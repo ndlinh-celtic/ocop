@@ -1,7 +1,7 @@
 import type { AssignmentRepo, CouncilRepo, ScoreSheetRepo } from "@ocop/core";
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { assignment, council, dossier, scoreSheet } from "../db/schema";
+import { assignment, council, dossier, scoreSheet, scoreSheetLine, scoreSheetLineFile } from "../db/schema";
 
 export function councilRepo(db: Db): CouncilRepo {
   return {
@@ -56,6 +56,27 @@ export function scoreSheetRepo(db: Db): ScoreSheetRepo {
   return {
     async insert(s) {
       await db.insert(scoreSheet).values(s);
+    },
+    async update({ id, dossierId: _d, assignmentId: _a, attempt: _n, createdAt: _c, ...fields }, expectedVersion) {
+      const rows = await db
+        .update(scoreSheet)
+        .set(fields)
+        .where(and(eq(scoreSheet.id, id), eq(scoreSheet.version, expectedVersion), eq(scoreSheet.state, "draft")))
+        .returning({ id: scoreSheet.id });
+      return rows.length === 1;
+    },
+    async lines(scoreSheetId) {
+      const lines = await db.select().from(scoreSheetLine).where(eq(scoreSheetLine.scoreSheetId, scoreSheetId));
+      const files = await db.select().from(scoreSheetLineFile).where(eq(scoreSheetLineFile.scoreSheetId, scoreSheetId)).orderBy(asc(scoreSheetLineFile.fileId));
+      return lines.map((l) => ({ ...l, fileIds: files.filter((f) => f.criterionId === l.criterionId).map((f) => f.fileId) }));
+    },
+    async saveLine({ fileIds, ...line }) {
+      const { scoreSheetId: _s, criterionId: _c, ...fields } = line;
+      await db.insert(scoreSheetLine).values(line).onConflictDoUpdate({ target: [scoreSheetLine.scoreSheetId, scoreSheetLine.criterionId], set: fields });
+      await db.delete(scoreSheetLineFile).where(and(eq(scoreSheetLineFile.scoreSheetId, line.scoreSheetId), eq(scoreSheetLineFile.criterionId, line.criterionId)));
+      if (fileIds.length > 0) {
+        await db.insert(scoreSheetLineFile).values(fileIds.map((fileId) => ({ scoreSheetId: line.scoreSheetId, criterionId: line.criterionId, fileId })));
+      }
     },
     async current(dossierId) {
       return db

@@ -55,6 +55,8 @@ import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvi
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";
+import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
+import { gradingProgress, readDossierScores } from "./scoring/read";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -212,8 +214,12 @@ export function createCore(deps: CoreDeps) {
       assignmentCandidates: assignmentCandidates(deps),
       startGrading: startGrading(deps),
     },
-    // L10, L11 Báo cáo Tổ tư vấn (#56).
     scoring: {
+      readDossierScores: readDossierScores(deps),
+      saveScoreSheet: saveScoreSheet(deps),
+      confirmScoreSheet: confirmScoreSheet(deps),
+      gradingProgress: gradingProgress(deps),
+      // L10, L11 Báo cáo Tổ tư vấn (#56).
       advisoryReport: advisoryReport(deps),
       saveAdvisoryDraft: saveAdvisoryDraft(deps),
       issueAdvisoryReport: issueAdvisoryReport(deps),

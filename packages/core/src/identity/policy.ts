@@ -36,7 +36,7 @@ const ROLE_ACTIONS = {
   // changeGradingMode checks; both only until the đợt's first Phiếu chấm.
   "round.grading_mode.change": ["province_officer", "council_secretary"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
-  "entity.read": ["entity_owner", "ward_officer", "province_officer"],
+  "entity.read": ["entity_owner", "ward_officer", "province_officer", "council_member"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).
   "entity.update": ["entity_owner"],
   "entity.legal_document.manage": ["entity_owner"],
@@ -61,6 +61,11 @@ const ROLE_ACTIONS = {
   "dossier.advisory_report.write": ["advisory_member"],
   "dossier.advisory_report.read": ["council_chair", "council_secretary", "council_member", "advisory_member"],
   "dossier.advisory_report.upload": ["advisory_member"],
+  // L14 (story 97): the tiến độ chấm of the Hội đồng's hồ sơ (S42), and bằng chứng kiểm tra of a Phiếu chấm (story 86).
+  "scoring.progress.read": ["council_chair", "council_secretary"],
+  "scoring.evidence.upload": ["council_member"],
+  // L14 (stories 83 to 94): writing one's own Phiếu chấm; which hồ sơ and state is the transition table and DataScope.
+  "scoring.sheet.write": ["council_member"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

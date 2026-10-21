@@ -21,7 +21,7 @@ export default async function AdvisoryQueuePage() {
         <p className="text-sm text-text-2">Hồ sơ Thư ký hội đồng đã Giao chấm cho Tổ tư vấn, hạn đánh giá gần nhất lên trước.</p>
       </div>
       <AssignedDossierList dossiers={sorted} empty="Hồ sơ sẽ hiện ở đây khi Thư ký hội đồng Giao chấm hồ sơ có Phân công Tổ tư vấn của anh/chị."
-        hrefOf={(id) => `/to-tu-van/ho-so/${id}`}
+        href={(id) => `/to-tu-van/ho-so/${id}`}
       />
     </div>
   );
