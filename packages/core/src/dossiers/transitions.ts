@@ -67,6 +67,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.score_sheet.edit",
   "dossier.score_sheet.confirm",
   "dossier.score_sheet.confirm_ready",
+  "dossier.finalize",
   "dossier.score_sheet.return",
   "dossier.score_sheet.return_unready",
   "dossier.assignment.replace",
@@ -108,6 +109,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.score_sheet_saved",
   "dossier.score_sheet_confirmed",
   "dossier.members_confirmed",
+  "dossier.score_finalized",
   "dossier.score_sheet_returned",
   "dossier.advisory_return_requested",
 ] as const;
@@ -367,6 +369,16 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["council_member"],
     event: "dossier.members_confirmed",
     timeline: false,
+  },
+  // L15 HD-08 (stories 116 to 120, 137): chốt điểm of a hồ sơ Sẵn sàng chốt; that it waits in an open Phiên họp is
+  // checked by finalizeDossier, which knows the Phiên họp. A row of the Chủ thể's timeline.
+  {
+    action: "dossier.finalize",
+    from: "member_confirmed",
+    to: "score_finalized",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.score_finalized",
+    timeline: true,
   },
   // L15 HD-05 (stories 102 to 105): Trả phiếu by the Chủ tịch or Thư ký before chốt. The one that leaves the phiếu
   // đã xác nhận below người chấm tối thiểu takes the hồ sơ back to Thành viên xem xét, its own action because ruleFor

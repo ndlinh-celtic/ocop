@@ -58,6 +58,8 @@ import { startGrading } from "./councils/grading";
 import { addAssignment, assignmentHistory, replaceAssignment } from "./councils/replace";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
+import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
+import { finalizeDossier } from "./scoring/finalize";
 import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
 
@@ -234,6 +236,15 @@ export function createCore(deps: CoreDeps) {
       reissueAdvisoryReport: reissueAdvisoryReport(deps),
       advisoryReportVersions: advisoryReportVersions(deps),
       downloadAdvisoryFile: downloadAdvisoryFile(deps),
+      // L15 Phiên họp and chốt điểm (#60).
+      createMeeting: createMeeting(deps),
+      addMeetingDossiers: addMeetingDossiers(deps),
+      removeMeetingDossier: removeMeetingDossier(deps),
+      closeMeeting: closeMeeting(deps),
+      listMeetings: listMeetings(deps),
+      getMeeting: getMeeting(deps),
+      meetingOf: meetingOf(deps),
+      finalize: finalizeDossier(deps),
       // L15 Trả phiếu (#61).
       returnScoreSheet: returnScoreSheet(deps),
       scoreSheetHistory: scoreSheetHistory(deps),

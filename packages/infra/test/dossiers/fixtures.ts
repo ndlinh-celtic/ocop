@@ -3,7 +3,7 @@ import type { FilePurpose, GradingMode, Role, UserActor } from "@ocop/core";
 import { anonymous, type TestApp } from "../support";
 
 export const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: "mat-khau-quan-tri-1" };
-const PASSWORD = "mat-khau-nguoi-dung-1";
+export const PASSWORD = "mat-khau-nguoi-dung-1";
 
 /** Builders for the dossier tests: real registration, activation, uploads and criteria import. */
 export function fixtures(t: TestApp, wardId: () => string) {

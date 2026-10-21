@@ -40,6 +40,7 @@ export type DomainEventBody =
       payload: { dossierId: string; entityId: string; kind: AssignmentKind; replacedUserId: string | null; newUserId: string };
     }
   | { type: "council.leader_changed"; payload: { councilId: string; fromUserId: string | null; toUserId: string } }
+  | { type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed"; payload: { meetingId: string; councilId: string; roundId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
   | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
   | { type: "entity.updated"; payload: { entityId: string } }
