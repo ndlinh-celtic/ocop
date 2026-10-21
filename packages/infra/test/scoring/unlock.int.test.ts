@@ -123,7 +123,7 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
     await expect(unlock(f.dossierId, { reason: "" })).rejects.toMatchObject({ code: "reason_required" });
     const notMine = await w.f.uploadPdf(w.province, "council_decision", "QĐ.pdf");
     await expect(unlock(f.dossierId, { requestFileId: notMine })).rejects.toMatchObject({ code: "file_required" });
-    const blocked = await w.f.uploadPdf(admin, "unlock_request", "virus.pdf", { content: EICAR });
+    const blocked = await w.f.uploadPdf(admin, "unlock_request", "virus.pdf", { content: Buffer.from(EICAR) });
     await expect(unlock(f.dossierId, { requestFileId: blocked })).rejects.toMatchObject({ code: "file_blocked" });
     expect((await w.t.app.scoring.unlockTarget(admin, { code: f.code })).state).toBe("score_finalized");
 
