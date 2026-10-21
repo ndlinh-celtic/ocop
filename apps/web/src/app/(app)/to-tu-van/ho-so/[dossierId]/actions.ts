@@ -98,3 +98,18 @@ export async function completeAdvisoryAttachmentAction(input: { fileId: string; 
   }
   return {};
 }
+
+/** L10 TM-03 (#57 story 51): a Thành viên Tổ tư vấn asks the Sở to trả về the hồ sơ to the xã, with a lý do. */
+export async function requestAdvisoryReturnAction(dossierId: string, expectedVersion: number, _prev: { error?: string; saved?: boolean }, form: FormData) {
+  const actor = await requireActor();
+  const reason = String(form.get("reason") ?? "").trim();
+  if (!reason) return { error: "Nhập lý do đề nghị trả về" };
+  try {
+    await app().core.dossiers.requestAdvisoryReturn(actor, { dossierId, expectedVersion, reason });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  paths(dossierId);
+  revalidatePath(`/so/ho-so/${dossierId}`);
+  return { saved: true };
+}

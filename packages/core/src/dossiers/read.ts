@@ -28,7 +28,7 @@ export interface DossierSummary extends Dossier {
  * Chờ tiếp nhận at the province (#51 story 13); and to one state, đợt, xã or Nhóm sản phẩm.
  */
 export interface DossierListInput {
-  filter?: "awaiting_receipt" | "mine" | "awaiting_next_round" | "awaiting_province_receipt";
+  filter?: "awaiting_receipt" | "mine" | "awaiting_next_round" | "awaiting_province_receipt" | "advisory_return_requested";
   state?: DossierState;
   roundId?: string;
   wardId?: string;
@@ -153,6 +153,7 @@ export function listDossiers(deps: CoreDeps) {
       ...(input.filter === "awaiting_receipt" ? { awaitingReceipt: true } : {}),
       ...(input.filter === "mine" ? { handlerUserId: actor.userId } : {}),
       ...(input.filter === "awaiting_province_receipt" ? { awaitingProvinceReceipt: true } : {}),
+      ...(input.filter === "advisory_return_requested" ? { advisoryReturnRequested: true } : {}),
     };
     // An id that cannot exist narrows to nothing rather than reaching the database.
     for (const key of ["roundId", "wardId", "productGroupId"] as const) {

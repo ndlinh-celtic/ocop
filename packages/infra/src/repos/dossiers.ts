@@ -2,6 +2,7 @@ import { FINISHED_STATES, type AssignmentKind, type DataScope, type Dossier, typ
 import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import {
+  advisoryReturnRequest,
   checklistResult,
   criteriaSet,
   criterionEntry,
@@ -136,6 +137,12 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.awaitingReceipt ? and(eq(dossier.state, "submitted_to_ward"), isNull(dossier.receivedAt)) : undefined,
         filter.handlerUserId ? eq(dossier.handlerUserId, filter.handlerUserId) : undefined,
         filter.awaitingProvinceReceipt ? and(eq(dossier.state, "forwarded_to_province"), isNull(dossier.provinceReceivedAt)) : undefined,
+        filter.advisoryReturnRequested
+          ? and(
+              eq(dossier.state, "advisory_review"),
+              sql`EXISTS (SELECT 1 FROM dossier.advisory_return_request r WHERE r.dossier_id = "dossier"."dossier"."id" AND r.requested_at >= "dossier"."dossier"."grading_started_at")`,
+            )
+          : undefined,
         filter.roundId ? eq(dossier.roundId, filter.roundId) : undefined,
         filter.wardId ? eq(dossier.wardId, filter.wardId) : undefined,
         filter.productGroupId
@@ -260,6 +267,16 @@ export function dossierRepo(db: Db): DossierRepo {
     },
     async returnRequests(dossierId) {
       return db.select().from(returnRequest).where(eq(returnRequest.dossierId, dossierId)).orderBy(asc(returnRequest.requestedAt), asc(returnRequest.id));
+    },
+    async insertAdvisoryReturnRequest(r) {
+      await db.insert(advisoryReturnRequest).values(r);
+    },
+    async advisoryReturnRequests(dossierId) {
+      return db
+        .select()
+        .from(advisoryReturnRequest)
+        .where(eq(advisoryReturnRequest.dossierId, dossierId))
+        .orderBy(asc(advisoryReturnRequest.requestedAt), asc(advisoryReturnRequest.id));
     },
     async criterionEntries(dossierId) {
       return db.select().from(criterionEntry).where(eq(criterionEntry.dossierId, dossierId));

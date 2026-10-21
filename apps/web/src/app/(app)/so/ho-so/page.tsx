@@ -26,6 +26,7 @@ function inputOf(q: Search): DossierListInput {
   const state = PROVINCE_STATES.find((s) => s === q["trang-thai"]);
   return {
     ...(q.loc === "cho-tiep-nhan" ? { filter: "awaiting_province_receipt" as const } : {}),
+    ...(q.loc === "de-nghi-tra-ve" ? { filter: "advisory_return_requested" as const } : {}),
     ...(state ? { state } : {}),
     ...(q.dot ? { roundId: q.dot } : {}),
     ...(q.xa ? { wardId: q.xa } : {}),
@@ -38,19 +39,21 @@ const selectClass = "rounded-lg border border-line-strong bg-surface px-2 py-1";
 /**
  * S32 Hồ sơ toàn tỉnh (L06 #44, L08 #51, stories 13, 19, 78, 79): every hồ sơ that has reached the
  * province, even after a Sở trả về, with its mã; "Chờ tiếp nhận" narrows to those Đã chuyển tỉnh not yet
- * Tiếp nhận tại tỉnh in this lượt gửi tỉnh, and the list narrows by đợt, xã, Nhóm sản phẩm and state.
+ * Tiếp nhận tại tỉnh in this lượt gửi tỉnh, "Tổ tư vấn đề nghị trả về" to those in Tổ tư vấn thẩm định with a
+ * pending đề nghị (#57 story 52), and the list narrows by đợt, xã, Nhóm sản phẩm and state.
  * Below, the số liệu tổng hợp of the hồ sơ still at the xã, by xã and state, with no row of a hồ sơ.
  */
 export default async function ProvinceDossiersPage({ searchParams }: { searchParams: Promise<Search> }) {
   const actor = await requireActor();
   const q = await searchParams;
   const input = inputOf(q);
-  const [dossiers, all, overview, rounds, wardList] = await Promise.all([
+  const [dossiers, all, overview, rounds, wardList, advisoryAsked] = await Promise.all([
     app().core.dossiers.list(actor, input),
     app().core.dossiers.list(actor),
     app().core.dossiers.provinceOverview(actor),
     app().core.rounds.listRounds(actor),
     app().core.org.listWards(),
+    app().core.dossiers.list(actor, { filter: "advisory_return_requested" }),
   ]);
   const { states, wards } = pivot(overview);
   // Nhóm sản phẩm are those of the hồ sơ at the province; each Phiên bản tiêu chí has its own.
@@ -75,6 +78,7 @@ export default async function ProvinceDossiersPage({ searchParams }: { searchPar
           {[
             { key: "", label: "Tất cả" },
             { key: "cho-tiep-nhan", label: `Chờ tiếp nhận (${awaiting})` },
+            { key: "de-nghi-tra-ve", label: `Tổ tư vấn đề nghị trả về (${advisoryAsked.length})` },
           ].map((tab) => {
             const active = (q.loc ?? "") === tab.key;
             return (
@@ -143,7 +147,11 @@ export default async function ProvinceDossiersPage({ searchParams }: { searchPar
 
       {dossiers.length === 0 ? (
         <EmptyState icon={FolderOpen} title={all.length === 0 ? "Chưa có hồ sơ nào lên tỉnh" : "Không có hồ sơ nào khớp bộ lọc"}>
-          {input.filter === "awaiting_province_receipt" ? "Không còn hồ sơ nào chờ tiếp nhận tại tỉnh." : "Hồ sơ xã/phường gửi tỉnh sẽ hiện ở đây."}
+          {input.filter === "awaiting_province_receipt"
+            ? "Không còn hồ sơ nào chờ tiếp nhận tại tỉnh."
+            : input.filter === "advisory_return_requested"
+              ? "Không có đề nghị trả về nào của Tổ tư vấn đang chờ Sở xem xét."
+              : "Hồ sơ xã/phường gửi tỉnh sẽ hiện ở đây."}
         </EmptyState>
       ) : (
         <section className="overflow-x-auto rounded-lg border bg-surface shadow-card">
