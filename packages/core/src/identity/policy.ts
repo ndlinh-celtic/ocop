@@ -71,6 +71,8 @@ const ROLE_ACTIONS = {
   // L15 HD-08, HD-09 (#60 stories 107 to 109, 116, 117, 64): Phiên họp of the Hội đồng and chốt điểm; never the Tổ tư vấn.
   "scoring.meeting.manage": ["council_chair", "council_secretary"],
   "scoring.finalize": ["council_chair", "council_secretary"],
+  // L15 HD-05 (stories 102 to 106): Trả phiếu before chốt, and the phiếu bị thay thế it leaves behind.
+  "scoring.sheet.return": ["council_chair", "council_secretary"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

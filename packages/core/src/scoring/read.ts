@@ -70,6 +70,8 @@ export interface GraderProgress {
   fullName: string;
   state: ScoreSheetState | null;
   confirmedAt: Date | null;
+  /** The phiếu not superseded, for Trả phiếu (#61); null before the thành viên has one. */
+  sheetId: string | null;
 }
 
 export interface SheetCriterion {
@@ -213,7 +215,7 @@ export async function gradersOf(tx: Tx, dossierId: string): Promise<{ progress: 
   for (const a of members) {
     const sheet = sheets.find((s) => s.assignmentId === a.id) ?? null;
     const user = await tx.users.findById(a.userId);
-    rows.push({ progress: { userId: a.userId, fullName: user?.fullName ?? "", state: sheet?.state ?? null, confirmedAt: sheet?.confirmedAt ?? null }, sheet });
+    rows.push({ progress: { userId: a.userId, fullName: user?.fullName ?? "", state: sheet?.state ?? null, sheetId: sheet?.id ?? null, confirmedAt: sheet?.confirmedAt ?? null }, sheet });
   }
   return rows.sort((x, y) => x.progress.fullName.localeCompare(y.progress.fullName, "vi"));
 }
@@ -293,6 +295,7 @@ async function finalizedView(tx: Tx, dossier: Dossier, result: AggregateResult):
     graders: snapshot.graders.map((g) => ({
       userId: g.userId,
       fullName: g.fullName,
+      sheetId: g.sheetId,
       state: g.state,
       confirmedAt: g.confirmedAt ? new Date(g.confirmedAt) : null,
       total: g.total,

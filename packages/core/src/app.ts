@@ -60,6 +60,7 @@ import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
 import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
 import { finalizeDossier } from "./scoring/finalize";
+import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
@@ -244,6 +245,9 @@ export function createCore(deps: CoreDeps) {
       getMeeting: getMeeting(deps),
       meetingOf: meetingOf(deps),
       finalize: finalizeDossier(deps),
+      // L15 Trả phiếu (#61).
+      returnScoreSheet: returnScoreSheet(deps),
+      scoreSheetHistory: scoreSheetHistory(deps),
       // L12 sao chép sang Phiếu chấm (#58).
       advisoryCopyBoard: advisoryCopyBoard(deps),
       previewAdvisoryCopy: previewAdvisoryCopy(deps),

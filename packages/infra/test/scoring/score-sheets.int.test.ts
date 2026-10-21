@@ -196,8 +196,8 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
         dossierId: d.dossierId,
         minGraders: 2,
         progress: [
-          { userId: m(0).userId, fullName: m(0).fullName, state: "confirmed", confirmedAt: expect.any(Date) },
-          { userId: m(1).userId, fullName: m(1).fullName, state: "draft", confirmedAt: null },
+          { userId: m(0).userId, fullName: m(0).fullName, state: "confirmed", confirmedAt: expect.any(Date), sheetId: expect.any(String) },
+          { userId: m(1).userId, fullName: m(1).fullName, state: "draft", confirmedAt: null, sheetId: expect.any(String) },
         ].sort((x, y) => x.fullName.localeCompare(y.fullName, "vi")),
       });
       expect(JSON.stringify(view)).not.toMatch(/points|levelId/);

@@ -63,6 +63,7 @@ export const NOTICE_EVENTS = [
   "dossier.advisory_copied",
   "dossier.members_confirmed",
   "dossier.score_finalized",
+  "scoring.score_sheet_returned",
   "council.assignment.replaced",
   "council.assignment.added",
   "dossier.advisory_return_requested",
@@ -424,6 +425,21 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         link,
       });
       return [notice(await usersOf("member"), `/thanh-vien/diem-tong-hop/${dossier.id}`), notice(await usersOf("advisory"), `/to-tu-van/ho-so/${dossier.id}`)];
+    }
+    // L15 HD-05 (story 103): the thành viên given their phiếu back hears why in the app; the email has only a link.
+    case "scoring.score_sheet_returned": {
+      const user = await tx.users.findById(event.payload.userId);
+      return [
+        {
+          recipients: user?.status === "active" ? [user] : [],
+          kind: "dossier_score_sheet_returned",
+          title: `Phiếu chấm được Trả phiếu: ${product}`,
+          body: `Hội đồng Trả phiếu của anh/chị cho hồ sơ ${dossier.code} để chấm lại. Lý do: ${event.payload.reason}`,
+          emailSubject: "Phiếu chấm của anh/chị được Trả phiếu",
+          emailLine: "Hội đồng vừa Trả phiếu chấm của anh/chị cho một hồ sơ OCOP để chấm lại.",
+          link: `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
     }
     default:
       return [];

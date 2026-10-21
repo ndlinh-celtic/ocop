@@ -49,6 +49,13 @@ export interface ScoreSheetRepo {
   lines(scoreSheetId: string): Promise<ScoreSheetLine[]>;
   /** Inserts or replaces one dòng with its files (the database refuses it unless the phiếu is draft). */
   saveLine(line: ScoreSheetLine): Promise<void>;
+  /**
+   * Trả phiếu (ADR 0008): marks a confirmed or absent phiếu superseded by `supersededBy` (inserted later in the same
+   * transaction), changing nothing else; false when it is no longer confirmed or absent.
+   */
+  supersede(id: string, supersededBy: string, reason: string): Promise<boolean>;
+  /** Every phiếu of a hồ sơ already loaded within scope, superseded ones included, oldest first. */
+  all(dossierId: string): Promise<ScoreSheet[]>;
   /** The phiếu not yet superseded of a hồ sơ already loaded within scope, one per Phân công at most. */
   current(dossierId: string): Promise<ScoreSheet[]>;
   /** Whether any hồ sơ of the đợt has a Phiếu chấm, whatever its state: from then on the đợt's grading config is fixed. */
