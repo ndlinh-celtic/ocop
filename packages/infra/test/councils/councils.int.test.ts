@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { UserActor } from "@ocop/core";
+import { roundActivity, type RoundActivity, type UserActor } from "@ocop/core";
 import { seedWards } from "../../src/seed/wards";
 import { createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
 import { ADMIN, fixtures } from "../dossiers/fixtures";
@@ -14,16 +14,20 @@ let t: TestApp;
 let f: ReturnType<typeof fixtures>;
 let province: UserActor;
 const START = new Date("2026-10-19T02:00:00Z");
+/** Giao chấm arrives in a later ticket: the test says when a đợt has its first phiếu chấm. */
+const scoreSheets = new Set<string>();
+const activity: RoundActivity = { ...roundActivity, hasScoreSheets: async (_tx, roundId) => scoreSheets.has(roundId) };
 
 beforeAll(async () => {
   db = await createTestDatabase();
-  t = createTestApp(db, { totpRequired: false });
+  t = createTestApp(db, { totpRequired: false, roundActivity: activity });
   await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
   await seedWards(db.app, "ma,ten\n00001,Xã An Phú\n");
   const wardId = (await t.app.org.listWards())[0]!.id;
   f = fixtures(t, () => wardId);
   t.clock.set(START);
   province = await f.staff("province_officer");
+  ({ versionId } = await f.publishedVersion("26/2026/QĐ-TTg"));
 });
 beforeEach(() => {
   t.clock.set(START);
@@ -32,6 +36,23 @@ afterAll(async () => {
   await t.stop();
   await db.drop();
 });
+
+let versionId: string;
+
+/** A Nháp Đợt đánh giá created by the Cán bộ Sở. */
+const draftRound = async () =>
+  (
+    await t.app.rounds.createRound(province, {
+      name: "Đợt có hội đồng",
+      year: 2026,
+      submissionDeadline: "2026-11-30",
+      forwardingDeadline: "2026-12-15",
+      evaluationDeadline: "2027-01-31",
+      criteriaVersionId: versionId,
+      gradingMode: "direct",
+      aggregation: { method: "mean", minGraders: 3, deviationFlagPoints: 15 },
+    })
+  ).roundId;
 
 const outboxCount = async (type: string, key: string, id: string) =>
   (await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = $1 AND payload->>$2 = $3", [type, key, id])).rowCount;
@@ -195,5 +216,92 @@ describe("L09 HD-01 Tổ trưởng (stories 2, 3)", () => {
     const assignmentId = (await t.app.councils.get(province, { councilId })).members.advisory_member[0]!.assignmentId;
     await t.app.identity.revokeRole(await f.admin(), { assignmentId });
     expect((await t.app.councils.get(province, { councilId })).leader).toMatchObject({ userId: advisors[0]!.userId, active: false });
+  });
+});
+
+describe("L09 HD-01 Cán bộ Sở gán a Hội đồng to a Đợt đánh giá (stories 10, 11)", () => {
+  it("gán a Hội đồng to a Nháp round, then another one; the round and the Hội đồng show it, with audit and outbox", async () => {
+    const roundId = await draftRound();
+    expect((await t.app.rounds.getRound(province, { roundId })).council).toBeNull();
+    const first = await f.council(province, "Hội đồng thứ nhất");
+    const second = await f.council(province, "Hội đồng thứ hai");
+    await t.app.rounds.assignCouncil(province, { roundId, councilId: first });
+    await t.app.rounds.assignCouncil(province, { roundId, councilId: second });
+
+    expect((await t.app.rounds.getRound(province, { roundId })).council).toEqual({ id: second, name: "Hội đồng thứ hai" });
+    expect((await t.app.councils.get(province, { councilId: second })).rounds.map((r) => r.id)).toEqual([roundId]);
+    expect((await t.app.councils.get(province, { councilId: first })).rounds).toEqual([]);
+    const entries = await t.app.audit.search(await f.admin(), { action: ["round.council_assigned"], targetId: roundId });
+    expect(entries.map((e) => [e.before, e.after])).toEqual(
+      expect.arrayContaining([
+        [{ councilId: null }, { councilId: first }],
+        [{ councilId: first }, { councilId: second }],
+      ]),
+    );
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.council_assigned' AND payload->>'roundId' = $1", [roundId]);
+    expect(rows).toHaveLength(2);
+  });
+
+  it("gán a Hội đồng to an opened round; one Hội đồng serves several đợt", async () => {
+    const councilId = await f.council(province);
+    const opened = await f.openRound(versionId);
+    const draft = await draftRound();
+    await t.app.rounds.assignCouncil(province, { roundId: opened, councilId });
+    await t.app.rounds.assignCouncil(province, { roundId: draft, councilId });
+    expect((await t.app.councils.get(province, { councilId })).rounds.map((r) => r.id).sort()).toEqual([opened, draft].sort());
+  });
+
+  it("refuses to change the Hội đồng once the đợt has its first phiếu chấm (story 11)", async () => {
+    const roundId = await draftRound();
+    const councilId = await f.council(province);
+    await t.app.rounds.assignCouncil(province, { roundId, councilId });
+    scoreSheets.add(roundId);
+    const other = await f.council(province);
+    await expect(t.app.rounds.assignCouncil(province, { roundId, councilId: other })).rejects.toMatchObject({ code: "round_council_locked" });
+    expect((await t.app.rounds.getRound(province, { roundId })).council?.id).toBe(councilId);
+  });
+
+  it("refuses a Hội đồng or đợt that does not exist", async () => {
+    const roundId = await draftRound();
+    const councilId = await f.council(province);
+    const missing = "00000000-0000-4000-8000-000000000000";
+    await expect(t.app.rounds.assignCouncil(province, { roundId, councilId: missing })).rejects.toMatchObject({ code: "council_not_found" });
+    await expect(t.app.rounds.assignCouncil(province, { roundId, councilId: "x" })).rejects.toMatchObject({ code: "council_not_found" });
+    await expect(t.app.rounds.assignCouncil(province, { roundId: missing, councilId })).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("L09 HD-01 permission matrix", () => {
+  it("only Cán bộ Sở records Hội đồng, names the Tổ trưởng and gán them to đợt; Quản trị only reads them", async () => {
+    const { councilId, chair, secretary, members, advisors } = await f.staffedCouncil(province, { members: 1, advisors: 1 });
+    const admin = await f.admin();
+    const ward = await f.staff("ward_officer", (await t.app.org.listWards())[0]!.id);
+    const owner = await f.verifiedOwner();
+    const roundId = await draftRound();
+    const file = await f.uploadPdf(province, "council_decision");
+    const input = { name: "Hội đồng", decisionNumber: "1/QĐ", decisionDate: "2026-09-01", decisionFileId: file };
+    const forbidden = { code: "forbidden" };
+
+    for (const actor of [admin, ward, owner, chair, secretary, members[0]!, advisors[0]!]) {
+      await expect(t.app.councils.create(actor, input)).rejects.toMatchObject(forbidden);
+      await expect(t.app.councils.update(actor, { councilId, ...input })).rejects.toMatchObject(forbidden);
+      await expect(t.app.councils.setLeader(actor, { councilId, userId: advisors[0]!.userId })).rejects.toMatchObject(forbidden);
+      await expect(t.app.rounds.assignCouncil(actor, { roundId, councilId })).rejects.toMatchObject(forbidden);
+      await expect(t.app.files.requestUpload(actor, { purpose: "council_decision", fileName: "QĐ.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject(forbidden);
+    }
+    for (const actor of [ward, owner, chair, secretary, members[0]!, advisors[0]!]) {
+      await expect(t.app.councils.list(actor)).rejects.toMatchObject(forbidden);
+      await expect(t.app.councils.get(actor, { councilId })).rejects.toMatchObject(forbidden);
+    }
+    expect((await t.app.councils.list(admin)).map((c) => c.id)).toContain(councilId);
+    expect((await t.app.councils.get(admin, { councilId })).id).toBe(councilId);
+  });
+
+  it("only Quản trị grants and revokes Phân vai on Phạm vi Hội đồng", async () => {
+    const councilId = await f.council(province);
+    const someone = await f.staff("province_officer");
+    const { assignmentId } = await t.app.identity.grantRole(await f.admin(), { userId: someone.userId, role: "council_member", scopeId: councilId });
+    await expect(t.app.identity.grantRole(province, { userId: someone.userId, role: "advisory_member", scopeId: councilId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.identity.revokeRole(province, { assignmentId })).rejects.toMatchObject({ code: "forbidden" });
   });
 });

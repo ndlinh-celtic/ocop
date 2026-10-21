@@ -9,11 +9,16 @@ import { isPastSubmissionDeadline, type Round } from "./model";
 /** A round as every signed-in Người dùng sees it, with the văn bản căn cứ of its Phiên bản tiêu chí. */
 export interface RoundView extends Round {
   criteriaVersion: { id: string; legalBasis: string; issuedOn: string };
+  /** The Hội đồng gán to the round (L09), by name; null until Cán bộ Sở gán one. */
+  council: { id: string; name: string } | null;
 }
 
 /** One round for its page: a RoundView plus whether its Chế độ chấm and Quy tắc tổng hợp are locked. */
 export interface RoundDetail extends RoundView {
-  /** True once the round has its first phiếu chấm (HD-06): changeGradingMode and changeAggregationRule refuse then. */
+  /**
+   * True once the round has its first phiếu chấm (HD-06), i.e. its first Giao chấm: changeGradingMode,
+   * changeAggregationRule and assignCouncil refuse then.
+   */
   gradingConfigLocked: boolean;
 }
 
@@ -23,9 +28,14 @@ export const roundVisibleTo = (actor: Actor, round: Round) => round.status !== "
 async function withVersions(tx: Tx, rounds: Round[]): Promise<RoundView[]> {
   const ids = [...new Set(rounds.map((r) => r.criteriaVersionId))];
   const versions = new Map((await tx.criteriaVersions.findByIds(ids)).map((v) => [v.id, v]));
+  const councils = rounds.some((r) => r.councilId) ? new Map((await tx.councils.list()).map((c) => [c.id, c.name])) : new Map<string, string>();
   return rounds.map((r) => {
     const v = versions.get(r.criteriaVersionId);
-    return { ...r, criteriaVersion: { id: r.criteriaVersionId, legalBasis: v?.legalBasis ?? "", issuedOn: v?.issuedOn ?? "" } };
+    return {
+      ...r,
+      criteriaVersion: { id: r.criteriaVersionId, legalBasis: v?.legalBasis ?? "", issuedOn: v?.issuedOn ?? "" },
+      council: r.councilId ? { id: r.councilId, name: councils.get(r.councilId) ?? "" } : null,
+    };
   });
 }
 

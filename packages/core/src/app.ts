@@ -21,6 +21,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { configureChecklist } from "./rounds/checklist";
+import { assignCouncil } from "./rounds/council";
 import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
@@ -136,6 +137,7 @@ export function createCore(deps: CoreDeps) {
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
       configureChecklist: configureChecklist(deps),
+      assignCouncil: assignCouncil(deps),
     },
     entities: {
       register: registerEntity(deps),
