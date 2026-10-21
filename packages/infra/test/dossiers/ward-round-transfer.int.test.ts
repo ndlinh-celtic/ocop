@@ -68,7 +68,7 @@ beforeAll(async () => {
   const r = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
   received = { dossierId: s.dossierId, version: r.version, owner: s.a };
   unreceived = await f.submitted(v1.sets["Thịt tươi"]);
-  const toReject = await f.submitted(v1.sets["Rau củ quả"]);
+  const toReject = await f.received(officer, v1.sets["Rau củ quả"]);
   await t.app.dossiers.reject(officer, { dossierId: toReject.dossierId, expectedVersion: toReject.version, reasonCode: "other", explanation: "Không phù hợp" });
   rejected = toReject;
   elsewhere = await f.submitted(v1.sets["Rau củ quả"], otherWardId);

@@ -159,13 +159,20 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { a, dossierId, version };
   }
 
+  /** A hồ sơ submitted to `ward` and Tiếp nhận there by `officer`, a Cán bộ xã of that xã. */
+  async function received(officer: UserActor, criteriaSetId: string, ward = wardId()) {
+    const s = await submitted(criteriaSetId, ward);
+    const { version } = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
+    return { ...s, version };
+  }
+
   /**
    * L06: a hồ sơ submitted, Tiếp nhận by `officer` (a Cán bộ xã of its xã), with its Checklist sơ bộ all
    * Đạt and a signed Báo cáo đánh giá cấp xã, then gửi tỉnh: Đã chuyển tỉnh.
    */
   async function forwarded(officer: UserActor, criteriaSetId: string, ward = wardId()) {
-    const s = await submitted(criteriaSetId, ward);
-    let { version } = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
+    const s = await received(officer, criteriaSetId, ward);
+    let { version } = s;
     const { items } = await t.app.dossiers.checklist(officer, { dossierId: s.dossierId });
     ({ version } = await t.app.dossiers.assessChecklist(officer, {
       dossierId: s.dossierId,
@@ -178,7 +185,7 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { ...s, version };
   }
 
-  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, forwarded };
+  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, received, forwarded };
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;

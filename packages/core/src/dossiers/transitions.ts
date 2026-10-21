@@ -181,8 +181,17 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     guard: (d, now) =>
       isPastSupplementDeadline(d, now) ? null : new DomainError("supplement_deadline_not_passed", "Chưa quá hạn bổ sung nên chưa đóng được hồ sơ"),
   },
-  // L05 XA-06 (story 63): the xã loại a hồ sơ Đã nộp xã, citing an Điều kiện loại or a Lý do loại sơ bộ.
-  { action: "dossier.reject", from: "submitted_to_ward", to: "rejected_preliminary", roles: ["ward_officer"], event: "dossier.rejected_preliminary", timeline: true },
+  // L05 XA-06 (story 63): the xã loại a hồ sơ Đã nộp xã it has Tiếp nhận, citing an Điều kiện loại or a
+  // Lý do loại sơ bộ.
+  {
+    action: "dossier.reject",
+    from: "submitted_to_ward",
+    to: "rejected_preliminary",
+    roles: ["ward_officer"],
+    event: "dossier.rejected_preliminary",
+    timeline: true,
+    guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
+  },
   // L05 (story 47): Chuyển xã moves a hồ sơ Đã nộp xã to the right xã, which Tiếp nhận it afresh.
   { action: "dossier.ward_transfer", from: "submitted_to_ward", to: "submitted_to_ward", roles: ["ward_officer"], event: "dossier.ward_transferred", timeline: true },
   // L06 XA-08 (story 69): chuyển đợt moves a hồ sơ Đã nộp xã into a later đợt of the same Phiên bản tiêu

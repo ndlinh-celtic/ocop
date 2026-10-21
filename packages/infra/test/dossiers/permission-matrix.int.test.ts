@@ -89,7 +89,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Chủ thể A", "loại", "Đã nộp xã", "forbidden"],
   ["Chủ thể A", "Chuyển xã", "Đã nộp xã", "forbidden"],
   ["Cán bộ xã X", "loại", "Nháp", "not_found"],
-  ["Cán bộ xã X", "loại", "Đã nộp xã", "allowed"],
+  ["Cán bộ xã X", "loại", "Đã nộp xã", "not_received"],
   ["Cán bộ xã X", "loại", "Đã nộp xã, đã Tiếp nhận", "allowed"],
   ["Cán bộ xã X", "Chuyển xã", "Đã nộp xã", "allowed"],
   ["Cán bộ xã X", "Chuyển xã", "Đã nộp xã, đã Tiếp nhận", "allowed"],

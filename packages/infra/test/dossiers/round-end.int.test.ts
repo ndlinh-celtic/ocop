@@ -35,7 +35,7 @@ describe("L07 kết thúc đợt with hồ sơ chưa xong (spec #30)", () => {
     const xã = await f.staff("ward_officer", wardId);
     const setId = sets["Rau củ quả"];
 
-    const pending = await f.submitted(setId);
+    const pending = await f.received(xã, setId);
     const up = await f.forwarded(xã, setId);
     const gone = await f.submitted(setId);
     await t.app.dossiers.withdraw(gone.a, { dossierId: gone.dossierId, expectedVersion: gone.version, reason: "Rút" });

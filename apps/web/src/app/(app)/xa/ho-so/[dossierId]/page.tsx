@@ -53,7 +53,7 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   // Officers who left the xã still appear by name on the timeline when they were the Cán bộ phụ trách.
   if (dossier.handler) names.set(dossier.handler.userId, dossier.handler.fullName);
   // L05 XA-06 and Chuyển xã (stories 47, 63): what loại may cite, and where the hồ sơ may go.
-  const rejectable = can(actor, "dossier.reject", dossier);
+  const rejectable = can(actor, "dossier.reject", dossier) && dossier.receivedAt !== null;
   const transferable = can(actor, "dossier.ward_transfer", dossier);
   const [exclusions, wards, rounds] = await Promise.all([
     rejectable ? app().core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id }).then((v) => v.set.exclusionConditions) : [],
