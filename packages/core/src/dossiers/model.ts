@@ -83,6 +83,13 @@ export interface Dossier extends ProductInfo {
   handlerUserId: string | null;
   /** When it first reached Đã chuyển tỉnh: from then on the province sees it (story 78). */
   firstForwardedAt: Date | null;
+  /** Mã hồ sơ, HS-<năm>-<số>, given at creation and never changed (story 19, SO-03; ADR 0004). */
+  code: string;
+  /** L08 SO-02: the Tiếp nhận tại tỉnh of the current lượt gửi tỉnh; null again after every Sở trả về. */
+  provinceReceivedAt: Date | null;
+  provinceReceivedBy: string | null;
+  /** The first Tiếp nhận tại tỉnh ever; never reset, so the Hội đồng keeps seeing the hồ sơ (spec #49). */
+  firstProvinceReceivedAt: Date | null;
   /** Hạn bổ sung of the open yêu cầu bổ sung: set exactly while the hồ sơ is Yêu cầu bổ sung (#39). */
   supplementDeadline: Date | null;
   copiedFrom: string | null;
@@ -121,6 +128,12 @@ export interface DossierListFilter {
   state?: DossierState;
   /** Đã nộp xã and not yet Tiếp nhận: "Chờ tiếp nhận" (story 39). */
   awaitingReceipt?: boolean;
+  /** Đã chuyển tỉnh and not yet Tiếp nhận tại tỉnh in this lượt gửi tỉnh: "Chờ tiếp nhận" of the Sở (#51 story 13). */
+  awaitingProvinceReceipt?: boolean;
+  roundId?: string;
+  wardId?: string;
+  /** The Nhóm sản phẩm of the hồ sơ's Bộ tiêu chí. */
+  productGroupId?: string;
   handlerUserId?: string;
   /** Chờ đợt sau at this instant: Đã nộp xã, and the Hạn gửi tỉnh of its đợt is before it (story 68). */
   awaitingNextRoundAt?: Date;
@@ -140,6 +153,8 @@ export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardi
  */
 export interface DossierRepo {
   insert(d: Dossier): Promise<void>;
+  /** The next số of the mã hồ sơ in `year`, 1 for the first; taken in the caller's transaction. */
+  nextCodeNumber(year: number): Promise<number>;
   findById(scope: DataScope, id: string): Promise<Dossier | null>;
   /** findById with the row locked FOR UPDATE until the transaction ends. */
   lock(scope: DataScope, id: string): Promise<Dossier | null>;

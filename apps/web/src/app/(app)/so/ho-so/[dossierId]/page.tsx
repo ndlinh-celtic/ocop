@@ -1,4 +1,4 @@
-import { can, ENTITY_KIND_LABEL, maskPersonalId, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS, vnDateOf } from "@ocop/core";
+import { can, CHECKLIST_RESULT_LABEL, ENTITY_KIND_LABEL, maskPersonalId, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS, vnDateOf } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
@@ -14,30 +14,37 @@ import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { RequestSupplementForm } from "../../../xa/ho-so/[dossierId]/supplement-forms";
 import { returnFromProvinceAction } from "../actions";
+import { ProvinceReceiveForm } from "./receive-form";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Chi tiết hồ sơ ở tỉnh (L04, L06, #44, stories 57, 59, 78): a hồ sơ that has reached the province, with
- * its newest Phiên bản nộp and generated văn bản, the signed Báo cáo đánh giá cấp xã, the đề nghị trả về of
- * the xã and the trả về itself while it is Đã chuyển tỉnh. A hồ sơ not yet at the province is not found,
- * as is one that does not exist (the notifications of gửi tỉnh link here).
+ * S33 Chi tiết hồ sơ ở tỉnh (L04, L06 #44, L08 #51, stories 12 to 19, 57, 59, 78): a hồ sơ that has
+ * reached the province, with its mã; the quick check before Tiếp nhận tại tỉnh (newest Phiên bản nộp and
+ * generated văn bản, the signed Báo cáo đánh giá cấp xã, the Checklist sơ bộ) and the Tiếp nhận itself;
+ * the đề nghị trả về of the xã and the trả về while it is Đã chuyển tỉnh, before or after Tiếp nhận. A hồ
+ * sơ not yet at the province is not found, as is one that does not exist (the notifications of gửi tỉnh
+ * link here).
  */
 export default async function ProvinceDossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, submissions, supplements, returnRequests] = await Promise.all([
+  const [dossier, timeline, submissions, supplements, returnRequests, checklist] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.returnRequests(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !timeline || !submissions || !supplements || !returnRequests) notFound();
+  if (!dossier || !timeline || !submissions || !supplements || !returnRequests || !checklist) notFound();
   const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
   const latest = submissions.at(-1);
   const snapshot = latest?.snapshot;
   const mayReturn = can(actor, "dossier.province_return", dossier);
+  const mayReceive = can(actor, "dossier.province_receive", dossier) && !dossier.provinceReceivedAt;
+  // Story 12: say so before the Cán bộ Sở tries, when the đợt has no Hội đồng yet.
+  const round = mayReceive && dossier.roundId ? await app().core.rounds.getRound(actor, { roundId: dossier.roundId }).catch(orNotFound) : null;
   const documentTypes = mayReturn ? (await app().core.entities.getLegalStanding(actor, { entityId: dossier.entity.id })).requirements : [];
 
   return (
@@ -50,13 +57,19 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
           {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
         </h1>
         <p className="text-sm text-text-2">
-          {dossier.entity.name} · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
+          Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
           {dossier.criteriaSet.name}, căn cứ {dossier.criteriaVersion.legalBasis}
         </p>
       </div>
 
       <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
+        <h2 className="font-semibold">Kiểm tra nhanh</h2>
         {dossier.firstForwardedAt && <p>Lên tỉnh lần đầu lúc {formatVnDateTime(dossier.firstForwardedAt)}.</p>}
+        {dossier.provinceReceivedAt ? (
+          <p>Đã tiếp nhận tại tỉnh lúc {formatVnDateTime(dossier.provinceReceivedAt)}.</p>
+        ) : (
+          dossier.state === "forwarded_to_province" && <p className="font-medium text-amber">Chờ tiếp nhận tại tỉnh.</p>
+        )}
         {latest && (
           <>
             <p>
@@ -66,6 +79,25 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
           </>
         )}
         {wardReport.signed ? <SignedWardReport dossierId={dossier.id} signed={wardReport.signed} /> : <p className="text-text-3">Chưa có Báo cáo đánh giá cấp xã đã ký.</p>}
+        <div>
+          <p className="font-medium">Checklist sơ bộ</p>
+          {checklist.items.length === 0 ? (
+            <p className="text-text-3">Đợt không có mục Checklist sơ bộ.</p>
+          ) : (
+            <ul className="mt-1 flex flex-col gap-1" data-testid="province-checklist">
+              {checklist.items.map((item) => (
+                <li key={item.code} className="flex flex-wrap gap-2">
+                  <span>{item.label}:</span>
+                  <b className={item.result === "pass" ? "text-brand" : item.result === null ? "text-text-3" : "text-amber"}>
+                    {item.result ? CHECKLIST_RESULT_LABEL[item.result] : "Chưa đánh giá"}
+                  </b>
+                  {item.comment && <span className="text-text-3">({item.comment})</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {mayReceive && <ProvinceReceiveForm dossierId={dossier.id} version={dossier.version} councilMissing={round !== null && !round.council} />}
         {dossier.state === "supplement_requested" && dossier.supplementDeadline && (
           <p role="status" className="text-amber">
             Đang chờ Chủ thể bổ sung, hạn đến {formatVnDateTime(dossier.supplementDeadline)}. Sau khi nộp lại, hồ sơ về xã/phường xem lại và gửi tỉnh lại.

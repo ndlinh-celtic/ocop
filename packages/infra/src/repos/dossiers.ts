@@ -3,13 +3,16 @@ import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, or
 import type { Db } from "../db/types";
 import {
   checklistResult,
+  criteriaSet,
   criterionEntry,
   dossier,
+  dossierCodeCounter,
   dossierEvent,
   entity,
   evidenceFile,
   evidenceLink,
   file,
+  productSubgroup,
   returnRequest,
   round,
   submission,
@@ -56,6 +59,14 @@ export function dossierRepo(db: Db): DossierRepo {
     async insert(d) {
       await db.insert(dossier).values(d);
     },
+    async nextCodeNumber(year) {
+      const [row] = await db
+        .insert(dossierCodeCounter)
+        .values({ year, lastNumber: 1 })
+        .onConflictDoUpdate({ target: dossierCodeCounter.year, set: { lastNumber: sql`${dossierCodeCounter.lastNumber} + 1` } })
+        .returning({ n: dossierCodeCounter.lastNumber });
+      return row!.n;
+    },
     async findById(scope, id) {
       const [row] = await db
         .select()
@@ -72,7 +83,7 @@ export function dossierRepo(db: Db): DossierRepo {
       return (row as Dossier | undefined) ?? null;
     },
     async update(d, expectedVersion) {
-      const { id: _id, entityId: _e, criteriaSetId: _s, criteriaVersionId: _v, copiedFrom: _c, createdAt: _ca, createdBy: _cb, ...fields } = d;
+      const { id: _id, code: _code, entityId: _e, criteriaSetId: _s, criteriaVersionId: _v, copiedFrom: _c, createdAt: _ca, createdBy: _cb, ...fields } = d;
       const updated = await db
         .update(dossier)
         .set(fields)
@@ -86,6 +97,19 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.state ? eq(dossier.state, filter.state) : undefined,
         filter.awaitingReceipt ? and(eq(dossier.state, "submitted_to_ward"), isNull(dossier.receivedAt)) : undefined,
         filter.handlerUserId ? eq(dossier.handlerUserId, filter.handlerUserId) : undefined,
+        filter.awaitingProvinceReceipt ? and(eq(dossier.state, "forwarded_to_province"), isNull(dossier.provinceReceivedAt)) : undefined,
+        filter.roundId ? eq(dossier.roundId, filter.roundId) : undefined,
+        filter.wardId ? eq(dossier.wardId, filter.wardId) : undefined,
+        filter.productGroupId
+          ? inArray(
+              dossier.criteriaSetId,
+              db
+                .select({ id: criteriaSet.id })
+                .from(criteriaSet)
+                .innerJoin(productSubgroup, eq(productSubgroup.id, criteriaSet.subgroupId))
+                .where(eq(productSubgroup.productGroupId, filter.productGroupId)),
+            )
+          : undefined,
         filter.awaitingNextRoundAt
           ? and(
               eq(dossier.state, "submitted_to_ward"),

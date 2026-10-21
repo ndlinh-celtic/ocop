@@ -378,6 +378,10 @@ export const dossier = dossierSchema.table("dossier", {
   receivedBy: uuid("received_by"),
   handlerUserId: uuid("handler_user_id"),
   firstForwardedAt: ts("first_forwarded_at"),
+  code: text("code").notNull(),
+  provinceReceivedAt: ts("province_received_at"),
+  provinceReceivedBy: uuid("province_received_by"),
+  firstProvinceReceivedAt: ts("first_province_received_at"),
   supplementDeadline: ts("supplement_deadline"),
   copiedFrom: uuid("copied_from"),
   deletedAt: ts("deleted_at"),
@@ -385,6 +389,12 @@ export const dossier = dossierSchema.table("dossier", {
   createdAt: ts("created_at").notNull(),
   createdBy: uuid("created_by").notNull(),
   updatedAt: ts("updated_at").notNull(),
+});
+
+// Mã hồ sơ, one counter row per year (0029_province_receipt.sql).
+export const dossierCodeCounter = dossierSchema.table("code_counter", {
+  year: integer("year").primaryKey(),
+  lastNumber: integer("last_number").notNull(),
 });
 
 export const dossierEvent = dossierSchema.table("dossier_event", {

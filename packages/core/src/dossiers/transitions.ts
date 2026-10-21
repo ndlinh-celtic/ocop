@@ -56,6 +56,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.forward",
   "dossier.province_return",
   "dossier.return_request",
+  "dossier.province_receive",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -84,6 +85,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.forwarded",
   "dossier.returned_by_province",
   "dossier.return_requested",
+  "dossier.province_received",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -250,6 +252,19 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["ward_officer"],
     event: "dossier.return_requested",
     timeline: false,
+  },
+  // L08 SO-02 (stories 15, 16, 137): Tiếp nhận tại tỉnh, once per lượt gửi tỉnh; a Sở trả về clears it
+  // (returnFromProvince), so the hồ sơ is Tiếp nhận again when it is back. That the đợt has a Hội đồng is
+  // checked by receiveAtProvince, which knows the đợt.
+  {
+    action: "dossier.province_receive",
+    from: "forwarded_to_province",
+    to: "forwarded_to_province",
+    roles: ["province_officer"],
+    event: "dossier.province_received",
+    timeline: true,
+    guard: (d) =>
+      d.provinceReceivedAt === null ? null : new DomainError("already_province_received", "Hồ sơ đã được tiếp nhận tại tỉnh trong lượt gửi tỉnh này"),
   },
 ];
 
