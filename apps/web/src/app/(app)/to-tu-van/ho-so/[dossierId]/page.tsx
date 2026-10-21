@@ -1,8 +1,9 @@
-import { CHECKLIST_RESULT_LABEL, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS } from "@ocop/core";
+import { can, CHECKLIST_RESULT_LABEL, PRODUCT_FIELD_LABEL, PRODUCT_FIELDS } from "@ocop/core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DownloadButton } from "@/components/download-button";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
+import { ReturnRequests } from "@/components/dossiers/return-requests";
 import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { downloadAdvisoryFileAction } from "@/components/scoring/actions";
@@ -10,6 +11,8 @@ import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { ReturnRequestForm } from "../../../xa/ho-so/[dossierId]/return-request-form";
+import { requestAdvisoryReturnAction } from "./actions";
 import { AdvisoryEditor } from "./advisory-editor";
 
 export const dynamic = "force-dynamic";
@@ -18,18 +21,21 @@ export const dynamic = "force-dynamic";
  * S51 Thẩm định và chấm điểm đề xuất (L10 TM-01, TM-02, TM-05, TM-06; #56 stories 43 to 50): on the left what
  * the Tổ tư vấn reviews (the newest Phiên bản nộp with its văn bản, minh chứng by Tiêu chí, the signed Báo cáo
  * đánh giá cấp xã and the Checklist sơ bộ); on the right the shared nháp, editable while Tổ tư vấn thẩm định. A
- * hồ sơ the reader is not Phân công on as Thành viên Tổ tư vấn is not found.
+ * hồ sơ the reader is not Phân công on as Thành viên Tổ tư vấn is not found. TM-03 (#57 story 51): while Tổ tư
+ * vấn thẩm định, a đề nghị Sở trả về xã with its lý do, and the đề nghị already sent.
  */
 export default async function AdvisoryReviewPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, ws, submissions, checklist] = await Promise.all([
+  const [dossier, ws, submissions, checklist, returnRequests] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.scoring.advisoryReport(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.advisoryReturnRequests(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !ws || !submissions || !checklist) notFound();
+  if (!dossier || !ws || !submissions || !checklist || !returnRequests) notFound();
+  const mayAskReturn = can(actor, "dossier.advisory_return_request", dossier);
   const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
   const latest = submissions.at(-1);
   const download = downloadAdvisoryFileAction.bind(null, dossierId);
@@ -55,6 +61,16 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
           {ws.versions.length > 0 && <span className="text-text-2">Đã phát hành {ws.versions.length} phiên bản.</span>}
         </p>
       </div>
+
+      {mayAskReturn && (
+        <ReturnRequestForm
+          dossierId={dossierId}
+          version={dossier.version}
+          submit={requestAdvisoryReturnAction}
+          intro="Khi hồ sơ thiếu nghiêm trọng, đề nghị Sở trả hồ sơ về xã kèm lý do. Sở quyết định có trả về hay không; Chủ thể bổ sung qua yêu cầu bổ sung của Sở. Khi hồ sơ lên tỉnh lại, Phân công và bản nháp được giữ nguyên."
+        />
+      )}
+      <ReturnRequests requests={returnRequests} from="advisory" />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
