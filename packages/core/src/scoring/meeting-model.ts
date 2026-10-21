@@ -35,6 +35,16 @@ export interface MeetingDossier {
   resultId: string | null;
 }
 
+/** A biên bản đã ký số of a Phiên họp (#62, story 115): numbered 1, 2, … per Phiên họp, never changed. */
+export interface MeetingMinutes {
+  id: string;
+  meetingId: string;
+  number: number;
+  fileId: string;
+  uploadedBy: string;
+  uploadedAt: Date;
+}
+
 export interface MeetingRepo {
   insert(m: Meeting): Promise<void>;
   update(m: Meeting): Promise<void>;
@@ -51,6 +61,10 @@ export interface MeetingRepo {
   /** Gỡ a pending hồ sơ; false when it is not pending there. */
   removeDossier(meetingId: string, dossierId: string): Promise<boolean>;
   markFinalized(meetingId: string, dossierId: string, resultId: string): Promise<void>;
+  /** The biên bản đã ký of a Phiên họp, newest number first. */
+  minutes(meetingId: string): Promise<MeetingMinutes[]>;
+  /** False when the file is already a biên bản. */
+  insertMinutes(m: MeetingMinutes): Promise<boolean>;
 }
 
 /** One thành viên chấm as the kết quả chốt keeps them. */

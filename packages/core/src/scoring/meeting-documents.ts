@@ -8,6 +8,8 @@ import { vnDateOf } from "../rounds/model";
 import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { assertIdShape } from "../shared/ids";
+import { emit } from "../platform/emit";
 import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
@@ -144,6 +146,60 @@ export function generateMeetingDocument(deps: CoreDeps) {
         }),
       );
       return { fileName: `${MEETING_DOCUMENT_LABEL[input.kind]} - ${safeName(meeting.title)}.docx`, bytes };
+    });
+  };
+}
+
+const minutesNotFound = () => new DomainError("not_found", "Không tìm thấy biên bản");
+
+/**
+ * Story 115: ties a biên bản đã ký số the Thư ký has uploaded (purpose `meeting_minutes`, PDF) to the Phiên họp as the
+ * next number. A file still being scanned may be attached (it downloads once clean); a blocked one never. Not needed to chốt.
+ */
+export function attachMeetingMinutes(deps: CoreDeps) {
+  return async (actor: Actor, input: { meetingId: string; fileId: string }): Promise<{ number: number }> => {
+    authorize(actor, "scoring.meeting.minutes.upload");
+    return deps.uow.run(async (tx) => {
+      const meeting = await ownMeeting(tx, actor, input.meetingId, true);
+      assertIdShape(input.fileId, minutesNotFound);
+      const file = await tx.files.findById(input.fileId);
+      if (!file || file.ownerUserId !== actor.userId || file.purpose !== "meeting_minutes") throw minutesNotFound();
+      if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa được tải lên xong");
+      if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp đã bị chặn vì không an toàn, hãy tải lên bản khác");
+      const number = ((await tx.meetings.minutes(meeting.id))[0]?.number ?? 0) + 1;
+      const now = deps.clock.now();
+      if (!(await tx.meetings.insertMinutes({ id: deps.ids.next(), meetingId: meeting.id, number, fileId: file.id, uploadedBy: actor.userId, uploadedAt: now }))) {
+        throw new DomainError("already_attached", "Tệp này đã là một biên bản của Phiên họp");
+      }
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, { action: "scoring.meeting.minutes_attached", targetType: "meeting", targetId: meeting.id, metadata: { number, fileId: file.id } }),
+      );
+      await emit(deps, tx, { type: "scoring.meeting_minutes_attached", payload: { meetingId: meeting.id, councilId: meeting.councilId, number, fileId: file.id } });
+      return { number };
+    });
+  };
+}
+
+/** A short-lived link to one biên bản đã ký of a Phiên họp of the actor's Hội đồng, once scanned clean. */
+export function downloadMeetingMinutes(deps: CoreDeps) {
+  return async (actor: Actor, input: { meetingId: string; number: number }): Promise<{ url: string; expiresAt: Date; fileName: string }> => {
+    authorize(actor, "scoring.meeting.document");
+    return deps.uow.run(async (tx) => {
+      const meeting = await ownMeeting(tx, actor, input.meetingId, false);
+      const row = (await tx.meetings.minutes(meeting.id)).find((m) => m.number === input.number);
+      const file = row && (await tx.files.findById(row.fileId));
+      if (!file) throw minutesNotFound();
+      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
+      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
+          action: "file.download_issued",
+          targetType: "file",
+          targetId: file.id,
+          metadata: { meetingId: meeting.id, document: "meeting_minutes", number: row.number },
+        }),
+      );
+      return { url: get.url, expiresAt: get.expiresAt, fileName: file.fileName };
     });
   };
 }

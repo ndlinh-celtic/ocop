@@ -60,7 +60,7 @@ import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
 import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
 import { finalizeDossier } from "./scoring/finalize";
-import { generateMeetingDocument } from "./scoring/meeting-documents";
+import { attachMeetingMinutes, downloadMeetingMinutes, generateMeetingDocument } from "./scoring/meeting-documents";
 import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
 
@@ -248,6 +248,8 @@ export function createCore(deps: CoreDeps) {
       finalize: finalizeDossier(deps),
       // L15 HD-09 văn bản họp and biên bản đã ký (#62).
       generateMeetingDocument: generateMeetingDocument(deps),
+      attachMeetingMinutes: attachMeetingMinutes(deps),
+      downloadMeetingMinutes: downloadMeetingMinutes(deps),
       // L15 Trả phiếu (#61).
       returnScoreSheet: returnScoreSheet(deps),
       scoreSheetHistory: scoreSheetHistory(deps),

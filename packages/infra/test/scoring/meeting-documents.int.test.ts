@@ -1,7 +1,8 @@
 import PizZip from "pizzip";
 import { describe, expect, it } from "vitest";
-import type { UserActor } from "@ocop/core";
+import { DOCX_TYPE as DOCX, type UserActor } from "@ocop/core";
 import { PRODUCT, entityIdOf } from "../dossiers/fixtures";
+import { EICAR } from "../support";
 import { scoringWorld } from "./world";
 
 /*
@@ -136,6 +137,55 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     const audited = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.meeting.document_generated"], targetId: meetingId });
     expect(audited).toHaveLength(2);
     expect(audited[0]).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { kind: "score_table", pending: 1 } });
+  });
+
+  describe("biên bản đã ký (story 115)", () => {
+    it("keeps each biên bản đã ký số the Thư ký uploads, numbered 1, 2, …, with audit and event, before chốt is required", async () => {
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+      const first = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Biên bản đã ký.pdf");
+      const second = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Biên bản đã ký lần 2.pdf");
+
+      expect(await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: first })).toEqual({ number: 1 });
+      expect(await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: second })).toEqual({ number: 2 });
+
+      const { minutes } = await w.t.app.scoring.getMeeting(w.A.chair, { meetingId });
+      expect(minutes).toEqual([
+        expect.objectContaining({ number: 2, fileName: "Biên bản đã ký lần 2.pdf", status: "clean", uploadedBy: { userId: w.A.secretary.userId, fullName: w.A.secretary.fullName } }),
+        expect.objectContaining({ number: 1, fileName: "Biên bản đã ký.pdf" }),
+      ]);
+      const link = await w.t.app.scoring.downloadMeetingMinutes(w.A.chair, { meetingId, number: 1 });
+      expect(link.fileName).toBe("Biên bản đã ký.pdf");
+      expect((await fetch(link.url)).ok).toBe(true);
+      const [audited] = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.meeting.minutes_attached"], targetId: meetingId });
+      expect(audited).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { number: 2, fileId: second } });
+      await w.t.drainJobs();
+    });
+
+    it("takes only the Thư ký's own PDF upload of purpose meeting_minutes that is not blocked", async () => {
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký 2", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+      await expect(w.t.app.files.requestUpload(w.A.chair, { purpose: "meeting_minutes", fileName: "a.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({ code: "forbidden" });
+      await expect(w.t.app.files.requestUpload(w.A.secretary, { purpose: "meeting_minutes", fileName: "a.docx", contentType: DOCX, size: 10 })).rejects.toMatchObject({ code: "file_type_not_allowed" });
+      const evidence = await w.f.uploadPdf(m(0), "grading_evidence", "Bằng chứng.pdf");
+      await expect(w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: evidence })).rejects.toMatchObject({ code: "not_found" });
+      const blocked = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Có mã độc.pdf", { content: Buffer.from(EICAR) });
+      const scanning = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Đang quét.pdf", { scan: false });
+      await expect(w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: blocked })).rejects.toMatchObject({ code: "file_blocked" });
+      expect(await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: scanning })).toEqual({ number: 1 });
+      await expect(w.t.app.scoring.downloadMeetingMinutes(w.A.secretary, { meetingId, number: 1 })).rejects.toMatchObject({ code: "file_not_ready" });
+      // One file is one biên bản: attaching it twice is refused.
+      await w.t.drainJobs();
+      await expect(w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: scanning })).rejects.toMatchObject({ code: "already_attached" });
+    });
+
+    it("never changes a biên bản once attached: the DB refuses UPDATE and DELETE", async () => {
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký 3", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+      await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: await w.f.uploadPdf(w.A.secretary, "meeting_minutes") });
+
+      await expect(w.db.app.query("UPDATE scoring.meeting_minutes SET number = 5 WHERE meeting_id = $1", [meetingId])).rejects.toThrow(/permission denied/);
+      await expect(w.db.app.query("DELETE FROM scoring.meeting_minutes WHERE meeting_id = $1", [meetingId])).rejects.toThrow(/permission denied/);
+      await expect(w.db.admin.query("UPDATE scoring.meeting_minutes SET number = 5 WHERE meeting_id = $1", [meetingId])).rejects.toThrow(/immutable/);
+      await expect(w.db.admin.query("DELETE FROM scoring.meeting_minutes WHERE meeting_id = $1", [meetingId])).rejects.toThrow(/immutable/);
+    });
   });
 
   it("gives a Phiên họp of another Hội đồng as not found", async () => {

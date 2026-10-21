@@ -11,6 +11,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError, forbidden } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
+import type { FileStatus } from "../files/model";
 import type { Meeting, MeetingState } from "./meeting-model";
 
 /*
@@ -165,6 +166,26 @@ export interface MeetingView extends MeetingSummary {
   dossiers: MeetingDossierView[];
   /** Hồ sơ Sẵn sàng chốt of the đợt not waiting in any Phiên họp: what may be added. */
   candidates: { dossierId: string; code: string; productName: string }[];
+  /** Biên bản đã ký (#62, story 115), newest first. */
+  minutes: MeetingMinutesView[];
+}
+
+export interface MeetingMinutesView {
+  number: number;
+  fileName: string;
+  status: FileStatus;
+  uploadedAt: Date;
+  uploadedBy: { userId: string; fullName: string };
+}
+
+async function minutesOf(tx: Tx, meetingId: string): Promise<MeetingMinutesView[]> {
+  const out: MeetingMinutesView[] = [];
+  for (const m of await tx.meetings.minutes(meetingId)) {
+    const file = await tx.files.findById(m.fileId);
+    const user = await tx.users.findById(m.uploadedBy);
+    out.push({ number: m.number, fileName: file?.fileName ?? "", status: file?.status ?? "blocked", uploadedAt: m.uploadedAt, uploadedBy: { userId: m.uploadedBy, fullName: user?.fullName ?? "" } });
+  }
+  return out;
 }
 
 /** S44: the Phiên họp of the actor's Hội đồng, newest ngày họp first. */
@@ -236,7 +257,7 @@ export function getMeeting(deps: CoreDeps) {
           if (!(await tx.meetings.pendingOf(d.id))) candidates.push({ dossierId: d.id, code: d.code, productName: d.productName });
         }
       }
-      return { ...(await summaryOf(tx, meeting)), createdAt: meeting.createdAt, closedAt: meeting.closedAt, dossiers, candidates };
+      return { ...(await summaryOf(tx, meeting)), createdAt: meeting.createdAt, closedAt: meeting.closedAt, dossiers, candidates, minutes: await minutesOf(tx, meeting.id) };
     });
   };
 }
