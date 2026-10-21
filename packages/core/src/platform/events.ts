@@ -41,6 +41,8 @@ export type DomainEventBody =
   | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
   | { type: "system.setting_changed"; payload: { key: string } }
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
+  // L15 HD-05 (story 103): who got a phiếu back and why, for their notice; the hồ sơ event names neither.
+  | { type: "scoring.score_sheet_returned"; payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string } }
   | {
       type: DossierEventType;
       /** `actorUserId`: who made the move; absent on events recorded before it was added. */

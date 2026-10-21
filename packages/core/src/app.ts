@@ -57,6 +57,7 @@ import { assignmentCandidates, editAssignments, listAssignments } from "./counci
 import { startGrading } from "./councils/grading";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
+import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -226,6 +227,9 @@ export function createCore(deps: CoreDeps) {
       reissueAdvisoryReport: reissueAdvisoryReport(deps),
       advisoryReportVersions: advisoryReportVersions(deps),
       downloadAdvisoryFile: downloadAdvisoryFile(deps),
+      // L15 Trả phiếu (#61).
+      returnScoreSheet: returnScoreSheet(deps),
+      scoreSheetHistory: scoreSheetHistory(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
