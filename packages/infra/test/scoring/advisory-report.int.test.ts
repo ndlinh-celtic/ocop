@@ -20,6 +20,7 @@ let province: UserActor;
 let A: Awaited<ReturnType<ReturnType<typeof fixtures>["staffedCouncil"]>>;
 let leader: UserActor;
 let colleague: UserActor;
+let roundId: string;
 const START = new Date("2026-10-19T02:00:00Z");
 
 /** A Bộ tiêu chí of three Tiêu chí over Phần A (1.1, 1.2) and B (2.1), so sums by Phần and missing lists mean something. */
@@ -83,7 +84,7 @@ beforeAll(async () => {
   A = await f.staffedCouncil(province, { members: 2, advisors: 3 });
   [leader, colleague] = A.advisors as [UserActor, UserActor];
   await t.app.councils.setLeader(province, { councilId: A.councilId, userId: leader.userId });
-  const roundId = await f.openRound(versionId, { gradingMode: "advisory_based", minGraders: 2 });
+  roundId = await f.openRound(versionId, { gradingMode: "advisory_based", minGraders: 2 });
   await t.app.rounds.assignCouncil(province, { roundId, councilId: A.councilId });
 });
 beforeEach(() => t.clock.set(START));
@@ -280,7 +281,7 @@ async function reissue(actor: UserActor, d: { dossierId: string; version: number
     attachmentFileIds: [],
   });
 }
-/** Stands in for the copy, xác nhận and chốt of later tickets (#55, #54, #60): puts the hồ sơ in `state` directly. */
+/** Stands in for the copy and xác nhận of later tickets (#55, #54): puts the hồ sơ in `state` directly. */
 const putIn = (dossierId: string, state: string) => db.admin.query("UPDATE dossier.dossier SET state = $2, version = version + 1 WHERE id = $1", [dossierId, state]);
 
 describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
@@ -328,7 +329,9 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
       const { dossierVersion } = await report(leader, d.dossierId);
       await expect(reissue(leader, { dossierId: d.dossierId, version: dossierVersion }, `Sửa khi ${state}`)).resolves.toMatchObject({ number: expect.any(Number) });
     }
-    await putIn(d.dossierId, "score_finalized");
+    // Chốt điểm for real (#60), from the Sẵn sàng chốt the loop left it in.
+    await t.app.scoring.createMeeting(A.secretary, { roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    await t.app.scoring.finalize(A.secretary, { dossierId: d.dossierId, expectedVersion: (await report(leader, d.dossierId)).dossierVersion });
     await expect(reissue(leader, { dossierId: d.dossierId, version: version + 5 }, "Sửa sau chốt")).rejects.toMatchObject({ code: "invalid_state" });
     expect((await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).map((v) => v.number)).toEqual([1, 2, 3]);
   });
