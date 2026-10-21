@@ -202,18 +202,26 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
 
 describe("L15 chốt điểm dựa trên Tổ tư vấn, and kết thúc đợt (#60, stories 123, 126)", () => {
   const w = scoringWorld({ gradingMode: "advisory_based", minGraders: 2 });
-  /** Stands in for the sao chép of #55, the only way from the Báo cáo Tổ tư vấn into Thành viên xem xét. */
-  const putInMemberReview = (dossierId: string) => w.db.admin.query("UPDATE dossier.dossier SET state = 'member_review', version = version + 1 WHERE id = $1", [dossierId]);
+  const PICKS = ["1.1:20", "2.1:25", "3.1:35"];
+
+  /** L10 to L12: the Tổ trưởng issues a Báo cáo Tổ tư vấn with PICKS and copies it into the phiếu: Thành viên xem xét. */
+  async function throughAdvisoryCopy(leader: UserActor, dossierId: string) {
+    await w.t.app.councils.setLeader(w.province, { councilId: w.A.councilId, userId: leader.userId });
+    const lines = PICKS.map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), basis: "Căn cứ hồ sơ", evidenceFileIds: [], evidenceAssessment: "sufficient" as const }));
+    await w.t.app.scoring.saveAdvisoryDraft(leader, { dossierId, draftVersion: 0, lines, summary: "Nhận xét", notes: "", attachmentFileIds: [] });
+    const { version } = await w.t.app.scoring.issueAdvisoryReport(leader, { dossierId, expectedVersion: (await w.t.app.scoring.advisoryReport(leader, { dossierId })).dossierVersion });
+    await w.t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId, expectedVersion: version }], criteria: "all", recipients: "all" });
+  }
 
   it("shows the Tổ tư vấn the kết quả chốt without a thành viên's phiếu, and the đợt ends once its hồ sơ is chốt", async () => {
     const [m0, m1] = [w.A.members[0]!, w.A.members[1]!];
     const advisor = w.A.advisors[0]!;
     const d = await w.graded([m0, m1], [advisor]);
-    await putInMemberReview(d.dossierId);
+    await throughAdvisoryCopy(advisor, d.dossierId);
     for (const m of [m0, m1]) {
       const view = await w.t.app.scoring.readDossierScores(m, { dossierId: d.dossierId });
       if (view.kind !== "own_sheet") throw new Error(view.kind);
-      const lines = ["1.1:20", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+      const lines = PICKS.map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
       const { version } = await w.t.app.scoring.saveScoreSheet(m, { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
       await w.t.app.scoring.confirmScoreSheet(m, { dossierId: d.dossierId, expectedVersion: version });
     }

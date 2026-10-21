@@ -61,6 +61,8 @@ const ROLE_ACTIONS = {
   "dossier.advisory_report.write": ["advisory_member"],
   "dossier.advisory_report.read": ["council_chair", "council_secretary", "council_member", "advisory_member"],
   "dossier.advisory_report.upload": ["advisory_member"],
+  // L12 TM-08, TM-09 (#58 stories 65 to 70): sao chép an issued phiên bản into the Phiếu chấm, with its xem trước.
+  "scoring.advisory_copy": ["advisory_member"],
   // L14 (story 97): the tiến độ chấm of the Hội đồng's hồ sơ (S42), and bằng chứng kiểm tra of a Phiếu chấm (story 86).
   "scoring.progress.read": ["council_chair", "council_secretary"],
   "scoring.evidence.upload": ["council_member"],

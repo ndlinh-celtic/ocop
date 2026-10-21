@@ -50,8 +50,11 @@ export type DomainEventBody =
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
   | {
       type: DossierEventType;
-      /** `actorUserId`: who made the move; absent on events recorded before it was added. */
-      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string };
+      /**
+       * `actorUserId`: who made the move; absent on events recorded before it was added. `recipientUserIds`: who
+       * its notices go to, when only the use case knows them (sao chép, L12).
+       */
+      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string; recipientUserIds?: string[] };
     };
 
 export type EventType = DomainEventBody["type"];

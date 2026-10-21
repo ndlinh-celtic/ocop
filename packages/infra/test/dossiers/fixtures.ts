@@ -244,6 +244,47 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { ...s, version: started!.version, state: started!.state };
   }
 
+  /**
+   * L10, L11: a hồ sơ Giao chấm in a đợt dựa trên Tổ tư vấn (as `gradingStarted`), whose Báo cáo Tổ tư vấn
+   * `people.advisors[0]` writes and issues as phiên bản 1 after being made Tổ trưởng by `province`. Every Tiêu chí
+   * gets the Mức điểm with the points in `points` (by mã), else its highest, and the căn cứ "Căn cứ <mã>".
+   * The hồ sơ is then Đã có báo cáo Tổ tư vấn.
+   */
+  async function advisoryIssued(
+    officer: UserActor,
+    province: UserActor,
+    criteriaSetId: string,
+    secretary: UserActor,
+    people: { members: UserActor[]; advisors: UserActor[] },
+    opts: { points?: Record<string, number>; ward?: string } = {},
+  ) {
+    const leader = people.advisors[0]!;
+    await t.app.councils.setLeader(province, { councilId: secretary.activeScope!.id!, userId: leader.userId });
+    const s = await gradingStarted(officer, province, criteriaSetId, secretary, people, opts.ward);
+    const { criteria } = await t.app.scoring.advisoryReport(leader, { dossierId: s.dossierId });
+    const lines = criteria.map((c) => {
+      const wanted = opts.points?.[c.code];
+      const level = wanted === undefined ? c.levels.reduce((a, b) => (b.points > a.points ? b : a)) : c.levels.find((l) => l.points === wanted)!;
+      return { criterionId: c.criterionId, levelId: level.id, basis: `Căn cứ ${c.code}`, evidenceFileIds: [], evidenceAssessment: "sufficient" as const };
+    });
+    await t.app.scoring.saveAdvisoryDraft(leader, { dossierId: s.dossierId, draftVersion: 0, lines, summary: "Nhận xét tổng hợp", notes: "", attachmentFileIds: [] });
+    const { dossierVersion } = await t.app.scoring.advisoryReport(leader, { dossierId: s.dossierId });
+    const { version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: s.dossierId, expectedVersion: dossierVersion });
+    return { ...s, leader, version, state: "advisory_report_issued" as const };
+  }
+
+  /**
+   * L12: `advisoryIssued`, then the Tổ trưởng sao chép phiên bản 1, all Tiêu chí, to every thành viên chấm: the hồ
+   * sơ is Thành viên xem xét and each Phiếu chấm is filled from the Tổ tư vấn, ready to save or xác nhận.
+   */
+  async function advisoryCopied(...args: Parameters<typeof advisoryIssued>) {
+    const s = await advisoryIssued(...args);
+    const [copied] = (
+      await t.app.scoring.copyAdvisory(s.leader, { dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }], criteria: "all", recipients: "all" })
+    ).dossiers;
+    return { ...s, version: copied!.version, state: copied!.state };
+  }
+
   /** Signs the Người dùng of `actor` in again with `role` as the Vai trò đang dùng (one of their Phân vai in force). */
   async function asRole(actor: UserActor, role: Role) {
     const { actor: fresh, token } = await t.signInWithToken(actor.email, PASSWORD);
@@ -272,6 +313,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
     forwarded,
     provinceReceived,
     gradingStarted,
+    advisoryIssued,
+    advisoryCopied,
     council,
     staffedCouncil,
     asRole,

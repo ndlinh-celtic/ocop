@@ -281,8 +281,6 @@ async function reissue(actor: UserActor, d: { dossierId: string; version: number
     attachmentFileIds: [],
   });
 }
-/** Stands in for the copy and xác nhận of later tickets (#55, #54): puts the hồ sơ in `state` directly. */
-const putIn = (dossierId: string, state: string) => db.admin.query("UPDATE dossier.dossier SET state = $2, version = version + 1 WHERE id = $1", [dossierId, state]);
 
 describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
   it("issues phiên bản 2 from edited content with its reason, leaves phiên bản 1 as it was, and tells the thành viên chấm again", async () => {
@@ -323,13 +321,19 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
     const d = await complete();
     await expect(reissue(leader, d, "Sửa")).rejects.toMatchObject({ code: "invalid_state" });
     const { version } = await issue(leader, d);
+    const reissueNow = async (why: string) => reissue(leader, { dossierId: d.dossierId, version: (await report(leader, d.dossierId)).dossierVersion }, why);
 
-    for (const state of ["member_review", "member_confirmed"]) {
-      await putIn(d.dossierId, state);
-      const { dossierVersion } = await report(leader, d.dossierId);
-      await expect(reissue(leader, { dossierId: d.dossierId, version: dossierVersion }, `Sửa khi ${state}`)).resolves.toMatchObject({ number: expect.any(Number) });
+    // L12: the first sao chép opens Thành viên xem xét; both thành viên xác nhận the copied phiếu: Sẵn sàng chốt.
+    await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" });
+    expect((await report(leader, d.dossierId)).state).toBe("member_review");
+    await expect(reissueNow("Sửa khi member_review")).resolves.toMatchObject({ number: 2 });
+    for (const member of A.members) {
+      const view = await t.app.scoring.readDossierScores(member, { dossierId: d.dossierId, ownSheet: true });
+      await t.app.scoring.confirmScoreSheet(member, { dossierId: d.dossierId, expectedVersion: view.kind === "own_sheet" ? view.sheet!.version : 0 });
     }
-    // Chốt điểm for real (#60), from the Sẵn sàng chốt the loop left it in.
+    expect((await report(leader, d.dossierId)).state).toBe("member_confirmed");
+    await expect(reissueNow("Sửa khi member_confirmed")).resolves.toMatchObject({ number: 3 });
+    // Chốt điểm for real (#60).
     await t.app.scoring.createMeeting(A.secretary, { roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
     await t.app.scoring.finalize(A.secretary, { dossierId: d.dossierId, expectedVersion: (await report(leader, d.dossierId)).dossierVersion });
     await expect(reissue(leader, { dossierId: d.dossierId, version: version + 5 }, "Sửa sau chốt")).rejects.toMatchObject({ code: "invalid_state" });
