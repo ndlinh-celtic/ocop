@@ -9,9 +9,9 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { FileStatus } from "../files/model";
+import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import { checklistOf } from "./checklist";
-import { vnDate, vnNumber } from "./documents";
 import { lockDossier } from "./edit";
 import { CHECKLIST_RESULT_LABEL, DOSSIER_STATE_LABEL, dossierNotFound, type Dossier, type Submission } from "./model";
 import { transition } from "./transition";
@@ -59,7 +59,7 @@ export function generateWardReport(deps: CoreDeps) {
           return { index: String(n + 1), label: item.label, result: r ? CHECKLIST_RESULT_LABEL[r.result] : "Chưa đánh giá" };
         }),
         suggestion: SUGGESTION_LABEL[eligible ? "eligible" : "not_eligible"],
-        generatedOn: vnDate(vnDateOf(now)),
+        generatedOn: formatDayVn(vnDateOf(now)),
       });
       const bytes = await deps.documents.render("ward_report", data);
       await tx.audit.append(
@@ -89,8 +89,8 @@ function wardReportData(s: Submission, c: Pick<WardReportData, "wardName" | "rou
     criteriaSetCode: criteriaSet.code,
     criteriaSetName: criteriaSet.name,
     submissionNumber: String(s.number),
-    submittedOn: vnDate(vnDateOf(s.submittedAt)),
-    selfScoreTotal: vnNumber(selfScore.total),
+    submittedOn: formatDayVn(vnDateOf(s.submittedAt)),
+    selfScoreTotal: formatDecimalVn(selfScore.total),
     selfScoreStar: String(selfScore.star),
   };
 }

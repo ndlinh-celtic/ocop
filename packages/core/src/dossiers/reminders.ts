@@ -11,6 +11,7 @@ import { reminderMilestonesIn } from "../system/settings";
 import { entityUsers } from "./notices";
 import type { ReminderKind, ReminderTarget, SentReminder } from "./reminder-model";
 import { wardOfficersOf } from "./ward";
+import { formatDayVn } from "../shared/format";
 
 // L03 CT-12 Nhắc hạn: the job and its two consumers. The three loại hạn are described in reminder-model.ts.
 
@@ -103,7 +104,7 @@ interface ReminderNotice {
   link: string;
 }
 
-const vnDisplayDate = (iso: string) => vnDateOf(new Date(iso)).split("-").reverse().join("/");
+const vnDisplayDate = (iso: string) => formatDayVn(vnDateOf(new Date(iso)));
 const left = (daysLeft: number) => (daysLeft === 0 ? "hôm nay là hạn" : `còn ${daysLeft} ngày`);
 const capitalized = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 

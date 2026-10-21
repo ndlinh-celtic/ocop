@@ -9,6 +9,7 @@ import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
+import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import { dossierNotFound, type SubmissionSnapshot } from "./model";
 
@@ -29,9 +30,6 @@ const DOCUMENT_TITLE: Record<SubmissionDocument, string> = {
 
 const fileNameOf = (document: SubmissionDocument, submissionNumber: number) => `${DOCUMENT_TITLE[document]} - Phiên bản nộp ${submissionNumber}.docx`;
 
-/** YYYY-MM-DD as read in Vietnam: DD/MM/YYYY. */
-export const vnDate = (isoDay: string) => isoDay.split("-").reverse().join("/");
-export const vnNumber = (n: number) => String(n).replace(".", ",");
 
 export interface SubmissionContext {
   number: number;
@@ -54,9 +52,9 @@ function registrationForm(s: SubmissionSnapshot, c: SubmissionContext): Registra
     ...product,
     criteriaSetCode: s.criteriaSet.code,
     criteriaSetName: s.criteriaSet.name,
-    legalDocuments: s.legalDocuments.map((d) => ({ typeName: d.typeName, documentNumber: d.documentNumber ?? "", issuedOn: vnDate(d.issuedOn) })),
+    legalDocuments: s.legalDocuments.map((d) => ({ typeName: d.typeName, documentNumber: d.documentNumber ?? "", issuedOn: formatDayVn(d.issuedOn) })),
     submissionNumber: String(c.number),
-    submittedOn: vnDate(vnDateOf(c.submittedAt)),
+    submittedOn: formatDayVn(vnDateOf(c.submittedAt)),
   };
 }
 
@@ -75,14 +73,14 @@ function selfAssessmentReport(s: SubmissionSnapshot, c: SubmissionContext): Self
       partCode: cr.partCode,
       code: cr.code,
       name: cr.name,
-      points: vnNumber(cr.points),
+      points: formatDecimalVn(cr.points),
       explanation: cr.explanation,
       evidence: cr.evidenceFileIds.map((id) => fileNames.get(id) ?? "").join("; "),
     })),
-    total: vnNumber(s.selfScore.total),
+    total: formatDecimalVn(s.selfScore.total),
     star: String(s.selfScore.star),
     submissionNumber: String(c.number),
-    submittedOn: vnDate(vnDateOf(c.submittedAt)),
+    submittedOn: formatDayVn(vnDateOf(c.submittedAt)),
   };
 }
 
