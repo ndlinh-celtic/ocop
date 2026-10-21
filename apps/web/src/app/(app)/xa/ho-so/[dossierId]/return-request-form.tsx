@@ -4,13 +4,20 @@ import { Undo2 } from "lucide-react";
 import { useActionState } from "react";
 import { requestReturnAction, type ReturnRequestFormState } from "./return-request-actions";
 
-/** L04 (story 59): a hồ sơ Đã chuyển tỉnh stays with the Sở; the xã may only ask it to trả về, with a lý do. */
-export function ReturnRequestForm({ dossierId, version }: { dossierId: string; version: number }) {
-  const [state, action, pending] = useActionState<ReturnRequestFormState, FormData>(requestReturnAction.bind(null, dossierId, version), {});
+type Submit = (dossierId: string, expectedVersion: number, prev: ReturnRequestFormState, form: FormData) => Promise<ReturnRequestFormState>;
+
+const XA_INTRO = "Khi phát hiện sai sót trong hồ sơ đã gửi tỉnh, gửi Sở đề nghị trả về kèm lý do. Sở quyết định có trả về hay không.";
+
+/**
+ * L04 (story 59): a hồ sơ Đã chuyển tỉnh stays with the Sở; the xã may only ask it to trả về, with a lý do.
+ * L10 TM-03 (#57 story 51) uses the same form for the Tổ tư vấn, with its own `submit` and `intro`.
+ */
+export function ReturnRequestForm({ dossierId, version, submit = requestReturnAction, intro = XA_INTRO }: { dossierId: string; version: number; submit?: Submit; intro?: string }) {
+  const [state, action, pending] = useActionState<ReturnRequestFormState, FormData>(submit.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
       <h2 className="mb-2 font-semibold">Đề nghị Sở trả về</h2>
-      <p className="mb-3 text-sm text-text-2">Khi phát hiện sai sót trong hồ sơ đã gửi tỉnh, gửi Sở đề nghị trả về kèm lý do. Sở quyết định có trả về hay không.</p>
+      <p className="mb-3 text-sm text-text-2">{intro}</p>
       <form action={action} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm">
           Lý do
