@@ -66,6 +66,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.score_sheet.edit",
   "dossier.score_sheet.confirm",
   "dossier.score_sheet.confirm_ready",
+  "dossier.assignment.replace",
   "dossier.advisory_return_request",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
@@ -356,6 +357,11 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     event: "dossier.members_confirmed",
     timeline: false,
   },
+  // L09 HD-03 (stories 34 to 39): after Giao chấm and before chốt điểm, the Thư ký thay or bổ sung a thành viên
+  // chấm or Thành viên Tổ tư vấn, with a reason; replaceAssignment/addAssignment check the Phân công and phiếu.
+  ...(["advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.assignment.replace", from, to: from, roles: ["council_secretary"], event: "dossier.assignment_changed", timeline: false }),
+  ),
 ];
 
 /** Guard of the Hội đồng rows: Tiếp nhận tại tỉnh in the current lượt gửi tỉnh. */
