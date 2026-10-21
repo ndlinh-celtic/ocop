@@ -21,6 +21,8 @@ export interface TransitionInput {
   reason?: string | null;
   /** Extra facts for the timeline and the audit row. */
   metadata?: Record<string, unknown>;
+  /** The Người dùng the outbox event names for its notices, when only the use case knows them (sao chép, L12). */
+  notify?: string[];
 }
 
 /**
@@ -55,6 +57,7 @@ export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, befor
     timeline: rule.timeline,
     reason: input.reason ?? null,
     metadata: input.metadata ?? {},
+    notify: input.notify,
   });
   return after;
 }
@@ -84,6 +87,7 @@ interface Recorded {
   timeline: boolean;
   reason: string | null;
   metadata: Record<string, unknown>;
+  notify?: string[];
 }
 
 /**
@@ -119,5 +123,5 @@ async function record(deps: CoreDeps, tx: Tx, actor: UserActor, now: Date, r: Re
       metadata: { ...r.metadata, ...(r.reason ? { reason: r.reason } : {}) },
     }),
   );
-  await emit(deps, tx, { type: r.event, payload: { dossierId: dossier.id, entityId: dossier.entityId, from: r.from, to: dossier.state, actorUserId: actor.userId } });
+  await emit(deps, tx, { type: r.event, payload: { dossierId: dossier.id, entityId: dossier.entityId, from: r.from, to: dossier.state, actorUserId: actor.userId, ...(r.notify ? { recipientUserIds: r.notify } : {}) } });
 }

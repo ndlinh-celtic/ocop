@@ -251,5 +251,14 @@ export {
 } from "./scoring/advisory-report";
 export { SCORE_SHEET_STATES, type ScoreSheet, type ScoreSheetLine, type ScoreSheetRepo, type ScoreSheetState } from "./scoring/score-sheet-model";
 export { ScoreSheetIncompleteError, type SaveScoreSheetInput, type ScoreSheetLineInput } from "./scoring/sheets";
+export {
+  AdvisoryCopyRefused,
+  type AdvisoryCopyBoardRow,
+  type AdvisoryCopyPlan,
+  type AdvisoryCopyRecipient,
+  type CopyAdvisoryInput,
+  type CopySheetOutcome,
+  type PreviewAdvisoryCopyInput,
+} from "./scoring/advisory-copy";
 export { scoresVisibility, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";

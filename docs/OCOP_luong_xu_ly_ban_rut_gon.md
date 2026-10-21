@@ -346,8 +346,8 @@ sequenceDiagram
 ```
 
 **Sao chép lại từ phiên bản mới**
-- Phiếu thành viên chưa chỉnh: cập nhật theo phiên bản mới.
-- Phiếu đã chỉnh hoặc đã xác nhận: bỏ qua, không ghi đè; báo cho thành viên Tổ tư vấn danh sách phiếu bị bỏ qua. (Bản rút gọn không có màn hình so sánh chênh lệch.)
+- Xét theo từng tiêu chí: tiêu chí thành viên chưa chỉnh được cập nhật theo phiên bản mới; tiêu chí đã chỉnh được giữ nguyên và báo lại.
+- Phiếu đã xác nhận: bỏ qua toàn bộ, không ghi đè. Thành viên Tổ tư vấn nhận danh sách tiêu chí và phiếu bị bỏ qua. (Bản rút gọn không có màn hình so sánh chênh lệch.)
 
 **Ngoại lệ**
 - Chế độ chấm trực tiếp: nút sao chép bị ẩn.

@@ -63,6 +63,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.advisory_report.edit",
   "dossier.advisory_report.issue",
   "dossier.advisory_report.reissue",
+  "dossier.advisory_copy",
   "dossier.score_sheet.edit",
   "dossier.score_sheet.confirm",
   "dossier.score_sheet.confirm_ready",
@@ -101,6 +102,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.grading_started",
   "dossier.advisory_report_saved",
   "dossier.advisory_report_issued",
+  "dossier.advisory_copied",
   "dossier.score_sheet_saved",
   "dossier.score_sheet_confirmed",
   "dossier.members_confirmed",
@@ -336,6 +338,12 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   // L11 (stories 60, 61): phiên bản N+1 until Đã chốt điểm, which has no row.
   ...(["advisory_report_issued", "member_review", "member_confirmed"] as const).map(
     (from): TransitionRule => ({ action: "dossier.advisory_report.reissue", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true }),
+  ),
+  // L12 TM-08, TM-09 (stories 65 to 74): sao chép an issued phiên bản into the Phiếu chấm; the first one opens
+  // grading, later ones leave the state. That the đợt is dựa trên Tổ tư vấn is checked by copyAdvisory. Off the timeline.
+  { action: "dossier.advisory_copy", from: "advisory_report_issued", to: "member_review", roles: ["advisory_member"], event: "dossier.advisory_copied", timeline: false },
+  ...(["member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.advisory_copy", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_copied", timeline: false }),
   ),
   // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
   // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.

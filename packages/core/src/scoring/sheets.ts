@@ -52,6 +52,8 @@ export interface ScoreSheetLineInput {
   comment: string;
   /** Bằng chứng kiểm tra: files the thành viên uploaded with purpose `grading_evidence`; replaces the dòng's list. */
   evidenceFileIds: string[];
+  /** TV-04: why a dòng from the Tổ tư vấn leaves its Mức điểm gốc; required then, dropped otherwise. */
+  adjustReason?: string | null;
 }
 
 export interface SaveScoreSheetInput {
@@ -71,6 +73,7 @@ export function saveScoreSheet(deps: CoreDeps) {
     for (const l of lines) {
       if (typeof l.comment !== "string" || l.comment.length > MAX_COMMENT) throw new DomainError("field_too_long", "Nhận xét quá dài");
       if (!Array.isArray(l.evidenceFileIds)) throw new DomainError("file_not_found", "Không tìm thấy tệp");
+      if (l.adjustReason != null && (typeof l.adjustReason !== "string" || l.adjustReason.length > MAX_COMMENT)) throw new DomainError("field_too_long", "Lý do điều chỉnh quá dài");
     }
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
@@ -96,6 +99,10 @@ export function saveScoreSheet(deps: CoreDeps) {
         const fileIds = [...new Set(l.evidenceFileIds)];
         for (const fileId of fileIds) await assertEvidence(tx, actor, fileId);
         const was = stored.get(l.criterionId);
+        // TV-04 (stories 84, 85): leaving the Điểm đề xuất copied from the Tổ tư vấn needs a reason.
+        const adjusted = was?.source === "advisory" && l.levelId !== was.advisoryLevelOriginal;
+        const adjustReason = adjusted ? (l.adjustReason ?? "").trim() : null;
+        if (adjustReason === "") throw adjustReasonRequired([rows.criteria.find((c) => c.id === l.criterionId)!.code]);
         await tx.scoreSheets.saveLine({
           scoreSheetId: current.id,
           criterionId: l.criterionId,
@@ -104,7 +111,7 @@ export function saveScoreSheet(deps: CoreDeps) {
           source: was?.source ?? "member",
           advisoryVersionId: was?.advisoryVersionId ?? null,
           advisoryLevelOriginal: was?.advisoryLevelOriginal ?? null,
-          adjustReason: was?.adjustReason ?? null,
+          adjustReason,
           edited: true,
           updatedAt: now,
           fileIds,
@@ -124,6 +131,9 @@ async function assertEvidence(tx: Tx, actor: UserActor, fileId: unknown) {
   if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa tải lên xong");
   if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp bị chặn vì không qua được kiểm tra virus");
 }
+
+const adjustReasonRequired = (codes: string[]) =>
+  new DomainError("adjust_reason_required", `Ghi lý do điều chỉnh khác Điểm đề xuất của Tổ tư vấn: ${codes.join(", ")}`);
 
 /** Story 90: xác nhận refused while Tiêu chí have no Mức điểm; `criteria` lists their mã. */
 export class ScoreSheetIncompleteError extends DomainError {
@@ -160,6 +170,12 @@ export function confirmScoreSheet(deps: CoreDeps) {
       const rows = await setRowsOf(tx, before);
       const unscored = sheetOrder(rows).filter((c) => !lines.get(c.id)?.scoreLevelId);
       if (unscored.length > 0) throw new ScoreSheetIncompleteError(unscored.map((c) => c.code));
+      // Story 90: no điều chỉnh left without its reason (save refuses one already; this holds whatever wrote the dòng).
+      const unexplained = sheetOrder(rows).filter((c) => {
+        const l = lines.get(c.id);
+        return l?.source === "advisory" && l.scoreLevelId !== l.advisoryLevelOriginal && !l.adjustReason;
+      });
+      if (unexplained.length > 0) throw adjustReasonRequired(unexplained.map((c) => c.code));
       const now = deps.clock.now();
       const version = current.version + 1;
       const done: ScoreSheet = { ...current, state: "confirmed", confirmedAt: now, reauthMethod: proof.method, version, updatedAt: now };
