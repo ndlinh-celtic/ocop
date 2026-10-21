@@ -41,6 +41,7 @@ export type DomainEventBody =
     }
   | { type: "council.leader_changed"; payload: { councilId: string; fromUserId: string | null; toUserId: string } }
   | { type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed"; payload: { meetingId: string; councilId: string; roundId: string } }
+  | { type: "scoring.meeting_minutes_attached"; payload: { meetingId: string; councilId: string; number: number; fileId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
   | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
   | { type: "entity.updated"; payload: { entityId: string } }
