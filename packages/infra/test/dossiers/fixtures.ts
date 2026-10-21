@@ -218,6 +218,32 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { ...s, version };
   }
 
+  /**
+   * L09 HD-06: a hồ sơ Tiếp nhận tại tỉnh, Phân công by `secretary` (Thư ký of the Hội đồng gán to the đợt)
+   * to `members` and `advisors`, then Giao chấm: Tổ tư vấn thẩm định or Thành viên xem xét by the đợt's Chế
+   * độ chấm. The đợt's minGraders must not exceed `members`; dựa trên Tổ tư vấn needs one advisor, chấm
+   * trực tiếp none. Each thành viên chấm then has a Phiếu chấm trống.
+   */
+  async function gradingStarted(
+    officer: UserActor,
+    province: UserActor,
+    criteriaSetId: string,
+    secretary: UserActor,
+    people: { members: UserActor[]; advisors?: UserActor[] },
+    ward = wardId(),
+  ) {
+    const s = await provinceReceived(officer, province, criteriaSetId, ward);
+    const [drafted] = (
+      await t.app.councils.editAssignments(secretary, {
+        dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
+        members: people.members.map((m) => m.userId),
+        advisors: (people.advisors ?? []).map((a) => a.userId),
+      })
+    ).dossiers;
+    const [started] = (await t.app.councils.startGrading(secretary, { dossiers: [{ dossierId: s.dossierId, expectedVersion: drafted!.version }] })).dossiers;
+    return { ...s, version: started!.version, state: started!.state };
+  }
+
   /** Signs the Người dùng of `actor` in again with `role` as the Vai trò đang dùng (one of their Phân vai in force). */
   async function asRole(actor: UserActor, role: Role) {
     const { actor: fresh, token } = await t.signInWithToken(actor.email, PASSWORD);
@@ -245,6 +271,7 @@ export function fixtures(t: TestApp, wardId: () => string) {
     received,
     forwarded,
     provinceReceived,
+    gradingStarted,
     council,
     staffedCouncil,
     asRole,
