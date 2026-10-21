@@ -208,7 +208,45 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { councilId, chair, secretary, members, advisors };
   }
 
-  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, received, forwarded, council, staffedCouncil };
+  /** A hồ sơ Đã chuyển tỉnh and Tiếp nhận tại tỉnh by `province` (a Cán bộ Sở); its đợt must have a Hội đồng. */
+  async function provinceReceived(officer: UserActor, province: UserActor, criteriaSetId: string, ward = wardId()) {
+    const s = await forwarded(officer, criteriaSetId, ward);
+    const { version } = await t.app.dossiers.receiveAtProvince(province, { dossierId: s.dossierId, expectedVersion: s.version });
+    return { ...s, version };
+  }
+
+  /** Signs the Người dùng of `actor` in again with `role` as the Vai trò đang dùng (one of their Phân vai in force). */
+  async function asRole(actor: UserActor, role: Role) {
+    const { actor: fresh, token } = await t.signInWithToken(actor.email, PASSWORD);
+    const target = (await t.app.identity.myAssignments(fresh)).find((a) => a.role === role);
+    if (!target) throw new Error(`${actor.email} holds no Phân vai ${role}`);
+    await t.app.identity.switchActiveRole(fresh, { assignmentId: target.id });
+    return (await t.app.identity.authenticate(anonymous(), { sessionToken: token }))!;
+  }
+
+  /** Grants `actor`'s Người dùng one more Phân vai, as the Quản trị. */
+  async function grant(actor: UserActor, role: Role, scopeId: string | null = null) {
+    await t.app.identity.grantRole(await admin(), { userId: actor.userId, role, scopeId });
+  }
+
+  return {
+    admin,
+    owner,
+    verifiedOwner,
+    staff,
+    uploadPdf,
+    publishedVersion,
+    openRound,
+    completeDraft,
+    submitted,
+    received,
+    forwarded,
+    provinceReceived,
+    council,
+    staffedCouncil,
+    asRole,
+    grant,
+  };
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;

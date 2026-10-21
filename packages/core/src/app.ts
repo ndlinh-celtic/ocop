@@ -52,6 +52,7 @@ import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, sel
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
+import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -204,6 +205,9 @@ export function createCore(deps: CoreDeps) {
       list: listCouncils(deps),
       get: getCouncil(deps),
       downloadDecision: downloadCouncilDecision(deps),
+      editAssignments: editAssignments(deps),
+      assignments: listAssignments(deps),
+      assignmentCandidates: assignmentCandidates(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
