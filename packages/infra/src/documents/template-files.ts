@@ -9,4 +9,7 @@ export const TEMPLATE_FILES: Record<DocumentTemplate, string> = {
   registration_form: "phieu-dang-ky.docx",
   self_assessment_report: "bao-cao-tu-danh-gia.docx",
   ward_report: "bao-cao-danh-gia-cap-xa.docx",
+  meeting_score_table: "bang-tong-hop-diem.docx",
+  meeting_minutes_draft: "du-thao-bien-ban-hop.docx",
+  recognition_decision_draft: "du-thao-quyet-dinh-cong-nhan.docx",
 };

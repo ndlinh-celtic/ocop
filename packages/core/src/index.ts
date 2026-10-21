@@ -28,6 +28,8 @@ export {
   type RegistrationFormData,
   type SelfAssessmentReportData,
   type WardReportData,
+  type MeetingDocumentData,
+  type MeetingDocumentRow,
 } from "./documents/renderer";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
@@ -266,4 +268,5 @@ export type { AggregateOnlyView, FinalizedResultView } from "./scoring/read";
 export { MEETING_STATES, type AggregateResult, type AggregateResultRepo, type FinalizedSnapshot, type Meeting, type MeetingDossier, type MeetingRepo, type MeetingState, type SnapshotGrader } from "./scoring/meeting-model";
 export type { CreateMeetingInput, MeetingDossierView, MeetingSummary, MeetingView } from "./scoring/meetings";
 export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
+export { MEETING_DOCUMENT_KINDS, MEETING_DOCUMENT_LABEL, type MeetingDocumentKind } from "./scoring/meeting-documents";
 export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";

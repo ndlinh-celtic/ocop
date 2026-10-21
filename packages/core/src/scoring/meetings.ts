@@ -30,7 +30,7 @@ function councilOf(actor: UserActor): string {
   return scope.councilId;
 }
 
-async function ownMeeting(tx: Tx, actor: UserActor, meetingId: unknown, lock: boolean): Promise<Meeting> {
+export async function ownMeeting(tx: Tx, actor: UserActor, meetingId: unknown, lock: boolean): Promise<Meeting> {
   assertIdShape(meetingId, meetingNotFound);
   const meeting = lock ? await tx.meetings.lock(meetingId) : await tx.meetings.findById(meetingId);
   if (!meeting || meeting.councilId !== councilOf(actor)) throw meetingNotFound();
