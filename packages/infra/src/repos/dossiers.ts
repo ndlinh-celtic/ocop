@@ -1,5 +1,5 @@
-import { FINISHED_STATES, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { FINISHED_STATES, type AssignmentKind, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
+import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import {
   checklistResult,
@@ -25,7 +25,7 @@ import {
  * deleted Nháp is outside every scope. The switch is exhaustive, so a new DataScope branch does not
  * compile until this repository decides what it sees.
  */
-function inScope(scope: DataScope): SQL {
+export function inScope(scope: DataScope): SQL {
   const live = isNull(dossier.deletedAt);
   switch (scope.kind) {
     case "entity":
@@ -45,6 +45,12 @@ function inScope(scope: DataScope): SQL {
         or(isNull(dossier.wardId), eq(dossier.wardId, scope.wardId)),
         sql`exists (select 1 from ${entity} where ${entity.id} = ${dossier.entityId} and ${entity.wardId} = ${scope.wardId})`,
       )!;
+    case "council":
+      // Story 24: the đợt is gán to the Hội đồng, and the hồ sơ has been Tiếp nhận tại tỉnh at least once.
+      return and(live, isNotNull(dossier.firstProvinceReceivedAt), eq(councilOfRound, scope.councilId))!;
+    case "assigned":
+      // Stories 41, 79: the reader's own Phân công of that kind, in force (Giao chấm given, not replaced).
+      return and(live, eq(councilOfRound, scope.councilId), eq(readerAssignment(scope), scope.as))!;
     case "none":
       return sql`false`;
     default: {
@@ -54,9 +60,29 @@ function inScope(scope: DataScope): SQL {
   }
 }
 
+/*
+ * The subqueries below are written as raw SQL with aliases: in the select list of a one-table query
+ * Drizzle renders column references unqualified, which inside a correlated subquery would bind to the
+ * inner table ("id" of the assignment instead of the hồ sơ).
+ */
+
+/** The Hội đồng gán to the hồ sơ's đợt. */
+const councilOfRound = sql<string | null>`(select r.council_id from round.round r where r.id = "dossier"."dossier"."round_id")`;
+
+/** The kind of the reader's own Phân công in force on the hồ sơ, for the DataScope `assigned`; null for any other. */
+function readerAssignment(scope: DataScope) {
+  if (scope.kind !== "assigned") return sql<AssignmentKind | null>`null::text`;
+  return sql<AssignmentKind | null>`(select a.kind from council.assignment a
+    where a.dossier_id = "dossier"."dossier"."id" and a.user_id = ${scope.userId}
+      and a.effective_at is not null and a.replaced_at is null)`;
+}
+
+/** A hồ sơ row with what policy derives when loading it (Dossier.councilId, Dossier.readerAssignment). */
+const selection = (scope: DataScope) => ({ ...getTableColumns(dossier), councilId: councilOfRound, readerAssignment: readerAssignment(scope) });
+
 export function dossierRepo(db: Db): DossierRepo {
   return {
-    async insert(d) {
+    async insert({ councilId: _council, readerAssignment: _ra, ...d }) {
       await db.insert(dossier).values(d);
     },
     async nextCodeNumber(year) {
@@ -69,21 +95,33 @@ export function dossierRepo(db: Db): DossierRepo {
     },
     async findById(scope, id) {
       const [row] = await db
-        .select()
+        .select(selection(scope))
         .from(dossier)
         .where(and(inScope(scope), eq(dossier.id, id)));
       return (row as Dossier | undefined) ?? null;
     },
     async lock(scope, id) {
       const [row] = await db
-        .select()
+        .select(selection(scope))
         .from(dossier)
         .where(and(inScope(scope), eq(dossier.id, id)))
         .for("update");
       return (row as Dossier | undefined) ?? null;
     },
     async update(d, expectedVersion) {
-      const { id: _id, code: _code, entityId: _e, criteriaSetId: _s, criteriaVersionId: _v, copiedFrom: _c, createdAt: _ca, createdBy: _cb, ...fields } = d;
+      const {
+        id: _id,
+        code: _code,
+        entityId: _e,
+        criteriaSetId: _s,
+        criteriaVersionId: _v,
+        copiedFrom: _c,
+        createdAt: _ca,
+        createdBy: _cb,
+        councilId: _council,
+        readerAssignment: _ra,
+        ...fields
+      } = d;
       const updated = await db
         .update(dossier)
         .set(fields)
@@ -117,7 +155,7 @@ export function dossierRepo(db: Db): DossierRepo {
             )
           : undefined,
       );
-      return (await db.select().from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
+      return (await db.select(selection(scope)).from(dossier).where(where).orderBy(desc(dossier.createdAt), desc(dossier.id))) as Dossier[];
     },
     async countNotForwarded(filter = {}) {
       const rows = await db

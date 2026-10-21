@@ -44,11 +44,14 @@ const ROLE_ACTIONS = {
   "entity.representative_email.change": ["ward_officer"],
   // Hồ sơ (spec #30): who may read or start them at all. What may be done to one hồ sơ is the transition
   // table of dossiers/transitions.ts, checked by can(actor, action, dossier).
-  "dossier.read": ["entity_owner", "ward_officer", "province_officer"],
+  // Step 4 adds the Vai trò hội đồng; their DataScope `council` / `assigned` decides which (spec #49).
+  "dossier.read": ["entity_owner", "ward_officer", "province_officer", "council_chair", "council_secretary", "council_member", "advisory_member"],
   "dossier.create": ["entity_owner"],
   // Any change to an existing hồ sơ starts here: the Vai trò that work on hồ sơ at all. Which change, on
   // which hồ sơ, is then the transition table's row and the Phạm vi, checked by transition().
-  "dossier.write": ["entity_owner", "ward_officer", "province_officer"],
+  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
+  // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
+  "dossier.assignment.read": ["council_chair", "council_secretary"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

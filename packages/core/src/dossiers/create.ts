@@ -106,6 +106,8 @@ async function newDraft(
     provinceReceivedAt: null,
     provinceReceivedBy: null,
     firstProvinceReceivedAt: null,
+    councilId: null,
+    readerAssignment: null,
     supplementDeadline: null,
     copiedFrom: from.copiedFrom,
     deletedAt: null,

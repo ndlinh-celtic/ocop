@@ -10,7 +10,7 @@ import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, ty
 import { dossierInScope, recordedAction, ruleAllows, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
 
 /** The fields of a hồ sơ a transition may change besides its state and version. */
-export type DossierPatch = Partial<Omit<Dossier, "id" | "code" | "entityId" | "criteriaSetId" | "criteriaVersionId" | "state" | "version" | "copiedFrom" | "createdAt" | "createdBy" | "updatedAt">>;
+export type DossierPatch = Partial<Omit<Dossier, "id" | "code" | "entityId" | "criteriaSetId" | "criteriaVersionId" | "state" | "version" | "copiedFrom" | "createdAt" | "createdBy" | "updatedAt" | "councilId" | "readerAssignment">>;
 
 export interface TransitionInput {
   action: DossierAction;

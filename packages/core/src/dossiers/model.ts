@@ -1,3 +1,4 @@
+import type { AssignmentKind } from "../councils/assignment-model";
 import type { EntityKind } from "../entities/model";
 import type { FileStatus } from "../files/model";
 import type { DataScope } from "../identity/scope";
@@ -90,6 +91,13 @@ export interface Dossier extends ProductInfo {
   provinceReceivedBy: string | null;
   /** The first Tiếp nhận tại tỉnh ever; never reset, so the Hội đồng keeps seeing the hồ sơ (spec #49). */
   firstProvinceReceivedAt: Date | null;
+  /**
+   * Derived when loaded, never written: the Hội đồng gán to the hồ sơ's đợt, and the kind of the reader's
+   * own Phân công in force on it (null unless the reader's DataScope is `assigned`). The DataScope checks of
+   * policy read them (spec #49 "DataScope và policy").
+   */
+  councilId: string | null;
+  readerAssignment: AssignmentKind | null;
   /** Hạn bổ sung of the open yêu cầu bổ sung: set exactly while the hồ sơ is Yêu cầu bổ sung (#39). */
   supplementDeadline: Date | null;
   copiedFrom: string | null;
