@@ -11,7 +11,7 @@ export default async function MemberDossiersPage() {
   const actor = await requireActor();
   const dossiers = await app().core.dossiers.list(actor);
   // Story 78: the state of the reader's own Phiếu chấm on each hồ sơ.
-  const views = await Promise.all(dossiers.map((d) => app().core.scoring.readDossierScores(actor, { dossierId: d.id })));
+  const views = await Promise.all(dossiers.map((d) => app().core.scoring.readDossierScores(actor, { dossierId: d.id, ownSheet: true })));
   const sheetState = Object.fromEntries(
     views.flatMap((v) => (v.kind === "own_sheet" ? [[v.dossierId, v.sheet ? SHEET_STATE[v.sheet.state] : "Chưa có phiếu"] as const] : [])),
   );
