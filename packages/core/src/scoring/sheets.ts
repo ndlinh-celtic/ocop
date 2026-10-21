@@ -137,6 +137,8 @@ const adjustReasonRequired = (codes: string[]) =>
 
 /** Story 90: xác nhận refused while Tiêu chí have no Mức điểm; `criteria` lists their mã. */
 export class ScoreSheetIncompleteError extends DomainError {
+  static override readonly brand = "ScoreSheetIncompleteError";
+
   constructor(readonly criteria: readonly string[]) {
     super("score_sheet_incomplete", `Còn Tiêu chí chưa có Mức điểm: ${criteria.join(", ")}`);
   }

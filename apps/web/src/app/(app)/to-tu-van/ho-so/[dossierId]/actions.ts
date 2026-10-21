@@ -1,6 +1,6 @@
 "use server";
 
-import { AdvisoryReportIncomplete, EVIDENCE_ASSESSMENTS, type UploadInstructions } from "@ocop/core";
+import { DomainError, EVIDENCE_ASSESSMENTS, type UploadInstructions } from "@ocop/core";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { app } from "@/server/app";
@@ -39,8 +39,8 @@ export async function saveAdvisoryDraftAction(dossierId: string, draftVersion: n
     paths(dossierId);
     return saved;
   } catch (err) {
-    const message = domainMessage(err);
-    return { error: (err as { code?: string }).code === "version_conflict" ? "Đồng nghiệp đã lưu bản nháp trước anh/chị. Tải lại trang để xem bản mới nhất." : message };
+    if (err instanceof DomainError && err.code === "version_conflict") return { error: "Đồng nghiệp đã lưu bản nháp trước anh/chị. Tải lại trang để xem bản mới nhất." };
+    return { error: domainMessage(err) };
   }
 }
 
@@ -50,7 +50,6 @@ export async function issueAdvisoryReportAction(dossierId: string, expectedVersi
   try {
     await app().core.scoring.issueAdvisoryReport(actor, { dossierId, expectedVersion });
   } catch (err) {
-    if (err instanceof AdvisoryReportIncomplete) return { error: err.message };
     return { error: domainMessage(err) };
   }
   paths(dossierId);

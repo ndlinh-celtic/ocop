@@ -35,6 +35,8 @@ const MAX_FILES = 50;
 
 /** Story 57: the Tiêu chí still without Điểm đề xuất or căn cứ, by code, in sheet order. */
 export class AdvisoryReportIncomplete extends DomainError {
+  static override readonly brand = "AdvisoryReportIncomplete";
+
   constructor(readonly criteria: string[]) {
     super("advisory_report_incomplete", `Còn tiêu chí chưa có Điểm đề xuất hoặc căn cứ: ${criteria.join(", ")}`);
   }

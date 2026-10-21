@@ -70,6 +70,8 @@ export interface AdvisoryCopyPlan {
 
 /** A refusal for one hồ sơ of the lô, naming it (spec #49: one conflict rolls the lô back and says which). */
 export class AdvisoryCopyRefused extends DomainError {
+  static override readonly brand = "AdvisoryCopyRefused";
+
   constructor(
     readonly dossierId: string,
     readonly dossierCode: string | null,
@@ -197,8 +199,7 @@ async function forDossier<T>(dossierId: string, fn: (named: (d: Dossier) => void
   try {
     return await fn((d) => (code = d.code));
   } catch (err) {
-    // DomainError's brand makes `instanceof` true for every subclass, so tell a refusal already named by its field.
-    if (err instanceof DomainError && !("dossierId" in err)) throw new AdvisoryCopyRefused(dossierId, code, err);
+    if (err instanceof DomainError && !(err instanceof AdvisoryCopyRefused)) throw new AdvisoryCopyRefused(dossierId, code, err);
     throw err;
   }
 }
