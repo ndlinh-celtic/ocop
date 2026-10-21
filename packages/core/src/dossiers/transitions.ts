@@ -58,6 +58,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.return_request",
   "dossier.province_receive",
   "dossier.assignment.edit",
+  "dossier.grading.start_advisory",
+  "dossier.grading.start_direct",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -88,6 +90,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.return_requested",
   "dossier.province_received",
   "dossier.assignment_changed",
+  "dossier.grading_started",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -278,9 +281,33 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["council_secretary"],
     event: "dossier.assignment_changed",
     timeline: false,
-    guard: (d) => (d.provinceReceivedAt !== null ? null : new DomainError("not_province_received", "Hồ sơ chưa được tiếp nhận tại tỉnh trong lượt gửi tỉnh này")),
+    guard: provinceReceived,
   },
+  // L09 HD-06 (stories 30 to 33): Giao chấm, into Tổ tư vấn thẩm định or Thành viên xem xét by the Chế độ chấm
+  // of the đợt at that moment; startGrading picks the row and checks the Phân công, which it knows. Two
+  // actions because ruleFor looks a row up by action and state. A row of the Chủ thể's timeline (story 137).
+  ...(
+    [
+      ["dossier.grading.start_advisory", "advisory_review"],
+      ["dossier.grading.start_direct", "member_review"],
+    ] as const
+  ).map(
+    ([action, to]): TransitionRule => ({
+      action,
+      from: "forwarded_to_province",
+      to,
+      roles: ["council_secretary"],
+      event: "dossier.grading_started",
+      timeline: true,
+      guard: provinceReceived,
+    }),
+  ),
 ];
+
+/** Guard of the Hội đồng rows: Tiếp nhận tại tỉnh in the current lượt gửi tỉnh. */
+function provinceReceived(d: Dossier): DomainError | null {
+  return d.provinceReceivedAt !== null ? null : new DomainError("not_province_received", "Hồ sơ chưa được tiếp nhận tại tỉnh trong lượt gửi tỉnh này");
+}
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */
 export const isPastSupplementDeadline = (d: Pick<Dossier, "supplementDeadline">, now: Date) =>

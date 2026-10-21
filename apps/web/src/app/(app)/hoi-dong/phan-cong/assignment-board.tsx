@@ -1,9 +1,9 @@
 "use client";
 
 import type { AssignmentCandidate, AssignmentKind } from "@ocop/core";
-import { Save } from "lucide-react";
+import { Save, Send } from "lucide-react";
 import { useActionState, useState } from "react";
-import { editAssignmentsAction, type AssignmentFormState } from "./actions";
+import { editAssignmentsAction, startGradingAction, type AssignmentFormState, type StartGradingFormState } from "./actions";
 
 export interface BoardRow {
   dossierId: string;
@@ -29,6 +29,7 @@ const chip = "rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
  */
 export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candidates: { members: AssignmentCandidate[]; advisors: AssignmentCandidate[] } }) {
   const [state, action, pending] = useActionState<AssignmentFormState, FormData>(editAssignmentsAction, {});
+  const [started, startAction, starting] = useActionState<StartGradingFormState, FormData>(startGradingAction, {});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [members, setMembers] = useState<Set<string>>(new Set());
   const [advisors, setAdvisors] = useState<Set<string>>(new Set());
@@ -166,6 +167,33 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
             Đã lưu Phân công nháp cho {state.saved} hồ sơ.
           </p>
         )}
+        <div className="flex flex-col gap-2 border-t pt-4">
+          <h2 className="font-semibold">Giao chấm</h2>
+          <p className="text-xs text-text-2">
+            Giao chấm theo Phân công đã lưu của {selected.size} hồ sơ đã chọn, theo Chế độ chấm của đợt. Người được Phân công nhận thông báo và bắt đầu thấy hồ sơ.
+          </p>
+          <button
+            type="submit"
+            formAction={startAction}
+            disabled={starting || pending || selected.size === 0}
+            onClick={(e) => {
+              if (!window.confirm(`Giao chấm ${selected.size} hồ sơ? Sau Giao chấm, Chế độ chấm và Quy tắc tổng hợp của đợt không đổi được nữa.`)) e.preventDefault();
+            }}
+            className="flex w-fit items-center gap-2 rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand disabled:opacity-60"
+          >
+            <Send className="size-4" aria-hidden /> Giao chấm
+          </button>
+          {started.error && (
+            <p role="alert" className="text-sm text-danger">
+              {started.error}
+            </p>
+          )}
+          {started.started !== undefined && !starting && (
+            <p role="status" className="text-sm text-brand">
+              Đã Giao chấm {started.started} hồ sơ.
+            </p>
+          )}
+        </div>
       </aside>
     </form>
   );

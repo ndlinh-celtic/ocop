@@ -27,4 +27,6 @@ export interface AssignmentRepo {
   insert(a: Assignment): Promise<void>;
   /** Deletes nháp rows by id; the DB refuses to delete one in force. */
   deleteDrafts(ids: readonly string[]): Promise<void>;
+  /** Giao chấm: sets `effectiveAt` on the current nháp rows of a hồ sơ; returns the ids of those it changed. */
+  takeEffect(dossierId: string, at: Date): Promise<string[]>;
 }

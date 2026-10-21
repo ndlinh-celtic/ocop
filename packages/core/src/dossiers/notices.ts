@@ -58,6 +58,7 @@ export const NOTICE_EVENTS = [
   "dossier.forwarded",
   "dossier.returned_by_province",
   "dossier.return_requested",
+  "dossier.grading_started",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -285,6 +286,27 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           link: `/so/ho-so/${dossier.id}`,
         },
       ];
+    // L09 HD-06 (story 40): Giao chấm tells everyone whose Phân công is in force, each with a link to their list.
+    case "dossier.grading_started": {
+      const inForce = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null);
+      const usersOf = async (kind: "member" | "advisory") => {
+        const users = await Promise.all(inForce.filter((a) => a.kind === kind).map((a) => tx.users.findById(a.userId)));
+        return users.filter((u): u is User => u?.status === "active");
+      };
+      const notice = (recipients: User[], role: string, link: string): Notice => ({
+        recipients,
+        kind: "dossier_grading_started",
+        title: `Hồ sơ được Giao chấm: ${product}`,
+        body: `Anh/chị được Phân công ${role} hồ sơ ${dossier.code}.`,
+        emailSubject: "Anh/chị được Giao chấm một hồ sơ OCOP",
+        emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
+        link,
+      });
+      return [
+        notice(await usersOf("advisory"), "thẩm định (Tổ tư vấn)", "/to-tu-van/hang-doi"),
+        notice(await usersOf("member"), "chấm điểm", "/thanh-vien/ho-so"),
+      ];
+    }
     default:
       return [];
   }

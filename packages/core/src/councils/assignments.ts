@@ -80,7 +80,8 @@ export function editAssignments(deps: CoreDeps) {
   };
 }
 
-async function eligibleOf(tx: Tx, councilId: string, now: Date) {
+/** The Người dùng with a Phân vai Thành viên hội đồng or Thành viên Tổ tư vấn in force on the Hội đồng at `now`. */
+export async function eligibleOf(tx: Tx, councilId: string, now: Date) {
   const members = await councilMembers(tx, councilId, now);
   return {
     member: new Set(members.council_member.map((m) => m.userId)),
@@ -88,7 +89,7 @@ async function eligibleOf(tx: Tx, councilId: string, now: Date) {
   };
 }
 
-function checkEligible(eligible: { member: Set<string>; advisory: Set<string> }, members: string[], advisors: string[]) {
+export function checkEligible(eligible: { member: Set<string>; advisory: Set<string> }, members: string[], advisors: string[]) {
   if (members.some((id) => !eligible.member.has(id))) {
     throw new DomainError("not_council_member", "Chỉ chọn được người có Phân vai Thành viên hội đồng còn hiệu lực của hội đồng");
   }

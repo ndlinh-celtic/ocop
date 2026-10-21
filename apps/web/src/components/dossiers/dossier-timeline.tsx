@@ -16,6 +16,9 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.forward": "Xã gửi tỉnh",
   "dossier.province_return": "Sở trả về để bổ sung",
   "dossier.province_receive": "Sở tiếp nhận tại tỉnh",
+  // L09 HD-06 (story 137): the milestone only; who is Phân công never shows here.
+  "dossier.grading.start_advisory": "Hội đồng giao thẩm định",
+  "dossier.grading.start_direct": "Hội đồng giao chấm",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

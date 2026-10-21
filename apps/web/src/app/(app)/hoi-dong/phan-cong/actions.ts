@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { GRADING_MODES } from "@ocop/core";
 import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
@@ -37,4 +38,48 @@ export async function editAssignmentsAction(_prev: AssignmentFormState, form: Fo
   }
   revalidatePath("/hoi-dong/phan-cong");
   return { saved: dossiers.length };
+}
+
+export interface StartGradingFormState {
+  error?: string;
+  started?: number;
+}
+
+/** L09 HD-06 (stories 30 to 33): Giao chấm every checked hồ sơ, or none of them. */
+export async function startGradingAction(_prev: StartGradingFormState, form: FormData): Promise<StartGradingFormState> {
+  const actor = await requireActor();
+  const parsed = input.shape.dossiers.safeParse(form.getAll("dossier"));
+  if (!parsed.success) return { error: "Chọn ít nhất một hồ sơ để Giao chấm" };
+  const dossiers = parsed.data.map((v) => {
+    const [dossierId, version] = v.split(":");
+    return { dossierId: dossierId!, expectedVersion: Number(version) };
+  });
+  try {
+    await app().core.councils.startGrading(actor, { dossiers });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath("/hoi-dong/phan-cong");
+  return { started: dossiers.length };
+}
+
+export interface GradingModeFormState {
+  error?: string;
+  saved?: boolean;
+}
+
+const gradingMode = z.object({ roundId: z.string().min(1), gradingMode: z.enum(GRADING_MODES) });
+
+/** L09 HD-06 (stories 20, 21): the Thư ký confirms or changes the Chế độ chấm of a đợt of its Hội đồng. */
+export async function changeGradingModeAction(_prev: GradingModeFormState, form: FormData): Promise<GradingModeFormState> {
+  const actor = await requireActor();
+  const parsed = gradingMode.safeParse({ roundId: form.get("roundId"), gradingMode: form.get("gradingMode") });
+  if (!parsed.success) return { error: "Chọn Chế độ chấm" };
+  try {
+    await app().core.rounds.changeGradingMode(actor, parsed.data);
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath("/hoi-dong/phan-cong");
+  return { saved: true };
 }
