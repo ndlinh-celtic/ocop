@@ -27,6 +27,11 @@ const ROLE_ACTIONS = {
   "criteria.delete": ["admin"],
   // Đợt đánh giá (spec #16 story 63): only Cán bộ Sở (Phạm vi tỉnh) creates, opens and changes rounds.
   "round.manage": ["province_officer"],
+  // L09 HD-01 (spec #49): Cán bộ Sở records Hội đồng and gán them to đợt; Quản trị reads them to choose a
+  // Phạm vi Hội đồng when granting Phân vai, but grants are its only write.
+  "council.manage": ["province_officer"],
+  "council.read": ["province_officer", "admin"],
+  "round.council.assign": ["province_officer"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
   "entity.read": ["entity_owner", "ward_officer", "province_officer"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).

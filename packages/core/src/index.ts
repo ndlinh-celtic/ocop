@@ -223,3 +223,6 @@ export type { DossierOverviewRow } from "./dossiers/read";
 export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
 export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
 export type { SystemSettingRepo } from "./system/settings-model";
+export type { Council, CouncilRepo } from "./councils/model";
+export type { CouncilInput } from "./councils/manage";
+export { COUNCIL_ROLES, type CouncilDetail, type CouncilMember, type CouncilRole } from "./councils/read";

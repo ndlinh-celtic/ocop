@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { FilePurpose, UserActor } from "@ocop/core";
+import type { FilePurpose, Role, UserActor } from "@ocop/core";
 import { anonymous, type TestApp } from "../support";
 
 export const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: "mat-khau-quan-tri-1" };
@@ -66,7 +66,7 @@ export function fixtures(t: TestApp, wardId: () => string) {
   }
 
   /** A staff Người dùng holding one Vai trò, through the real activation flow. */
-  async function staff(role: "province_officer" | "ward_officer" | "admin", scopeId: string | null = null) {
+  async function staff(role: Role, scopeId: string | null = null) {
     const email = `can-bo-${++seq}@tinh.gov.vn`;
     const a = await admin();
     const { userId } = await t.app.identity.createStaffUser(a, { email, fullName: `Cán Bộ ${seq}` });
@@ -185,7 +185,29 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { ...s, version };
   }
 
-  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, received, forwarded };
+  /** L09 HD-01: a Hội đồng recorded by `officer` (a Cán bộ Sở), with its quyết định thành lập uploaded as a clean PDF. */
+  async function council(officer: UserActor, name = `Hội đồng ${++seq}`) {
+    const decisionFileId = await uploadPdf(officer, "council_decision", "QĐ thành lập.pdf");
+    const { councilId } = await t.app.councils.create(officer, { name, decisionNumber: `${seq}/QĐ-UBND`, decisionDate: "2026-09-01", decisionFileId });
+    return councilId;
+  }
+
+  /**
+   * A Hội đồng with every Phân vai it needs: Chủ tịch, Thư ký, `members` Thành viên hội đồng and
+   * `advisors` Thành viên Tổ tư vấn, each a signed-in Người dùng whose Vai trò đang dùng is that one.
+   */
+  async function staffedCouncil(officer: UserActor, opts: { members?: number; advisors?: number } = {}) {
+    const councilId = await council(officer);
+    const chair = await staff("council_chair", councilId);
+    const secretary = await staff("council_secretary", councilId);
+    const members: UserActor[] = [];
+    for (let i = 0; i < (opts.members ?? 3); i++) members.push(await staff("council_member", councilId));
+    const advisors: UserActor[] = [];
+    for (let i = 0; i < (opts.advisors ?? 2); i++) advisors.push(await staff("advisory_member", councilId));
+    return { councilId, chair, secretary, members, advisors };
+  }
+
+  return { admin, owner, verifiedOwner, staff, uploadPdf, publishedVersion, openRound, completeDraft, submitted, received, forwarded, council, staffedCouncil };
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;

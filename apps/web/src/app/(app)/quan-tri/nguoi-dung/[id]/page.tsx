@@ -12,11 +12,12 @@ export const dynamic = "force-dynamic";
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const actor = await requireActor();
-  const [user, wards] = await Promise.all([
+  const [user, wards, councils] = await Promise.all([
     app()
       .core.identity.getUser(actor, { userId: id })
       .catch((err: unknown) => (err instanceof DomainError && err.code === "user_not_found" ? null : Promise.reject(err))),
     app().core.org.listWards(),
+    app().core.councils.list(actor),
   ]);
   if (!user) notFound();
   return (
@@ -28,7 +29,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
       <p className="text-sm text-text-2">{user.email}</p>
       <section className="rounded-lg border bg-surface p-4">
         <h2 className="mb-3 font-medium">Gán vai trò</h2>
-        <GrantRoleForm userId={user.id} wards={wards} />
+        <GrantRoleForm userId={user.id} wards={wards} councils={councils.map((c) => ({ id: c.id, name: c.name, decisionNumber: c.decisionNumber }))} />
       </section>
       <section className="rounded-lg border bg-surface">
         <h2 className="border-b px-4 py-3 font-medium">Phân vai</h2>

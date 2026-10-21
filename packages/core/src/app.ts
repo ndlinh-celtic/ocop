@@ -21,6 +21,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { configureChecklist } from "./rounds/checklist";
+import { assignCouncil } from "./rounds/council";
 import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
@@ -48,6 +49,8 @@ import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
+import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
+import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -134,6 +137,7 @@ export function createCore(deps: CoreDeps) {
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
       configureChecklist: configureChecklist(deps),
+      assignCouncil: assignCouncil(deps),
     },
     entities: {
       register: registerEntity(deps),
@@ -190,6 +194,14 @@ export function createCore(deps: CoreDeps) {
       forwardToProvince: forwardToProvince(deps),
       provinceOverview: provinceOverview(deps),
       sendDueReminders: sendDueReminders(deps),
+    },
+    councils: {
+      create: createCouncil(deps),
+      update: updateCouncil(deps),
+      setLeader: setCouncilLeader(deps),
+      list: listCouncils(deps),
+      get: getCouncil(deps),
+      downloadDecision: downloadCouncilDecision(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

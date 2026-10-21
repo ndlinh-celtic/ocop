@@ -68,6 +68,7 @@ export const NAV: Record<Role, NavItem[]> = {
     HOME,
     { href: "/so/dot-danh-gia", label: "Đợt đánh giá", icon: CalendarRange, ready: true },
     { href: "/so/ho-so", label: "Hồ sơ toàn tỉnh", icon: FolderOpen, ready: true },
+    { href: "/so/hoi-dong", label: "Hội đồng", icon: Users, ready: true },
     { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: false },
     STATS,
     CRITERIA,
