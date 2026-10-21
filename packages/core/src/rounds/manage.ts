@@ -112,6 +112,7 @@ export function createRound(deps: CoreDeps) {
         ...fields,
         status: "draft",
         checklist: DEFAULT_CHECKLIST.map((i) => ({ ...i })),
+        councilId: null,
         createdAt: now,
         createdBy: actor.userId,
         updatedAt: now,

@@ -10,6 +10,7 @@ export const org = pgSchema("org");
 export const criteria = pgSchema("criteria");
 export const roundSchema = pgSchema("round");
 export const entitySchema = pgSchema("entity");
+export const councilSchema = pgSchema("council");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -284,6 +285,21 @@ export const round = roundSchema.table("round", {
   submissionClosedAt: ts("submission_closed_at"),
   endedAt: ts("ended_at"),
   endedBy: uuid("ended_by"),
+  // 0028_councils.sql
+  councilId: uuid("council_id"),
+});
+
+// Hội đồng (0028_councils.sql).
+export const council = councilSchema.table("council", {
+  id: uuid("id").primaryKey(),
+  name: text("name").notNull(),
+  decisionNumber: text("decision_number").notNull(),
+  decisionDate: date("decision_date", { mode: "string" }).notNull(),
+  decisionFileId: uuid("decision_file_id").notNull(),
+  leaderUserId: uuid("leader_user_id"),
+  createdAt: ts("created_at").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  updatedAt: ts("updated_at").notNull(),
 });
 
 // Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).
