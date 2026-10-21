@@ -219,4 +219,37 @@ describe("L09 thay và bổ sung Thành viên Tổ tư vấn, chấm dựa trên
       w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: v, userId: adv(0).userId, newUserId: m(1).userId, reason: REASON }),
     ).rejects.toMatchObject({ code: "conflict_of_roles" });
   });
+
+  it("refuses the other role to someone replaced on the hồ sơ: being replaced does not clear the conflict (CLAUDE.md, story 28)", async () => {
+    const d = await w.graded([m(0), m(1)], [adv(0)]);
+    await w.f.grant(adv(0), "council_member", w.A.councilId);
+    await w.f.grant(m(1), "advisory_member", w.A.councilId);
+    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, newUserId: adv(1).userId, reason: REASON });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: m(1).userId, newUserId: m(2).userId, reason: REASON });
+
+    await expect(
+      w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, kind: "member", reason: REASON }),
+    ).rejects.toMatchObject({ code: "conflict_of_roles" });
+    await expect(
+      w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(1).userId, newUserId: m(1).userId, reason: REASON }),
+    ).rejects.toMatchObject({ code: "conflict_of_roles" });
+  });
+
+  it("holds in SQL too: the DB refuses a Phân công of the other kind for someone with any Phân công on the hồ sơ", async () => {
+    const d = await w.graded([m(0), m(1)], [adv(0)]);
+    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, newUserId: adv(1).userId, reason: REASON });
+    const insert = (userId: string, kind: string) =>
+      w.db.app.query("INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, now())", [
+        d.dossierId,
+        userId,
+        kind,
+        w.A.secretary.userId,
+      ]);
+
+    await expect(insert(adv(0).userId, "member")).rejects.toThrow(/both Tổ tư vấn and thành viên chấm/);
+    await expect(w.db.admin.query("INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, 'advisory', $3, now())", [d.dossierId, m(0).userId, w.A.secretary.userId])).rejects.toThrow(
+      /both Tổ tư vấn and thành viên chấm/,
+    );
+    await expect(w.db.app.query("ALTER TABLE council.assignment DISABLE TRIGGER assignment_one_role")).rejects.toThrow(/must be owner/);
+  });
 });

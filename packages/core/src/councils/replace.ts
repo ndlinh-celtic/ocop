@@ -10,7 +10,7 @@ import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind } from "./assignment-model";
-import { checkEligible, eligibleOf } from "./assignments";
+import { checkEligible, conflictOfRoles, eligibleOf } from "./assignments";
 import { openScoreSheets } from "./grading";
 
 /*
@@ -161,13 +161,14 @@ async function begin(tx: Tx, actor: UserActor, dossierId: string) {
   return { before, current: await tx.assignments.current(before.id) };
 }
 
-/** The newcomer: not on the hồ sơ yet in any role (story 28), holding the Phân vai, and no Tổ tư vấn in chấm trực tiếp. */
+/**
+ * The newcomer: never Phân công on the hồ sơ in the other role, even if replaced since (story 28), not on it now,
+ * holding the Phân vai, and no Tổ tư vấn in chấm trực tiếp.
+ */
 async function checkNewcomer(deps: CoreDeps, tx: Tx, dossier: Dossier, current: Assignment[], userId: string, kind: AssignmentKind, now: Date) {
-  const existing = current.find((a) => a.userId === userId);
-  if (existing && existing.kind !== kind) {
-    throw new DomainError("conflict_of_roles", "Một người không thể vừa là Thành viên Tổ tư vấn vừa là thành viên chấm của cùng một hồ sơ");
-  }
-  if (existing) throw new DomainError("already_assigned", "Người này đã được Phân công trên hồ sơ");
+  const everOnIt = [...current, ...(await tx.assignments.replaced(dossier.id))].filter((a) => a.userId === userId);
+  if (everOnIt.some((a) => a.kind !== kind)) throw conflictOfRoles();
+  if (current.some((a) => a.userId === userId)) throw new DomainError("already_assigned", "Người này đã được Phân công trên hồ sơ");
   if (kind === "advisory") {
     const round = (await tx.rounds.findById(dossier.roundId!))!;
     if (round.gradingMode !== "advisory_based") {

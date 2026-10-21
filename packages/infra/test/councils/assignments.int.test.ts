@@ -216,11 +216,14 @@ describe("L09 Phân công in the database (CLAUDE.md: một người không vừ
   it("keeps one current row per (hồ sơ, Người dùng) whatever the kind, fixes what took effect, and never deletes it", async () => {
     const d = await received();
     const drafted = (await edit(A.secretary, [d], [A.members[0]!], [A.advisors[0]!])).dossiers[0]!;
-    const insert = (id: string) =>
-      db.app.query(
-        "INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES ($1, $2, $3, 'advisory', $4, now())",
-        [id, d.dossierId, A.members[0]!.userId, A.secretary.userId],
-      );
+    const insert = (id: string, kind = "member") =>
+      db.app.query("INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES ($1, $2, $3, $4, $5, now())", [
+        id,
+        d.dossierId,
+        A.members[0]!.userId,
+        kind,
+        A.secretary.userId,
+      ]);
     await expect(insert("00000000-0000-4000-8000-000000000001")).rejects.toThrow(/assignment_current_key/);
 
     await giaoCham(drafted);
@@ -230,7 +233,8 @@ describe("L09 Phân công in the database (CLAUDE.md: một người không vừ
     await expect(db.admin.query("DELETE FROM council.assignment WHERE dossier_id = $1", [d.dossierId])).rejects.toThrow(/fixed/);
     await db.app.query("UPDATE council.assignment SET replaced_at = now(), replaced_by = $2 WHERE dossier_id = $1", [d.dossierId, A.secretary.userId]);
     await expect(db.app.query("UPDATE council.assignment SET replace_reason = 'x' WHERE dossier_id = $1", [d.dossierId])).rejects.toThrow(/fixed/);
-    // Replaced, the person may be Phân công again.
+    // Replaced, the person may be Phân công again in the same role, never in the other.
+    await expect(insert("00000000-0000-4000-8000-000000000003", "advisory")).rejects.toThrow(/both Tổ tư vấn and thành viên chấm/);
     await expect(insert("00000000-0000-4000-8000-000000000002")).resolves.toBeDefined();
     await expect(db.app.query("ALTER TABLE council.assignment DISABLE TRIGGER assignment_guard")).rejects.toThrow(/must be owner/);
   });
