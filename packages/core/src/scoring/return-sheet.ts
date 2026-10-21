@@ -94,14 +94,14 @@ export interface SupersededSheet {
   confirmedAt: Date | null;
   reason: string | null;
   /** When the lần chấm that replaced it opened, i.e. when it was returned. */
-  returnedAt: Date | null;
+  returnedAt: Date;
   /** Tổng điểm of its dòng; a Tiêu chí without Mức điểm counts 0. */
   total: number;
   lines: { criterionId: string; code: string; levelId: string | null; points: number | null; comment: string; adjustReason: string | null; source: "member" | "advisory" }[];
 }
 
 /**
- * Story 104: the phiếu bị thay thế of the thành viên chấm in force on a hồ sơ, unchanged, newest first, for the
+ * Story 104: the phiếu a Trả phiếu superseded on a hồ sơ (its thành viên since thay or not), unchanged, newest first, for the
  * Chủ tịch and Thư ký only; nobody else reads them (spec #49 "chỉ hiện trong lịch sử cho Chủ tịch/Thư ký").
  */
 export function scoreSheetHistory(deps: CoreDeps) {
@@ -113,12 +113,17 @@ export function scoreSheetHistory(deps: CoreDeps) {
       if (!dossier) throw dossierNotFound();
       const order = sheetOrder(await setRowsOf(tx, dossier));
       const pointsOf = new Map(order.flatMap((c) => c.levels.map((l) => [l.id, l.points] as const)));
-      const members = new Map((await tx.assignments.current(dossier.id)).filter((a) => a.kind === "member").map((a) => [a.id, a.userId]));
+      const assignments = [...(await tx.assignments.current(dossier.id)), ...(await tx.assignments.replaced(dossier.id))];
+      const members = new Map(assignments.filter((a) => a.kind === "member").map((a) => [a.id, a.userId]));
       const sheets = await tx.scoreSheets.all(dossier.id);
+      const byId = new Map(sheets.map((s) => [s.id, s]));
       const out: SupersededSheet[] = [];
       for (const s of [...sheets].reverse()) {
         const userId = members.get(s.assignmentId);
-        if (s.state !== "superseded" || !userId) continue;
+        // A Trả phiếu supersedes a phiếu by the next lần chấm of the same Phân công; a thay (#55) supersedes the old
+        // thành viên's nháp by the newcomer's phiếu, which the Phân công history (assignmentHistory) shows instead.
+        const successor = s.supersededBy ? byId.get(s.supersededBy) : undefined;
+        if (s.state !== "superseded" || !userId || successor?.assignmentId !== s.assignmentId) continue;
         const byCriterion = new Map((await tx.scoreSheets.lines(s.id)).map((l) => [l.criterionId, l]));
         const lines = order.flatMap((c) => {
           const l = byCriterion.get(c.id);
@@ -133,7 +138,7 @@ export function scoreSheetHistory(deps: CoreDeps) {
           attempt: s.attempt,
           confirmedAt: s.confirmedAt,
           reason: s.supersededReason,
-          returnedAt: sheets.find((x) => x.id === s.supersededBy)?.createdAt ?? null,
+          returnedAt: successor.createdAt,
           total: lines.reduce((sum, l) => sum + (l.points ?? 0), 0),
           lines,
         });

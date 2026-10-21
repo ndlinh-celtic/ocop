@@ -105,6 +105,23 @@ describe("L15 Trả phiếu (#61)", () => {
     }
   });
 
+  it("keeps a returned phiếu in the lịch sử after its thành viên is thay, and leaves out the nháp the thay superseded (#55)", async () => {
+    const d = await graded(3, 3);
+    const old = await sheetOf(m(0), d.dossierId);
+    await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: old.id, reason: "Chấm lại" });
+    const { version } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version, userId: m(0).userId, newUserId: m(3).userId, reason: "Bận" });
+
+    const history = await w.t.app.scoring.scoreSheetHistory(w.A.secretary, { dossierId: d.dossierId });
+
+    expect(history.map((h) => [h.sheetId, h.userId, h.attempt, h.reason])).toEqual([[old.id, m(0).userId, 1, "Chấm lại"]]);
+    // The newcomer's phiếu trống is theirs to grade; a Trả phiếu of another's phiếu still counts only Phân công in force.
+    expect(await sheetOf(m(3), d.dossierId)).toMatchObject({ state: "draft", attempt: 1 });
+    expect(await stateOf(d.dossierId)).toBe("member_confirmed");
+    await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: (await sheetOf(m(1), d.dossierId)).id, reason: "Chấm lại" });
+    expect(await stateOf(d.dossierId)).toBe("member_review");
+  });
+
   it("hides the lần chấm in progress from the other thành viên and shows it without points to the Chủ tịch (story 106)", async () => {
     const d = await graded(3, 3);
     await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: (await sheetOf(m(0), d.dossierId)).id, reason: "Chấm lại" });
