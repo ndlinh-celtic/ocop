@@ -56,6 +56,16 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
   const product = dossier.productName || "chưa đặt tên";
   const ownerLink = `/chu-the/ho-so/${dossier.id}`;
   const wardLink = `/xa/ho-so/${dossier.id}`;
+  /**
+   * Those of `userIds` still Cán bộ xã of the hồ sơ's xã; when none is, every Cán bộ xã of the xã, so
+   * that the xã always hears of it.
+   */
+  const xaOfficers = async (userIds: (string | null)[]): Promise<User[]> => {
+    if (!dossier.wardId) return [];
+    const officers = await wardOfficersOf(tx, dossier.wardId, now);
+    const named = officers.filter((u) => userIds.includes(u.id));
+    return named.length > 0 ? named : officers;
+  };
   // L05 XA-02, XA-03 (story 41): the Cán bộ phụ trách hears of it when someone else names them.
   const handlerAssigned = async (): Promise<Notice[]> => {
     const named = dossier.handlerUserId;
@@ -171,14 +181,13 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
     case "dossier.resubmitted": {
       // Who asked for more, and the Cán bộ phụ trách (story 54), each once. After a Sở trả về the hồ sơ is
       // back with the xã to review (story 58), so only the xã hears of it.
+      // Whoever of them no longer works at the xã is replaced by every Cán bộ xã of the xã.
       const request = (await tx.supplements.list(dossier.id)).filter((r) => r.outcome === "resubmitted").at(-1);
       const asker = request?.requestedRole === "ward_officer" ? request.requestedBy : null;
-      const ids = [...new Set([asker, dossier.handlerUserId].filter((id): id is string => !!id))];
-      const users = await Promise.all(ids.map((id) => tx.users.findById(id)));
       const entity = await tx.entities.findById(scope, dossier.entityId);
       return [
         {
-          recipients: users.filter((u): u is User => u !== null && u.status === "active"),
+          recipients: await xaOfficers([asker, dossier.handlerUserId]),
           kind: "dossier_resubmitted",
           title: `Hồ sơ nộp lại: ${product}`,
           body: `${entity?.name ?? "Chủ thể"} đã bổ sung và nộp lại hồ sơ.`,
@@ -227,8 +236,7 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
     // L04 (stories 42, 57): the Sở trả về; the Chủ thể has to bổ sung, and the Cán bộ phụ trách will
     // review the nộp lại.
     case "dossier.returned_by_province": {
-      const handler = dossier.handlerUserId ? await tx.users.findById(dossier.handlerUserId) : null;
-      const xa = handler?.status === "active" ? [handler] : dossier.wardId ? await wardOfficersOf(tx, dossier.wardId, now) : [];
+      const xa = await xaOfficers([dossier.handlerUserId]);
       return [
         {
           recipients: await entityUsers(tx, dossier.entityId, now),
