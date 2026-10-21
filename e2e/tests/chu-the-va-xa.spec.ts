@@ -126,23 +126,35 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
   });
 
   const ownerPage = await newPage(browser);
+  /** Fills in and sends the S02 Đăng ký form for a hộ sản xuất. */
+  async function register(page: Page, email: string) {
+    await page.goto("/dang-ky");
+    await page.getByText("Hộ sản xuất", { exact: true }).click();
+    await page.getByLabel("Họ tên chủ hộ").fill(owner.fullName);
+    await page.getByLabel("Số định danh cá nhân của chủ hộ").fill(owner.identifier);
+    await page.getByLabel("Xã/phường").selectOption({ label: WARD.name });
+    await page.getByLabel("Địa chỉ").fill(`Ấp 1, ${WARD.name}`);
+    await page.getByLabel("Người đại diện").fill(owner.fullName);
+    await page.getByLabel("Số điện thoại").fill("0901234567");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel(/Tôi đồng ý/).check();
+    await page.getByRole("button", { name: "Tạo tài khoản" }).click();
+  }
+
   await test.step("CT-01 a hộ sản xuất registers and activates its account from the email", async () => {
-    await ownerPage.goto("/dang-ky");
-    await ownerPage.getByText("Hộ sản xuất", { exact: true }).click();
-    await ownerPage.getByLabel("Họ tên chủ hộ").fill(owner.fullName);
-    await ownerPage.getByLabel("Số định danh cá nhân của chủ hộ").fill(owner.identifier);
-    await ownerPage.getByLabel("Xã/phường").selectOption({ label: WARD.name });
-    await ownerPage.getByLabel("Địa chỉ").fill(`Ấp 1, ${WARD.name}`);
-    await ownerPage.getByLabel("Người đại diện").fill(owner.fullName);
-    await ownerPage.getByLabel("Số điện thoại").fill("0901234567");
-    await ownerPage.getByLabel("Email").fill(owner.email);
-    await ownerPage.getByLabel(/Tôi đồng ý/).check();
-    await ownerPage.getByRole("button", { name: "Tạo tài khoản" }).click();
+    await register(ownerPage, owner.email);
     await expect(ownerPage.getByRole("heading", { name: "Kiểm tra hộp thư của bạn" })).toBeVisible();
 
     await activateFromEmail(ownerPage, owner.email, PASSWORD);
     await ownerPage.waitForURL("/");
-    await expect(ownerPage.getByText("Chủ thể ·").first()).toBeVisible();
+    await expect(ownerPage.getByTestId("sidebar").getByText(`Chủ thể · ${owner.fullName}`)).toBeVisible();
+  });
+
+  await test.step("CT-01 a second registration with the same số định danh is refused with the neutral message", async () => {
+    const visitor = await newPage(browser);
+    await register(visitor, `khac.${owner.email}`);
+    await expect(visitor.getByRole("alert").filter({ hasText: "Không thể đăng ký" })).toContainText("đã được dùng");
+    await visitor.context().close();
   });
 
   await test.step("CT-02 the Chủ thể adds its giấy tờ pháp lý and becomes Đã xác thực", async () => {
@@ -164,7 +176,7 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
     await ownerPage.getByRole("radio", { name: /Rau củ quả tươi E2E/ }).check();
     await ownerPage.getByLabel("Tôi đã hiểu").check();
     await ownerPage.getByRole("button", { name: "Tạo hồ sơ" }).click();
-    await ownerPage.waitForURL(/\/chu-the\/ho-so\/[\w-]+$/);
+    await ownerPage.waitForURL(/\/chu-the\/ho-so\/[0-9a-f-]{36}$/);
     dossierUrl = new URL(ownerPage.url()).pathname;
 
     await ownerPage.getByLabel("Tên sản phẩm").fill(PRODUCT);
@@ -196,6 +208,12 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
     await expect(ownerPage.getByLabel("Ước lượng hạng sao")).toContainText("Tổng điểm: 75");
     await ownerPage.getByLabel("Giải trình").first().fill("Hợp đồng bao tiêu với 20 hộ trồng bưởi");
     await ownerPage.getByLabel("Giải trình").first().blur();
+    // Saved on blur: it is still there after a reload, with the tự chấm.
+    await expect(async () => {
+      await ownerPage.reload();
+      await expect(ownerPage.getByLabel("Giải trình").first()).toHaveValue("Hợp đồng bao tiêu với 20 hộ trồng bưởi", { timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(ownerPage.getByLabel("Ước lượng hạng sao")).toContainText("Tổng điểm: 75");
   });
 
   await test.step("CT-09 the Chủ thể submits the hồ sơ to the xã", async () => {
@@ -213,6 +231,7 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
     await nav(wardPage, "Hồ sơ tại xã");
     await wardPage.getByRole("link", { name: "Chờ tiếp nhận" }).click();
     await wardPage.getByRole("link", { name: PRODUCT }).click();
+    await wardPage.waitForURL(/\/xa\/ho-so\/[0-9a-f-]{36}$/);
     wardDossierUrl = new URL(wardPage.url()).pathname;
     await expect(wardPage.getByText("1 tiêu chí chưa có minh chứng: 1.2.")).toBeVisible();
     await wardPage.getByRole("button", { name: "Tiếp nhận" }).click();
@@ -220,13 +239,14 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
   });
 
   const otherWardPage = await newPage(browser);
-  await test.step("the Cán bộ xã of another xã cannot open the hồ sơ", async () => {
+  await test.step("XA-01 the Cán bộ xã of another xã cannot open the hồ sơ: the page is not found", async () => {
     await activateFromEmail(otherWardPage, otherWardOfficer.email, PASSWORD);
     await otherWardPage.waitForURL("/");
     await nav(otherWardPage, "Hồ sơ tại xã");
     await expect(otherWardPage.getByRole("link", { name: PRODUCT })).toHaveCount(0);
     const res = await otherWardPage.goto(wardDossierUrl);
     expect(res?.status()).toBe(404);
+    await expect(otherWardPage.getByRole("heading", { name: "Không tìm thấy trang" })).toBeVisible();
     await expect(otherWardPage.getByText(PRODUCT)).toHaveCount(0);
   });
 
@@ -275,12 +295,14 @@ test("L01–L06 Chủ thể registers and submits, the xã asks for bổ sung, a
     expect(await download(wardPage, "Tải bản nháp (Word)", "link")).toMatch(/\.docx$/);
     await expect(wardPage.getByRole("button", { name: "Gửi lên tỉnh" })).toBeDisabled();
     await wardPage.getByLabel(/Tải lên bản đã ký/).setInputFiles(pdf("Bao-cao-xa-da-ky.pdf"));
-    await wardPage.getByRole("button", { name: "Tải lên" }).click();
+    await wardPage.getByRole("button", { name: "Tải lên", exact: true }).click();
     await expect(wardPage.getByRole("button", { name: "Tải bản đã ký (.pdf)" })).toBeVisible({ timeout: 90_000 });
     expect(await download(wardPage, "Tải bản đã ký (.pdf)")).toMatch(/\.pdf$/);
     await wardPage.getByRole("button", { name: "Gửi lên tỉnh" }).click();
     await wardPage.getByRole("button", { name: "Xác nhận gửi" }).click();
-    await expect(wardPage.getByText(/Đã gửi lên tỉnh lúc/)).toBeVisible();
+    await wardPage.waitForURL(wardDossierUrl);
+    await expect(wardPage.getByRole("heading", { level: 1 })).toContainText("Đã chuyển tỉnh");
+    await expect(wardPage.getByText(/Báo cáo đánh giá cấp xã đã ký: Bao-cao-xa-da-ky.pdf/)).toBeVisible();
   });
 
   await test.step("the Cán bộ Sở sees the hồ sơ at the province and trả về for bổ sung", async () => {
