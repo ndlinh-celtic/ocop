@@ -1,7 +1,7 @@
 export { createCore, type Core } from "./app";
 export type { Clock, IdGen, PasswordHasher, SecretBox, TotpCheck, TotpService } from "./shared/ports";
 export { DEFAULT_SETTINGS, type CoreDeps, type CoreSettings } from "./shared/deps";
-export type { Tx, UnitOfWork } from "./shared/uow";
+export type { Repos, Tx, UnitOfWork } from "./shared/uow";
 export { anonymousActor, systemActor, type Actor, type AnonymousActor, type RequestContext, type SystemActor, type UserActor } from "./shared/context";
 export { DomainError } from "./shared/errors";
 export type { AuditEntry, AuditFilter, AuditLog } from "./audit/audit";

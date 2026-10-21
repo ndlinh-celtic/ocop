@@ -89,6 +89,14 @@ describe("FileStore contract / S3 compatibility", () => {
     expect(Buffer.concat(chunks).toString("utf8")).toBe("nội dung");
   });
 
+  it("deletes an object, and deleting a missing one is not an error", async () => {
+    const k = key();
+    await store().put(k, "tạm", "text/plain");
+    await store().delete(k);
+    await expect(store().head(k)).resolves.toBeNull();
+    await expect(store().delete(k)).resolves.toBeUndefined();
+  });
+
   it("HEAD of a missing object is null, not an error", async () => {
     await expect(store().head(key())).resolves.toBeNull();
   });

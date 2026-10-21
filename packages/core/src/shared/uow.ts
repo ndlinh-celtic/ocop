@@ -17,8 +17,8 @@ import type { SupplementRepo } from "../dossiers/supplement-model";
 import type { ReminderRepo } from "../dossiers/reminder-model";
 import type { SystemSettingRepo } from "../system/settings-model";
 
-/** Everything a use case can touch inside one database transaction. */
-export interface Tx {
+/** The repositories of one database transaction. */
+export interface Repos {
   users: UserRepo;
   roleAssignments: RoleAssignmentRepo;
   sessions: SessionRepo;
@@ -40,6 +40,15 @@ export interface Tx {
   supplements: SupplementRepo;
   reminders: ReminderRepo;
   systemSettings: SystemSettingRepo;
+}
+
+/** Everything a use case can touch inside one database transaction. */
+export interface Tx extends Repos {
+  /**
+   * Registers an undo for a side effect outside the database (e.g. an object put to storage) that only
+   * makes sense if the transaction commits. It runs, best effort, after a rollback; never after a commit.
+   */
+  onRollback(undo: () => Promise<void>): void;
 }
 
 export interface UnitOfWork {

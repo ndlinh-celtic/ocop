@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type DocumentRenderer, type RequestContext, type RoundActivity, type UserActor } from "@ocop/core";
+import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type DocumentRenderer, type FileStore, type RequestContext, type RoundActivity, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
 import type { ScanResult, VirusScanner } from "../../src/files/clamd";
@@ -104,7 +104,14 @@ export interface TestApp {
 
 export function createTestApp(
   db: TestDatabase,
-  opts: { clock?: FakeClock; totpRequired?: boolean; roundActivity?: RoundActivity; documents?: DocumentRenderer } = {},
+  opts: {
+    clock?: FakeClock;
+    totpRequired?: boolean;
+    roundActivity?: RoundActivity;
+    documents?: DocumentRenderer;
+    /** Wraps the evidence bucket's FileStore, e.g. to make one call fail. */
+    files?: (real: FileStore) => FileStore;
+  } = {},
 ): TestApp {
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
@@ -122,7 +129,7 @@ export function createTestApp(
     {
       clock,
       mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>"),
-      files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
+      files: (opts.files ?? ((real) => real))(createS3FileStore(s3TestSettings(), "ocop-evidence-test")),
       anchorStore,
       scanner,
       roundActivity: opts.roundActivity,
