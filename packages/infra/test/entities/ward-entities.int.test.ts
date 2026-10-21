@@ -96,19 +96,38 @@ describe("L01 Cán bộ xã sees the Chủ thể registered in their xã (#14, s
   });
 });
 
+describe("L01 contact details of the người đại diện are personal data (NĐ 13/2023)", () => {
+  it("audits a Cán bộ xã reading a Chủ thể or the list of them; a Chủ thể reading itself is not audited", async () => {
+    const reader = await officer("canbo.doc@xa.gov.vn", wardA);
+
+    await t.app.entities.getEntity(reader, { entityId: idOf(ownerA) });
+    await t.app.entities.listEntities(reader);
+    await t.app.entities.getEntity(ownerA, { entityId: idOf(ownerA) });
+    await t.app.entities.listEntities(ownerA);
+
+    const views = await t.app.audit.search(admin, { action: ["personal_data.viewed"], actorUserId: reader.userId });
+    expect(views.map((v) => v.metadata)).toEqual(expect.arrayContaining([{ view: "entity_detail" }, { view: "entity_list", count: 2 }]));
+    expect(views).toHaveLength(2);
+    expect(views.find((v) => v.metadata?.view === "entity_detail")).toMatchObject({ actorRole: "ward_officer", targetType: "entity", targetId: idOf(ownerA) });
+    expect(await t.app.audit.search(admin, { action: ["personal_data.viewed"], actorUserId: ownerA.userId })).toEqual([]);
+  });
+});
+
 describe("L01 Cán bộ xã checks the identity of a Chủ thể of their xã (stories 14, 44)", () => {
   it("sees the số định danh masked, and the full number only through its own use case, audited on every call", async () => {
     expect(await t.app.entities.getEntity(officerA, { entityId: idOf(householdA) })).toMatchObject({ identifier: "••••••••1234" });
     expect(await t.app.entities.revealPersonalId(officerA, { entityId: idOf(householdA) })).toEqual({ personalId: "079200001234" });
     await t.app.entities.revealPersonalId(officerA, { entityId: idOf(householdA) });
-    const views = await t.app.audit.search(admin, { action: ["personal_data.viewed"], targetId: idOf(householdA), actorUserId: officerA.userId });
+    const views = (await t.app.audit.search(admin, { action: ["personal_data.viewed"], targetId: idOf(householdA), actorUserId: officerA.userId })).filter(
+      (v) => v.metadata?.view === "entity_personal_id",
+    );
     expect(views).toHaveLength(2);
     expect(views[0]).toMatchObject({ actorRole: "ward_officer", targetType: "entity", metadata: { view: "entity_personal_id" } });
   });
 
   it("cannot reveal the số định danh of a Chủ thể of another xã", async () => {
     await expect(t.app.entities.revealPersonalId(officerB, { entityId: idOf(householdA) })).rejects.toMatchObject({ code: "not_found" });
-    const views = await t.app.audit.search(admin, { action: ["personal_data.viewed"], actorUserId: officerB.userId });
+    const views = await t.app.audit.search(admin, { action: ["personal_data.viewed"], targetId: idOf(householdA), actorUserId: officerB.userId });
     expect(views).toEqual([]);
   });
 
