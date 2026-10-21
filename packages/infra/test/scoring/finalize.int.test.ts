@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { snapshotHash, type DossierScores, type UserActor } from "@ocop/core";
+import { PASSWORD } from "../dossiers/fixtures";
 import { scoringWorld } from "./world";
 
 /*
@@ -59,5 +60,41 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect(after.result).toMatchObject({ n: 1, reauthMethod: "password", finalizedBy: { userId: w.A.secretary.userId } });
     expect(after.result!.absent).toEqual([expect.objectContaining({ userId: m(2).userId })]);
     expect(snapshotHash(after.result!.snapshot)).toBe(after.result!.sha256);
+  });
+
+  it("is refused while the hồ sơ is not Sẵn sàng chốt, or not in an open Phiên họp (story 117)", async () => {
+    const early = await w.graded([m(0), m(1), m(2)]);
+    await scoreAndConfirm(m(0), early.dossierId, [40, 25, 35]);
+    const { version } = await w.t.app.dossiers.get(w.A.chair, { dossierId: early.dossierId });
+    await meetingWith(w.A.chair, []);
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: early.dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "invalid_state" });
+
+    const d = await ready();
+    const { dossierVersion } = await full(w.A.chair, d.dossierId);
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "not_in_open_meeting" });
+    expect((await full(w.A.chair, d.dossierId)).dossierState).toBe("member_confirmed");
+  });
+
+  it("asks for Xác thực lại when the last one is older than 5 minutes, and records the method (stories 116, 134)", async () => {
+    const d = await ready();
+    await meetingWith(w.A.chair, [d.dossierId]);
+    const { dossierVersion } = await full(w.A.chair, d.dossierId);
+    w.t.clock.advance(6 * 60_000);
+
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "reauth_required" });
+    await w.t.app.identity.reauthenticate(w.A.chair, { password: PASSWORD });
+    await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
+
+    expect((await full(w.A.chair, d.dossierId)).result).toMatchObject({ reauthMethod: "password", finalizedBy: { userId: w.A.chair.userId } });
+  });
+
+  it("refuses the second of two chốt made from the same version (version)", async () => {
+    const d = await ready();
+    await meetingWith(w.A.secretary, [d.dossierId]);
+    const { dossierVersion } = await full(w.A.secretary, d.dossierId);
+
+    await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
+    await expect(w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "version_conflict" });
+    expect((await full(w.A.secretary, d.dossierId)).result).toMatchObject({ n: 1, finalizedBy: { userId: w.A.chair.userId } });
   });
 });

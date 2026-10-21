@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { auditEntry } from "../audit/audit";
 import { lockDossier } from "../dossiers/edit";
-import type { DossierState } from "../dossiers/model";
+import { versionConflict, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
 import { authorize } from "../identity/policy";
 import { requireRecentAuth } from "../identity/reauth";
@@ -36,6 +36,8 @@ export function finalizeDossier(deps: CoreDeps) {
     authorize(actor, "scoring.finalize");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
+      // Two people chốt from the same screen: the one whose turn comes second saw an older version (story 87).
+      if (input.expectedVersion !== before.version) throw versionConflict();
       const proof = await requireRecentAuth(deps, tx, actor);
       const n = (await tx.aggregateResults.list(before.id)).length + 1;
       const pending = await tx.meetings.pendingOf(before.id);
