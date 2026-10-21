@@ -229,4 +229,6 @@ export { COUNCIL_ROLES, type CouncilDetail, type CouncilMember, type CouncilRole
 export { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind, type AssignmentRepo } from "./councils/assignment-model";
 export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "./councils/assignments";
 export type { StartGradingInput } from "./councils/grading";
-export { SCORE_SHEET_STATES, type ScoreSheet, type ScoreSheetRepo, type ScoreSheetState } from "./scoring/score-sheet-model";
+export { SCORE_SHEET_STATES, type ScoreSheet, type ScoreSheetLine, type ScoreSheetRepo, type ScoreSheetState } from "./scoring/score-sheet-model";
+export { ScoreSheetIncompleteError, type SaveScoreSheetInput, type ScoreSheetLineInput } from "./scoring/sheets";
+export { scoresVisibility, type DossierScores, type GraderProgress, type GradingProgressRow, type OwnSheetView, type SheetCriterion } from "./scoring/read";

@@ -333,6 +333,33 @@ export const scoreSheet = scoringSchema.table("score_sheet", {
   updatedAt: ts("updated_at").notNull(),
 });
 
+// Dòng chấm of a Phiếu chấm and their bằng chứng kiểm tra (0032_score_sheet_lines.sql).
+export const scoreSheetLine = scoringSchema.table(
+  "score_sheet_line",
+  {
+    scoreSheetId: uuid("score_sheet_id").notNull(),
+    criterionId: uuid("criterion_id").notNull(),
+    scoreLevelId: uuid("score_level_id"),
+    comment: text("comment").notNull(),
+    source: text("source").$type<"member" | "advisory">().notNull(),
+    advisoryVersionId: uuid("advisory_version_id"),
+    advisoryLevelOriginal: uuid("advisory_level_original"),
+    adjustReason: text("adjust_reason"),
+    edited: boolean("edited").notNull(),
+    updatedAt: ts("updated_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.scoreSheetId, t.criterionId] })],
+);
+export const scoreSheetLineFile = scoringSchema.table(
+  "score_sheet_line_file",
+  {
+    scoreSheetId: uuid("score_sheet_id").notNull(),
+    criterionId: uuid("criterion_id").notNull(),
+    fileId: uuid("file_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.scoreSheetId, t.criterionId, t.fileId] })],
+);
+
 // Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).
 export const deadlineExtension = roundSchema.table("deadline_extension", {
   id: uuid("id").primaryKey(),

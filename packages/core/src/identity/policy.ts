@@ -36,7 +36,7 @@ const ROLE_ACTIONS = {
   // changeGradingMode checks; both only until the đợt's first Phiếu chấm.
   "round.grading_mode.change": ["province_officer", "council_secretary"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
-  "entity.read": ["entity_owner", "ward_officer", "province_officer"],
+  "entity.read": ["entity_owner", "ward_officer", "province_officer", "council_member"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).
   "entity.update": ["entity_owner"],
   "entity.legal_document.manage": ["entity_owner"],
@@ -55,6 +55,11 @@ const ROLE_ACTIONS = {
   "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
   // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
   "dossier.assignment.read": ["council_chair", "council_secretary"],
+  // L14 (story 97): the tiến độ chấm of the Hội đồng's hồ sơ (S42), and bằng chứng kiểm tra of a Phiếu chấm (story 86).
+  "scoring.progress.read": ["council_chair", "council_secretary"],
+  "scoring.evidence.upload": ["council_member"],
+  // L14 (stories 83 to 94): writing one's own Phiếu chấm; which hồ sơ and state is the transition table and DataScope.
+  "scoring.sheet.write": ["council_member"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.
@@ -63,7 +68,7 @@ const ROLE_ACTIONS = {
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
-  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer"],
+  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer", "council_member"],
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],
