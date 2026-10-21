@@ -356,3 +356,92 @@ describe("L11 an issued phiên bản is fixed in the database (spec #49 Trigger 
     expect(await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).toHaveLength(1);
   });
 });
+
+/**
+ * L01 to L09 by their use cases, with one minh chứng ("Phiếu kiểm nghiệm.pdf") tied to Tiêu chí 1.1 before nộp, up
+ * to Tổ tư vấn thẩm định with the same people as underReview().
+ */
+async function underReviewWithEvidence() {
+  const a = await f.verifiedOwner();
+  const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: setId });
+  const evidenceId = await f.uploadPdf(a, "evidence", "Phiếu kiểm nghiệm.pdf");
+  let { version } = await t.app.dossiers.addEvidenceFile(a, { dossierId, expectedVersion: 1, fileId: evidenceId });
+  const { criteria } = await t.app.dossiers.selfAssessment(a, { dossierId });
+  ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: evidenceId, criterionIds: [criteria[0]!.criterionId] }));
+  await f.completeDraft(a, dossierId);
+  ({ version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: (await t.app.dossiers.get(a, { dossierId })).version }));
+  ({ version } = await t.app.dossiers.receive(ward, { dossierId, expectedVersion: version }));
+  const { items } = await t.app.dossiers.checklist(ward, { dossierId });
+  ({ version } = await t.app.dossiers.assessChecklist(ward, { dossierId, expectedVersion: version, results: items.map((i) => ({ itemCode: i.code, result: "pass" as const })) }));
+  const reportId = await f.uploadPdf(ward, "signed_ward_report", "BC xã đã ký.pdf");
+  ({ version } = await t.app.dossiers.attachSignedWardReport(ward, { dossierId, expectedVersion: version, fileId: reportId }));
+  ({ version } = await t.app.dossiers.forwardToProvince(ward, { dossierId, expectedVersion: version }));
+  ({ version } = await t.app.dossiers.receiveAtProvince(province, { dossierId, expectedVersion: version }));
+  const [drafted] = (
+    await t.app.councils.editAssignments(A.secretary, {
+      dossiers: [{ dossierId, expectedVersion: version }],
+      members: A.members.map((m) => m.userId),
+      advisors: [leader.userId, colleague.userId],
+    })
+  ).dossiers;
+  await t.app.councils.startGrading(A.secretary, { dossiers: [{ dossierId, expectedVersion: drafted!.version }] });
+  return { a, dossierId, evidenceId };
+}
+const fetched = async (url: string) => (await fetch(url)).status;
+
+describe("L10 TM-01, TM-05 minh chứng and tệp đính kèm thực địa (stories 43, 45, 48)", () => {
+  it("shows the minh chứng of the newest Phiên bản nộp by Tiêu chí, lets the căn cứ cite them, and only them", async () => {
+    const d = await underReviewWithEvidence();
+    const ws = await report(leader, d.dossierId);
+    expect(ws.criteria.find((c) => c.code === "1.1")!.submitted.evidence).toEqual([{ fileId: d.evidenceId, fileName: "Phiếu kiểm nghiệm.pdf" }]);
+
+    const [line] = await lines(leader, d.dossierId, { "1.1": { points: 40 } });
+    await t.app.scoring.saveAdvisoryDraft(leader, {
+      dossierId: d.dossierId,
+      draftVersion: 0,
+      lines: [{ ...line!, evidenceFileIds: [d.evidenceId], evidenceAssessment: "needs_verification" }],
+      summary: "",
+      notes: "",
+      attachmentFileIds: [],
+    });
+    expect((await report(colleague, d.dossierId)).criteria[0]!.line).toMatchObject({ evidenceFileIds: [d.evidenceId], evidenceAssessment: "needs_verification" });
+
+    const elsewhere = await f.uploadPdf(d.a, "evidence", "Không nộp.pdf");
+    await expect(
+      t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 1, lines: [{ ...line!, evidenceFileIds: [elsewhere] }], summary: "", notes: "", attachmentFileIds: [] }),
+    ).rejects.toMatchObject({ code: "evidence_not_in_submission" });
+    await expect(
+      t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 1, lines: [{ ...line!, evidenceAssessment: "ok" as never }], summary: "", notes: "", attachmentFileIds: [] }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+
+    for (const reader of [leader, A.members[0]!]) {
+      const { url } = await t.app.scoring.downloadAdvisoryFile(reader, { dossierId: d.dossierId, fileId: d.evidenceId });
+      expect(await fetched(url)).toBe(200);
+    }
+    await expect(t.app.scoring.downloadAdvisoryFile(leader, { dossierId: d.dossierId, fileId: elsewhere })).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("keeps tệp đính kèm thực địa in the nháp for the Tổ tư vấn, and in the phiên bản for the thành viên chấm (story 48)", async () => {
+    const d = await complete();
+    const photo = await f.uploadPdf(colleague, "advisory_attachment", "Biên bản thực địa.pdf");
+    const ws = await report(colleague, d.dossierId);
+    const content = { lines: ws.criteria.map((c) => ({ ...c.line })), summary: ws.summary, notes: ws.notes };
+    await t.app.scoring.saveAdvisoryDraft(colleague, { dossierId: d.dossierId, draftVersion: ws.draftVersion, ...content, attachmentFileIds: [photo] });
+
+    expect((await report(leader, d.dossierId)).attachments).toEqual([{ fileId: photo, fileName: "Biên bản thực địa.pdf", status: "clean" }]);
+    expect(await fetched((await t.app.scoring.downloadAdvisoryFile(leader, { dossierId: d.dossierId, fileId: photo })).url)).toBe(200);
+    await expect(t.app.scoring.downloadAdvisoryFile(A.members[0]!, { dossierId: d.dossierId, fileId: photo })).rejects.toMatchObject({ code: "not_found" });
+    // A colleague keeps the file in the nháp; a file of someone else's that the nháp does not hold is refused.
+    const other = await f.uploadPdf(leader, "advisory_attachment", "Ảnh.pdf");
+    await expect(
+      t.app.scoring.saveAdvisoryDraft(colleague, { dossierId: d.dossierId, draftVersion: ws.draftVersion + 1, ...content, attachmentFileIds: [photo, other] }),
+    ).rejects.toMatchObject({ code: "file_required" });
+    await t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: ws.draftVersion + 1, ...content, attachmentFileIds: [photo, other] });
+
+    const { dossierVersion } = await report(leader, d.dossierId);
+    await issue(leader, { dossierId: d.dossierId, version: dossierVersion });
+    const [v1] = await t.app.scoring.advisoryReportVersions(A.members[0]!, { dossierId: d.dossierId });
+    expect(v1!.report.attachments.map((a) => a.fileName)).toEqual(["Biên bản thực địa.pdf", "Ảnh.pdf"]);
+    expect(await fetched((await t.app.scoring.downloadAdvisoryFile(A.members[0]!, { dossierId: d.dossierId, fileId: photo })).url)).toBe(200);
+  });
+});
