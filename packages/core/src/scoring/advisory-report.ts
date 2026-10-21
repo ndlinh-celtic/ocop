@@ -245,7 +245,7 @@ export function advisoryReport(deps: CoreDeps) {
 /** Stories 44 to 49: saves the whole nháp; a save from an older nháp version than the stored one is refused (story 50). */
 export function saveAdvisoryDraft(deps: CoreDeps) {
   return async (actor: Actor, input: AdvisoryReportContent & { dossierId: string; draftVersion: number }): Promise<{ draftVersion: number }> => {
-    authorize(actor, "dossier.write");
+    authorize(actor, "dossier.advisory_report.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const stored = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
@@ -320,7 +320,7 @@ async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier,
 /** Stories 56 to 59: the Tổ trưởng issues the nháp as phiên bản 1; the hồ sơ moves to Đã có báo cáo Tổ tư vấn. */
 export function issueAdvisoryReport(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number; number: number }> => {
-    authorize(actor, "dossier.write");
+    authorize(actor, "dossier.advisory_report.write");
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const before = await lockDossier(tx, actor, input.dossierId);
@@ -340,7 +340,7 @@ export function issueAdvisoryReport(deps: CoreDeps) {
  */
 export function reissueAdvisoryReport(deps: CoreDeps) {
   return async (actor: Actor, input: AdvisoryReportContent & { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number; number: number }> => {
-    authorize(actor, "dossier.write");
+    authorize(actor, "dossier.advisory_report.write");
     const reason = typeof input.reason === "string" ? input.reason.trim() : "";
     if (reason === "") throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
     if (reason.length > 2000) throw new DomainError("field_too_long", "Lý do quá dài");

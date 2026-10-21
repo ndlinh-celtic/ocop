@@ -52,12 +52,13 @@ const ROLE_ACTIONS = {
   "dossier.create": ["entity_owner"],
   // Any change to an existing hồ sơ starts here: the Vai trò that work on hồ sơ at all. Which change, on
   // which hồ sơ, is then the transition table's row and the Phạm vi, checked by transition().
-  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary", "advisory_member"],
+  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
   // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
   "dossier.assignment.read": ["council_chair", "council_secretary"],
   // L10, L11 (#56 stories 49, 63): the Báo cáo Tổ tư vấn nháp is the Tổ tư vấn's alone; its issued phiên bản,
   // and the minh chứng and tệp đính kèm they cite, are for every Vai trò hội đồng whose Phạm vi covers the hồ sơ.
   "dossier.advisory_report.draft": ["advisory_member"],
+  "dossier.advisory_report.write": ["advisory_member"],
   "dossier.advisory_report.read": ["council_chair", "council_secretary", "council_member", "advisory_member"],
   "dossier.advisory_report.upload": ["advisory_member"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
