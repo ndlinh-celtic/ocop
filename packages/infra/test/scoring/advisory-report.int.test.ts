@@ -159,3 +159,105 @@ describe("L10 TM-02, TM-05, TM-06 Báo cáo Tổ tư vấn nháp (stories 44 to 
     expect((await report(colleague, d.dossierId)).summary).toBe("Bản của Tổ trưởng");
   });
 });
+
+/** A hồ sơ under review whose nháp has every Tiêu chí filled: 40 + 10 + 20 = 70 points. */
+async function complete() {
+  const d = await underReview();
+  await t.app.scoring.saveAdvisoryDraft(colleague, {
+    dossierId: d.dossierId,
+    draftVersion: 0,
+    lines: await lines(colleague, d.dossierId, { "1.1": { points: 40 }, "1.2": { points: 10 }, "2.1": { points: 20 } }),
+    summary: "Nhận xét tổng hợp",
+    notes: "Điểm cần lưu ý",
+    attachmentFileIds: [],
+  });
+  return { ...d, version: (await report(leader, d.dossierId)).dossierVersion };
+}
+const issue = (actor: UserActor, d: { dossierId: string; version: number }) => t.app.scoring.issueAdvisoryReport(actor, { dossierId: d.dossierId, expectedVersion: d.version });
+
+describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 63)", () => {
+  it("issues the nháp as phiên bản 1, naming who and when, and moves the hồ sơ to Đã có báo cáo Tổ tư vấn", async () => {
+    const d = await complete();
+    t.clock.set(new Date("2026-10-22T03:00:00Z"));
+
+    expect(await issue(leader, d)).toEqual({ version: d.version + 1, number: 1 });
+
+    expect((await t.app.dossiers.get(leader, { dossierId: d.dossierId })).state).toBe("advisory_report_issued");
+    const [v1] = await t.app.scoring.advisoryReportVersions(A.members[0]!, { dossierId: d.dossierId });
+    expect(v1).toMatchObject({ number: 1, issuedAt: new Date("2026-10-22T03:00:00Z"), issuedBy: { userId: leader.userId, fullName: leader.fullName }, reason: null });
+    expect(v1!.report).toMatchObject({ summary: "Nhận xét tổng hợp", notes: "Điểm cần lưu ý", estimate: { total: 70, star: 4 } });
+    expect(v1!.report.lines.map((l) => [l.code, l.points, l.basis])).toEqual([
+      ["1.1", 40, "Căn cứ 1.1"],
+      ["1.2", 10, "Căn cứ 1.2"],
+      ["2.1", 20, "Căn cứ 2.1"],
+    ]);
+    expect((await report(colleague, d.dossierId)).versions.map((v) => v.number)).toEqual([1]);
+  });
+
+  it("refuses while a Tiêu chí lacks Điểm đề xuất or căn cứ, listing their codes (story 57)", async () => {
+    const d = await underReview();
+    const picked = await lines(leader, d.dossierId, { "1.1": { points: 40 }, "1.2": { points: 10, basis: "   " } });
+    await t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 0, lines: picked, summary: "", notes: "", attachmentFileIds: [] });
+    const { dossierVersion } = await report(leader, d.dossierId);
+
+    await expect(issue(leader, { dossierId: d.dossierId, version: dossierVersion })).rejects.toMatchObject({ code: "advisory_report_incomplete", criteria: ["1.2", "2.1"] });
+    expect((await t.app.dossiers.get(leader, { dossierId: d.dossierId })).state).toBe("advisory_review");
+    expect(await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).toEqual([]);
+  });
+
+  it("is refused to a Thành viên Tổ tư vấn who is not the Tổ trưởng, and to a former Tổ trưởng (story 58)", async () => {
+    const d = await complete();
+    expect((await report(colleague, d.dossierId)).isLeader).toBe(false);
+    await expect(issue(colleague, d)).rejects.toMatchObject({ code: "forbidden" });
+
+    await t.app.councils.setLeader(province, { councilId: A.councilId, userId: colleague.userId });
+    try {
+      await expect(issue(leader, d)).rejects.toMatchObject({ code: "forbidden" });
+      await expect(issue(colleague, d)).resolves.toMatchObject({ number: 1 });
+    } finally {
+      await t.app.councils.setLeader(province, { councilId: A.councilId, userId: leader.userId });
+    }
+  });
+
+  it("is audited and emitted in the same transaction, and shows the Chủ thể a milestone without names (story 59)", async () => {
+    const d = await complete();
+    await issue(leader, d);
+
+    const [moved] = await t.app.audit.search(await f.admin(), { action: ["dossier.advisory_report.issue"], targetId: d.dossierId });
+    expect(moved).toMatchObject({ actorUserId: leader.userId, actorRole: "advisory_member", before: { state: "advisory_review" }, after: { state: "advisory_report_issued" } });
+    const [issued] = await t.app.audit.search(await f.admin(), { action: ["scoring.advisory_report.issued"], targetId: d.dossierId });
+    expect(issued).toMatchObject({ after: { number: 1 }, metadata: { total: 70, star: 4 } });
+    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.advisory_report_issued' AND payload->>'dossierId' = $1", [d.dossierId]);
+    expect(outbox.rows).toEqual([{ payload: expect.objectContaining({ from: "advisory_review", to: "advisory_report_issued" }) }]);
+
+    const timeline = await t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
+    expect(timeline.find((e) => e.action === "dossier.advisory_report.issue")).toMatchObject({ toState: "advisory_report_issued", metadata: { number: 1 } });
+    expect(timeline.map((e) => e.action)).not.toContain("dossier.advisory_report.edit");
+    expect(JSON.stringify(timeline)).not.toContain(leader.fullName);
+  });
+
+  it('tells each thành viên chấm Phân công "Có báo cáo Tổ tư vấn mới", in the app and by email (story 62)', async () => {
+    const d = await complete();
+    await issue(leader, d);
+    await t.drainJobs();
+
+    const link = `/thanh-vien/ho-so/${d.dossierId}/bao-cao-to-tu-van`;
+    for (const m of A.members) {
+      const notices = (await t.app.notifications.list(m)).filter((n) => n.kind === "dossier_advisory_report_issued" && n.link === link);
+      expect(notices.map((n) => n.title)).toEqual([expect.stringMatching(/^Có báo cáo Tổ tư vấn mới/)]);
+      expect(t.mailbox.to(m.email).at(-1)!.text).toContain(link);
+    }
+    expect((await t.app.notifications.list(colleague)).filter((n) => n.kind === "dossier_advisory_report_issued")).toEqual([]);
+  });
+
+  it("shows the thành viên chấm, Chủ tịch and Thư ký only issued phiên bản, never the nháp (story 63)", async () => {
+    const d = await complete();
+    for (const reader of [A.members[0]!, A.chair, A.secretary]) {
+      expect(await t.app.scoring.advisoryReportVersions(reader, { dossierId: d.dossierId })).toEqual([]);
+      await expect(report(reader, d.dossierId)).rejects.toMatchObject({ code: "forbidden" });
+    }
+    await expect(t.app.scoring.advisoryReportVersions(province, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.scoring.advisoryReportVersions(d.a, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(report(A.advisors[2]!, d.dossierId)).rejects.toMatchObject({ code: "not_found" });
+  });
+});
