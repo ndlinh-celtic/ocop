@@ -15,4 +15,6 @@ export interface FileStore {
   presignGet(key: string, opts: { fileName: string; expiresInSec: number }): Promise<PresignedRequest>;
   read(key: string): Promise<AsyncIterable<Uint8Array>>;
   put(key: string, body: Uint8Array | string, contentType: string): Promise<void>;
+  /** Removes an object; removing one that does not exist is not an error. */
+  delete(key: string): Promise<void>;
 }

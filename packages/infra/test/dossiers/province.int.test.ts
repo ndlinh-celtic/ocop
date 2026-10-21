@@ -163,6 +163,21 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
     expect(await resubmitted(province)).toHaveLength(0);
   });
 
+  it("after the nộp lại tells every Cán bộ xã of the xã when the Cán bộ phụ trách no longer works there", async () => {
+    const handler = await f.staff("ward_officer", wardId);
+    const up = await f.forwarded(handler, setId);
+    const { version } = await t.app.dossiers.returnFromProvince(province, { dossierId: up.dossierId, expectedVersion: up.version, ...RETURN });
+    const [assignment] = await t.app.identity.myAssignments(handler);
+    await t.app.identity.revokeRole(await f.admin(), { assignmentId: assignment!.id });
+
+    await t.app.dossiers.submit(up.a, { dossierId: up.dossierId, expectedVersion: version });
+    await t.drainJobs();
+
+    const resubmitted = async (u: UserActor) => (await t.app.notifications.list(u)).filter((n) => n.kind === "dossier_resubmitted" && n.link?.includes(up.dossierId));
+    expect(await resubmitted(ward)).toHaveLength(1);
+    expect(await resubmitted(handler)).toHaveLength(0);
+  });
+
   it("after the nộp lại the hồ sơ is Đã nộp xã again: the xã reviews it, signs a report for the new Phiên bản nộp and gửi tỉnh again", async () => {
     const up = await f.forwarded(ward, setId);
     const { version: returned } = await t.app.dossiers.returnFromProvince(province, { dossierId: up.dossierId, expectedVersion: up.version, ...RETURN });

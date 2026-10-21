@@ -221,7 +221,7 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
     const [audit] = await t.app.audit.search(await f.admin(), { action: ["dossier.submit"], targetId: dossierId });
     expect(audit).toMatchObject({ actorUserId: a.userId, after: { state: "submitted_to_ward", version } });
     const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.submitted' AND payload->>'dossierId' = $1", [dossierId]);
-    expect(rows).toEqual([{ payload: { dossierId, entityId: entityIdOf(a), from: "draft", to: "submitted_to_ward" } }]);
+    expect(rows).toEqual([{ payload: { dossierId, entityId: entityIdOf(a), from: "draft", to: "submitted_to_ward", actorUserId: a.userId } }]);
   });
 });
 

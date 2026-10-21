@@ -44,7 +44,7 @@ afterAll(async () => {
 
 describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35, 63, 84)", () => {
   it("rejects citing an Điều kiện loại of the hồ sơ's Bộ tiêu chí; the Chủ thể sees why", async () => {
-    const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
     const condition = exclusions[1]!;
 
     const after = await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, exclusionConditionId: condition.id, explanation: "Nguyên liệu nhập từ nước ngoài" });
@@ -74,7 +74,7 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
   });
 
   it("rejects with a Lý do loại sơ bộ and its diễn giải, shown to the Chủ thể with the label of the Lý do", async () => {
-    const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
 
     await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "not_eligible", explanation: "Chủ thể là hộ kinh doanh thương mại" });
 
@@ -89,7 +89,7 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
   });
 
   it("requires exactly one ground: an Điều kiện loại of this Bộ tiêu chí, or a Lý do loại sơ bộ with a diễn giải", async () => {
-    const { dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const { dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
     const attempt = (input: Record<string, unknown>) => t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, ...input });
 
     await expect(attempt({})).rejects.toMatchObject({ code: "rejection_ground_required" });
@@ -102,7 +102,7 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
   });
 
   it("is for the Cán bộ xã of the hồ sơ's xã only, on a hồ sơ Đã nộp xã (stories 80, 81, 87)", async () => {
-    const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
     const ground = { reasonCode: "other", explanation: "Thử" };
 
     await expect(t.app.dossiers.reject(a, { dossierId, expectedVersion: version, ...ground })).rejects.toMatchObject({ code: "forbidden" });
@@ -112,6 +112,13 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
     const { version: rejected } = await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, ...ground });
 
     await expect(t.app.dossiers.reject(officerX, { dossierId, expectedVersion: rejected, ...ground })).rejects.toMatchObject({ code: "invalid_state" });
+  });
+
+  it("comes after Tiếp nhận: a hồ sơ Chờ tiếp nhận cannot be loại yet (XA-06)", async () => {
+    const { dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+
+    await expect(t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "other", explanation: "Thử" })).rejects.toMatchObject({ code: "not_received" });
+    expect((await t.app.dossiers.get(officerX, { dossierId })).state).toBe("submitted_to_ward");
   });
 });
 
@@ -174,7 +181,7 @@ describe("L05 thông báo loại and Chuyển xã (story 86)", () => {
   const latestFor = async (actor: UserActor, dossierId: string) => (await t.app.notifications.list(actor)).find((n) => n.link?.endsWith(dossierId));
 
   it("tells the Chủ thể, in the app and by email, that its hồ sơ was loại", async () => {
-    const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
     await t.drainJobs();
     await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "wrong_ward", explanation: "Ngoài địa bàn" });
     await t.drainJobs();

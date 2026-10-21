@@ -1,5 +1,5 @@
 import type { DomainEvent, EmailDeliveries, EmailDelivery, Outbox, ProcessedEvents } from "@ocop/core";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { emailDelivery, outbox, processedEvent } from "../db/schema";
 
@@ -37,6 +37,21 @@ export function emailDeliveriesRepo(db: Db): EmailDeliveries {
         .orderBy(emailDelivery.attemptedAt, emailDelivery.id)
         .limit(f.limit ?? 100);
       return rows as EmailDelivery[];
+    },
+    async wasSent(eventId, consumer, recipient) {
+      const rows = await db
+        .select({ id: emailDelivery.id })
+        .from(emailDelivery)
+        .where(
+          and(
+            eq(emailDelivery.eventId, eventId),
+            eq(emailDelivery.consumer, consumer),
+            sql`${emailDelivery.recipient} = ${recipient}::citext`,
+            eq(emailDelivery.status, "sent"),
+          ),
+        )
+        .limit(1);
+      return rows.length === 1;
     },
   };
 }

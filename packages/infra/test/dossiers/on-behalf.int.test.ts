@@ -138,6 +138,20 @@ describe("L01 Nhập hộ only for a Chủ thể đăng ký ở xã mình (story
     expect(await t.app.dossiers.get(s.a, { dossierId: draftId })).toMatchObject({ productName: "", version: 1 });
   });
 
+  it("stops once the hồ sơ is Chuyển xã to another xã, though the Chủ thể is still đăng ký ở xã mình (story 49)", async () => {
+    const s = await f.submitted(sets["Rau củ quả"]);
+    const officer = onBehalfOf(officerX, entityIdOf(s.a));
+    const { dossierId: draftId } = await t.app.dossiers.create(officer, { criteriaSetId: sets["Thịt tươi"] });
+    const received = await t.app.dossiers.receive(officerX, { dossierId: s.dossierId, expectedVersion: s.version });
+    await t.app.dossiers.transferWard(officerX, { dossierId: s.dossierId, expectedVersion: received.version, wardId: wardY, reason: "Sai địa bàn" });
+
+    await expect(t.app.dossiers.get(officer, { dossierId: s.dossierId })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.dossiers.timeline(officer, { dossierId: s.dossierId })).rejects.toMatchObject({ code: "not_found" });
+    expect((await t.app.dossiers.list(officer)).map((d) => d.id)).toEqual([draftId]);
+    // The Chủ thể's Nháp belongs to no xã yet, so the officer still works on it.
+    expect(await t.app.dossiers.get(officer, { dossierId: draftId })).toMatchObject({ state: "draft" });
+  });
+
   it("stops once the Chủ thể changes its xã đăng ký to another xã", async () => {
     const owner = await f.verifiedOwner();
     const entityId = entityIdOf(owner);

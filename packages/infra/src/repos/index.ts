@@ -1,4 +1,4 @@
-import type { Tx } from "@ocop/core";
+import type { Repos } from "@ocop/core";
 import type { Db } from "../db/types";
 import { auditRepo } from "./audit";
 import { auditChainRepo } from "./audit-chain";
@@ -15,7 +15,7 @@ import { dossierRepo } from "./dossiers";
 import { supplementRepo } from "./supplements";
 import { reminderRepo, systemSettingRepo } from "./reminders";
 
-export function buildRepos(db: Db): Tx {
+export function buildRepos(db: Db): Repos {
   return {
     users: userRepo(db),
     roleAssignments: roleAssignmentRepo(db),

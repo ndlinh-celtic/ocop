@@ -1,9 +1,11 @@
 import type { Actor } from "../shared/context";
 
 /**
- * The business data a Người dùng may see through their Vai trò đang dùng (#14, spec #30). Repositories of
- * Chủ thể and hồ sơ take it as a mandatory argument on every read and turn it into a WHERE clause, so an
- * out-of-scope row is never loaded; to the caller it does not exist.
+ * The business data a Người dùng may see through their Vai trò đang dùng (#14, spec #30). The reads that
+ * load a Chủ thể or a hồ sơ (by id or as a list) take it as a mandatory argument and turn it into a WHERE
+ * clause, so an out-of-scope row is never loaded; to the caller it does not exist. Reads of what belongs
+ * to a hồ sơ (its timeline, Phiên bản nộp, minh chứng, yêu cầu bổ sung…) go by dossierId without a scope:
+ * they rely on the use case having loaded that hồ sơ through a scoped lookup first.
  *
  * Branches arrive with the modules that need them: `ward` (Cán bộ xã) and `province` (Cán bộ Sở, only what
  * has reached the province) in step 3, `council` and `assigned` in step 4. Adding one is a new member here,
@@ -14,7 +16,10 @@ export type DataScope =
   | { kind: "ward"; wardId: string }
   /** Cán bộ Sở: the hồ sơ that have ever reached Đã chuyển tỉnh, and the Chủ thể of those (story 78). */
   | { kind: "province" }
-  /** Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75). */
+  /**
+   * Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75); of its hồ sơ, a Nháp
+   * (no xã yet) or one whose xã is `wardId`, so a hồ sơ Chuyển xã elsewhere is out (story 49).
+   */
   | { kind: "on_behalf"; entityId: string; wardId: string }
   | { kind: "none" };
 

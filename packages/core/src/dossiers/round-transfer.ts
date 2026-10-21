@@ -36,7 +36,7 @@ function refusalOf(dossier: Dossier, round: Round, now: Date): DomainError | nul
 /** L06 XA-08 (stories 69, 70): moves a hồ sơ Đã nộp xã into another đợt, with a lý do; the Chủ thể is told. */
 export function transferRound(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; roundId: string; reason: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const reason = typeof input.reason === "string" ? input.reason.trim() : "";
     if (reason === "") throw new DomainError("reason_required", "Nhập lý do chuyển đợt");
     if (reason.length > MAX_REASON) throw new DomainError("field_too_long", "Nội dung quá dài");

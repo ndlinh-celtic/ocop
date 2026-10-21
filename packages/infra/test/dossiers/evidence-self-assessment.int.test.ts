@@ -293,7 +293,7 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
       "dossier.explained",
       "dossier.evidence_removed",
     ]);
-    expect(rows[3].payload).toEqual({ dossierId, entityId: entityIdOf(a), from: "draft", to: "draft" });
+    expect(rows[3].payload).toEqual({ dossierId, entityId: entityIdOf(a), from: "draft", to: "draft", actorUserId: a.userId });
     expect((await t.app.dossiers.timeline(a, { dossierId })).map((e) => e.action)).toEqual(["dossier.create"]);
   });
 
@@ -360,6 +360,8 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
     expect(copy.files).toEqual([expect.objectContaining({ fileId, criterionIds: [] })]);
     expect(copy.criteria.every((c) => c.levelId === null && c.explanation === "" && c.evidence.length === 0)).toBe(true);
     expect(copy.estimate).toMatchObject({ total: 0 });
+    const [created] = await t.app.audit.search(await f.admin(), { action: ["dossier.create"], targetId: copyId });
+    expect(created).toMatchObject({ metadata: { copiedFrom: dossierId, evidenceFileIds: [fileId] } });
   });
 });
 

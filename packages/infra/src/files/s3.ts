@@ -2,6 +2,7 @@ import {
   CompleteMultipartUploadCommand,
   CreateBucketCommand,
   CreateMultipartUploadCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
@@ -94,6 +95,9 @@ export function createS3FileStore(s: S3Settings, bucket: string): FileStore {
     },
     async put(key, body, contentType) {
       await internal.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
+    },
+    async delete(key) {
+      await internal.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
     },
   };
 }

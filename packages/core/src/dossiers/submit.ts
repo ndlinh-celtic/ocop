@@ -208,7 +208,7 @@ function filesOf(snapshot: SubmissionSnapshot): SubmissionFileRef[] {
  */
 export function submitDossier(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number; submissionNumber: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const now = deps.clock.now();
@@ -260,7 +260,7 @@ const MAX_REASON = 2_000;
 /** L03 story 33: rút a hồ sơ Đã nộp xã the xã has not Tiếp nhận yet, with a reason, into Đã rút. */
 export function withdrawDossier(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const reason = typeof input.reason === "string" ? input.reason.trim() : "";
     if (reason === "") throw new DomainError("reason_required", "Nhập lý do rút hồ sơ");
     if (reason.length > MAX_REASON) throw new DomainError("field_too_long", "Nội dung quá dài");

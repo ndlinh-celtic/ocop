@@ -2,7 +2,7 @@ import { auditEntry } from "../audit/audit";
 import type { User } from "../identity/model";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { emit } from "../platform/emit";
-import { sendEmail } from "../platform/send-email";
+import { sendEmailOnce } from "../platform/send-email";
 import { vnDateOf } from "../rounds/model";
 import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -11,6 +11,7 @@ import { reminderMilestonesIn } from "../system/settings";
 import { entityUsers } from "./notices";
 import type { ReminderKind, ReminderTarget, SentReminder } from "./reminder-model";
 import { wardOfficersOf } from "./ward";
+import { formatDayVn } from "../shared/format";
 
 // L03 CT-12 Nhắc hạn: the job and its two consumers. The three loại hạn are described in reminder-model.ts.
 
@@ -103,7 +104,7 @@ interface ReminderNotice {
   link: string;
 }
 
-const vnDisplayDate = (iso: string) => vnDateOf(new Date(iso)).split("-").reverse().join("/");
+const vnDisplayDate = (iso: string) => formatDayVn(vnDateOf(new Date(iso)));
 const left = (daysLeft: number) => (daysLeft === 0 ? "hôm nay là hạn" : `còn ${daysLeft} ngày`);
 const capitalized = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -173,7 +174,7 @@ export async function emailReminder(c: ConsumerContext): Promise<void> {
   const notice = await reminderOf(c);
   if (!notice) return;
   for (const user of notice.recipients) {
-    await sendEmail(c, {
+    await sendEmailOnce(c, {
       to: user.email,
       template: "dossier_notice",
       data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },

@@ -66,8 +66,18 @@ async function verifiedEntity(tx: Tx, actor: UserActor, now: Date) {
 const setNotApplicable = () =>
   new DomainError("criteria_set_not_applicable", "Bộ tiêu chí không thuộc phiên bản tiêu chí đang áp dụng, hãy chọn lại");
 
-/** A new Nháp on a Bộ tiêu chí of the applicable version, with what it is created from. */
-async function newDraft(deps: CoreDeps, tx: Tx, actor: UserActor, criteriaSetId: unknown, from: { product: ProductInfo; copiedFrom: string | null }) {
+/**
+ * A new Nháp on a Bộ tiêu chí of the applicable version, with what it is created from: its thông tin sản
+ * phẩm and, for a copy, the hồ sơ it comes from and the files of its kho minh chứng, all on the record of
+ * the creation.
+ */
+async function newDraft(
+  deps: CoreDeps,
+  tx: Tx,
+  actor: UserActor,
+  criteriaSetId: unknown,
+  from: { product: ProductInfo; copiedFrom: string | null; evidenceFileIds?: string[] },
+) {
   const now = deps.clock.now();
   const entity = await verifiedEntity(tx, actor, now);
   if (!isUuid(criteriaSetId)) throw setNotApplicable();
@@ -94,7 +104,14 @@ async function newDraft(deps: CoreDeps, tx: Tx, actor: UserActor, criteriaSetId:
     createdBy: actor.userId,
     updatedAt: now,
   };
-  await recordCreation(deps, tx, actor, dossier, { criteriaSetId, criteriaVersionId: version.id, ...(from.copiedFrom ? { copiedFrom: from.copiedFrom } : {}) });
+  await recordCreation(deps, tx, actor, dossier, {
+    criteriaSetId,
+    criteriaVersionId: version.id,
+    ...(from.copiedFrom ? { copiedFrom: from.copiedFrom, evidenceFileIds: from.evidenceFileIds ?? [] } : {}),
+  });
+  for (const fileId of from.evidenceFileIds ?? []) {
+    await tx.dossiers.addEvidence({ dossierId: dossier.id, fileId, addedBy: actor.userId, addedAt: now });
+  }
   return dossier;
 }
 
@@ -130,10 +147,8 @@ export function copyDossier(deps: CoreDeps) {
         packaging: source.packaging,
         qualityDeclaration: source.qualityDeclaration,
       };
-      const copy = await newDraft(deps, tx, actor, input.criteriaSetId, { product, copiedFrom: source.id });
-      for (const file of await tx.dossiers.evidence(source.id)) {
-        await tx.dossiers.addEvidence({ dossierId: copy.id, fileId: file.fileId, addedBy: actor.userId, addedAt: copy.createdAt });
-      }
+      const evidenceFileIds = (await tx.dossiers.evidence(source.id)).map((file) => file.fileId);
+      const copy = await newDraft(deps, tx, actor, input.criteriaSetId, { product, copiedFrom: source.id, evidenceFileIds });
       return { dossierId: copy.id };
     });
   };

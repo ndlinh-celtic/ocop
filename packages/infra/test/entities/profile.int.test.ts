@@ -110,15 +110,12 @@ describe("L01 CT-02 Chủ thể edits its organisation details (stories 9, 10)",
 });
 
 describe("L01 số định danh cá nhân of a hộ sản xuất (story 13, NĐ 13/2023)", () => {
-  it("is masked to the last four digits by default, even for the hộ itself", async () => {
-    expect(await t.app.entities.getEntity(household, { entityId: idOf(household) })).toMatchObject({ identifier: "••••••••1234" });
-    expect((await t.app.entities.listEntities(household))[0]).toMatchObject({ identifier: "••••••••1234" });
-  });
-
-  it("is shown in full only through its own use case, audited as a personal data access", async () => {
+  it("is shown in full to the hộ itself, with no reveal and no personal data audit: it is masked for everyone but the hộ", async () => {
+    expect(await t.app.entities.getEntity(household, { entityId: idOf(household) })).toMatchObject({ identifier: "079200001234" });
+    expect((await t.app.entities.listEntities(household))[0]).toMatchObject({ identifier: "079200001234" });
     expect(await t.app.entities.revealPersonalId(household, { entityId: idOf(household) })).toEqual({ personalId: "079200001234" });
-    const [audit] = await t.app.audit.search(admin, { action: ["personal_data.viewed"], targetId: idOf(household) });
-    expect(audit).toMatchObject({ actorUserId: household.userId, targetType: "entity", metadata: { view: "entity_personal_id" } });
+
+    expect(await t.app.audit.search(admin, { action: ["personal_data.viewed"], targetId: idOf(household) })).toEqual([]);
   });
 
   it("cannot be revealed for another Chủ thể, nor for one identified by mã số thuế", async () => {

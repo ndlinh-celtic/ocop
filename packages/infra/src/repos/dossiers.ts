@@ -1,5 +1,5 @@
 import { FINISHED_STATES, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import {
   checklistResult,
@@ -34,10 +34,12 @@ function inScope(scope: DataScope): SQL {
       // From the first gửi tỉnh on, even after the Sở trả về it (story 78).
       return and(live, isNotNull(dossier.firstForwardedAt))!;
     case "on_behalf":
-      // Nhập hộ (story 75): every hồ sơ of the Chủ thể, only while it is đăng ký ở xã of the officer.
+      // Nhập hộ (story 75): the hồ sơ of the Chủ thể, only while it is đăng ký ở xã of the officer, and
+      // only those with no xã yet (a Nháp) or at the officer's xã: one Chuyển xã elsewhere is out (story 49).
       return and(
         live,
         eq(dossier.entityId, scope.entityId),
+        or(isNull(dossier.wardId), eq(dossier.wardId, scope.wardId)),
         sql`exists (select 1 from ${entity} where ${entity.id} = ${dossier.entityId} and ${entity.wardId} = ${scope.wardId})`,
       )!;
     case "none":

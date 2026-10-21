@@ -9,7 +9,7 @@ import { DOCX_TYPE } from "./renderer";
  * Stores a văn bản the server generated as a `generated_document` file, `clean` at once since it never
  * came from outside. Each call writes a new object under a new id, so a stored văn bản never changes:
  * a later template or a later nộp produces another file. The caller references the id in the same
- * transaction; should that transaction roll back, the object stays unreferenced in the bucket.
+ * transaction; should that transaction roll back, the object is deleted with it.
  */
 export async function storeGeneratedDocument(
   deps: CoreDeps,
@@ -20,6 +20,7 @@ export async function storeGeneratedDocument(
   const id = deps.ids.next();
   const storageKey = `files/${id}`;
   const now = deps.clock.now();
+  tx.onRollback(() => deps.files.delete(storageKey));
   await deps.files.put(storageKey, input.bytes, DOCX_TYPE);
   await tx.files.insert({
     id,

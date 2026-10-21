@@ -41,6 +41,9 @@ const ROLE_ACTIONS = {
   // table of dossiers/transitions.ts, checked by can(actor, action, dossier).
   "dossier.read": ["entity_owner", "ward_officer", "province_officer"],
   "dossier.create": ["entity_owner"],
+  // Any change to an existing hồ sơ starts here: the Vai trò that work on hồ sơ at all. Which change, on
+  // which hồ sơ, is then the transition table's row and the Phạm vi, checked by transition().
+  "dossier.write": ["entity_owner", "ward_officer", "province_officer"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.
@@ -56,6 +59,7 @@ const ROLE_ACTIONS = {
   // L01 Nhập hộ (stories 72 to 75): what a Cán bộ xã may do for a Chủ thể đăng ký ở xã mình, through
   // onBehalfOf(). The actions on one hồ sơ are the transition table's rows marked `onBehalf`.
   "dossier.read_on_behalf": ["ward_officer"],
+  "dossier.write_on_behalf": ["ward_officer"],
   "dossier.create_on_behalf": ["ward_officer"],
   "dossier.evidence.upload_on_behalf": ["ward_officer"],
   "dossier.document.download_on_behalf": ["ward_officer"],

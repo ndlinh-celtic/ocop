@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type DocumentRenderer, type RequestContext, type RoundActivity, type UserActor } from "@ocop/core";
+import { anonymousActor, CONSUMER_NAMES, systemActor, type Clock, type Core, type DocumentRenderer, type FileStore, type RequestContext, type RoundActivity, type UserActor } from "@ocop/core";
 import { generate } from "otplib";
 import { createApp } from "../../src/app";
 import type { ScanResult, VirusScanner } from "../../src/files/clamd";
@@ -10,12 +10,18 @@ import { renderingMailer, type MailTransport, type OutgoingEmail } from "../../s
 import type { TestDatabase } from "./database";
 import { s3TestSettings } from "./s3";
 
-/** Captures rendered emails instead of sending them; can be told to fail the next N deliveries. */
+/**
+ * Captures rendered emails instead of sending them; can be told to fail the next N deliveries, optionally
+ * after letting some through first.
+ */
 export class Mailbox implements MailTransport {
   private sent: OutgoingEmail[] = [];
   private failures = 0;
+  private passes = 0;
   async deliver(email: OutgoingEmail) {
-    if (this.failures > 0) {
+    if (this.failures > 0 && this.passes > 0) {
+      this.passes--;
+    } else if (this.failures > 0) {
       this.failures--;
       throw new Error("SMTP unavailable (simulated)");
     }
@@ -27,8 +33,9 @@ export class Mailbox implements MailTransport {
   to(address: string) {
     return this.sent.filter((e) => e.to.toLowerCase() === address.toLowerCase());
   }
-  failNext(n: number) {
+  failNext(n: number, opts: { after?: number } = {}) {
     this.failures = n;
+    this.passes = opts.after ?? 0;
   }
 }
 
@@ -104,7 +111,14 @@ export interface TestApp {
 
 export function createTestApp(
   db: TestDatabase,
-  opts: { clock?: FakeClock; totpRequired?: boolean; roundActivity?: RoundActivity; documents?: DocumentRenderer } = {},
+  opts: {
+    clock?: FakeClock;
+    totpRequired?: boolean;
+    roundActivity?: RoundActivity;
+    documents?: DocumentRenderer;
+    /** Wraps the evidence bucket's FileStore, e.g. to make one call fail. */
+    files?: (real: FileStore) => FileStore;
+  } = {},
 ): TestApp {
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
@@ -122,7 +136,7 @@ export function createTestApp(
     {
       clock,
       mailer: renderingMailer(mailbox, "OCOP <no-reply@ocop.test>"),
-      files: createS3FileStore(s3TestSettings(), "ocop-evidence-test"),
+      files: (opts.files ?? ((real) => real))(createS3FileStore(s3TestSettings(), "ocop-evidence-test")),
       anchorStore,
       scanner,
       roundActivity: opts.roundActivity,

@@ -58,7 +58,7 @@ async function groundOf(tx: Tx, dossier: Dossier, input: RejectInput): Promise<R
  */
 export function rejectDossier(deps: CoreDeps) {
   return async (actor: Actor, input: RejectInput): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const ground = await groundOf(tx, before, input);
@@ -81,7 +81,7 @@ export function rejectDossier(deps: CoreDeps) {
  */
 export function transferWard(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; wardId: string; reason: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const reason = text(input.reason);
     if (reason === "") throw new DomainError("reason_required", "Nhập lý do chuyển xã");
     return deps.uow.run(async (tx) => {

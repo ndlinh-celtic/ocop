@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import PizZip from "pizzip";
-import type { SubmissionDocument, UserActor } from "@ocop/core";
+import type { FileStore, SubmissionDocument, UserActor } from "@ocop/core";
 import { builtInTemplates, docxRenderer } from "../../src/documents/docx";
 import { seedWards } from "../../src/seed/wards";
 import { createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
@@ -91,6 +91,39 @@ describe("L03 CT-09 Phiếu đăng ký and Báo cáo tự đánh giá generated 
 
       expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "draft", version: expectedVersion, latestSubmission: null });
       expect(await t.app.dossiers.submissions(a, { dossierId })).toEqual([]);
+    } finally {
+      await failing.stop();
+    }
+  });
+
+  it("leaves no văn bản behind in storage when the nộp fails after one was stored", async () => {
+    const stored: string[] = [];
+    let real: FileStore | undefined;
+    const failing = createTestApp(db, {
+      totpRequired: false,
+      clock: t.clock,
+      files: (store) => {
+        real = store;
+        return {
+          ...store,
+          async put(key, body, contentType) {
+            if (stored.length === 1) throw new Error("storage unavailable");
+            await store.put(key, body, contentType);
+            stored.push(key);
+          },
+        };
+      },
+    });
+    try {
+      const a = await f.verifiedOwner();
+      const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });
+      const expectedVersion = await f.completeDraft(a, dossierId);
+
+      await expect(failing.app.dossiers.submit(a, { dossierId, expectedVersion })).rejects.toThrow(/storage unavailable/);
+
+      expect(stored).toHaveLength(1);
+      expect(await real!.head(stored[0]!)).toBeNull();
+      expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "draft", latestSubmission: null });
     } finally {
       await failing.stop();
     }
