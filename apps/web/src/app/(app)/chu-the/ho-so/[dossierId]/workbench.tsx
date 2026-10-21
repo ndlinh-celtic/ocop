@@ -3,7 +3,7 @@
 import { DEFAULT_ALLOWED_TYPES, type SelfAssessment } from "@ocop/core";
 import { Info, Link2, Paperclip, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { RefreshWhileScanning } from "@/components/refresh-while-scanning";
 import { sendToStorage } from "@/lib/direct-upload";
 import {
@@ -15,6 +15,7 @@ import {
   selfScoreAction,
   type SaveResult,
 } from "../actions";
+import { useDossierVersion } from "./dossier-version";
 
 const accept = Object.entries(DEFAULT_ALLOWED_TYPES)
   .flatMap(([mime, exts]) => [mime, ...exts.map((e) => `.${e}`)])
@@ -31,24 +32,23 @@ const stars = (n: number) => "★".repeat(n);
 
 /**
  * L02 CT-05, CT-06 (stories 20 to 25): kho minh chứng, gắn minh chứng theo tiêu chí, giải trình and tự chấm
- * thử of one hồ sơ. Every write carries the version it last saw; the page then reloads its data, and a
- * write refused because the hồ sơ changed meanwhile asks the Chủ thể to reload rather than overwrite.
+ * thử of one hồ sơ. Every write carries the version the page last saw; the page then reloads its data, and
+ * a write refused because the hồ sơ changed meanwhile asks the Chủ thể to reload rather than overwrite.
  */
 export function Workbench({ assessment, editable, onBehalf }: { assessment: SelfAssessment; editable: boolean; /** Nhập hộ (L01). */ onBehalf?: string }) {
   const router = useRouter();
   const { dossierId } = assessment;
-  const [version, setVersion] = useState(assessment.version);
+  const version = useDossierVersion();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ message: string; conflict: boolean }>();
-  useEffect(() => setVersion((v) => Math.max(v, assessment.version)), [assessment.version]);
 
   async function run(write: (expectedVersion: number) => Promise<SaveResult>) {
     setPending(true);
     setError(undefined);
     try {
-      const res = await write(version);
+      const res = await write(version.current);
       if ("version" in res) {
-        setVersion(res.version);
+        version.current = res.version;
         router.refresh();
         return true;
       }

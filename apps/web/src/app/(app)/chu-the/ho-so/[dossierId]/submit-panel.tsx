@@ -6,28 +6,32 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { dossierHome } from "@/lib/dossier-paths";
 import { submitDossierAction, withdrawDossierAction, type DossierFormState } from "../actions";
+import { useDossierVersion } from "./dossier-version";
 
 /**
  * S16 Nộp hồ sơ (L03 CT-09, story 29): every reason the hồ sơ cannot be submitted yet, or the button that
  * submits it into the đợt Đang nhận nộp after confirmation. With `resubmission` (L04 CT-11) it nộp lại a
- * hồ sơ Yêu cầu bổ sung as the next Phiên bản nộp.
+ * hồ sơ Yêu cầu bổ sung as the next Phiên bản nộp. It nộp the version the editors of the page last saw,
+ * so a giải trình saved a moment before does not make it stale.
  */
 export function SubmitPanel({
   dossierId,
-  version,
   blockers,
   resubmission = false,
   onBehalf,
 }: {
   dossierId: string;
-  version: number;
   blockers: SubmissionBlocker[];
   resubmission?: boolean;
   /** Nhập hộ (L01): the Chủ thể the Cán bộ xã nộp for. */
   onBehalf?: string;
 }) {
   const verb = resubmission ? "Nộp lại hồ sơ" : "Nộp hồ sơ";
-  const [state, action, pending] = useActionState<DossierFormState, FormData>(submitDossierAction.bind(null, dossierId, version, onBehalf), {});
+  const version = useDossierVersion();
+  const [state, action, pending] = useActionState<DossierFormState, FormData>(
+    (prev) => submitDossierAction(dossierId, version.current, onBehalf, prev),
+    {},
+  );
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
       <h2 className="mb-2 font-semibold">{verb}</h2>

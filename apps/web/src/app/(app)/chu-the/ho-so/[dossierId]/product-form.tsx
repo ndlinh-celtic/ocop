@@ -4,6 +4,7 @@ import type { ProductField, ProductInfo } from "@ocop/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { saveProductAction } from "../actions";
+import { useDossierVersion } from "./dossier-version";
 
 const FIELDS: { name: ProductField; label: string; rows: number }[] = [
   { name: "productName", label: "Tên sản phẩm", rows: 1 },
@@ -20,19 +21,18 @@ type Status = { kind: "idle" | "saving" | "saved" } | { kind: "error"; message: 
 
 /**
  * Thông tin sản phẩm of a Nháp (stories 18, 19): saves itself a moment after each change and when a field
- * loses focus, carrying the version it last saw. If someone else changed the hồ sơ meanwhile, the save
- * is refused and the Chủ thể is asked to reload rather than overwrite.
+ * loses focus, carrying the version it last saw. Saves run one after another, each sending what changed
+ * since the previous one. If someone else changed the hồ sơ meanwhile, the save is refused and the Chủ
+ * thể is asked to reload rather than overwrite.
  */
 export function ProductForm({
   dossierId,
   initial,
-  version: initialVersion,
   editable,
   onBehalf,
 }: {
   dossierId: string;
   initial: ProductInfo;
-  version: number;
   editable: boolean;
   /** Nhập hộ (L01): the Chủ thể the Cán bộ xã writes for. */
   onBehalf?: string;
@@ -41,40 +41,39 @@ export function ProductForm({
   const [values, setValues] = useState(initial);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const saved = useRef(initial);
-  const version = useRef(initialVersion);
+  const version = useDossierVersion();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef<Promise<void> | null>(null);
   const latest = useRef(values);
   latest.current = values;
 
-  async function save() {
+  function save() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    await inFlight.current;
+    // Queued behind the save in flight, so two saves never carry the same version.
+    const run = (inFlight.current ?? Promise.resolve()).catch(() => undefined).then(saveChanges);
+    inFlight.current = run;
+    return run;
+  }
+
+  async function saveChanges() {
     const changed = Object.fromEntries(FIELDS.filter((f) => latest.current[f.name] !== saved.current[f.name]).map((f) => [f.name, latest.current[f.name]]));
     if (Object.keys(changed).length === 0) return;
     setStatus({ kind: "saving" });
     const snapshot = latest.current;
-    const run = saveProductAction({ dossierId, expectedVersion: version.current, ...changed, onBehalf }).then((res) => {
-      if ("version" in res) {
-        version.current = res.version;
-        saved.current = snapshot;
-        setStatus({ kind: "saved" });
-        // Other controls of the page (Xóa hồ sơ) act on the new version.
-        router.refresh();
-      } else {
-        setStatus({ kind: "error", message: res.error, conflict: res.conflict });
-      }
-    });
-    inFlight.current = run;
-    await run;
+    const res = await saveProductAction({ dossierId, expectedVersion: version.current, ...changed, onBehalf });
+    if ("version" in res) {
+      version.current = res.version;
+      saved.current = snapshot;
+      setStatus({ kind: "saved" });
+      // Other controls of the page (Xóa hồ sơ) act on the new version.
+      router.refresh();
+    } else {
+      setStatus({ kind: "error", message: res.error, conflict: res.conflict });
+    }
   }
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
-  // Other editors of the page (kho minh chứng, tự chấm thử) bump the version too; follow the page's latest.
-  useEffect(() => {
-    version.current = Math.max(version.current, initialVersion);
-  }, [initialVersion]);
 
   function change(name: ProductField, value: string) {
     setValues((v) => ({ ...v, [name]: value }));
