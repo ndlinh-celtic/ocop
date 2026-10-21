@@ -88,6 +88,34 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect((await full(w.A.chair, d.dossierId)).result).toMatchObject({ reauthMethod: "password", finalizedBy: { userId: w.A.chair.userId } });
   });
 
+  it("after chốt shows every thành viên chấm the kết quả, tells them, and gives the Chủ thể a timeline row and the Sở the state only (stories 121, 122, 124, 125, 137)", async () => {
+    const d = await ready();
+    await meetingWith(w.A.secretary, [d.dossierId]);
+    await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: (await full(w.A.secretary, d.dossierId)).dossierVersion });
+
+    // The Vắng thành viên too, though they never confirmed (TV-08); their own phiếu stays theirs on S61.
+    expect((await full(m(2), d.dossierId)).result).toMatchObject({ n: 1 });
+    expect((await full(m(0), d.dossierId)).aggregate.total).toBe(72.5);
+    expect((await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId, ownSheet: true })).kind).toBe("own_sheet");
+    await expect(w.t.app.scoring.readDossierScores(m(3), { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
+    for (const reader of [w.province, w.ward, d.a]) expect(await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId })).toEqual({ kind: "none" });
+    expect(await w.t.app.dossiers.get(w.province, { dossierId: d.dossierId })).toMatchObject({ state: "score_finalized" });
+
+    const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
+    expect(timeline.find((e) => e.action === "dossier.finalize")).toMatchObject({ fromState: "member_confirmed", toState: "score_finalized", metadata: { n: 1 } });
+    const text = JSON.stringify(timeline);
+    for (const x of [m(0), m(1), m(2)]) expect(text).not.toContain(x.fullName);
+    expect(text).not.toContain("72.5");
+
+    await w.t.drainJobs();
+    for (const x of [m(0), m(1), m(2)]) {
+      expect((await w.t.app.notifications.list(x)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/thanh-vien/diem-tong-hop/${d.dossierId}`)).toHaveLength(1);
+    }
+    expect((await w.t.app.notifications.list(m(3))).filter((n) => n.kind === "dossier_score_finalized")).toEqual([]);
+    const [audited] = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.result.finalized"], targetId: d.dossierId });
+    expect(audited).toMatchObject({ metadata: { reauth: { method: "password" } }, after: { n: 1, star: 4 } });
+  });
+
   describe("Phiên họp (stories 107 to 109)", () => {
     it("lists the hồ sơ Sẵn sàng chốt not yet in a Phiên họp, and adds or gỡ them while open", async () => {
       const one = await ready();

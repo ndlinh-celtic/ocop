@@ -61,6 +61,7 @@ export const NOTICE_EVENTS = [
   "dossier.grading_started",
   "dossier.advisory_report_issued",
   "dossier.members_confirmed",
+  "dossier.score_finalized",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -343,6 +344,22 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           link: "/hoi-dong/tien-do",
         },
       ];
+    }
+    // L15 HD-08 (story 121): chốt điểm, for the thành viên chấm and the Tổ tư vấn whose Phân công is in force.
+    case "dossier.score_finalized": {
+      const inForce = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null);
+      const usersOf = async (kind: "member" | "advisory") =>
+        (await Promise.all(inForce.filter((a) => a.kind === kind).map((a) => tx.users.findById(a.userId)))).filter((u): u is User => u?.status === "active");
+      const notice = (recipients: User[], link: string): Notice => ({
+        recipients,
+        kind: "dossier_score_finalized",
+        title: `Hồ sơ đã chốt điểm: ${product}`,
+        body: `Hội đồng đã chốt điểm hồ sơ ${dossier.code}.`,
+        emailSubject: "Một hồ sơ OCOP đã được chốt điểm",
+        emailLine: "Hội đồng vừa chốt điểm một hồ sơ OCOP anh/chị được Phân công.",
+        link,
+      });
+      return [notice(await usersOf("member"), `/thanh-vien/diem-tong-hop/${dossier.id}`), notice(await usersOf("advisory"), `/to-tu-van/ho-so/${dossier.id}`)];
     }
     default:
       return [];
