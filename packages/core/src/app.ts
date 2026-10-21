@@ -55,6 +55,7 @@ import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvi
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";
+import { addAssignment, assignmentHistory, replaceAssignment } from "./councils/replace";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
 import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
@@ -216,6 +217,9 @@ export function createCore(deps: CoreDeps) {
       assignments: listAssignments(deps),
       assignmentCandidates: assignmentCandidates(deps),
       startGrading: startGrading(deps),
+      replaceAssignment: replaceAssignment(deps),
+      addAssignment: addAssignment(deps),
+      assignmentHistory: assignmentHistory(deps),
     },
     scoring: {
       readDossierScores: readDossierScores(deps),

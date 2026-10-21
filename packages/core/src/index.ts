@@ -229,6 +229,7 @@ export { COUNCIL_ROLES, type CouncilDetail, type CouncilMember, type CouncilRole
 export { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind, type AssignmentRepo } from "./councils/assignment-model";
 export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "./councils/assignments";
 export type { StartGradingInput } from "./councils/grading";
+export type { AddAssignmentInput, ReplaceAssignmentInput, ReplacedAssignmentView } from "./councils/replace";
 export {
   EVIDENCE_ASSESSMENTS,
   EVIDENCE_ASSESSMENT_LABEL,

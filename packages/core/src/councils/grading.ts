@@ -97,7 +97,7 @@ export function startGrading(deps: CoreDeps) {
 }
 
 /** A Phiếu chấm trống for each Phân công thành viên chấm that has no current one yet (a Giao chấm again keeps them). */
-async function openScoreSheets(deps: CoreDeps, tx: Tx, dossierId: string, assignmentIds: string[], now: Date): Promise<string[]> {
+export async function openScoreSheets(deps: CoreDeps, tx: Tx, dossierId: string, assignmentIds: string[], now: Date): Promise<string[]> {
   const have = new Set((await tx.scoreSheets.current(dossierId)).map((s) => s.assignmentId));
   const opened: string[] = [];
   for (const assignmentId of assignmentIds) {

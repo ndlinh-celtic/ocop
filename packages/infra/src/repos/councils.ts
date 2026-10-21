@@ -1,5 +1,5 @@
 import type { AssignmentRepo, CouncilRepo, ScoreSheetRepo } from "@ocop/core";
-import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { assignment, council, dossier, scoreSheet, scoreSheetLine, scoreSheetLineFile } from "../db/schema";
 
@@ -48,6 +48,21 @@ export function assignmentRepo(db: Db): AssignmentRepo {
         .where(and(eq(assignment.dossierId, dossierId), isNull(assignment.effectiveAt), isNull(assignment.replacedAt)))
         .returning({ id: assignment.id });
       return rows.map((r) => r.id);
+    },
+    async markReplaced(id, at, by, reason) {
+      const rows = await db
+        .update(assignment)
+        .set({ replacedAt: at, replacedBy: by, replaceReason: reason })
+        .where(and(eq(assignment.id, id), isNull(assignment.replacedAt), isNotNull(assignment.effectiveAt)))
+        .returning({ id: assignment.id });
+      return rows.length === 1;
+    },
+    async replaced(dossierId) {
+      return db
+        .select()
+        .from(assignment)
+        .where(and(eq(assignment.dossierId, dossierId), isNotNull(assignment.replacedAt)))
+        .orderBy(asc(assignment.replacedAt), asc(assignment.id));
     },
   };
 }
