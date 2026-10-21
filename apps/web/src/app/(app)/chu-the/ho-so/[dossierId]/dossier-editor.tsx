@@ -119,9 +119,9 @@ export async function DossierEditor({ actor, dossierId, onBehalf, back, notice }
         </section>
 
         <Workbench assessment={assessment} editable={editable} onBehalf={onBehalf} />
-      </DossierVersionProvider>
 
-      {check && <SubmitPanel dossierId={dossier.id} version={dossier.version} blockers={check.blockers} resubmission={resubmission} onBehalf={onBehalf} />}
+        {check && <SubmitPanel dossierId={dossier.id} blockers={check.blockers} resubmission={resubmission} onBehalf={onBehalf} />}
+      </DossierVersionProvider>
       {withdrawable && <WithdrawForm dossierId={dossier.id} version={dossier.version} />}
 
       <DossierTimeline events={timeline} />
