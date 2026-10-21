@@ -95,14 +95,14 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   council_member: [
     HOME,
-    { href: "/thanh-vien/ho-so", label: "Hồ sơ được phân công", icon: ClipboardList, ready: false },
+    { href: "/thanh-vien/ho-so", label: "Hồ sơ được phân công", icon: ClipboardList, ready: true },
     { href: "/thanh-vien/diem-tong-hop", label: "Điểm tổng hợp", icon: Table2, ready: false },
     CRITERIA,
     ...COMMON,
   ],
   advisory_member: [
     HOME,
-    { href: "/to-tu-van/hang-doi", label: "Hàng đợi thẩm định", icon: Inbox, ready: false },
+    { href: "/to-tu-van/hang-doi", label: "Hàng đợi thẩm định", icon: Inbox, ready: true },
     { href: "/to-tu-van/sao-chep", label: "Sao chép sang phiếu chấm", icon: Copy, ready: false },
     CRITERIA,
     ...COMMON,
