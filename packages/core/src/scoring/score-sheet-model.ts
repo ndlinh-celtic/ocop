@@ -17,6 +17,11 @@ export interface ScoreSheet {
   reauthMethod: "totp" | "password" | null;
   supersededBy: string | null;
   supersededReason: string | null;
+  /**
+   * Dựa trên Tổ tư vấn (spec #49 HD-03): a Phiếu chấm trống opened for a thành viên chấm added or replaced once
+   * the hồ sơ is past the first sao chép waits for the next one; no lưu or xác nhận until a sao chép writes into it.
+   */
+  awaitingCopy: boolean;
   version: number;
   createdAt: Date;
   updatedAt: Date;

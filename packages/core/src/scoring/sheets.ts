@@ -42,6 +42,9 @@ function writable(sheet: ScoreSheet | null, expectedVersion: number): ScoreSheet
   if (!sheet) throw new DomainError("score_sheet_not_found", "Anh/chị chưa có Phiếu chấm cho hồ sơ này");
   if (sheet.state !== "draft") throw new DomainError("score_sheet_confirmed", "Phiếu chấm đã xác nhận nên không sửa được nữa");
   if (sheet.version !== expectedVersion) throw versionConflict();
+  if (sheet.awaitingCopy) {
+    throw new DomainError("score_sheet_awaiting_copy", "Phiếu chấm đang chờ Tổ tư vấn sao chép dữ liệu nên chưa lưu hoặc xác nhận được");
+  }
   return sheet;
 }
 

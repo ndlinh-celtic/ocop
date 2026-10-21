@@ -97,7 +97,7 @@ export interface OwnSheetView {
   kind: "own_sheet";
   dossierId: string;
   /** Null when the reader has no Phiếu chấm (not yet given one). */
-  sheet: Pick<ScoreSheet, "id" | "state" | "attempt" | "version" | "confirmedAt" | "reauthMethod"> | null;
+  sheet: Pick<ScoreSheet, "id" | "state" | "attempt" | "version" | "confirmedAt" | "reauthMethod" | "awaitingCopy"> | null;
   set: CriteriaSetDetail;
   thresholds: RankThresholds;
   criteria: SheetCriterion[];
@@ -359,7 +359,7 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
   return {
     kind: "own_sheet",
     dossierId: dossier.id,
-    sheet: sheet && { id: sheet.id, state: sheet.state, attempt: sheet.attempt, version: sheet.version, confirmedAt: sheet.confirmedAt, reauthMethod: sheet.reauthMethod },
+    sheet: sheet && { id: sheet.id, state: sheet.state, attempt: sheet.attempt, version: sheet.version, confirmedAt: sheet.confirmedAt, reauthMethod: sheet.reauthMethod, awaitingCopy: sheet.awaitingCopy },
     set,
     thresholds,
     criteria,

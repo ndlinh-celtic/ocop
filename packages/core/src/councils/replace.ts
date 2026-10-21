@@ -85,7 +85,7 @@ export function replaceAssignment(deps: CoreDeps) {
         throw new DomainError("assignment_sheet_confirmed", "Thành viên đã xác nhận Phiếu chấm nên không thay được");
       }
       if (!(await tx.assignments.markReplaced(old.id, now, actor.userId, reason))) throw new Error(`assignment ${old.id} changed under a lock`);
-      const created = await insertInForce(deps, tx, actor, before.id, input.newUserId, old.kind, now);
+      const created = await insertInForce(deps, tx, actor, before, input.newUserId, old.kind, now);
       if (sheet) {
         const newSheet = created.scoreSheetIds[0] ?? null;
         const superseded = { ...sheet, state: "superseded" as const, supersededBy: newSheet, supersededReason: reason, version: sheet.version + 1, updatedAt: now };
@@ -116,7 +116,7 @@ export function addAssignment(deps: CoreDeps) {
         metadata: { kind: input.kind, replacedUserId: null, newUserId: input.userId },
       });
       await checkNewcomer(deps, tx, before, current, input.userId, input.kind, now);
-      await insertInForce(deps, tx, actor, before.id, input.userId, input.kind, now);
+      await insertInForce(deps, tx, actor, before, input.userId, input.kind, now);
       await emit(deps, tx, {
         type: "council.assignment.added",
         payload: { dossierId: before.id, entityId: before.entityId, kind: input.kind, replacedUserId: null, newUserId: input.userId },
@@ -178,10 +178,10 @@ async function checkNewcomer(deps: CoreDeps, tx: Tx, dossier: Dossier, current: 
   checkEligible(await eligibleOf(tx, dossier.councilId!, now), kind === "member" ? [userId] : [], kind === "advisory" ? [userId] : []);
 }
 
-async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, userId: string, kind: AssignmentKind, now: Date) {
+async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier, userId: string, kind: AssignmentKind, now: Date) {
   const a: Assignment = {
     id: deps.ids.next(),
-    dossierId,
+    dossierId: dossier.id,
     userId,
     kind,
     createdBy: actor.userId,
@@ -192,6 +192,8 @@ async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId
     replaceReason: null,
   };
   await tx.assignments.insert(a);
-  const scoreSheetIds = kind === "member" ? await openScoreSheets(deps, tx, dossierId, [a.id], now) : [];
+  // Dựa trên Tổ tư vấn, past the first sao chép: the Phiếu chấm trống waits for the next one.
+  const awaitingCopy = kind === "member" && (dossier.state === "member_review" || dossier.state === "member_confirmed") && (await tx.rounds.findById(dossier.roundId!))!.gradingMode === "advisory_based";
+  const scoreSheetIds = kind === "member" ? await openScoreSheets(deps, tx, dossier.id, [a.id], now, awaitingCopy) : [];
   return { assignmentId: a.id, scoreSheetIds };
 }

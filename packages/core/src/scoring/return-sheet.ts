@@ -70,6 +70,7 @@ export function returnScoreSheet(deps: CoreDeps) {
         reauthMethod: null,
         supersededBy: null,
         supersededReason: null,
+        awaitingCopy: sheet.awaitingCopy,
         version: 1,
         createdAt: now,
         updatedAt: now,

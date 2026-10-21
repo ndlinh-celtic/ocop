@@ -330,6 +330,7 @@ export const scoreSheet = scoringSchema.table("score_sheet", {
   reauthMethod: text("reauth_method").$type<"totp" | "password">(),
   supersededBy: uuid("superseded_by"),
   supersededReason: text("superseded_reason"),
+  awaitingCopy: boolean("awaiting_copy").notNull(),
   version: integer("version").notNull(),
   createdAt: ts("created_at").notNull(),
   updatedAt: ts("updated_at").notNull(),

@@ -268,7 +268,7 @@ export function copyAdvisory(deps: CoreDeps) {
           for (const w of writes) {
             for (const line of w.lines) await tx.scoreSheets.saveLine({ ...line, updatedAt: now });
             // A thành viên's form open meanwhile gets a version conflict rather than writing over the sao chép.
-            if (!(await tx.scoreSheets.update({ ...w.sheet, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version))) throw versionConflict();
+            if (!(await tx.scoreSheets.update({ ...w.sheet, awaitingCopy: false, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version))) throw versionConflict();
           }
           return { ...plan, version: after.version, state: after.state };
         });

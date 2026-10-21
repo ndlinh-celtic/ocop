@@ -37,7 +37,8 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
       },
     ]),
   );
-  const writable = scores.sheet?.state === "draft" && (dossier.state === "member_review" || dossier.state === "member_confirmed");
+  const awaitingCopy = scores.sheet?.state === "draft" && scores.sheet.awaitingCopy;
+  const writable = scores.sheet?.state === "draft" && !awaitingCopy && (dossier.state === "member_review" || dossier.state === "member_confirmed");
   // S61: a phiên bản newer than any copied into the phiếu changes nothing in it until the Tổ tư vấn copies it.
   const versions = await app().core.scoring.advisoryReportVersions(actor, { dossierId });
   const copied = Math.max(0, ...scores.criteria.map((c) => c.advisory?.number ?? 0));
@@ -70,6 +71,11 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
       {scores.sheet?.state === "confirmed" && (
         <p role="status" className="rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand" data-testid="sheet-locked">
           Phiếu đã xác nhận lúc {formatVnDateTime(scores.sheet.confirmedAt!)} và đã khóa. Muốn sửa phải có Trả phiếu của hội đồng.
+        </p>
+      )}
+      {awaitingCopy && (
+        <p role="status" className="rounded-lg border border-amber bg-amber-soft px-4 py-2 text-sm" data-testid="sheet-awaiting-copy">
+          Anh/chị được bổ sung sau lần sao chép từ Tổ tư vấn. Phiếu này chờ lần sao chép tiếp theo; chấm được sau khi Tổ tư vấn sao chép báo cáo vào phiếu.
         </p>
       )}
       {newer !== null && scores.sheet?.state === "draft" && (

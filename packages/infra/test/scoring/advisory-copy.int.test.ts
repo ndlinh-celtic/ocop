@@ -218,6 +218,28 @@ describe("TV-04 điều chỉnh khác Điểm đề xuất cần lý do (stories
   });
 });
 
+describe("L09 a thành viên chấm added after the first sao chép waits for the next one (spec #49 HD-03)", () => {
+  it("refuses lưu and xác nhận on the Phiếu chấm trống until a sao chép writes into it, and says it is waiting", async () => {
+    const d = await issued([m(0), m(1)]);
+    await copy(leader(), [d]);
+    await w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await dossierVersion(d.dossierId), userId: m(3).userId, kind: "member", reason: "Bổ sung thành viên" });
+
+    const waiting = await sheetOf(m(3), d.dossierId);
+    expect(waiting.sheet).toMatchObject({ state: "draft", awaitingCopy: true });
+    await expect(save(m(3), d.dossierId, waiting.sheet!.version, [{ code: "1.1", points: 40 }])).rejects.toMatchObject({ code: "score_sheet_awaiting_copy" });
+    await expect(w.t.app.scoring.confirmScoreSheet(m(3), { dossierId: d.dossierId, expectedVersion: waiting.sheet!.version })).rejects.toMatchObject({ code: "score_sheet_awaiting_copy" });
+    // The others are not held up.
+    expect((await sheetOf(m(0), d.dossierId)).sheet).toMatchObject({ awaitingCopy: false });
+
+    await copy(leader(), [{ dossierId: d.dossierId, version: await dossierVersion(d.dossierId) }], "all", [m(3).userId]);
+
+    const filled = await sheetOf(m(3), d.dossierId);
+    expect(filled.sheet).toMatchObject({ awaitingCopy: false });
+    expect(byCode(filled)["1.1"]).toMatchObject({ source: "advisory", levelId: w.level("1.1:40") });
+    await expect(save(m(3), d.dossierId, filled.sheet!.version, [{ code: "1.1", points: 40 }])).resolves.toMatchObject({ version: filled.sheet!.version + 1 });
+  });
+});
+
 describe("L12 audit, outbox and thông báo (stories 75, 76)", () => {
   it("writes one audit row per hồ sơ with phiên bản, phạm vi, người nhận and result, and tells only those with a dòng written", async () => {
     const d = await issued([m(0), m(1)]);
