@@ -1,5 +1,7 @@
 import { GRADING_MODE_LABEL } from "@ocop/core";
 import { GitFork } from "lucide-react";
+import Link from "next/link";
+import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { EmptyState } from "@/components/empty-state";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
@@ -17,10 +19,12 @@ export const dynamic = "force-dynamic";
 export default async function AssignmentPage({ searchParams }: { searchParams: Promise<{ dot?: string }> }) {
   const actor = await requireActor();
   const q = await searchParams;
-  const [dossiers, candidates, rounds] = await Promise.all([
+  const [dossiers, candidates, rounds, graded] = await Promise.all([
     app().core.dossiers.list(actor, { state: "forwarded_to_province", ...(q.dot ? { roundId: q.dot } : {}) }),
     app().core.councils.assignmentCandidates(actor),
     app().core.rounds.listRounds(actor),
+    // Between Giao chấm and chốt: thay and bổ sung thành viên (HD-03, #55).
+    app().core.scoring.gradingProgress(actor),
   ]);
   const roundById = new Map(rounds.map((r) => [r.id, r]));
   const rows: BoardRow[] = [];
@@ -94,6 +98,26 @@ export default async function AssignmentPage({ searchParams }: { searchParams: P
         </EmptyState>
       ) : (
         <AssignmentBoard rows={rows} candidates={candidates} />
+      )}
+      {graded.length > 0 && (
+        <section className="flex flex-col gap-2" aria-label="Hồ sơ đã Giao chấm">
+          <h2 className="font-medium">Hồ sơ đã Giao chấm</h2>
+          <p className="text-sm text-text-2">Thay thành viên chưa xác nhận phiếu, hoặc bổ sung thành viên, đến trước khi chốt điểm.</p>
+          <ul className="divide-y rounded-lg border bg-surface shadow-card">
+            {graded.map((g) => (
+              <li key={g.dossierId} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm" data-testid="graded-row">
+                <Link href={`/hoi-dong/phan-cong/${g.dossierId}`} className="font-mono text-brand hover:underline">
+                  {g.code}
+                </Link>
+                <span>{g.productName || "(Chưa đặt tên sản phẩm)"}</span>
+                <DossierStateTag state={g.state} />
+                <span className="text-text-3">
+                  {g.confirmed} / {g.graders} phiếu đã xác nhận
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

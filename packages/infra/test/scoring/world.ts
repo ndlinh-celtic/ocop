@@ -48,10 +48,10 @@ export interface ScoringWorld {
 }
 
 /**
- * One database for a describe: Hội đồng A (4 thành viên, 1 Tổ tư vấn) and B (2, 1); a đợt Đang nhận nộp on a
+ * One database for a describe: Hội đồng A (4 thành viên, `advisors` Tổ tư vấn, default 1) and B (2, 1); a đợt Đang nhận nộp on a
  * three-Tiêu chí Bộ tiêu chí, gán to A, with `gradingMode` (chấm trực tiếp) and `minGraders` (2).
  */
-export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean } = {}): ScoringWorld {
+export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean; advisors?: number } = {}): ScoringWorld {
   const w = {} as ScoringWorld;
   beforeAll(async () => {
     w.db = await createTestDatabase();
@@ -80,7 +80,7 @@ export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: num
     w.criterionId = (code) => ids.get(code)!;
     w.ward = await w.f.staff("ward_officer", wardId);
     w.province = await w.f.staff("province_officer");
-    w.A = await w.f.staffedCouncil(w.province, { members: 4, advisors: 1 });
+    w.A = await w.f.staffedCouncil(w.province, { members: 4, advisors: opts.advisors ?? 1 });
     w.B = await w.f.staffedCouncil(w.province, { members: 2, advisors: 1 });
     w.roundId = await w.f.openRound(versionId, { gradingMode: opts.gradingMode ?? "direct", minGraders: opts.minGraders ?? 2 });
     await w.t.app.rounds.assignCouncil(w.province, { roundId: w.roundId, councilId: w.A.councilId });
