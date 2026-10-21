@@ -280,7 +280,7 @@ async function reissue(actor: UserActor, d: { dossierId: string; version: number
     attachmentFileIds: [],
   });
 }
-/** Stands in for the copy, xác nhận and chốt of later tickets (#55, #54, #60): puts the hồ sơ in `state` directly. */
+/** Stands in for the chốt of a later ticket (#60): puts the hồ sơ in `state` directly. */
 const putIn = (dossierId: string, state: string) => db.admin.query("UPDATE dossier.dossier SET state = $2, version = version + 1 WHERE id = $1", [dossierId, state]);
 
 describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
@@ -322,12 +322,18 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
     const d = await complete();
     await expect(reissue(leader, d, "Sửa")).rejects.toMatchObject({ code: "invalid_state" });
     const { version } = await issue(leader, d);
+    const reissueNow = async (why: string) => reissue(leader, { dossierId: d.dossierId, version: (await report(leader, d.dossierId)).dossierVersion }, why);
 
-    for (const state of ["member_review", "member_confirmed"]) {
-      await putIn(d.dossierId, state);
-      const { dossierVersion } = await report(leader, d.dossierId);
-      await expect(reissue(leader, { dossierId: d.dossierId, version: dossierVersion }, `Sửa khi ${state}`)).resolves.toMatchObject({ number: expect.any(Number) });
+    // L12: the first sao chép opens Thành viên xem xét; both thành viên xác nhận the copied phiếu: Sẵn sàng chốt.
+    await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" });
+    expect((await report(leader, d.dossierId)).state).toBe("member_review");
+    await expect(reissueNow("Sửa khi member_review")).resolves.toMatchObject({ number: 2 });
+    for (const member of A.members) {
+      const view = await t.app.scoring.readDossierScores(member, { dossierId: d.dossierId });
+      await t.app.scoring.confirmScoreSheet(member, { dossierId: d.dossierId, expectedVersion: view.kind === "own_sheet" ? view.sheet!.version : 0 });
     }
+    expect((await report(leader, d.dossierId)).state).toBe("member_confirmed");
+    await expect(reissueNow("Sửa khi member_confirmed")).resolves.toMatchObject({ number: 3 });
     await putIn(d.dossierId, "score_finalized");
     await expect(reissue(leader, { dossierId: d.dossierId, version: version + 5 }, "Sửa sau chốt")).rejects.toMatchObject({ code: "invalid_state" });
     expect((await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).map((v) => v.number)).toEqual([1, 2, 3]);

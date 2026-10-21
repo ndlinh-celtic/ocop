@@ -57,6 +57,7 @@ import { assignmentCandidates, editAssignments, listAssignments } from "./counci
 import { startGrading } from "./councils/grading";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
+import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -226,6 +227,10 @@ export function createCore(deps: CoreDeps) {
       reissueAdvisoryReport: reissueAdvisoryReport(deps),
       advisoryReportVersions: advisoryReportVersions(deps),
       downloadAdvisoryFile: downloadAdvisoryFile(deps),
+      // L12 sao chép sang Phiếu chấm (#58).
+      advisoryCopyBoard: advisoryCopyBoard(deps),
+      previewAdvisoryCopy: previewAdvisoryCopy(deps),
+      copyAdvisory: copyAdvisory(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

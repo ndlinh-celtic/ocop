@@ -60,6 +60,10 @@ export interface SheetCriterion {
   files: { fileId: string; fileName: string; status: FileStatus }[];
   source: "member" | "advisory";
   edited: boolean;
+  /** L12 (stories 71, 84): the Tổ tư vấn phiên bản the dòng was copied from and its Mức điểm gốc; null for a dòng of the thành viên's own. */
+  advisory: { versionId: string; number: number; levelId: string; points: number; description: string } | null;
+  /** TV-04 (story 85): why the thành viên moved off the Mức điểm gốc. */
+  adjustReason: string | null;
 }
 
 export interface OwnSheetView {
@@ -126,9 +130,11 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
     const f = await tx.files.findById(id);
     if (f) fileOf.set(id, { fileName: f.fileName, status: f.status });
   }
+  const numberOf = new Map((await tx.advisoryReports.versions(dossier.id)).map((v) => [v.id, v.number]));
   const criteria = sheetOrder(rows).map((c): SheetCriterion => {
     const line = lines.get(c.id);
     const level = c.levels.find((l) => l.id === line?.scoreLevelId);
+    const original = line?.source === "advisory" ? c.levels.find((l) => l.id === line.advisoryLevelOriginal) : undefined;
     return {
       criterionId: c.id,
       code: c.code,
@@ -145,6 +151,11 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
       }),
       source: line?.source ?? "member",
       edited: line?.edited ?? false,
+      advisory:
+        original && line?.advisoryVersionId
+          ? { versionId: line.advisoryVersionId, number: numberOf.get(line.advisoryVersionId) ?? 0, levelId: original.id, points: original.points, description: original.description }
+          : null,
+      adjustReason: line?.adjustReason ?? null,
     };
   });
   const set = assembleSet(rows);

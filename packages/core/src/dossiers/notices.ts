@@ -60,6 +60,7 @@ export const NOTICE_EVENTS = [
   "dossier.return_requested",
   "dossier.grading_started",
   "dossier.advisory_report_issued",
+  "dossier.advisory_copied",
   "dossier.members_confirmed",
 ] as const;
 
@@ -322,6 +323,22 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           emailSubject: "Có báo cáo Tổ tư vấn mới",
           emailLine: "Tổ tư vấn vừa phát hành báo cáo cho một hồ sơ OCOP anh/chị được Phân công chấm.",
           link: `/thanh-vien/ho-so/${dossier.id}/bao-cao-to-tu-van`,
+        },
+      ];
+    }
+    // L12 (story 75): a sao chép tells the thành viên chấm it wrote a dòng for, as copyAdvisory named them.
+    case "dossier.advisory_copied": {
+      const ids = "recipientUserIds" in event.payload ? (event.payload.recipientUserIds ?? []) : [];
+      const users = (await Promise.all(ids.map((id) => tx.users.findById(id)))).filter((u): u is User => u?.status === "active");
+      return [
+        {
+          recipients: users,
+          kind: "dossier_advisory_copied",
+          title: `Phiếu chấm đã được điền sẵn: ${product}`,
+          body: `Tổ tư vấn đã sao chép Điểm đề xuất vào Phiếu chấm của anh/chị cho hồ sơ ${dossier.code}.`,
+          emailSubject: "Phiếu chấm OCOP của anh/chị đã được điền sẵn",
+          emailLine: "Tổ tư vấn vừa sao chép Điểm đề xuất vào Phiếu chấm của anh/chị cho một hồ sơ OCOP.",
+          link: `/thanh-vien/ho-so/${dossier.id}`,
         },
       ];
     }
