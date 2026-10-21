@@ -72,6 +72,10 @@ const ROLE_ACTIONS = {
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.
   "dossier.return_request.read": ["ward_officer", "province_officer"],
+  // L10 TM-03 (#57 stories 52, 53): the đề nghị trả về of the Tổ tư vấn, for the Sở and the Tổ tư vấn of the
+  // hồ sơ (DataScope `assigned`); neither the xã nor the Chủ thể reads them. Sending one is gated by
+  // dossier.advisory_report.write, the Tổ tư vấn's write on a hồ sơ, then by the transition table.
+  "dossier.advisory_return_request.read": ["province_officer", "advisory_member"],
   "dossier.evidence.upload": ["entity_owner"],
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],

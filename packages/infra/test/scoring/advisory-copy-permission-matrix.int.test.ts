@@ -107,7 +107,7 @@ async function dossierIn(state: State): Promise<Subject> {
   const d = await f.advisoryCopied(...args);
   if (state === "Thành viên xem xét") return d;
   const other = A.members[1]!;
-  const sheet = await t.app.scoring.readDossierScores(other, { dossierId: d.dossierId });
+  const sheet = await t.app.scoring.readDossierScores(other, { dossierId: d.dossierId, ownSheet: true });
   await t.app.scoring.confirmScoreSheet(other, { dossierId: d.dossierId, expectedVersion: sheet.kind === "own_sheet" ? sheet.sheet!.version : 0 });
   return { ...d, version: (await t.app.dossiers.get(A.secretary, { dossierId: d.dossierId })).version };
 }
@@ -124,7 +124,7 @@ async function attempt(who: Who, action: Action, d: Subject): Promise<void> {
       return;
     case "lưu Phiếu chấm": {
       // The Mức điểm the dòng already holds (the copied one once copied), so no lý do điều chỉnh is needed.
-      const own = actor === actors["Thành viên A, có Phân công"] ? await t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId }) : null;
+      const own = actor === actors["Thành viên A, có Phân công"] ? await t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId, ownSheet: true }) : null;
       const c = own?.kind === "own_sheet" ? own.criteria[0]! : null;
       await t.app.scoring.saveScoreSheet(actor, {
         dossierId: d.dossierId,

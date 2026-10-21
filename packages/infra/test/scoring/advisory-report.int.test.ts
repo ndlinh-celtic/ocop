@@ -329,7 +329,7 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
     expect((await report(leader, d.dossierId)).state).toBe("member_review");
     await expect(reissueNow("Sửa khi member_review")).resolves.toMatchObject({ number: 2 });
     for (const member of A.members) {
-      const view = await t.app.scoring.readDossierScores(member, { dossierId: d.dossierId });
+      const view = await t.app.scoring.readDossierScores(member, { dossierId: d.dossierId, ownSheet: true });
       await t.app.scoring.confirmScoreSheet(member, { dossierId: d.dossierId, expectedVersion: view.kind === "own_sheet" ? view.sheet!.version : 0 });
     }
     expect((await report(leader, d.dossierId)).state).toBe("member_confirmed");

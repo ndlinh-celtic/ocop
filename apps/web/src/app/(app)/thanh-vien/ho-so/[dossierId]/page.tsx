@@ -21,7 +21,7 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
   const { dossierId } = await params;
   const [dossier, scores, submissions] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
-    app().core.scoring.readDossierScores(actor, { dossierId }).catch(orNotFound),
+    app().core.scoring.readDossierScores(actor, { dossierId, ownSheet: true }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !scores || !submissions || scores.kind !== "own_sheet") notFound();

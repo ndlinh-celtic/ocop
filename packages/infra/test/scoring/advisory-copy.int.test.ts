@@ -23,7 +23,7 @@ const copy = (actor: UserActor, picks: Pick[], criteria: "all" | string[] = "all
 const preview = (actor: UserActor, picks: Pick[], criteria: "all" | string[] = "all", recipients: "all" | string[] = "all") =>
   w.t.app.scoring.previewAdvisoryCopy(actor, { dossiers: picks.map((p) => ({ dossierId: p.dossierId, advisoryVersionId: p.advisoryVersionId })), criteria, recipients });
 const sheetOf = async (member: UserActor, dossierId: string) => {
-  const view = await w.t.app.scoring.readDossierScores(member, { dossierId });
+  const view = await w.t.app.scoring.readDossierScores(member, { dossierId, ownSheet: true });
   if (view.kind !== "own_sheet") throw new Error(`no own sheet: ${view.kind}`);
   return view;
 };

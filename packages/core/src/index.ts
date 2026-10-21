@@ -259,4 +259,5 @@ export {
   type CopySheetOutcome,
   type PreviewAdvisoryCopyInput,
 } from "./scoring/advisory-copy";
-export { scoresVisibility, type DossierScores, type GraderProgress, type GradingProgressRow, type OwnSheetView, type SheetCriterion } from "./scoring/read";
+export { scoresVisibility, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
+export { aggregateScores, type AggregateScores } from "./scoring/aggregate";

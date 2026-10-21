@@ -62,6 +62,7 @@ export const NOTICE_EVENTS = [
   "dossier.advisory_report_issued",
   "dossier.advisory_copied",
   "dossier.members_confirmed",
+  "dossier.advisory_return_requested",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -286,6 +287,19 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           body: "UBND xã/phường đề nghị Sở trả về một hồ sơ đã gửi tỉnh. Xem lý do trong hồ sơ.",
           emailSubject: "Có đề nghị trả về hồ sơ OCOP",
           emailLine: "UBND xã/phường vừa đề nghị Sở trả về một hồ sơ OCOP đã gửi tỉnh.",
+          link: `/so/ho-so/${dossier.id}`,
+        },
+      ];
+    // L10 TM-03 (#57 story 52): the Sở hears of a đề nghị trả về of the Tổ tư vấn; the lý do is read in the app.
+    case "dossier.advisory_return_requested":
+      return [
+        {
+          recipients: await provinceOfficers(tx, now),
+          kind: "dossier_advisory_return_requested",
+          title: `Tổ tư vấn đề nghị trả về hồ sơ: ${product}`,
+          body: `Tổ tư vấn đề nghị Sở trả hồ sơ ${dossier.code} về xã để bổ sung. Xem lý do trong hồ sơ.`,
+          emailSubject: "Tổ tư vấn đề nghị trả về một hồ sơ OCOP",
+          emailLine: "Tổ tư vấn Hội đồng vừa đề nghị Sở trả về xã một hồ sơ OCOP đang thẩm định.",
           link: `/so/ho-so/${dossier.id}`,
         },
       ];

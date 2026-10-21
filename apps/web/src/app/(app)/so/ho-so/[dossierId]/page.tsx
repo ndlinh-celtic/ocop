@@ -22,22 +22,24 @@ export const dynamic = "force-dynamic";
  * S33 Chi tiết hồ sơ ở tỉnh (L04, L06 #44, L08 #51, stories 12 to 19, 57, 59, 78): a hồ sơ that has
  * reached the province, with its mã; the quick check before Tiếp nhận tại tỉnh (newest Phiên bản nộp and
  * generated văn bản, the signed Báo cáo đánh giá cấp xã, the Checklist sơ bộ) and the Tiếp nhận itself;
- * the đề nghị trả về of the xã and the trả về while it is Đã chuyển tỉnh, before or after Tiếp nhận. A hồ
+ * the đề nghị trả về of the xã and the trả về while it is Đã chuyển tỉnh, before or after Tiếp nhận, or (#57
+ * stories 52, 55) the đề nghị of the Tổ tư vấn and the trả về while Tổ tư vấn thẩm định. A hồ
  * sơ not yet at the province is not found, as is one that does not exist (the notifications of gửi tỉnh
  * link here).
  */
 export default async function ProvinceDossierPage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
   const { dossierId } = await params;
-  const [dossier, timeline, submissions, supplements, returnRequests, checklist] = await Promise.all([
+  const [dossier, timeline, submissions, supplements, returnRequests, advisoryReturns, checklist] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.submissions(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.supplementRequests(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.returnRequests(actor, { dossierId }).catch(orNotFound),
+    app().core.dossiers.advisoryReturnRequests(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !timeline || !submissions || !supplements || !returnRequests || !checklist) notFound();
+  if (!dossier || !timeline || !submissions || !supplements || !returnRequests || !advisoryReturns || !checklist) notFound();
   const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
   const latest = submissions.at(-1);
   const snapshot = latest?.snapshot;
@@ -107,6 +109,7 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
 
       {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
       <ReturnRequests requests={returnRequests} />
+      <ReturnRequests requests={advisoryReturns} from="advisory" />
 
       {mayReturn && snapshot && (
         <RequestSupplementForm
