@@ -360,6 +360,8 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
     expect(copy.files).toEqual([expect.objectContaining({ fileId, criterionIds: [] })]);
     expect(copy.criteria.every((c) => c.levelId === null && c.explanation === "" && c.evidence.length === 0)).toBe(true);
     expect(copy.estimate).toMatchObject({ total: 0 });
+    const [created] = await t.app.audit.search(await f.admin(), { action: ["dossier.create"], targetId: copyId });
+    expect(created).toMatchObject({ metadata: { copiedFrom: dossierId, evidenceFileIds: [fileId] } });
   });
 });
 
