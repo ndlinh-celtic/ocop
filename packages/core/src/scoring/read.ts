@@ -32,6 +32,8 @@ export interface VisibilityFacts {
   state: DossierState;
   /** Whether the reader's own Phiếu chấm in force is confirmed; only asked of a Thành viên hội đồng. */
   ownSheetConfirmed: boolean;
+  /** S61 asks a thành viên's own phiếu, whatever else they may see. */
+  ownSheetOnly?: boolean;
 }
 
 /**
@@ -39,14 +41,14 @@ export interface VisibilityFacts {
  * Thư ký see progress only until Sẵn sàng chốt, then everything; a thành viên sees their own phiếu, and everything
  * once both their phiếu is confirmed and the hồ sơ is Sẵn sàng chốt (L15 step 4 "họp xem điểm của nhau").
  */
-export function scoresVisibility({ role, state, ownSheetConfirmed }: VisibilityFacts): ScoresVisibility {
+export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly = false }: VisibilityFacts): ScoresVisibility {
   const ready = READY_OR_LATER.includes(state);
   switch (role) {
     case "council_chair":
     case "council_secretary":
       return ready ? "full" : "progress_only";
     case "council_member":
-      return ready && ownSheetConfirmed ? "full" : "own_sheet";
+      return ready && ownSheetConfirmed && !ownSheetOnly ? "full" : "own_sheet";
     default:
       // Chủ thể, Cán bộ xã, Cán bộ Sở, Quản trị and, until chốt (#60, aggregate_only), Tổ tư vấn.
       return "none";
@@ -118,7 +120,7 @@ export type DossierScores = { kind: "none" } | { kind: "progress_only"; dossierI
 
 /** The score view of a hồ sơ the reader is allowed (story 92, 95): see `scoresVisibility`. */
 export function readDossierScores(deps: CoreDeps) {
-  return async (actor: Actor, input: { dossierId: string }): Promise<DossierScores> => {
+  return async (actor: Actor, input: { dossierId: string; ownSheet?: boolean }): Promise<DossierScores> => {
     if (actor.kind !== "user") throw forbidden();
     // Quản trị reads no hồ sơ at all (story 83, 132): it gets `none` like any Vai trò outside the Hội đồng.
     if (!actor.activeRole || !COUNCIL_READERS.includes(actor.activeRole)) return { kind: "none" };
@@ -128,7 +130,7 @@ export function readDossierScores(deps: CoreDeps) {
       const dossier = await tx.dossiers.findById(dataScopeOf(actor), input.dossierId);
       if (!dossier) throw dossierNotFound();
       const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
-      switch (scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed })) {
+      switch (scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly: input.ownSheet === true })) {
         case "progress_only": {
           const round = dossier.roundId ? await tx.rounds.findById(dossier.roundId) : null;
           return { kind: "progress_only", dossierId: dossier.id, minGraders: round?.aggregation.minGraders ?? 0, progress: await progressOf(tx, dossier.id) };

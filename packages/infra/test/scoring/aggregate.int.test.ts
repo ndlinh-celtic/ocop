@@ -131,6 +131,9 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
       expect(view.aggregate).toMatchObject({ sheetCount: 3, star: 4, deviation: 45, flagged: true });
       expect(view.aggregate.total).toBeCloseTo(78.3333, 4);
     }
+    // S61 still opens the reader's own phiếu on request; nobody but a thành viên chấm gets one that way.
+    expect(await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId, ownSheet: true })).toMatchObject({ kind: "own_sheet", sheet: { state: "confirmed" } });
+    expect((await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId, ownSheet: true })).kind).toBe("full");
     // A thành viên who has not confirmed still sees only their phiếu, though the hồ sơ is Sẵn sàng chốt.
     const mine = await w.t.app.scoring.readDossierScores(m(3), { dossierId: d.dossierId });
     expect(mine.kind).toBe("own_sheet");
