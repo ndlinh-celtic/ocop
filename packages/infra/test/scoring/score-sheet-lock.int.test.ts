@@ -54,6 +54,29 @@ describe("Phiếu chấm triggers (#54, story 91, 135)", () => {
     await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET superseded_reason = 'khác' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
   });
 
+  it("lets a phiếu Vắng move to superseded on the state columns alone, and nothing else (#61)", async () => {
+    const sheetId = await draftSheet();
+    await w.db.app.query(`UPDATE scoring.score_sheet SET state = 'absent' WHERE id = $1`, [sheetId]);
+
+    await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET state = 'draft' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
+    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', version = version + 1 WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
+    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_reason = 'Trả phiếu' WHERE id = $1`, [sheetId])).resolves.toBeDefined();
+    await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET state = 'draft' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
+  });
+
+  it("checks superseded_by at commit, so Trả phiếu may name the lần chấm it inserts next (#61)", async () => {
+    const sheetId = await draftSheet();
+    await confirm(sheetId);
+    const client = await w.db.app.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_by = gen_random_uuid() WHERE id = $1`, [sheetId]);
+      await expect(client.query("COMMIT")).rejects.toThrow(/foreign key/);
+    } finally {
+      client.release();
+    }
+  });
+
   it("refuses writing the dòng of a phiếu no longer draft", async () => {
     const sheetId = await draftSheet();
     await insertLine(sheetId);

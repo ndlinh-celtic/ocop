@@ -93,6 +93,17 @@ export function scoreSheetRepo(db: Db): ScoreSheetRepo {
         await db.insert(scoreSheetLineFile).values(fileIds.map((fileId) => ({ scoreSheetId: line.scoreSheetId, criterionId: line.criterionId, fileId })));
       }
     },
+    async supersede(id, supersededBy, reason) {
+      const rows = await db
+        .update(scoreSheet)
+        .set({ state: "superseded", supersededBy, supersededReason: reason })
+        .where(and(eq(scoreSheet.id, id), inArray(scoreSheet.state, ["confirmed", "absent"])))
+        .returning({ id: scoreSheet.id });
+      return rows.length === 1;
+    },
+    async all(dossierId) {
+      return db.select().from(scoreSheet).where(eq(scoreSheet.dossierId, dossierId)).orderBy(asc(scoreSheet.createdAt), asc(scoreSheet.attempt), asc(scoreSheet.id));
+    },
     async current(dossierId) {
       return db
         .select()

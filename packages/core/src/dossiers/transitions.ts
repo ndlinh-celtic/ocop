@@ -67,6 +67,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.score_sheet.edit",
   "dossier.score_sheet.confirm",
   "dossier.score_sheet.confirm_ready",
+  "dossier.score_sheet.return",
+  "dossier.score_sheet.return_unready",
   "dossier.assignment.replace",
   "dossier.advisory_return_request",
 ] as const;
@@ -106,6 +108,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.score_sheet_saved",
   "dossier.score_sheet_confirmed",
   "dossier.members_confirmed",
+  "dossier.score_sheet_returned",
   "dossier.advisory_return_requested",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
@@ -363,6 +366,20 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     to: "member_confirmed",
     roles: ["council_member"],
     event: "dossier.members_confirmed",
+    timeline: false,
+  },
+  // L15 HD-05 (stories 102 to 105): Trả phiếu by the Chủ tịch or Thư ký before chốt. The one that leaves the phiếu
+  // đã xác nhận below người chấm tối thiểu takes the hồ sơ back to Thành viên xem xét, its own action because ruleFor
+  // looks a row up by action and state; returnScoreSheet picks it. Off the Chủ thể's timeline (story 137).
+  ...(["member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.score_sheet.return", from, to: from, roles: ["council_chair", "council_secretary"], event: "dossier.score_sheet_returned", timeline: false }),
+  ),
+  {
+    action: "dossier.score_sheet.return_unready",
+    from: "member_confirmed",
+    to: "member_review",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.score_sheet_returned",
     timeline: false,
   },
   // L09 HD-03 (stories 34 to 39): after Giao chấm and before chốt điểm, the Thư ký thay or bổ sung a thành viên

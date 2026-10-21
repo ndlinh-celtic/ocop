@@ -68,6 +68,8 @@ const ROLE_ACTIONS = {
   "scoring.evidence.upload": ["council_member"],
   // L14 (stories 83 to 94): writing one's own Phiếu chấm; which hồ sơ and state is the transition table and DataScope.
   "scoring.sheet.write": ["council_member"],
+  // L15 HD-05 (stories 102 to 106): Trả phiếu before chốt, and the phiếu bị thay thế it leaves behind.
+  "scoring.sheet.return": ["council_chair", "council_secretary"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

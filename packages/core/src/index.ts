@@ -262,3 +262,4 @@ export {
 } from "./scoring/advisory-copy";
 export { scoresVisibility, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
+export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";
