@@ -3,6 +3,7 @@
 import type { AssignmentCandidate, AssignmentKind } from "@ocop/core";
 import { Save, Send } from "lucide-react";
 import { startTransition, useActionState, useState } from "react";
+import { useFlash } from "@/components/flash";
 import { editAssignmentsAction, startGradingAction, type AssignmentFormState, type StartGradingFormState } from "./actions";
 
 export interface BoardRow {
@@ -29,7 +30,13 @@ const chip = "rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
  */
 export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candidates: { members: AssignmentCandidate[]; advisors: AssignmentCandidate[] } }) {
   const [state, action, pending] = useActionState<AssignmentFormState, FormData>(editAssignmentsAction, {});
-  const [started, startAction, starting] = useActionState<StartGradingFormState, FormData>(startGradingAction, {});
+  const flash = useFlash();
+  // The board goes with its last hồ sơ, so the Giao chấm message is a flash outside it.
+  const [started, startAction, starting] = useActionState<StartGradingFormState, FormData>(async (prev, form) => {
+    const result = await startGradingAction(prev, form);
+    if (result.started !== undefined) flash(`Đã Giao chấm ${result.started} hồ sơ.`);
+    return result;
+  }, {});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [members, setMembers] = useState<Set<string>>(new Set());
   const [advisors, setAdvisors] = useState<Set<string>>(new Set());
@@ -203,11 +210,6 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
           {started.error && (
             <p role="alert" className="text-sm text-danger">
               {started.error}
-            </p>
-          )}
-          {started.started !== undefined && !starting && (
-            <p role="status" className="text-sm text-brand">
-              Đã Giao chấm {started.started} hồ sơ.
             </p>
           )}
         </div>

@@ -300,6 +300,7 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
       dossierIds[product] = new URL(provincePage.url()).pathname.split("/").at(-1)!;
       await provincePage.getByRole("button", { name: "Tiếp nhận tại tỉnh" }).click();
       await expect(provincePage.getByText(/Đã tiếp nhận tại tỉnh lúc/)).toBeVisible();
+      await expect(provincePage.getByTestId("flash")).toContainText("Đã tiếp nhận hồ sơ tại tỉnh.");
     }
   });
   const advisoryId = dossierIds[ADVISORY_PRODUCT]!;
@@ -318,8 +319,9 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
     await expect(secretaryPage.getByText("Đã lưu Phân công nháp cho 1 hồ sơ.")).toBeVisible();
     await expect(row.getByText("Nháp").first()).toBeVisible();
     await secretaryPage.getByRole("button", { name: "Giao chấm" }).click();
-    // The hồ sơ leaves the board (with the board's message when it was the last one) for the Giao chấm list.
+    // The hồ sơ leaves the board (the board goes too when it was the last one) for the Giao chấm list; the message stays.
     await expect(secretaryPage.getByTestId("graded-row").filter({ hasText: product })).toBeVisible();
+    await expect(secretaryPage.getByTestId("flash")).toContainText("Đã Giao chấm 1 hồ sơ.");
     await expect(row).toHaveCount(0);
   }
 
