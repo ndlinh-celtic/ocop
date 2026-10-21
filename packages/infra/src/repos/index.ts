@@ -14,7 +14,7 @@ import { rateLimitRepo } from "./rate-limits";
 import { dossierRepo } from "./dossiers";
 import { supplementRepo } from "./supplements";
 import { reminderRepo, systemSettingRepo } from "./reminders";
-import { councilRepo } from "./councils";
+import { assignmentRepo, councilRepo } from "./councils";
 
 export function buildRepos(db: Db): Repos {
   return {
@@ -40,5 +40,6 @@ export function buildRepos(db: Db): Repos {
     reminders: reminderRepo(db),
     systemSettings: systemSettingRepo(db),
     councils: councilRepo(db),
+    assignments: assignmentRepo(db),
   };
 }

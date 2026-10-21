@@ -1,7 +1,7 @@
-import type { CouncilRepo } from "@ocop/core";
-import { desc, eq } from "drizzle-orm";
+import type { AssignmentRepo, CouncilRepo } from "@ocop/core";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { council } from "../db/schema";
+import { assignment, council } from "../db/schema";
 
 export function councilRepo(db: Db): CouncilRepo {
   return {
@@ -21,6 +21,25 @@ export function councilRepo(db: Db): CouncilRepo {
     },
     async list() {
       return db.select().from(council).orderBy(desc(council.createdAt), desc(council.id));
+    },
+  };
+}
+
+export function assignmentRepo(db: Db): AssignmentRepo {
+  return {
+    async current(dossierId) {
+      return db
+        .select()
+        .from(assignment)
+        .where(and(eq(assignment.dossierId, dossierId), isNull(assignment.replacedAt)))
+        .orderBy(asc(assignment.createdAt), asc(assignment.id));
+    },
+    async insert(a) {
+      await db.insert(assignment).values(a);
+    },
+    async deleteDrafts(ids) {
+      if (ids.length === 0) return;
+      await db.delete(assignment).where(and(inArray(assignment.id, [...ids]), isNull(assignment.effectiveAt)));
     },
   };
 }
