@@ -152,9 +152,14 @@ describe("L15 Trả phiếu (#61)", () => {
 
   it("returns a phiếu Vắng, so that its thành viên grades for the first time (spec #49, after Mở khóa sau chốt)", async () => {
     const d = await graded(3, 2);
+    // Chốt (#60) marks the nháp Vắng; Mở khóa sau chốt (#63) brings the hồ sơ back to Sẵn sàng chốt.
+    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: (await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version });
+    const admin = await w.f.admin();
+    const requestFileId = await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf");
+    await w.t.app.scoring.unlockFinalized(admin, { dossierId: d.dossierId, requestFileId, requestedBy: "Chủ tịch Hội đồng A", reason: "Chấm bổ sung" });
     const absent = await sheetOf(m(2), d.dossierId);
-    // Chốt (#60) marks the nháp Vắng; until a Mở khóa (#63) brings the hồ sơ back, set it by hand.
-    await w.db.admin.query("UPDATE scoring.score_sheet SET state = 'absent' WHERE id = $1", [absent.id]);
+    expect(absent.state).toBe("absent");
 
     const result = await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: absent.id, reason: "Vắng ở Phiên họp, chấm bổ sung" });
 

@@ -43,7 +43,7 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
     }
     // The application may only write the superseded columns at all.
     await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET star = 5 WHERE id = $1`, [resultId])).rejects.toThrow(/permission denied/);
-    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now(), superseded_by_unlock = gen_random_uuid() WHERE id = $1`, [resultId])).resolves.toBeDefined();
+    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now() WHERE id = $1`, [resultId])).resolves.toBeDefined();
     // Superseded is final.
     await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now() + interval '1 day' WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
     await expect(w.db.admin.query(`UPDATE scoring.aggregate_result SET superseded_at = NULL WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
@@ -57,6 +57,28 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
     await expect(w.db.admin.query(`TRUNCATE scoring.aggregate_result CASCADE`)).rejects.toThrow(/immutable/);
     await expect(w.db.app.query(`DELETE FROM scoring.meeting_dossier WHERE meeting_id = $1 AND dossier_id = $2`, [meetingId, dossierId])).rejects.toThrow(/fixed/);
     await expect(w.db.app.query(`UPDATE scoring.meeting_dossier SET result_id = NULL WHERE meeting_id = $1`, [meetingId])).rejects.toThrow(/fixed/);
+  });
+
+  it("keeps a Mở khóa sau chốt request as written, and a kết quả superseded by it final (#63, stories 127, 128)", async () => {
+    const { resultId, dossierId } = await finalized();
+    const admin = await w.f.admin();
+    const requestFileId = await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf");
+    const { unlockId } = await w.t.app.scoring.unlockFinalized(admin, { dossierId, requestFileId, requestedBy: "Chủ tịch Hội đồng A", reason: "Sai sót" });
+
+    const { rows } = await w.db.app.query(`SELECT superseded_by_unlock FROM scoring.aggregate_result WHERE id = $1`, [resultId]);
+    expect(rows[0].superseded_by_unlock).toBe(unlockId);
+    for (const sql of [`UPDATE scoring.unlock_request SET reason = 'khác' WHERE id = $1`, `DELETE FROM scoring.unlock_request WHERE id = $1`]) {
+      await expect(w.db.app.query(sql, [unlockId])).rejects.toThrow(/permission denied/);
+      await expect(w.db.admin.query(sql, [unlockId])).rejects.toThrow(/immutable/);
+    }
+    await expect(w.db.admin.query(`TRUNCATE scoring.unlock_request CASCADE`)).rejects.toThrow(/immutable/);
+    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_by_unlock = NULL WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
+    // A kết quả points only at a Mở khóa that exists.
+    const second = await finalized();
+    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now(), superseded_by_unlock = gen_random_uuid() WHERE id = $1`, [second.resultId])).rejects.toThrow(
+      /aggregate_result_superseded_by_unlock_fkey/,
+    );
+    await expect(w.db.app.query(`ALTER TABLE scoring.unlock_request DISABLE TRIGGER unlock_request_immutable`)).rejects.toThrow(/must be owner/);
   });
 
   it("keeps one pending row per hồ sơ across Phiên họp, and the application cannot switch the triggers off", async () => {

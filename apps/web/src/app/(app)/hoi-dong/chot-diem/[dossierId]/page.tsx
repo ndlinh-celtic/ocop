@@ -28,6 +28,8 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
   if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "progress_only")) notFound();
   const meeting = scores.kind === "full" && !scores.result ? await app().core.scoring.meetingOf(actor, { dossierId }) : null;
   const history = await app().core.scoring.scoreSheetHistory(actor, { dossierId });
+  // L15 Mở khóa sau chốt (#63, story 130): earlier kết quả chốt, superseded, with the request that superseded them.
+  const superseded = (await app().core.scoring.finalizedResults(actor, { dossierId })).filter((r) => r.supersededAt !== null);
   const ready = (await app().core.scoring.gradingProgress(actor)).filter((r) => r.state === "member_confirmed").map((r) => r.dossierId);
   const at = ready.indexOf(dossierId);
   const prev = at > 0 ? ready[at - 1] : undefined;
@@ -118,6 +120,21 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
         </p>
       )}
 
+      {superseded.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-lg border border-amber bg-amber-soft px-4 py-3 text-sm" data-testid="superseded-results">
+          <h2 className="font-medium">Kết quả chốt bị thay thế sau Mở khóa</h2>
+          <ul className="flex flex-col gap-1">
+            {superseded.map((r) => (
+              <li key={r.id}>
+                Lần {r.n}: {r.star} sao, {formatPoints(r.total)} điểm, chốt lúc {formatVnDateTime(r.finalizedAt)}.
+                {r.unlock && ` Mở khóa lúc ${formatVnDateTime(r.unlock.unlockedAt)} theo yêu cầu của ${r.unlock.requestedBy}: ${r.unlock.reason}`}
+                <span className="block font-mono text-xs break-all text-text-3">SHA-256 {r.sha256}</span>
+              </li>
+            ))}
+          </ul>
+          {dossier.state !== "score_finalized" && <p className="text-text-2">Trả phiếu cho người cần chấm lại, rồi thêm hồ sơ vào một Phiên họp mới để chốt lại.</p>}
+        </section>
+      )}
       {(dossier.state === "member_review" || dossier.state === "member_confirmed") && (
         <ReturnPanel dossierId={dossierId} graders={scores.kind === "full" ? scores.graders : scores.progress} history={history} />
       )}

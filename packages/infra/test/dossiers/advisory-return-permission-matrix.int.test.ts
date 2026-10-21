@@ -28,11 +28,6 @@ type State = "Tổ tư vấn thẩm định" | "Đã có báo cáo Tổ tư vấ
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state";
 
 const STATES: State[] = ["Tổ tư vấn thẩm định", "Đã có báo cáo Tổ tư vấn", "Thành viên xem xét", "Sẵn sàng chốt", "Đã chốt điểm"];
-const STATE_CODE: Record<Exclude<State, "Tổ tư vấn thẩm định" | "Đã có báo cáo Tổ tư vấn">, string> = {
-  "Thành viên xem xét": "member_review",
-  "Sẵn sàng chốt": "member_confirmed",
-  "Đã chốt điểm": "score_finalized",
-};
 const A_ = "allowed";
 const NF = "not_found";
 const FB = "forbidden";
@@ -65,6 +60,7 @@ let db: TestDatabase;
 let t: TestApp;
 let f: ReturnType<typeof fixtures>;
 let setId: string;
+let roundId: string;
 const actors = {} as Record<Exclude<Who, "Chủ thể">, UserActor>;
 let A: Awaited<ReturnType<ReturnType<typeof fixtures>["staffedCouncil"]>>;
 
@@ -83,7 +79,7 @@ beforeAll(async () => {
   A = await f.staffedCouncil(province, { members: 1, advisors: 3 });
   const B = await f.staffedCouncil(province, { members: 1, advisors: 1 });
   await t.app.councils.setLeader(province, { councilId: A.councilId, userId: A.advisors[0]!.userId });
-  const roundId = await f.openRound(version.versionId, { gradingMode: "advisory_based", minGraders: 1 });
+  roundId = await f.openRound(version.versionId, { gradingMode: "advisory_based", minGraders: 1 });
   await t.app.rounds.assignCouncil(province, { roundId, councilId: A.councilId });
   actors["Tổ trưởng A, có Phân công"] = A.advisors[0]!;
   actors["Tổ tư vấn A, có Phân công"] = A.advisors[1]!;
@@ -106,8 +102,8 @@ interface Subject {
 }
 
 /**
- * A hồ sơ in `state` with one đề nghị trả về. Tổ tư vấn thẩm định and Đã có báo cáo Tổ tư vấn are reached by use
- * cases; the later states only by the sao chép and chốt of later tickets, so they are set by the DB owner.
+ * A hồ sơ in `state` with one đề nghị trả về, reached through the use cases: phát hành, sao chép to Thành viên A,
+ * whose xác nhận makes it Sẵn sàng chốt, then chốt in a Phiên họp.
  */
 async function dossierIn(state: State): Promise<Subject> {
   const leader = actors["Tổ trưởng A, có Phân công"];
@@ -125,8 +121,18 @@ async function dossierIn(state: State): Promise<Subject> {
   });
   ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version + 1 }));
   if (state === "Đã có báo cáo Tổ tư vấn") return { a: d.a, dossierId: d.dossierId, version };
-  await db.admin.query("UPDATE dossier.dossier SET state = $2, version = version + 1 WHERE id = $1", [d.dossierId, STATE_CODE[state]]);
-  return { a: d.a, dossierId: d.dossierId, version: version + 1 };
+  const [copied] = (await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" })).dossiers;
+  ({ version } = copied!);
+  if (state === "Thành viên xem xét") return { a: d.a, dossierId: d.dossierId, version };
+  const member = actors["Thành viên A, có Phân công"];
+  const own = await t.app.scoring.readDossierScores(member, { dossierId: d.dossierId, ownSheet: true });
+  if (own.kind !== "own_sheet") throw new Error(own.kind);
+  await t.app.scoring.confirmScoreSheet(member, { dossierId: d.dossierId, expectedVersion: own.sheet!.version });
+  ({ version } = await t.app.dossiers.get(A.secretary, { dossierId: d.dossierId }));
+  if (state === "Sẵn sàng chốt") return { a: d.a, dossierId: d.dossierId, version };
+  await t.app.scoring.createMeeting(A.secretary, { roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+  ({ version } = await t.app.scoring.finalize(A.secretary, { dossierId: d.dossierId, expectedVersion: version }));
+  return { a: d.a, dossierId: d.dossierId, version };
 }
 
 async function attempt(who: Who, action: Action, d: Subject): Promise<void> {

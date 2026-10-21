@@ -6,7 +6,7 @@ import type { UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError, forbidden } from "../shared/errors";
 import type { Tx } from "../shared/uow";
-import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState } from "./model";
+import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState, type DossierStateRow } from "./model";
 import { dossierInScope, recordedAction, ruleAllows, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
 
 /** The fields of a hồ sơ a transition may change besides its state and version. */
@@ -79,8 +79,37 @@ export async function recordCreation(deps: CoreDeps, tx: Tx, actor: UserActor, d
   });
 }
 
+/**
+ * transition() for a row marked `lookup` (Mở khóa sau chốt): the actor's DataScope covers no hồ sơ, so the use case
+ * loaded `before` with the narrow, locked DossierRepo.stateRow. The rule, the Vai trò and the version are checked as
+ * transition() checks them; only state, version and updated_at change; timeline, audit and outbox are written the same.
+ */
+export async function transitionByLookup(deps: CoreDeps, tx: Tx, actor: UserActor, before: DossierStateRow, input: Omit<TransitionInput, "patch">): Promise<DossierStateRow> {
+  const rule = ruleFor(input.action, before.state);
+  if (!rule) {
+    if (!TRANSITIONS.some((r) => r.action === input.action && ruleAllows(r, actor))) throw forbidden();
+    throw new DomainError("invalid_state", `Không thể thực hiện thao tác này khi hồ sơ đang ở trạng thái ${DOSSIER_STATE_LABEL[before.state]}`);
+  }
+  if (rule.lookup !== true || !ruleAllows(rule, actor)) throw forbidden();
+  if (input.expectedVersion !== before.version) throw versionConflict();
+  const now = deps.clock.now();
+  const after: DossierStateRow = { ...before, state: rule.to, version: before.version + 1 };
+  if (!(await tx.dossiers.updateState(before.id, before.version, rule.to, now))) throw versionConflict();
+  await record(deps, tx, actor, now, {
+    dossier: after,
+    action: input.action,
+    from: before.state,
+    event: rule.event,
+    timeline: rule.timeline,
+    reason: input.reason ?? null,
+    metadata: input.metadata ?? {},
+    notify: input.notify,
+  });
+  return after;
+}
+
 interface Recorded {
-  dossier: Dossier;
+  dossier: Pick<Dossier, "id" | "entityId" | "state" | "version">;
   action: DossierAction | "dossier.create";
   from: DossierState | null;
   event: DossierEventType;

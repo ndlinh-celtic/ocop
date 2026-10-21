@@ -17,12 +17,14 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   council_decision: "council.manage",
   advisory_attachment: "dossier.advisory_report.upload",
   grading_evidence: "scoring.evidence.upload",
+  unlock_request: "scoring.unlock",
   meeting_minutes: "scoring.meeting.minutes.upload",
 };
 
 /** Purposes that accept fewer types than the deployment allows: a signed Báo cáo đánh giá cấp xã is a PDF (story 65). */
 const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
   signed_ward_report: ["application/pdf"],
+  unlock_request: ["application/pdf"],
   meeting_minutes: ["application/pdf"],
 };
 

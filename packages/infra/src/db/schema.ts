@@ -709,3 +709,16 @@ export const meetingMinutes = scoringSchema.table("meeting_minutes", {
   uploadedBy: uuid("uploaded_by").notNull(),
   uploadedAt: ts("uploaded_at").notNull(),
 });
+
+/** Mở khóa sau chốt (#63): append-only; the kết quả it superseded points back at it. */
+export const unlockRequest = scoringSchema.table("unlock_request", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  resultId: uuid("result_id").notNull(),
+  requestFileId: uuid("request_file_id").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  reason: text("reason").notNull(),
+  unlockedBy: uuid("unlocked_by").notNull(),
+  unlockedAt: ts("unlocked_at").notNull(),
+  reauthMethod: text("reauth_method").$type<"totp" | "password">().notNull(),
+});
