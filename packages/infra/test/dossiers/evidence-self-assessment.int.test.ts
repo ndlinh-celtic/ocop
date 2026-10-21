@@ -293,7 +293,7 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
       "dossier.explained",
       "dossier.evidence_removed",
     ]);
-    expect(rows[3].payload).toEqual({ dossierId, entityId: entityIdOf(a), from: "draft", to: "draft" });
+    expect(rows[3].payload).toEqual({ dossierId, entityId: entityIdOf(a), from: "draft", to: "draft", actorUserId: a.userId });
     expect((await t.app.dossiers.timeline(a, { dossierId })).map((e) => e.action)).toEqual(["dossier.create"]);
   });
 

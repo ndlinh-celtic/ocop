@@ -38,7 +38,11 @@ export type DomainEventBody =
   | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
   | { type: "system.setting_changed"; payload: { key: string } }
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
-  | { type: DossierEventType; payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState } };
+  | {
+      type: DossierEventType;
+      /** `actorUserId`: who made the move; absent on events recorded before it was added. */
+      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string };
+    };
 
 export type EventType = DomainEventBody["type"];
 

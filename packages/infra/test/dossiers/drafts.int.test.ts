@@ -65,7 +65,7 @@ describe("L02 CT-03 tạo hồ sơ Nháp theo Bộ tiêu chí (stories 15 to 19)
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.create"], targetId: dossierId });
     expect(entry).toMatchObject({ actorUserId: a.userId, actorRole: "entity_owner", targetType: "dossier", metadata: { criteriaSetId: sets["Thịt tươi"] } });
     const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.created' AND payload->>'dossierId' = $1", [dossierId]);
-    expect(rows).toEqual([{ payload: { dossierId, entityId: entityIdOf(a), from: null, to: "draft" } }]);
+    expect(rows).toEqual([{ payload: { dossierId, entityId: entityIdOf(a), from: null, to: "draft", actorUserId: a.userId } }]);
   });
 
   it("autosaves thông tin sản phẩm on a Nháp, each save bumping the version (stories 18, 19)", async () => {

@@ -119,5 +119,5 @@ async function record(deps: CoreDeps, tx: Tx, actor: UserActor, now: Date, r: Re
       metadata: { ...r.metadata, ...(r.reason ? { reason: r.reason } : {}) },
     }),
   );
-  await emit(deps, tx, { type: r.event, payload: { dossierId: dossier.id, entityId: dossier.entityId, from: r.from, to: dossier.state } });
+  await emit(deps, tx, { type: r.event, payload: { dossierId: dossier.id, entityId: dossier.entityId, from: r.from, to: dossier.state, actorUserId: actor.userId } });
 }

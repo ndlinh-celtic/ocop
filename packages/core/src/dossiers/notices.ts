@@ -34,6 +34,7 @@ export async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<
 export const NOTICE_EVENTS = [
   "dossier.submitted",
   "dossier.received",
+  "dossier.handler_changed",
   "dossier.rejected_preliminary",
   "dossier.ward_transferred",
   "dossier.round_transferred",
@@ -55,6 +56,25 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
   const product = dossier.productName || "chưa đặt tên";
   const ownerLink = `/chu-the/ho-so/${dossier.id}`;
   const wardLink = `/xa/ho-so/${dossier.id}`;
+  // L05 XA-02, XA-03 (story 41): the Cán bộ phụ trách hears of it when someone else names them.
+  const handlerAssigned = async (): Promise<Notice[]> => {
+    const named = dossier.handlerUserId;
+    const actorUserId = "actorUserId" in event.payload ? event.payload.actorUserId : undefined;
+    if (!named || named === actorUserId) return [];
+    const handler = await tx.users.findById(named);
+    if (handler?.status !== "active") return [];
+    return [
+      {
+        recipients: [handler],
+        kind: "dossier_handler_assigned",
+        title: `Anh/chị là Cán bộ phụ trách hồ sơ: ${product}`,
+        body: "Anh/chị được chỉ định làm Cán bộ phụ trách hồ sơ này.",
+        emailSubject: "Anh/chị được chỉ định làm Cán bộ phụ trách hồ sơ OCOP",
+        emailLine: "Anh/chị vừa được chỉ định làm Cán bộ phụ trách một hồ sơ OCOP của xã/phường.",
+        link: wardLink,
+      },
+    ];
+  };
 
   switch (event.type) {
     case "dossier.submitted": {
@@ -83,7 +103,10 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           emailLine: "UBND xã/phường đã tiếp nhận hồ sơ OCOP của anh/chị.",
           link: ownerLink,
         },
+        ...(await handlerAssigned()),
       ];
+    case "dossier.handler_changed":
+      return handlerAssigned();
     case "dossier.rejected_preliminary":
       return [
         {

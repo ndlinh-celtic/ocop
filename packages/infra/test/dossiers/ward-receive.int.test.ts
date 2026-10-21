@@ -257,6 +257,27 @@ describe("L05 XA-03 Cán bộ phụ trách (stories 41, 43)", () => {
     expect(rows).toHaveLength(2);
   });
 
+  it("tells the Cán bộ phụ trách, in the app and by email, when someone else names them; not when they take it themselves (story 86)", async () => {
+    const { dossierId, version } = await f.submitted(sets["Rau củ quả"]);
+    const assigned = async (officer: UserActor) => ({
+      inApp: (await t.app.notifications.list(officer)).filter((n) => n.kind === "dossier_handler_assigned" && n.link === `/xa/ho-so/${dossierId}`).length,
+      email: t.mailbox.to(officer.email).filter((m) => m.subject.includes("Cán bộ phụ trách") && m.text.includes(`/xa/ho-so/${dossierId}`)).length,
+    });
+
+    const received = await t.app.dossiers.receive(officerX, { dossierId, expectedVersion: version, handlerUserId: officerX2.userId });
+    await t.drainJobs();
+    expect(await assigned(officerX2)).toEqual({ inApp: 1, email: 1 });
+    expect(await assigned(officerX)).toEqual({ inApp: 0, email: 0 });
+
+    const changed = await t.app.dossiers.changeHandler(officerX2, { dossierId, expectedVersion: received.version, handlerUserId: officerX.userId });
+    await t.drainJobs();
+    expect(await assigned(officerX)).toEqual({ inApp: 1, email: 1 });
+
+    await t.app.dossiers.changeHandler(officerX2, { dossierId, expectedVersion: changed.version, handlerUserId: officerX2.userId });
+    await t.drainJobs();
+    expect(await assigned(officerX2)).toEqual({ inApp: 1, email: 1 });
+  });
+
   it("refuses before Tiếp nhận, to the same Cán bộ, to someone outside the xã, and from another xã", async () => {
     const { dossierId, version } = await f.submitted(sets["Rau củ quả"]);
     await expect(t.app.dossiers.changeHandler(officerX, { dossierId, expectedVersion: version, handlerUserId: officerX2.userId })).rejects.toMatchObject({
