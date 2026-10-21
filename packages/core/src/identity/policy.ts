@@ -52,12 +52,14 @@ const ROLE_ACTIONS = {
   "dossier.create": ["entity_owner"],
   // Any change to an existing hồ sơ starts here: the Vai trò that work on hồ sơ at all. Which change, on
   // which hồ sơ, is then the transition table's row and the Phạm vi, checked by transition().
-  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary", "council_member"],
+  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
   // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
   "dossier.assignment.read": ["council_chair", "council_secretary"],
   // L14 (story 97): the tiến độ chấm of the Hội đồng's hồ sơ (S42), and bằng chứng kiểm tra of a Phiếu chấm (story 86).
   "scoring.progress.read": ["council_chair", "council_secretary"],
   "scoring.evidence.upload": ["council_member"],
+  // L14 (stories 83 to 94): writing one's own Phiếu chấm; which hồ sơ and state is the transition table and DataScope.
+  "scoring.sheet.write": ["council_member"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.

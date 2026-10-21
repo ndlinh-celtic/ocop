@@ -65,7 +65,7 @@ export interface SaveScoreSheetInput {
 /** TV-05 (stories 83, 86, 88): saves dòng of the reader's Phiếu chấm as a nháp; returns the phiếu's new version. */
 export function saveScoreSheet(deps: CoreDeps) {
   return async (actor: Actor, input: SaveScoreSheetInput): Promise<{ version: number }> => {
-    authorize(actor, "dossier.write");
+    authorize(actor, "scoring.sheet.write");
     const lines = [...new Map((Array.isArray(input.lines) ? input.lines : []).map((l) => [l.criterionId, l])).values()];
     if (lines.length === 0) throw new DomainError("lines_required", "Chưa có Tiêu chí nào để lưu");
     for (const l of lines) {
@@ -140,7 +140,7 @@ export class ScoreSheetIncompleteError extends DomainError {
  */
 export function confirmScoreSheet(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number; dossierState: DossierState }> => {
-    authorize(actor, "dossier.write");
+    authorize(actor, "scoring.sheet.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const { sheet } = await ownSheet(tx, actor, before.id);
