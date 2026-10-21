@@ -1,4 +1,5 @@
 import { isAssignmentActive, type User } from "../identity/model";
+import type { Role, ScopeType } from "../identity/roles";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { sendEmailOnce } from "../platform/send-email";
 import type { Tx } from "../shared/uow";
@@ -23,11 +24,24 @@ interface Notice {
   link: string;
 }
 
-/** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
-export async function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
-  const assignments = (await tx.roleAssignments.listForScope("entity_owner", "entity", entityId)).filter((a) => isAssignmentActive(a, now));
-  const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
+type IdlessScope = "province" | "system";
+
+/** The active Người dùng holding a Phân vai of `role` on one Phạm vi, active at `now`, each once. */
+async function activeHolders(tx: Tx, role: Role, scopeType: IdlessScope, scopeId: null, now: Date): Promise<User[]>;
+async function activeHolders(tx: Tx, role: Role, scopeType: Exclude<ScopeType, IdlessScope>, scopeId: string, now: Date): Promise<User[]>;
+async function activeHolders(tx: Tx, role: Role, scopeType: ScopeType, scopeId: string | null, now: Date): Promise<User[]> {
+  const all =
+    scopeId === null
+      ? await tx.roleAssignments.listForScope(role, scopeType as IdlessScope, null)
+      : await tx.roleAssignments.listForScope(role, scopeType as Exclude<ScopeType, IdlessScope>, scopeId);
+  const userIds = new Set(all.filter((a) => isAssignmentActive(a, now)).map((a) => a.userId));
+  const users = await Promise.all([...userIds].map((id) => tx.users.findById(id)));
   return users.filter((u): u is User => u !== null && u.status === "active");
+}
+
+/** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
+export function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
+  return activeHolders(tx, "entity_owner", "entity", entityId, now);
 }
 
 /** The events of a hồ sơ someone hears about; the consumers of platform/consumers.ts subscribe to these. */
@@ -277,10 +291,8 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
 }
 
 /** The Người dùng holding an active Phân vai Cán bộ Sở (Phạm vi tỉnh). */
-async function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
-  const assignments = (await tx.roleAssignments.listForScope("province_officer", "province", null)).filter((a) => isAssignmentActive(a, now));
-  const users = await Promise.all([...new Set(assignments.map((a) => a.userId))].map((id) => tx.users.findById(id)));
-  return users.filter((u): u is User => u !== null && u.status === "active");
+function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
+  return activeHolders(tx, "province_officer", "province", null, now);
 }
 
 /** In-app side of the notices on a hồ sơ. */
