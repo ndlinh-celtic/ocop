@@ -1,4 +1,5 @@
 import type { AssignmentKind, ScoreSheetState, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -603,3 +604,37 @@ export const reminderSent = dossierSchema.table(
   },
   (t) => [primaryKey({ columns: [t.kind, t.subjectId, t.contextId, t.deadline, t.milestoneDays] })],
 );
+
+// Báo cáo Tổ tư vấn (0033_advisory_reports.sql).
+export const advisoryReportDraft = scoringSchema.table("advisory_report_draft", {
+  dossierId: uuid("dossier_id").primaryKey(),
+  version: integer("version").notNull(),
+  summary: text("summary").notNull(),
+  notes: text("notes").notNull(),
+  attachmentFileIds: uuid("attachment_file_ids").array().notNull(),
+  updatedAt: ts("updated_at").notNull(),
+  updatedBy: uuid("updated_by").notNull(),
+});
+
+export const advisoryReportLine = scoringSchema.table(
+  "advisory_report_line",
+  {
+    dossierId: uuid("dossier_id").notNull(),
+    criterionId: uuid("criterion_id").notNull(),
+    levelId: uuid("level_id"),
+    basis: text("basis").notNull(),
+    evidenceFileIds: uuid("evidence_file_ids").array().notNull(),
+    evidenceAssessment: text("evidence_assessment").$type<EvidenceAssessment>(),
+  },
+  (t) => [primaryKey({ columns: [t.dossierId, t.criterionId] })],
+);
+
+export const advisoryReportVersion = scoringSchema.table("advisory_report_version", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  number: integer("number").notNull(),
+  snapshot: jsonb("snapshot").$type<AdvisoryReportSnapshot>().notNull(),
+  issuedBy: uuid("issued_by").notNull(),
+  issuedAt: ts("issued_at").notNull(),
+  reason: text("reason"),
+});

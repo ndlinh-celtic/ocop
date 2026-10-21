@@ -55,6 +55,12 @@ const ROLE_ACTIONS = {
   "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
   // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
   "dossier.assignment.read": ["council_chair", "council_secretary"],
+  // L10, L11 (#56 stories 49, 63): the Báo cáo Tổ tư vấn nháp is the Tổ tư vấn's alone; its issued phiên bản,
+  // and the minh chứng and tệp đính kèm they cite, are for every Vai trò hội đồng whose Phạm vi covers the hồ sơ.
+  "dossier.advisory_report.draft": ["advisory_member"],
+  "dossier.advisory_report.write": ["advisory_member"],
+  "dossier.advisory_report.read": ["council_chair", "council_secretary", "council_member", "advisory_member"],
+  "dossier.advisory_report.upload": ["advisory_member"],
   // L14 (story 97): the tiến độ chấm of the Hội đồng's hồ sơ (S42), and bằng chứng kiểm tra of a Phiếu chấm (story 86).
   "scoring.progress.read": ["council_chair", "council_secretary"],
   "scoring.evidence.upload": ["council_member"],
@@ -68,7 +74,7 @@ const ROLE_ACTIONS = {
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
-  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer", "council_member"],
+  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer", "council_chair", "council_secretary", "council_member", "advisory_member"],
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],

@@ -51,6 +51,7 @@ import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, ge
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
+import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvisoryReport, reissueAdvisoryReport, saveAdvisoryDraft } from "./scoring/advisory-report";
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";
@@ -218,6 +219,13 @@ export function createCore(deps: CoreDeps) {
       saveScoreSheet: saveScoreSheet(deps),
       confirmScoreSheet: confirmScoreSheet(deps),
       gradingProgress: gradingProgress(deps),
+      // L10, L11 Báo cáo Tổ tư vấn (#56).
+      advisoryReport: advisoryReport(deps),
+      saveAdvisoryDraft: saveAdvisoryDraft(deps),
+      issueAdvisoryReport: issueAdvisoryReport(deps),
+      reissueAdvisoryReport: reissueAdvisoryReport(deps),
+      advisoryReportVersions: advisoryReportVersions(deps),
+      downloadAdvisoryFile: downloadAdvisoryFile(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

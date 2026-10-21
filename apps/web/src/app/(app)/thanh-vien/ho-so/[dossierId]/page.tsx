@@ -53,6 +53,9 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
           {dossier.criteriaSet.name}
           {dossier.round && ` · ${dossier.round.name}`}
         </p>
+        <Link href={`/thanh-vien/ho-so/${dossier.id}/bao-cao-to-tu-van`} className="text-sm font-semibold text-brand">
+          Báo cáo Tổ tư vấn đã phát hành →
+        </Link>
       </div>
 
       {scores.sheet?.state === "confirmed" && (
