@@ -66,6 +66,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.score_sheet.edit",
   "dossier.score_sheet.confirm",
   "dossier.score_sheet.confirm_ready",
+  "dossier.finalize",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -102,6 +103,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.score_sheet_saved",
   "dossier.score_sheet_confirmed",
   "dossier.members_confirmed",
+  "dossier.score_finalized",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -340,6 +342,16 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["council_member"],
     event: "dossier.members_confirmed",
     timeline: false,
+  },
+  // L15 HD-08 (stories 116 to 120, 137): chốt điểm of a hồ sơ Sẵn sàng chốt; that it waits in an open Phiên họp is
+  // checked by finalizeDossier, which knows the Phiên họp. A row of the Chủ thể's timeline.
+  {
+    action: "dossier.finalize",
+    from: "member_confirmed",
+    to: "score_finalized",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.score_finalized",
+    timeline: true,
   },
 ];
 

@@ -57,6 +57,8 @@ import { assignmentCandidates, editAssignments, listAssignments } from "./counci
 import { startGrading } from "./councils/grading";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
+import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, removeMeetingDossier } from "./scoring/meetings";
+import { finalizeDossier } from "./scoring/finalize";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -226,6 +228,14 @@ export function createCore(deps: CoreDeps) {
       reissueAdvisoryReport: reissueAdvisoryReport(deps),
       advisoryReportVersions: advisoryReportVersions(deps),
       downloadAdvisoryFile: downloadAdvisoryFile(deps),
+      // L15 Phiên họp and chốt điểm (#60).
+      createMeeting: createMeeting(deps),
+      addMeetingDossiers: addMeetingDossiers(deps),
+      removeMeetingDossier: removeMeetingDossier(deps),
+      closeMeeting: closeMeeting(deps),
+      listMeetings: listMeetings(deps),
+      getMeeting: getMeeting(deps),
+      finalize: finalizeDossier(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

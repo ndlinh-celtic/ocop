@@ -1,5 +1,6 @@
 import type { AssignmentKind, ScoreSheetState, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
+import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -637,4 +638,55 @@ export const advisoryReportVersion = scoringSchema.table("advisory_report_versio
   issuedBy: uuid("issued_by").notNull(),
   issuedAt: ts("issued_at").notNull(),
   reason: text("reason"),
+});
+
+// Phiên họp and kết quả chốt (0038_meetings_and_finalize.sql).
+export const meeting = scoringSchema.table("meeting", {
+  id: uuid("id").primaryKey(),
+  councilId: uuid("council_id").notNull(),
+  roundId: uuid("round_id").notNull(),
+  title: text("title").notNull(),
+  heldOn: date("held_on", { mode: "string" }).notNull(),
+  location: text("location").notNull(),
+  state: text("state").$type<MeetingState>().notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: ts("created_at").notNull(),
+  closedBy: uuid("closed_by"),
+  closedAt: ts("closed_at"),
+});
+
+export const meetingDossier = scoringSchema.table(
+  "meeting_dossier",
+  {
+    meetingId: uuid("meeting_id").notNull(),
+    dossierId: uuid("dossier_id").notNull(),
+    addedBy: uuid("added_by").notNull(),
+    addedAt: ts("added_at").notNull(),
+    resultId: uuid("result_id"),
+  },
+  (t) => [primaryKey({ columns: [t.meetingId, t.dossierId] })],
+);
+
+export const aggregateResult = scoringSchema.table("aggregate_result", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  n: integer("n").notNull(),
+  meetingId: uuid("meeting_id").notNull(),
+  criteriaVersionId: uuid("criteria_version_id").notNull(),
+  total: numeric("total", { mode: "number" }).notNull(),
+  star: smallint("star").notNull(),
+  parts: jsonb("parts").$type<AggregateResult["parts"]>().notNull(),
+  averages: jsonb("averages").$type<Record<string, number>>().notNull(),
+  unmet: jsonb("unmet").$type<AggregateResult["unmet"]>().notNull(),
+  deviation: numeric("deviation", { mode: "number" }).notNull(),
+  flagged: boolean("flagged").notNull(),
+  countedSheetIds: uuid("counted_sheet_ids").array().notNull(),
+  absentSheetIds: uuid("absent_sheet_ids").array().notNull(),
+  snapshot: jsonb("snapshot").$type<FinalizedSnapshot>().notNull(),
+  sha256: text("sha256").notNull(),
+  finalizedBy: uuid("finalized_by").notNull(),
+  finalizedAt: ts("finalized_at").notNull(),
+  reauthMethod: text("reauth_method").$type<"totp" | "password">().notNull(),
+  supersededAt: ts("superseded_at"),
+  supersededByUnlock: uuid("superseded_by_unlock"),
 });

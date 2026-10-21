@@ -25,7 +25,7 @@ type Who =
   | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Tổ tư vấn thẩm định";
 type Action = "lưu phiếu" | "xác nhận phiếu" | "xem điểm";
-type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "progress_only" | "own_sheet" | "full" | "none";
+type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "progress_only" | "own_sheet" | "full" | "aggregate_only" | "none";
 
 function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Outcome][]) {
   const actors = {} as Record<Exclude<Who, "Chủ thể">, UserActor>;
@@ -91,7 +91,7 @@ function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Out
   it.each(rows.filter((r) => states.includes(r[2])))("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const run = attempt(who, action, d);
-    if (outcome === "allowed" || outcome === "progress_only" || outcome === "own_sheet" || outcome === "full" || outcome === "none") await expect(run).resolves.toBe(outcome);
+    if (outcome === "allowed" || outcome === "progress_only" || outcome === "own_sheet" || outcome === "full" || outcome === "aggregate_only" || outcome === "none") await expect(run).resolves.toBe(outcome);
     else await expect(run).rejects.toMatchObject({ code: outcome });
   });
 }
