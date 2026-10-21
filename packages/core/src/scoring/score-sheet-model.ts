@@ -55,7 +55,7 @@ export interface ScoreSheetRepo {
   /** Inserts or replaces one dòng with its files (the database refuses it unless the phiếu is draft). */
   saveLine(line: ScoreSheetLine): Promise<void>;
   /**
-   * Trả phiếu (ADR 0008): marks a confirmed or absent phiếu superseded by `supersededBy` (inserted later in the same
+   * Trả phiếu, or thay a Vắng (ADR 0008): marks a confirmed or absent phiếu superseded by `supersededBy` (inserted in the same
    * transaction), changing nothing else; false when it is no longer confirmed or absent.
    */
   supersede(id: string, supersededBy: string, reason: string): Promise<boolean>;

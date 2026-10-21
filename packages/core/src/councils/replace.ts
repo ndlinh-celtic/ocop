@@ -79,17 +79,19 @@ export function replaceAssignment(deps: CoreDeps) {
       if (!old) throw new DomainError("assignment_not_found", "Người này không có Phân công đang hiệu lực trên hồ sơ");
       await checkNewcomer(deps, tx, before, current, input.newUserId, old.kind, now);
 
-      // Story 35: a phiếu đã xác nhận is never dropped quietly.
+      // Story 35: a phiếu đã xác nhận is never dropped quietly. A Vắng never xác nhận one, so is replaceable (after a Mở khóa).
       const sheet = old.kind === "member" ? (await tx.scoreSheets.current(before.id)).find((s) => s.assignmentId === old.id) : undefined;
-      if (sheet && sheet.state !== "draft") {
+      if (sheet && sheet.state === "confirmed") {
         throw new DomainError("assignment_sheet_confirmed", "Thành viên đã xác nhận Phiếu chấm nên không thay được");
       }
       if (!(await tx.assignments.markReplaced(old.id, now, actor.userId, reason))) throw new Error(`assignment ${old.id} changed under a lock`);
       const created = await insertInForce(deps, tx, actor, before, input.newUserId, old.kind, now);
       if (sheet) {
-        const newSheet = created.scoreSheetIds[0] ?? null;
+        const newSheet = created.scoreSheetIds[0]!;
         const superseded = { ...sheet, state: "superseded" as const, supersededBy: newSheet, supersededReason: reason, version: sheet.version + 1, updatedAt: now };
-        if (!(await tx.scoreSheets.update(superseded, sheet.version))) throw new Error(`score sheet ${sheet.id} changed under a lock`);
+        // A nháp is written like any draft; a phiếu Vắng changes only its state and supersession (ADR 0008).
+        const done = sheet.state === "draft" ? await tx.scoreSheets.update(superseded, sheet.version) : await tx.scoreSheets.supersede(sheet.id, newSheet, reason);
+        if (!done) throw new Error(`score sheet ${sheet.id} changed under a lock`);
       }
       await emit(deps, tx, {
         type: "council.assignment.replaced",

@@ -85,6 +85,26 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
     ]);
   });
 
+  it("lets the Thư ký thay the Vắng thành viên after the Mở khóa, since they never xác nhận a phiếu (spec #49 HD-03)", async () => {
+    const d = await finalized();
+    await unlock(d.dossierId);
+    const absent = (await own(m(2), d.dossierId)).sheet!;
+    expect(absent.state).toBe("absent");
+    const { version } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
+
+    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version, userId: m(2).userId, newUserId: m(3).userId, reason: "Thành viên vắng dài ngày" });
+
+    expect((await own(m(3), d.dossierId)).sheet).toMatchObject({ state: "draft", attempt: 1 });
+    const old = await w.db.admin.query("SELECT state, superseded_reason FROM scoring.score_sheet WHERE id = $1", [absent.id]);
+    expect(old.rows).toEqual([{ state: "superseded", superseded_reason: "Thành viên vắng dài ngày" }]);
+    await scoreAndConfirm(m(3), d.dossierId, [40, 25, 35]);
+    expect((await full(w.A.secretary, d.dossierId)).graders.map((g) => [g.userId, g.state])).toEqual([
+      [m(0).userId, "confirmed"],
+      [m(1).userId, "confirmed"],
+      [m(3).userId, "confirmed"],
+    ]);
+  });
+
   it("then Trả phiếu the Vắng thành viên, who grades for the first time, and a chốt in a new Phiên họp writes kết quả 2 while kết quả 1 stays (stories 130, ADR 0008)", async () => {
     const d = await finalized();
     const first = (await full(w.A.secretary, d.dossierId)).result!;
