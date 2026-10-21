@@ -62,6 +62,9 @@ export const NOTICE_EVENTS = [
   "dossier.advisory_report_issued",
   "dossier.members_confirmed",
   "dossier.score_finalized",
+  "council.assignment.replaced",
+  "council.assignment.added",
+  "dossier.advisory_return_requested",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -289,6 +292,19 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           link: `/so/ho-so/${dossier.id}`,
         },
       ];
+    // L10 TM-03 (#57 story 52): the Sở hears of a đề nghị trả về of the Tổ tư vấn; the lý do is read in the app.
+    case "dossier.advisory_return_requested":
+      return [
+        {
+          recipients: await provinceOfficers(tx, now),
+          kind: "dossier_advisory_return_requested",
+          title: `Tổ tư vấn đề nghị trả về hồ sơ: ${product}`,
+          body: `Tổ tư vấn đề nghị Sở trả hồ sơ ${dossier.code} về xã để bổ sung. Xem lý do trong hồ sơ.`,
+          emailSubject: "Tổ tư vấn đề nghị trả về một hồ sơ OCOP",
+          emailLine: "Tổ tư vấn Hội đồng vừa đề nghị Sở trả về xã một hồ sơ OCOP đang thẩm định.",
+          link: `/so/ho-so/${dossier.id}`,
+        },
+      ];
     // L09 HD-06 (story 40): Giao chấm tells everyone whose Phân công is in force, each with a link to their list.
     case "dossier.grading_started": {
       const inForce = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null);
@@ -308,6 +324,37 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
       return [
         notice(await usersOf("advisory"), "thẩm định (Tổ tư vấn)", "/to-tu-van/hang-doi"),
         notice(await usersOf("member"), "chấm điểm", "/thanh-vien/ho-so"),
+      ];
+    }
+    // L09 HD-03 (stories 38, 39): the person replaced loses the hồ sơ, so their notice names only its mã;
+    // the newcomer hears like a Giao chấm.
+    case "council.assignment.replaced":
+    case "council.assignment.added": {
+      const { kind, replacedUserId, newUserId } = event.payload;
+      const active = async (id: string | null) => {
+        const u = id ? await tx.users.findById(id) : null;
+        return u?.status === "active" ? [u] : [];
+      };
+      const role = kind === "advisory" ? "thẩm định (Tổ tư vấn)" : "chấm điểm";
+      return [
+        {
+          recipients: await active(replacedUserId),
+          kind: "dossier_assignment_replaced",
+          title: `Anh/chị không còn phụ trách hồ sơ ${dossier.code}`,
+          body: `Thư ký hội đồng đã thay người ${role} hồ sơ ${dossier.code}. Anh/chị không còn xem được hồ sơ này.`,
+          emailSubject: "Anh/chị không còn phụ trách một hồ sơ OCOP",
+          emailLine: "Thư ký hội đồng đã thay anh/chị khỏi Phân công một hồ sơ OCOP.",
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : "/thanh-vien/ho-so",
+        },
+        {
+          recipients: await active(newUserId),
+          kind: "dossier_assigned",
+          title: `Anh/chị được Phân công hồ sơ: ${product}`,
+          body: `Anh/chị được Phân công ${role} hồ sơ ${dossier.code}.`,
+          emailSubject: "Anh/chị được Phân công một hồ sơ OCOP",
+          emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : `/thanh-vien/ho-so/${dossier.id}`,
+        },
       ];
     }
     // L11 (story 62): each phiên bản issued tells the thành viên chấm whose Phân công is in force.

@@ -1,3 +1,4 @@
+import type { AssignmentKind } from "../councils/assignment-model";
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
 import type { DossierState } from "../dossiers/model";
 import type { ReminderPayload } from "../dossiers/reminder-model";
@@ -33,6 +34,11 @@ export type DomainEventBody =
   | { type: "round.checklist_configured"; payload: { roundId: string } }
   | { type: "round.council_assigned"; payload: { roundId: string; fromCouncilId: string | null; toCouncilId: string } }
   | { type: "council.created" | "council.updated"; payload: { councilId: string } }
+  | {
+      // L09 HD-03 (#55): a Phân công changed after Giao chấm; `replacedUserId` is null for a bổ sung.
+      type: "council.assignment.replaced" | "council.assignment.added";
+      payload: { dossierId: string; entityId: string; kind: AssignmentKind; replacedUserId: string | null; newUserId: string };
+    }
   | { type: "council.leader_changed"; payload: { councilId: string; fromUserId: string | null; toUserId: string } }
   | { type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed"; payload: { meetingId: string; councilId: string; roundId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }

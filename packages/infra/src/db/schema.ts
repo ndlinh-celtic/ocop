@@ -527,6 +527,15 @@ export const returnRequest = dossierSchema.table("return_request", {
   requestedAt: ts("requested_at").notNull(),
 });
 
+// L10 TM-03 đề nghị trả về of the Tổ tư vấn, append-only (0036_advisory_return_requests.sql).
+export const advisoryReturnRequest = dossierSchema.table("advisory_return_request", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  reason: text("reason").notNull(),
+  requestedBy: uuid("requested_by").notNull(),
+  requestedAt: ts("requested_at").notNull(),
+});
+
 export const criterionEntry = dossierSchema.table(
   "criterion_entry",
   {

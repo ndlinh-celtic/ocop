@@ -41,7 +41,7 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
-import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { listAdvisoryReturnRequests, listReturnRequests, requestAdvisoryReturn, requestReturn } from "./dossiers/return-request";
 import { receiveAtProvince } from "./dossiers/province";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
@@ -55,6 +55,7 @@ import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvi
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";
+import { addAssignment, assignmentHistory, replaceAssignment } from "./councils/replace";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
 import { gradingProgress, readDossierScores } from "./scoring/read";
 import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
@@ -191,6 +192,8 @@ export function createCore(deps: CoreDeps) {
       receiveAtProvince: receiveAtProvince(deps),
       requestReturn: requestReturn(deps),
       returnRequests: listReturnRequests(deps),
+      requestAdvisoryReturn: requestAdvisoryReturn(deps),
+      advisoryReturnRequests: listAdvisoryReturnRequests(deps),
       respondSupplementItem: respondSupplementItem(deps),
       supplementRequests: listSupplementRequests(deps),
       closeUnsupplemented: closeUnsupplemented(deps),
@@ -215,6 +218,9 @@ export function createCore(deps: CoreDeps) {
       assignments: listAssignments(deps),
       assignmentCandidates: assignmentCandidates(deps),
       startGrading: startGrading(deps),
+      replaceAssignment: replaceAssignment(deps),
+      addAssignment: addAssignment(deps),
+      assignmentHistory: assignmentHistory(deps),
     },
     scoring: {
       readDossierScores: readDossierScores(deps),
