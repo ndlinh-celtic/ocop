@@ -88,6 +88,64 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect((await full(w.A.chair, d.dossierId)).result).toMatchObject({ reauthMethod: "password", finalizedBy: { userId: w.A.chair.userId } });
   });
 
+  describe("Phiên họp (stories 107 to 109)", () => {
+    it("lists the hồ sơ Sẵn sàng chốt not yet in a Phiên họp, and adds or gỡ them while open", async () => {
+      const one = await ready();
+      const two = await ready();
+      const { meetingId } = await meetingWith(w.A.secretary, [one.dossierId]);
+
+      const view = await w.t.app.scoring.getMeeting(w.A.chair, { meetingId });
+      expect(view).toMatchObject({ title: "Phiên họp thứ nhất", heldOn: "2026-10-25", location: "Phòng họp Sở", state: "open", dossierCount: 1, finalizedCount: 0 });
+      expect(view.dossiers.map((d) => d.dossierId)).toEqual([one.dossierId]);
+      expect(view.candidates.map((c) => c.dossierId)).toContain(two.dossierId);
+      expect(view.candidates.map((c) => c.dossierId)).not.toContain(one.dossierId);
+
+      await w.t.app.scoring.addMeetingDossiers(w.A.chair, { meetingId, dossierIds: [two.dossierId] });
+      await w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: one.dossierId });
+      expect((await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId })).dossiers.map((d) => d.dossierId)).toEqual([two.dossierId]);
+      expect((await w.t.app.scoring.listMeetings(w.A.secretary, { roundId: w.roundId })).find((x) => x.id === meetingId)).toMatchObject({ dossierCount: 1 });
+    });
+
+    it("keeps a hồ sơ in one open Phiên họp at a time, and only a hồ sơ Sẵn sàng chốt joins one", async () => {
+      const d = await ready();
+      await meetingWith(w.A.secretary, [d.dossierId]);
+      await expect(meetingWith(w.A.chair, [d.dossierId])).rejects.toMatchObject({ code: "already_in_meeting" });
+
+      const early = await w.graded([m(0), m(1)]);
+      const { meetingId } = await meetingWith(w.A.chair, []);
+      await expect(w.t.app.scoring.addMeetingDossiers(w.A.chair, { meetingId, dossierIds: [early.dossierId] })).rejects.toMatchObject({ code: "not_ready_to_finalize" });
+    });
+
+    it("closes once each hồ sơ is chốt or gỡ; a hồ sơ chốt stays and a closed Phiên họp takes no more", async () => {
+      const kept = await ready();
+      const dropped = await ready();
+      const { meetingId } = await meetingWith(w.A.secretary, [kept.dossierId, dropped.dossierId]);
+      await expect(w.t.app.scoring.closeMeeting(w.A.secretary, { meetingId })).rejects.toMatchObject({ code: "meeting_has_pending_dossiers" });
+
+      const { dossierVersion } = await full(w.A.secretary, kept.dossierId);
+      await w.t.app.scoring.finalize(w.A.secretary, { dossierId: kept.dossierId, expectedVersion: dossierVersion });
+      await expect(w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: kept.dossierId })).rejects.toMatchObject({ code: "not_in_meeting" });
+      await w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: dropped.dossierId });
+      await w.t.app.scoring.closeMeeting(w.A.chair, { meetingId });
+
+      const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
+      expect(view).toMatchObject({ state: "closed", dossierCount: 1, finalizedCount: 1, candidates: [] });
+      expect(view.dossiers[0]).toMatchObject({ dossierId: kept.dossierId, state: "score_finalized", result: { n: 1, star: 4, total: 72.5, flagged: true } });
+      await expect(w.t.app.scoring.addMeetingDossiers(w.A.secretary, { meetingId, dossierIds: [dropped.dossierId] })).rejects.toMatchObject({ code: "meeting_closed" });
+    });
+
+    it("is the Hội đồng's own: another Hội đồng finds neither the Phiên họp nor the hồ sơ, and a đợt not gán to it is refused", async () => {
+      const d = await ready();
+      const { meetingId } = await meetingWith(w.A.secretary, [d.dossierId]);
+      await expect(w.t.app.scoring.getMeeting(w.B.secretary, { meetingId })).rejects.toMatchObject({ code: "not_found" });
+      await expect(w.t.app.scoring.closeMeeting(w.B.chair, { meetingId })).rejects.toMatchObject({ code: "not_found" });
+      await expect(
+        w.t.app.scoring.createMeeting(w.B.secretary, { roundId: w.roundId, title: "Họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [] }),
+      ).rejects.toMatchObject({ code: "not_found" });
+      expect(await w.t.app.scoring.listMeetings(w.B.chair)).toEqual([]);
+    });
+  });
+
   it("refuses the second of two chốt made from the same version (version)", async () => {
     const d = await ready();
     await meetingWith(w.A.secretary, [d.dossierId]);
