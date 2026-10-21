@@ -52,3 +52,16 @@ export async function returnFromProvinceAction(
   revalidatePath(`${LIST}/${dossierId}`);
   return { saved: true };
 }
+
+/** L08 SO-02 (stories 15, 16): Tiếp nhận tại tỉnh a hồ sơ Đã chuyển tỉnh, once per lượt gửi tỉnh. */
+export async function receiveAtProvinceAction(dossierId: string, expectedVersion: number, _prev: ProvinceDossierFormState): Promise<ProvinceDossierFormState> {
+  const actor = await requireActor();
+  try {
+    await app().core.dossiers.receiveAtProvince(actor, { dossierId, expectedVersion });
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath(LIST);
+  revalidatePath(`${LIST}/${dossierId}`);
+  return { saved: true };
+}

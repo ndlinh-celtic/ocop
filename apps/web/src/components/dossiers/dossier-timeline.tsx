@@ -15,6 +15,7 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.ward_transfer": "Chuyển xã",
   "dossier.forward": "Xã gửi tỉnh",
   "dossier.province_return": "Sở trả về để bổ sung",
+  "dossier.province_receive": "Sở tiếp nhận tại tỉnh",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",
