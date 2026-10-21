@@ -195,6 +195,21 @@ async function summaryOf(tx: Tx, m: Meeting): Promise<MeetingSummary> {
   };
 }
 
+/** S43: the open Phiên họp where a hồ sơ of the actor's Hội đồng waits for chốt, if any. */
+export function meetingOf(deps: CoreDeps) {
+  return async (actor: Actor, input: { dossierId: string }): Promise<Pick<Meeting, "id" | "title" | "heldOn" | "location"> | null> => {
+    authorize(actor, "scoring.meeting.manage");
+    return deps.uow.run(async (tx) => {
+      assertIdShape(input.dossierId, dossierNotFound);
+      const d = await tx.dossiers.findById(dataScopeOf(actor), input.dossierId);
+      if (!d) throw dossierNotFound();
+      const pending = await tx.meetings.pendingOf(d.id);
+      const m = pending && (await tx.meetings.findById(pending.meetingId));
+      return m ? { id: m.id, title: m.title, heldOn: m.heldOn, location: m.location } : null;
+    });
+  };
+}
+
 /** S44: one Phiên họp with its hồ sơ and, while open, the hồ sơ that may join it. */
 export function getMeeting(deps: CoreDeps) {
   return async (actor: Actor, input: { meetingId: string }): Promise<MeetingView> => {

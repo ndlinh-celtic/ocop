@@ -128,6 +128,8 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
       expect(view.dossiers.map((d) => d.dossierId)).toEqual([one.dossierId]);
       expect(view.candidates.map((c) => c.dossierId)).toContain(two.dossierId);
       expect(view.candidates.map((c) => c.dossierId)).not.toContain(one.dossierId);
+      expect(await w.t.app.scoring.meetingOf(w.A.chair, { dossierId: one.dossierId })).toMatchObject({ id: meetingId, title: "Phiên họp thứ nhất" });
+      expect(await w.t.app.scoring.meetingOf(w.A.chair, { dossierId: two.dossierId })).toBeNull();
 
       await w.t.app.scoring.addMeetingDossiers(w.A.chair, { meetingId, dossierIds: [two.dossierId] });
       await w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: one.dossierId });
