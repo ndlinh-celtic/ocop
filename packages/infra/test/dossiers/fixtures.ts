@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { FilePurpose, Role, UserActor } from "@ocop/core";
+import type { FilePurpose, GradingMode, Role, UserActor } from "@ocop/core";
 import { anonymous, type TestApp } from "../support";
 
 export const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: "mat-khau-quan-tri-1" };
@@ -119,8 +119,11 @@ export function fixtures(t: TestApp, wardId: () => string) {
     return { versionId, sets: sets as Record<"Rau củ quả" | "Thịt tươi", string> };
   }
 
-  /** Opens a round Đang nhận nộp on the version; the test clock starts on 19/10/2026. */
-  async function openRound(criteriaVersionId: string) {
+  /**
+   * Opens a round Đang nhận nộp on the version; the test clock starts on 19/10/2026. Chấm trực tiếp with
+   * 5 người chấm tối thiểu unless `opts` says otherwise.
+   */
+  async function openRound(criteriaVersionId: string, opts: { gradingMode?: GradingMode; minGraders?: number } = {}) {
     const officer = await staff("province_officer");
     const { roundId } = await t.app.rounds.createRound(officer, {
       name: `Đợt ${++seq}`,
@@ -129,8 +132,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
       forwardingDeadline: "2026-12-15",
       evaluationDeadline: "2027-01-31",
       criteriaVersionId,
-      gradingMode: "direct",
-      aggregation: { method: "mean", minGraders: 5, deviationFlagPoints: 15 },
+      gradingMode: opts.gradingMode ?? "direct",
+      aggregation: { method: "mean", minGraders: opts.minGraders ?? 5, deviationFlagPoints: 15 },
     });
     await t.app.rounds.openRound(officer, { roundId });
     return roundId;

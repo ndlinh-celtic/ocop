@@ -56,7 +56,10 @@ function askForMore(deps: CoreDeps, action: "dossier.supplement.request" | "doss
         action,
         expectedVersion: input.expectedVersion,
         // L08 (story 18): a Sở trả về ends the lượt gửi tỉnh, so the next one is Tiếp nhận tại tỉnh afresh.
-        patch: action === "dossier.province_return" ? { supplementDeadline: deadline, provinceReceivedAt: null, provinceReceivedBy: null } : { supplementDeadline: deadline },
+        patch:
+          action === "dossier.province_return"
+            ? { supplementDeadline: deadline, provinceReceivedAt: null, provinceReceivedBy: null, gradingStartedAt: null }
+            : { supplementDeadline: deadline },
         metadata: { deadline: deadline.toISOString(), itemCount: items.length },
       });
       const set = items.some((i) => i.criterionId) ? await tx.criteriaVersions.findSet(before.criteriaSetId) : null;

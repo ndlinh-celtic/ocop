@@ -32,6 +32,9 @@ const ROLE_ACTIONS = {
   "council.manage": ["province_officer"],
   "council.read": ["province_officer", "admin"],
   "round.council.assign": ["province_officer"],
+  // L09 HD-06 (stories 20, 23): the Cán bộ Sở, or the Thư ký of the Hội đồng gán to the đợt, which
+  // changeGradingMode checks; both only until the đợt's first Phiếu chấm.
+  "round.grading_mode.change": ["province_officer", "council_secretary"],
   // Chủ thể (spec #30): who may read them at all; which ones is the DataScope of identity/scope.ts.
   "entity.read": ["entity_owner", "ward_officer", "province_officer"],
   // The Chủ thể keeps its own organisation details and giấy tờ pháp lý (L01 CT-02).

@@ -1,4 +1,4 @@
-import type { AssignmentKind, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type { AssignmentKind, ScoreSheetState, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -11,6 +11,7 @@ export const criteria = pgSchema("criteria");
 export const roundSchema = pgSchema("round");
 export const entitySchema = pgSchema("entity");
 export const councilSchema = pgSchema("council");
+export const scoringSchema = pgSchema("scoring");
 
 export const userAccount = identity.table("user_account", {
   id: uuid("id").primaryKey(),
@@ -316,6 +317,22 @@ export const assignment = councilSchema.table("assignment", {
   replaceReason: text("replace_reason"),
 });
 
+// Phiếu chấm (0031_grading.sql).
+export const scoreSheet = scoringSchema.table("score_sheet", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  assignmentId: uuid("assignment_id").notNull(),
+  attempt: integer("attempt").notNull(),
+  state: text("state").$type<ScoreSheetState>().notNull(),
+  confirmedAt: ts("confirmed_at"),
+  reauthMethod: text("reauth_method").$type<"totp" | "password">(),
+  supersededBy: uuid("superseded_by"),
+  supersededReason: text("superseded_reason"),
+  version: integer("version").notNull(),
+  createdAt: ts("created_at").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+});
+
 // Gia hạn đợt history, append-only (0013_round_deadline_extension.sql; 0016 drops `reopened`).
 export const deadlineExtension = roundSchema.table("deadline_extension", {
   id: uuid("id").primaryKey(),
@@ -396,6 +413,8 @@ export const dossier = dossierSchema.table("dossier", {
   provinceReceivedAt: ts("province_received_at"),
   provinceReceivedBy: uuid("province_received_by"),
   firstProvinceReceivedAt: ts("first_province_received_at"),
+  // 0031_grading.sql
+  gradingStartedAt: ts("grading_started_at"),
   supplementDeadline: ts("supplement_deadline"),
   copiedFrom: uuid("copied_from"),
   deletedAt: ts("deleted_at"),

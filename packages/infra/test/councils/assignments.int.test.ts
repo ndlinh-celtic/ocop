@@ -32,7 +32,8 @@ beforeAll(async () => {
   t.clock.set(START);
   const version = await f.publishedVersion("26/2026/QĐ-TTg");
   setId = version.sets["Rau củ quả"];
-  const roundId = await f.openRound(version.versionId);
+  // Dựa trên Tổ tư vấn, so that Giao chấm takes both kinds of Phân công.
+  const roundId = await f.openRound(version.versionId, { gradingMode: "advisory_based", minGraders: 1 });
   ward = await f.staff("ward_officer", wardId);
   province = await f.staff("province_officer");
   A = await f.staffedCouncil(province, { members: 3, advisors: 2 });
@@ -59,8 +60,9 @@ const assigned = async (dossierId: string) =>
 const outboxCount = async (type: string, id: string) =>
   (await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = $1 AND payload->>'dossierId' = $2", [type, id])).rowCount;
 const listed = async (actor: UserActor) => (await t.app.dossiers.list(actor)).map((d) => d.id);
-/** Stand-in for Giao chấm (#53), which is the only writer of effective_at. */
-const takeEffect = (dossierId: string) => db.admin.query("UPDATE council.assignment SET effective_at = $2 WHERE dossier_id = $1", [dossierId, START]);
+/** L09 HD-06 Giao chấm (#53), the only writer of effective_at. */
+const giaoCham = async (d: { dossierId: string; version: number }) =>
+  (await t.app.councils.startGrading(A.secretary, { dossiers: [{ dossierId: d.dossierId, expectedVersion: d.version }] })).dossiers[0]!;
 
 describe("L09 HD-02 the Thư ký sees the hồ sơ of its Hội đồng (story 24)", () => {
   it("lists a hồ sơ from its Tiếp nhận tại tỉnh on, with its mã and đợt, for the Chủ tịch and Thư ký of the Hội đồng only", async () => {
@@ -183,7 +185,7 @@ describe("L09 the DataScope `assigned`: a Phân công in force shows the hồ s�
       await expect(t.app.dossiers.get(actor, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
     }
 
-    await takeEffect(d.dossierId);
+    const graded = await giaoCham({ dossierId: d.dossierId, version });
 
     for (const actor of [A.members[0]!, A.advisors[0]!]) {
       expect(await listed(actor)).toContain(d.dossierId);
@@ -193,17 +195,15 @@ describe("L09 the DataScope `assigned`: a Phân công in force shows the hồ s�
       expect(await listed(actor)).not.toContain(d.dossierId);
       await expect(t.app.dossiers.get(actor, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
     }
-    // A Phân công in force is not dropped or changed by editing the nháp.
-    await expect(edit(A.secretary, [{ dossierId: d.dossierId, version }], [A.members[1]!], [A.advisors[0]!])).rejects.toMatchObject({
-      code: "assignment_in_force",
-    });
-    await expect(edit(A.secretary, [{ dossierId: d.dossierId, version }], [A.members[0]!, A.members[1]!], [A.advisors[0]!])).resolves.toBeDefined();
+    // After Giao chấm the Phân công nháp is no longer edited (the hồ sơ has left Đã chuyển tỉnh); a Phân
+    // công in force would refuse with `assignment_in_force` when a hồ sơ comes back to it (#57).
+    await expect(edit(A.secretary, [graded], [A.members[0]!, A.members[1]!], [A.advisors[0]!])).rejects.toMatchObject({ code: "invalid_state" });
   });
 
   it("hides the hồ sơ again once the Phân công is replaced", async () => {
     const d = await received();
-    await edit(A.secretary, [d], [A.members[0]!]);
-    await takeEffect(d.dossierId);
+    const drafted = (await edit(A.secretary, [d], [A.members[0]!], [A.advisors[0]!])).dossiers[0]!;
+    await giaoCham(drafted);
     expect(await listed(A.members[0]!)).toContain(d.dossierId);
 
     await db.admin.query("UPDATE council.assignment SET replaced_at = $2, replaced_by = $3 WHERE dossier_id = $1", [d.dossierId, START, A.secretary.userId]);
@@ -215,7 +215,7 @@ describe("L09 the DataScope `assigned`: a Phân công in force shows the hồ s�
 describe("L09 Phân công in the database (CLAUDE.md: một người không vừa là Tổ tư vấn vừa chấm cùng hồ sơ)", () => {
   it("keeps one current row per (hồ sơ, Người dùng) whatever the kind, fixes what took effect, and never deletes it", async () => {
     const d = await received();
-    await edit(A.secretary, [d], [A.members[0]!]);
+    const drafted = (await edit(A.secretary, [d], [A.members[0]!], [A.advisors[0]!])).dossiers[0]!;
     const insert = (id: string) =>
       db.app.query(
         "INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES ($1, $2, $3, 'advisory', $4, now())",
@@ -223,7 +223,7 @@ describe("L09 Phân công in the database (CLAUDE.md: một người không vừ
       );
     await expect(insert("00000000-0000-4000-8000-000000000001")).rejects.toThrow(/assignment_current_key/);
 
-    await takeEffect(d.dossierId);
+    await giaoCham(drafted);
     await expect(db.app.query("UPDATE council.assignment SET effective_at = now() WHERE dossier_id = $1", [d.dossierId])).rejects.toThrow(/fixed/);
     await expect(db.app.query("UPDATE council.assignment SET kind = 'advisory' WHERE dossier_id = $1", [d.dossierId])).rejects.toThrow(/fixed/);
     await expect(db.app.query("DELETE FROM council.assignment WHERE dossier_id = $1", [d.dossierId])).rejects.toThrow(/fixed/);

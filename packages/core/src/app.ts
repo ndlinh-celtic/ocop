@@ -53,6 +53,7 @@ import { changeRepresentativeEmail, createEntity } from "./entities/ward-support
 import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
+import { startGrading } from "./councils/grading";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -208,6 +209,7 @@ export function createCore(deps: CoreDeps) {
       editAssignments: editAssignments(deps),
       assignments: listAssignments(deps),
       assignmentCandidates: assignmentCandidates(deps),
+      startGrading: startGrading(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

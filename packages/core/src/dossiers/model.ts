@@ -91,6 +91,8 @@ export interface Dossier extends ProductInfo {
   provinceReceivedBy: string | null;
   /** The first Tiếp nhận tại tỉnh ever; never reset, so the Hội đồng keeps seeing the hồ sơ (spec #49). */
   firstProvinceReceivedAt: Date | null;
+  /** L09 HD-06: when Giao chấm put the hồ sơ into Tổ tư vấn thẩm định or Thành viên xem xét; null again after a Sở trả về. */
+  gradingStartedAt: Date | null;
   /**
    * Derived when loaded, never written: the Hội đồng gán to the hồ sơ's đợt, and the kind of the reader's
    * own Phân công in force on it (null unless the reader's DataScope is `assigned`). The DataScope checks of
