@@ -107,6 +107,16 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     const text = JSON.stringify(timeline);
     for (const x of [m(0), m(1), m(2)]) expect(text).not.toContain(x.fullName);
     expect(text).not.toContain("72.5");
+    // Who in the Hội đồng took a step is not the Chủ thể's to know: no id, no Vai trò.
+    for (const x of [m(0), m(1), m(2), w.A.secretary, w.A.chair]) expect(text).not.toContain(x.userId);
+    for (const role of ["council_chair", "council_secretary", "council_member", "advisory_member"]) expect(text).not.toContain(role);
+    expect(timeline.find((e) => e.action === "dossier.finalize")).toMatchObject({ actorUserId: null, actorRole: null });
+    expect(timeline.find((e) => e.action === "dossier.province_receive")).toMatchObject({ actorUserId: w.province.userId, actorRole: "province_officer" });
+    // Staff still see who it was.
+    expect((await w.t.app.dossiers.timeline(w.province, { dossierId: d.dossierId })).find((e) => e.action === "dossier.finalize")).toMatchObject({
+      actorUserId: w.A.secretary.userId,
+      actorRole: "council_secretary",
+    });
 
     await w.t.drainJobs();
     for (const x of [m(0), m(1), m(2)]) {
