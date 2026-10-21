@@ -75,10 +75,10 @@ describe("#14 Phạm vi of Chủ thể data (L01, stories 76, 80, 83)", () => {
     await expect(t.app.entities.getEntity(anonymous(), { entityId: idOf(a) })).rejects.toMatchObject({ code: "forbidden" });
   });
 
-  it("a hộ sản xuất reads its own số định danh masked, the full number being its own audited use case (story 13)", async () => {
+  it("a hộ sản xuất reads its own số định danh in full: it is masked for everyone but the hộ (story 13)", async () => {
     expect(await t.app.entities.getEntity(household, { entityId: idOf(household) })).toMatchObject({
       kind: "household",
-      identifier: "••••••••1234",
+      identifier: "079200001234",
     });
   });
 

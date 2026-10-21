@@ -7,6 +7,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import { entityNotFound, parseDetails, type Entity, type EntityDetails } from "./model";
+import { isOwnEntity } from "./read";
 import { assertWard } from "./register";
 
 export interface UpdateEntityInput extends EntityDetails {
@@ -58,8 +59,9 @@ export function updateEntity(deps: CoreDeps) {
 }
 
 /**
- * Story 13: the full số định danh cá nhân of a hộ sản xuất. Every other read shows only the last four
- * digits; this one is a separate use case and is audited as a personal data access (NĐ 13/2023).
+ * Story 13: the full số định danh cá nhân of a hộ sản xuất. Every other read by anyone but the hộ itself
+ * shows only the last four digits; this one is a separate use case and is audited as a personal data
+ * access (NĐ 13/2023), except when the hộ reads its own number.
  */
 export function revealPersonalId(deps: CoreDeps) {
   return async (actor: Actor, input: { entityId: string }): Promise<{ personalId: string }> => {
@@ -70,14 +72,16 @@ export function revealPersonalId(deps: CoreDeps) {
       const entity = await tx.entities.findById(scope, input.entityId);
       if (!entity) throw entityNotFound();
       if (!entity.personalIdSealed) throw new DomainError("no_personal_id", "Chủ thể này không đăng ký bằng số định danh cá nhân");
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
-          action: "personal_data.viewed",
-          targetType: "entity",
-          targetId: entity.id,
-          metadata: { view: "entity_personal_id" },
-        }),
-      );
+      if (!isOwnEntity(scope, entity.id)) {
+        await tx.audit.append(
+          auditEntry(actor, deps.ids.next(), deps.clock.now(), {
+            action: "personal_data.viewed",
+            targetType: "entity",
+            targetId: entity.id,
+            metadata: { view: "entity_personal_id" },
+          }),
+        );
+      }
       return { personalId: deps.secretBox.open(entity.personalIdSealed) };
     });
   };

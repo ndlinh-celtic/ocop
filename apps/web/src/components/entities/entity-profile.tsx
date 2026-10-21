@@ -4,7 +4,8 @@ import { formatVnDate } from "@/lib/format";
 
 /**
  * "Thông tin tổ chức" of a Chủ thể (L01 CT-01): what it registered with. `identifier` replaces the plain
- * (masked) identifier, e.g. with a control that reveals the full số định danh to the Chủ thể itself.
+ * identifier (masked for anyone but the Chủ thể), e.g. with a control that reveals the full số định danh
+ * to a Cán bộ xã.
  */
 export function EntityProfile({ entity, email, identifier, children }: { entity: EntityView; email?: string; identifier?: ReactNode; children?: ReactNode }) {
   const household = entity.kind === "household";

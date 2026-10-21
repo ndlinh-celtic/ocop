@@ -2,7 +2,6 @@ import { BadgeCheck, CircleAlert } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EntityProfile } from "@/components/entities/entity-profile";
 import { DocumentTable, REQUIREMENT_STATE, RequirementList } from "@/components/entities/legal-documents";
-import { RevealPersonalId } from "@/components/entities/reveal-personal-id";
 import { RefreshWhileScanning } from "@/components/refresh-while-scanning";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -85,11 +84,7 @@ export default async function LegalProfilePage() {
         </section>
       )}
 
-      <EntityProfile
-        entity={entity}
-        email={actor.email}
-        identifier={entity.kind === "household" ? <RevealPersonalId entityId={entity.id} masked={entity.identifier} /> : undefined}
-      >
+      <EntityProfile entity={entity} email={actor.email}>
         <details className="mt-4 border-t pt-4">
           <summary className="cursor-pointer text-sm font-medium text-brand">Sửa thông tin tổ chức</summary>
           <div className="mt-4">
