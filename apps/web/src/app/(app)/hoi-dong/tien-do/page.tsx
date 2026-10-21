@@ -1,4 +1,5 @@
-import { ListChecks } from "lucide-react";
+import { Flag, ListChecks } from "lucide-react";
+import Link from "next/link";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { EmptyState } from "@/components/empty-state";
 import { formatVnDateTime } from "@/lib/format";
@@ -17,7 +18,7 @@ const SHEET = {
 /**
  * S42 Tiến độ chấm (L15 HD-04; stories 95 to 97): for the Chủ tịch and Thư ký, every hồ sơ of the Hội đồng between
  * Giao chấm and chốt, with each thành viên chấm's phiếu state and how many are confirmed against the đợt's người
- * chấm tối thiểu. No points appear here before Sẵn sàng chốt is read (#59).
+ * chấm tối thiểu. No points appear here; a hồ sơ Sẵn sàng chốt shows its Cờ chênh lệch and links to S43 (#59).
  */
 export default async function GradingProgressPage() {
   const actor = await requireActor();
@@ -54,12 +55,21 @@ export default async function GradingProgressPage() {
                   <th className="px-3 py-2">Trạng thái</th>
                   <th className="px-3 py-2">Đã xác nhận</th>
                   <th className="px-3 py-2">Thành viên chấm</th>
+                  <th className="px-3 py-2">Cờ</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.dossierId} className="border-b align-top last:border-0" data-testid="progress-row">
-                    <td className="px-3 py-2 font-mono whitespace-nowrap">{r.code}</td>
+                    <td className="px-3 py-2 font-mono whitespace-nowrap">
+                      {r.state === "member_confirmed" ? (
+                        <Link href={`/hoi-dong/chot-diem/${r.dossierId}`} className="text-brand">
+                          {r.code}
+                        </Link>
+                      ) : (
+                        r.code
+                      )}
+                    </td>
                     <td className="px-3 py-2">{r.productName || "(Chưa đặt tên sản phẩm)"}</td>
                     <td className="px-3 py-2">{r.round?.name ?? "—"}</td>
                     <td className="px-3 py-2">
@@ -80,6 +90,13 @@ export default async function GradingProgressPage() {
                           </li>
                         ))}
                       </ul>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {r.flagged && (
+                        <span className="inline-flex items-center gap-1 text-danger">
+                          <Flag className="size-4" aria-hidden /> Lệch điểm lớn
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

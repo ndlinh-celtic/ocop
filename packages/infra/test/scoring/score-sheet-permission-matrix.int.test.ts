@@ -12,6 +12,7 @@ import { scoringWorld, type ScoringWorld } from "./world";
 type Who =
   | "Thành viên A, có Phân công"
   | "Thành viên A, không Phân công"
+  | "Thành viên A, đã xác nhận"
   | "Thư ký A dùng vai Thành viên"
   | "Chủ tịch A"
   | "Thư ký A"
@@ -24,13 +25,14 @@ type Who =
   | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Tổ tư vấn thẩm định";
 type Action = "lưu phiếu" | "xác nhận phiếu" | "xem điểm";
-type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "progress_only" | "own_sheet" | "none";
+type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "progress_only" | "own_sheet" | "full" | "none";
 
 function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Outcome][]) {
   const actors = {} as Record<Exclude<Who, "Chủ thể">, UserActor>;
   beforeAll(async () => {
     actors["Thành viên A, có Phân công"] = w.A.members[0]!;
     actors["Thành viên A, không Phân công"] = w.A.members[2]!;
+    actors["Thành viên A, đã xác nhận"] = w.A.members[1]!;
     actors["Chủ tịch A"] = w.A.chair;
     actors["Thư ký A"] = w.A.secretary;
     actors["Tổ tư vấn A, có Phân công"] = w.A.advisors[0]!;
@@ -89,7 +91,7 @@ function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Out
   it.each(rows.filter((r) => states.includes(r[2])))("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const run = attempt(who, action, d);
-    if (outcome === "allowed" || outcome === "progress_only" || outcome === "own_sheet" || outcome === "none") await expect(run).resolves.toBe(outcome);
+    if (outcome === "allowed" || outcome === "progress_only" || outcome === "own_sheet" || outcome === "full" || outcome === "none") await expect(run).resolves.toBe(outcome);
     else await expect(run).rejects.toMatchObject({ code: outcome });
   });
 }
@@ -127,15 +129,17 @@ const ROWS: [Who, Action, State, Outcome][] = [
   ["Quản trị", "xác nhận phiếu", "Thành viên xem xét", "forbidden"],
   ["Thành viên A, có Phân công", "xác nhận phiếu", "Tổ tư vấn thẩm định", "invalid_state"],
 
-  // Who sees which points (stories 92, 95, 124, 132): no `full` before #59.
+  // Who sees which points (stories 92, 93, 95, 124, 132): `full` from Sẵn sàng chốt, for a thành viên only once confirmed (#59).
   ["Thành viên A, có Phân công", "xem điểm", "Thành viên xem xét", "own_sheet"],
   ["Thành viên A, có Phân công", "xem điểm", "Sẵn sàng chốt", "own_sheet"],
   ["Thành viên A, có Phân công", "xem điểm", "Tổ tư vấn thẩm định", "own_sheet"],
   ["Thư ký A dùng vai Thành viên", "xem điểm", "Sẵn sàng chốt", "own_sheet"],
   ["Thành viên A, không Phân công", "xem điểm", "Thành viên xem xét", "not_found"],
   ["Chủ tịch A", "xem điểm", "Thành viên xem xét", "progress_only"],
-  ["Chủ tịch A", "xem điểm", "Sẵn sàng chốt", "progress_only"],
-  ["Thư ký A", "xem điểm", "Sẵn sàng chốt", "progress_only"],
+  ["Chủ tịch A", "xem điểm", "Sẵn sàng chốt", "full"],
+  ["Thư ký A", "xem điểm", "Sẵn sàng chốt", "full"],
+  ["Thư ký A", "xem điểm", "Thành viên xem xét", "progress_only"],
+  ["Thành viên A, đã xác nhận", "xem điểm", "Sẵn sàng chốt", "full"],
   ["Tổ tư vấn A, có Phân công", "xem điểm", "Tổ tư vấn thẩm định", "none"],
   ["Thành viên B", "xem điểm", "Thành viên xem xét", "not_found"],
   ["Thư ký B", "xem điểm", "Sẵn sàng chốt", "not_found"],
