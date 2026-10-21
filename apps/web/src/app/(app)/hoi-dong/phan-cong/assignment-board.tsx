@@ -2,7 +2,7 @@
 
 import type { AssignmentCandidate, AssignmentKind } from "@ocop/core";
 import { Save, Send } from "lucide-react";
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { editAssignmentsAction, startGradingAction, type AssignmentFormState, type StartGradingFormState } from "./actions";
 
 export interface BoardRow {
@@ -54,9 +54,25 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
     return next;
   };
   const conflict = [...members].filter((id) => advisors.has(id));
+  // The payload comes from state, not from the form: React resets a form after its action ran, which unchecks
+  // these controlled checkboxes in the DOM while the state still has them, so a Giao chấm right after a save
+  // would send no hồ sơ. Each hồ sơ goes with the version the page shows now.
+  const payload = () => {
+    const form = new FormData();
+    for (const r of rows) if (selected.has(r.dossierId)) form.append("dossier", `${r.dossierId}:${r.version}`);
+    for (const id of members) form.append("member", id);
+    for (const id of advisors) form.append("advisor", id);
+    return form;
+  };
 
   return (
-    <form action={action} className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(() => action(payload()));
+      }}
+      className="grid gap-6 lg:grid-cols-[1fr_20rem]"
+    >
       <section className="overflow-x-auto rounded-lg border bg-surface shadow-card">
         <table className="w-full text-left text-sm">
           <thead className="border-b bg-surface-2">
@@ -173,11 +189,12 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
             Giao chấm theo Phân công đã lưu của {selected.size} hồ sơ đã chọn, theo Chế độ chấm của đợt. Người được Phân công nhận thông báo và bắt đầu thấy hồ sơ.
           </p>
           <button
-            type="submit"
-            formAction={startAction}
+            type="button"
             disabled={starting || pending || selected.size === 0}
-            onClick={(e) => {
-              if (!window.confirm(`Giao chấm ${selected.size} hồ sơ? Sau Giao chấm, Chế độ chấm và Quy tắc tổng hợp của đợt không đổi được nữa.`)) e.preventDefault();
+            onClick={() => {
+              if (window.confirm(`Giao chấm ${selected.size} hồ sơ? Sau Giao chấm, Chế độ chấm và Quy tắc tổng hợp của đợt không đổi được nữa.`)) {
+                startTransition(() => startAction(payload()));
+              }
             }}
             className="flex w-fit items-center gap-2 rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand disabled:opacity-60"
           >

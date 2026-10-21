@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, type Page } from "@playwright/test";
@@ -87,6 +88,21 @@ export async function activateFromEmail(page: Page, email: string, password: str
 export function pdf(name: string) {
   const body = `%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n${name}\n`;
   return { name, mimeType: "application/pdf", buffer: Buffer.from(body) };
+}
+
+/**
+ * Runs SQL as the database superuser in the Compose stack and returns the rows, tab-separated. Only for what a
+ * browser cannot do: moving a deadline into the past instead of waiting days, and reading the audit and outbox.
+ */
+export function sql(query: string): string[][] {
+  const out = execFileSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "postgres", "-d", "ocop", "-v", "ON_ERROR_STOP=1", "-AtF", "\t", "-c", query], {
+    cwd: path.resolve(import.meta.dirname, "../.."),
+    encoding: "utf8",
+  });
+  return out
+    .split("\n")
+    .filter((line) => line !== "")
+    .map((line) => line.split("\t"));
 }
 
 /** YYYY-MM-DD in giờ Việt Nam, `days` from today. */
