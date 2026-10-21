@@ -38,6 +38,10 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
     ]),
   );
   const writable = scores.sheet?.state === "draft" && (dossier.state === "member_review" || dossier.state === "member_confirmed");
+  // S61: a phiên bản newer than any copied into the phiếu changes nothing in it until the Tổ tư vấn copies it.
+  const versions = await app().core.scoring.advisoryReportVersions(actor, { dossierId });
+  const copied = Math.max(0, ...scores.criteria.map((c) => c.advisory?.number ?? 0));
+  const newer = copied > 0 && (versions.at(-1)?.number ?? 0) > copied ? versions.at(-1)!.number : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,6 +70,11 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
       {scores.sheet?.state === "confirmed" && (
         <p role="status" className="rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand" data-testid="sheet-locked">
           Phiếu đã xác nhận lúc {formatVnDateTime(scores.sheet.confirmedAt!)} và đã khóa. Muốn sửa phải có Trả phiếu của hội đồng.
+        </p>
+      )}
+      {newer !== null && scores.sheet?.state === "draft" && (
+        <p role="status" className="rounded-lg border px-4 py-2 text-sm text-text-2" data-testid="newer-advisory-version">
+          Có phiên bản {newer} của báo cáo Tổ tư vấn. Phiếu của anh/chị không bị thay đổi cho đến khi Tổ tư vấn sao chép phiên bản này.
         </p>
       )}
       {dossier.state === "advisory_review" || dossier.state === "advisory_report_issued" ? (
