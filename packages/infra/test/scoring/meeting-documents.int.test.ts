@@ -34,7 +34,8 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     await scoreAndConfirm(m(0), d.dossierId, first);
     await scoreAndConfirm(m(1), d.dossierId, second);
     const entity = await w.t.app.entities.getEntity(d.a, { entityId: entityIdOf(d.a) });
-    return { ...d, entityName: entity.name };
+    const { code } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
+    return { ...d, code, entityName: entity.name };
   }
 
   async function finalize(actor: UserActor, dossierId: string) {
@@ -86,6 +87,79 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     expect(doc).toContain(`${m(2).fullName}: Chưa xác nhận`);
     expect(doc).toContain("| 100 | 5 sao |  | Tạm tính |");
     expect(doc).toContain("Bản nháp: còn 2 hồ sơ chưa chốt điểm");
+  });
+
+  it("sinh the dự thảo biên bản: điểm, hạng, người Vắng by hồ sơ and chỗ trống cho ý kiến (story 111)", async () => {
+    const { meetingId, done, best } = await meeting();
+
+    const doc = await text(w.A.chair, meetingId, "minutes");
+
+    expect(doc).toContain("BIÊN BẢN HỌP HỘI ĐỒNG");
+    expect(doc).toContain("cần đối chiếu");
+    expect(doc).toContain(`Hồ sơ ${done.code}: ${PRODUCT.productName} của ${done.entityName} (Bộ tiêu chí 1 - Rau củ quả)`);
+    expect(doc).toContain("Điểm tổng hợp: 72,5 điểm. Hạng sao: 4 sao. Tình trạng: Đã chốt.");
+    expect(doc).toContain(`Thành viên vắng: ${m(2).fullName}\n`);
+    expect(doc).toContain("Cờ chênh lệch: Lệch điểm lớn (55 điểm)");
+    expect(doc).toContain(`Hồ sơ ${best.code}`);
+    expect(doc).toContain(`Thành viên vắng: chưa chốt; chưa xác nhận phiếu: ${m(2).fullName}`);
+    expect(doc).toContain("Nhận xét tổng hợp của Tổ tư vấn: Không có Báo cáo Tổ tư vấn");
+    for (const blank of ["Thành phần tham dự: ....", "Ý kiến thảo luận: ....", "Kết luận của Hội đồng: ...."]) expect(doc).toContain(blank);
+  });
+
+  it("sinh the dự thảo quyết định with the hồ sơ from 3 sao only, and đề nghị xét 5 sao from 90 điểm (story 112)", async () => {
+    const { meetingId, done, best, low } = await meeting();
+
+    const doc = await text(w.A.secretary, meetingId, "decision");
+
+    expect(doc).toContain("QUYẾT ĐỊNH");
+    expect(doc).toContain("Công nhận 2 sản phẩm đạt chuẩn OCOP");
+    expect(doc).toContain(`| ${PRODUCT.productName} | ${done.entityName} | Ấp 1 | 1 - Rau củ quả | 72,5 | 4 sao |  |`);
+    expect(doc).toContain(`| ${PRODUCT.productName} | ${best.entityName} | Ấp 1 | 1 - Rau củ quả | 100 | 5 sao | Đề nghị xét 5 sao |`);
+    expect(doc).not.toContain(low.entityName);
+  });
+
+  it("sinh lại after chốt gives the số liệu cuối, and records who sinh what (story 113)", async () => {
+    const { meetingId, best } = await meeting();
+    expect(await text(w.A.secretary, meetingId, "score_table")).toContain("| 100 | 5 sao |  | Tạm tính |");
+
+    // Thành viên 1 is Trả phiếu and confirms 40/25/0 instead: the hồ sơ chốt at 82,5.
+    const scores = await w.t.app.scoring.readDossierScores(w.A.secretary, { dossierId: best.dossierId });
+    if (scores.kind !== "full") throw new Error(scores.kind);
+    const sheetId = scores.graders.find((g) => g.userId === m(1).userId)!.sheetId!;
+    await w.t.app.scoring.returnScoreSheet(w.A.secretary, { dossierId: best.dossierId, sheetId, reason: "Xem lại phần C" });
+    await scoreAndConfirm(m(1), best.dossierId, [40, 25, 0]);
+    await finalize(w.A.secretary, best.dossierId);
+
+    const doc = await text(w.A.secretary, meetingId, "score_table");
+    expect(doc).toContain("| 82,5 | 4 sao | Lệch điểm lớn (35 điểm) | Đã chốt |");
+    expect(doc).toContain("Bản nháp: còn 1 hồ sơ chưa chốt điểm");
+    const audited = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.meeting.document_generated"], targetId: meetingId });
+    expect(audited).toHaveLength(2);
+    expect(audited[0]).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { kind: "score_table", pending: 1 } });
+  });
+
+  it("gives a Phiên họp of another Hội đồng as not found", async () => {
+    const { meetingId } = await meeting();
+    await expect(w.t.app.scoring.generateMeetingDocument(w.B.secretary, { meetingId, kind: "minutes" })).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("L15 văn bản họp in a đợt dựa trên Tổ tư vấn (#62, story 114)", () => {
+  const w = scoringWorld({ gradingMode: "advisory_based", minGraders: 1 });
+
+  it("takes the nhận xét tổng hợp from the Báo cáo Tổ tư vấn the kết quả chốt rests on", async () => {
+    const [m0] = w.A.members;
+    const advisor = w.A.advisors[0]!;
+    const d = await w.f.advisoryCopied(w.ward, w.province, w.setId, w.A.secretary, { members: [m0!], advisors: [advisor] });
+    const own = await w.t.app.scoring.readDossierScores(m0!, { dossierId: d.dossierId });
+    if (own.kind !== "own_sheet") throw new Error(own.kind);
+    await w.t.app.scoring.confirmScoreSheet(m0!, { dossierId: d.dossierId, expectedVersion: own.sheet!.version });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+
+    const { bytes } = await w.t.app.scoring.generateMeetingDocument(w.A.secretary, { meetingId, kind: "minutes" });
+
+    const summary = (await w.t.app.scoring.advisoryReportVersions(w.A.secretary, { dossierId: d.dossierId }))[0]!.report.summary;
+    expect(docxText(bytes)).toContain(`Nhận xét tổng hợp của Tổ tư vấn: ${summary} (Báo cáo Tổ tư vấn phiên bản 1)`);
   });
 });
 
