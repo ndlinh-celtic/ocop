@@ -14,7 +14,10 @@ export type DataScope =
   | { kind: "ward"; wardId: string }
   /** Cán bộ Sở: the hồ sơ that have ever reached Đã chuyển tỉnh, and the Chủ thể of those (story 78). */
   | { kind: "province" }
-  /** Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75). */
+  /**
+   * Nhập hộ: one Chủ thể, and only while it is đăng ký ở xã `wardId` (story 75); of its hồ sơ, a Nháp
+   * (no xã yet) or one whose xã is `wardId`, so a hồ sơ Chuyển xã elsewhere is out (story 49).
+   */
   | { kind: "on_behalf"; entityId: string; wardId: string }
   | { kind: "none" };
 

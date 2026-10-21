@@ -280,9 +280,10 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
       // From the first gửi tỉnh on, even after the Sở trả về it (story 78).
       return d.firstForwardedAt !== null;
     case "on_behalf":
-      // Every hồ sơ of the Chủ thể. Its xã đăng ký is not on the hồ sơ: the repository checks it when it
-      // loads the row, and a row in hand was loaded within this scope.
-      return d.entityId === scope.entityId;
+      // The hồ sơ of the Chủ thể with no xã yet (a Nháp) or at the officer's xã (story 49). The Chủ thể's
+      // xã đăng ký is not on the hồ sơ: the repository checks it when it loads the row, and a row in hand
+      // was loaded within this scope.
+      return d.entityId === scope.entityId && (d.wardId === null || d.wardId === scope.wardId);
     case "none":
       return false;
     default: {
