@@ -67,6 +67,7 @@ export const NOTICE_EVENTS = [
   "council.assignment.replaced",
   "council.assignment.added",
   "dossier.advisory_return_requested",
+  "dossier.unlocked",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -392,6 +393,25 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
       ];
     }
     // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.
+    case "dossier.unlocked": {
+      // L15 Mở khóa sau chốt (story 130): the Chủ tịch and Thư ký Trả phiếu and chốt again; the lý do stays in the audit.
+      if (!dossier.councilId) return [];
+      const recipients = [
+        ...(await activeHolders(tx, "council_chair", "council", dossier.councilId, now)),
+        ...(await activeHolders(tx, "council_secretary", "council", dossier.councilId, now)),
+      ];
+      return [
+        {
+          recipients: [...new Map(recipients.map((u) => [u.id, u])).values()],
+          kind: "dossier_unlocked",
+          title: `Hồ sơ được Mở khóa sau chốt: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã được Mở khóa sau chốt theo văn bản yêu cầu của Hội đồng; kết quả chốt cũ bị thay thế. Trả phiếu cho người cần chấm lại rồi chốt lại trong một Phiên họp mới.`,
+          emailSubject: "Một hồ sơ OCOP được Mở khóa sau chốt",
+          emailLine: "Một hồ sơ OCOP của Hội đồng đã được Mở khóa sau chốt và cần chốt lại.",
+          link: `/hoi-dong/chot-diem/${dossier.id}`,
+        },
+      ];
+    }
     case "dossier.members_confirmed": {
       if (!dossier.councilId) return [];
       const recipients = [
