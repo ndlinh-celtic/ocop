@@ -230,6 +230,25 @@ export { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind, type Assignment
 export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "./councils/assignments";
 export type { StartGradingInput } from "./councils/grading";
 export type { AddAssignmentInput, ReplaceAssignmentInput, ReplacedAssignmentView } from "./councils/replace";
+export {
+  EVIDENCE_ASSESSMENTS,
+  EVIDENCE_ASSESSMENT_LABEL,
+  type AdvisoryReportDraft,
+  type AdvisoryReportLine,
+  type AdvisoryReportRepo,
+  type AdvisoryReportSnapshot,
+  type AdvisoryReportVersion,
+  type EvidenceAssessment,
+} from "./scoring/advisory-report-model";
+export {
+  AdvisoryReportIncomplete,
+  type AdvisoryCriterionView,
+  type AdvisoryReportContent,
+  type AdvisoryReportLineInput,
+  type AdvisoryReportVersionSummary,
+  type AdvisoryReportVersionView,
+  type AdvisoryReportWorkspace,
+} from "./scoring/advisory-report";
 export { SCORE_SHEET_STATES, type ScoreSheet, type ScoreSheetLine, type ScoreSheetRepo, type ScoreSheetState } from "./scoring/score-sheet-model";
 export { ScoreSheetIncompleteError, type SaveScoreSheetInput, type ScoreSheetLineInput } from "./scoring/sheets";
 export { scoresVisibility, type DossierScores, type GraderProgress, type GradingProgressRow, type OwnSheetView, type SheetCriterion } from "./scoring/read";

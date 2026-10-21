@@ -15,6 +15,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   evidence: "dossier.evidence.upload",
   signed_ward_report: "dossier.ward_report.upload",
   council_decision: "council.manage",
+  advisory_attachment: "dossier.advisory_report.upload",
   grading_evidence: "scoring.evidence.upload",
 };
 

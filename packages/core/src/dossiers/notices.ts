@@ -59,6 +59,7 @@ export const NOTICE_EVENTS = [
   "dossier.returned_by_province",
   "dossier.return_requested",
   "dossier.grading_started",
+  "dossier.advisory_report_issued",
   "dossier.members_confirmed",
   "council.assignment.replaced",
   "council.assignment.added",
@@ -338,6 +339,22 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           emailSubject: "Anh/chị được Phân công một hồ sơ OCOP",
           emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
           link: kind === "advisory" ? "/to-tu-van/hang-doi" : `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
+    }
+    // L11 (story 62): each phiên bản issued tells the thành viên chấm whose Phân công is in force.
+    case "dossier.advisory_report_issued": {
+      const members = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null && a.kind === "member");
+      const users = (await Promise.all(members.map((a) => tx.users.findById(a.userId)))).filter((u): u is User => u?.status === "active");
+      return [
+        {
+          recipients: users,
+          kind: "dossier_advisory_report_issued",
+          title: `Có báo cáo Tổ tư vấn mới: ${product}`,
+          body: `Tổ tư vấn đã phát hành báo cáo cho hồ sơ ${dossier.code}.`,
+          emailSubject: "Có báo cáo Tổ tư vấn mới",
+          emailLine: "Tổ tư vấn vừa phát hành báo cáo cho một hồ sơ OCOP anh/chị được Phân công chấm.",
+          link: `/thanh-vien/ho-so/${dossier.id}/bao-cao-to-tu-van`,
         },
       ];
     }

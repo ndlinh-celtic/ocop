@@ -15,6 +15,7 @@ import { dossierRepo } from "./dossiers";
 import { supplementRepo } from "./supplements";
 import { reminderRepo, systemSettingRepo } from "./reminders";
 import { assignmentRepo, councilRepo, scoreSheetRepo } from "./councils";
+import { advisoryReportRepo } from "./advisory-reports";
 
 export function buildRepos(db: Db): Repos {
   return {
@@ -42,5 +43,6 @@ export function buildRepos(db: Db): Repos {
     councils: councilRepo(db),
     assignments: assignmentRepo(db),
     scoreSheets: scoreSheetRepo(db),
+    advisoryReports: advisoryReportRepo(db),
   };
 }
