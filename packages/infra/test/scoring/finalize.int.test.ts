@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { snapshotHash, type DossierScores, type UserActor } from "@ocop/core";
 import { PASSWORD } from "../dossiers/fixtures";
+import { systemActor } from "../support";
 import { scoringWorld } from "./world";
 
 /*
@@ -174,6 +175,18 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     });
   });
 
+  it("refuses Phiên họp and chốt to the Tổ tư vấn, a thành viên chấm, the Sở and Quản trị (stories 64, 132)", async () => {
+    const d = await ready();
+    const { meetingId } = await meetingWith(w.A.secretary, [d.dossierId]);
+    const { dossierVersion } = await full(w.A.secretary, d.dossierId);
+    for (const actor of [w.A.advisors[0]!, m(0), w.province, await w.f.admin()]) {
+      await expect(w.t.app.scoring.finalize(actor, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "forbidden" });
+      await expect(meetingWith(actor, [])).rejects.toMatchObject({ code: "forbidden" });
+      await expect(w.t.app.scoring.getMeeting(actor, { meetingId })).rejects.toMatchObject({ code: "forbidden" });
+    }
+    await expect(w.t.app.scoring.finalize(w.B.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "not_found" });
+  });
+
   it("refuses the second of two chốt made from the same version (version)", async () => {
     const d = await ready();
     await meetingWith(w.A.secretary, [d.dossierId]);
@@ -182,5 +195,45 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
     await expect(w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "version_conflict" });
     expect((await full(w.A.secretary, d.dossierId)).result).toMatchObject({ n: 1, finalizedBy: { userId: w.A.chair.userId } });
+  });
+});
+
+describe("L15 chốt điểm dựa trên Tổ tư vấn, and kết thúc đợt (#60, stories 123, 126)", () => {
+  const w = scoringWorld({ gradingMode: "advisory_based", minGraders: 2 });
+  /** Stands in for the sao chép of #55, the only way from the Báo cáo Tổ tư vấn into Thành viên xem xét. */
+  const putInMemberReview = (dossierId: string) => w.db.admin.query("UPDATE dossier.dossier SET state = 'member_review', version = version + 1 WHERE id = $1", [dossierId]);
+
+  it("shows the Tổ tư vấn the kết quả chốt without a thành viên's phiếu, and the đợt ends once its hồ sơ is chốt", async () => {
+    const [m0, m1] = [w.A.members[0]!, w.A.members[1]!];
+    const advisor = w.A.advisors[0]!;
+    const d = await w.graded([m0, m1], [advisor]);
+    await putInMemberReview(d.dossierId);
+    for (const m of [m0, m1]) {
+      const view = await w.t.app.scoring.readDossierScores(m, { dossierId: d.dossierId });
+      if (view.kind !== "own_sheet") throw new Error(view.kind);
+      const lines = ["1.1:20", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+      const { version } = await w.t.app.scoring.saveScoreSheet(m, { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
+      await w.t.app.scoring.confirmScoreSheet(m, { dossierId: d.dossierId, expectedVersion: version });
+    }
+    expect(await w.t.app.scoring.readDossierScores(advisor, { dossierId: d.dossierId })).toEqual({ kind: "none" });
+
+    w.t.clock.set(new Date("2026-12-01T02:00:00Z"));
+    await w.t.app.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
+    await expect(w.t.app.rounds.endRound(w.province, { roundId: w.roundId })).rejects.toMatchObject({ code: "round_has_unfinished_dossiers" });
+
+    await w.t.app.identity.reauthenticate(w.A.secretary, { password: PASSWORD });
+    const ready = await w.t.app.scoring.readDossierScores(w.A.secretary, { dossierId: d.dossierId });
+    if (ready.kind !== "full") throw new Error(ready.kind);
+    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-12-01", location: "Sở", dossierIds: [d.dossierId] });
+    await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: ready.dossierVersion });
+
+    const seen = await w.t.app.scoring.readDossierScores(advisor, { dossierId: d.dossierId });
+    expect(seen).toMatchObject({ kind: "aggregate_only", dossierState: "score_finalized", aggregate: { total: 80, star: 4 }, result: { n: 1 } });
+    expect(JSON.stringify(seen)).not.toContain(m0.userId);
+    expect(seen).not.toHaveProperty("graders");
+    await w.t.drainJobs();
+    expect((await w.t.app.notifications.list(advisor)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/to-tu-van/ho-so/${d.dossierId}`)).toHaveLength(1);
+
+    await expect(w.t.app.rounds.endRound(w.province, { roundId: w.roundId })).resolves.toBeUndefined();
   });
 });
