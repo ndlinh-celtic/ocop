@@ -70,9 +70,13 @@ export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: num
     w.setId = version.productGroups[0]!.subgroups[0]!.sets[0]!.id;
     const detail = await w.t.app.criteria.getCriteriaSet(admin, { setId: w.setId });
     const criteria = detail.set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "criterion" ? [i] : i.criteria))));
-    const levels = new Map(criteria.flatMap((c) => c.levels.map((l) => [`${c.code}:${l.points}`, l.id] as const)));
+    const levels = new Map<string, string>(criteria.flatMap((c) => c.levels.map((l) => [`${c.code}:${l.points}`, l.id] as const)));
     const ids = new Map(criteria.map((c) => [c.code, c.id]));
-    w.level = (key) => levels.get(key) ?? (() => { throw new Error(`no level ${key}`); })();
+    w.level = (key) => {
+      const id = levels.get(key);
+      if (!id) throw new Error(`no level ${key}`);
+      return id;
+    };
     w.criterionId = (code) => ids.get(code)!;
     w.ward = await w.f.staff("ward_officer", wardId);
     w.province = await w.f.staff("province_officer");

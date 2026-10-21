@@ -60,6 +60,9 @@ export const DOSSIER_ACTIONS = [
   "dossier.assignment.edit",
   "dossier.grading.start_advisory",
   "dossier.grading.start_direct",
+  "dossier.score_sheet.edit",
+  "dossier.score_sheet.confirm",
+  "dossier.score_sheet.confirm_ready",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -91,6 +94,9 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.province_received",
   "dossier.assignment_changed",
   "dossier.grading_started",
+  "dossier.score_sheet_saved",
+  "dossier.score_sheet_confirmed",
+  "dossier.members_confirmed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -302,6 +308,26 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       guard: provinceReceived,
     }),
   ),
+  // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
+  // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.
+  // The xác nhận that brings the phiếu đã xác nhận to người chấm tối thiểu is its own action because ruleFor
+  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49).
+  ...(["member_review", "member_confirmed"] as const).flatMap((from) =>
+    (
+      [
+        ["dossier.score_sheet.edit", "dossier.score_sheet_saved"],
+        ["dossier.score_sheet.confirm", "dossier.score_sheet_confirmed"],
+      ] as const
+    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["council_member"], event, timeline: false })),
+  ),
+  {
+    action: "dossier.score_sheet.confirm_ready",
+    from: "member_review",
+    to: "member_confirmed",
+    roles: ["council_member"],
+    event: "dossier.members_confirmed",
+    timeline: false,
+  },
 ];
 
 /** Guard of the Hội đồng rows: Tiếp nhận tại tỉnh in the current lượt gửi tỉnh. */

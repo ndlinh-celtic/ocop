@@ -54,6 +54,8 @@ import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manag
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";
+import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
+import { gradingProgress, readDossierScores } from "./scoring/read";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -210,6 +212,12 @@ export function createCore(deps: CoreDeps) {
       assignments: listAssignments(deps),
       assignmentCandidates: assignmentCandidates(deps),
       startGrading: startGrading(deps),
+    },
+    scoring: {
+      readDossierScores: readDossierScores(deps),
+      saveScoreSheet: saveScoreSheet(deps),
+      confirmScoreSheet: confirmScoreSheet(deps),
+      gradingProgress: gradingProgress(deps),
     },
     system: {
       recordStartup: recordStartup(deps),

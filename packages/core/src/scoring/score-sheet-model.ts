@@ -22,8 +22,33 @@ export interface ScoreSheet {
   updatedAt: Date;
 }
 
+/**
+ * A dòng chấm: one Tiêu chí of a Phiếu chấm (#54). No row yet means the Tiêu chí is not scored. The sao chép from
+ * Tổ tư vấn (L12) fills `source`, `advisoryVersionId` and `advisoryLevelOriginal`; `edited` marks a dòng the
+ * thành viên has touched, which a later sao chép leaves as it is.
+ */
+export interface ScoreSheetLine {
+  scoreSheetId: string;
+  criterionId: string;
+  scoreLevelId: string | null;
+  comment: string;
+  source: "member" | "advisory";
+  advisoryVersionId: string | null;
+  advisoryLevelOriginal: string | null;
+  adjustReason: string | null;
+  edited: boolean;
+  updatedAt: Date;
+  /** Bằng chứng kiểm tra. */
+  fileIds: string[];
+}
+
 export interface ScoreSheetRepo {
   insert(s: ScoreSheet): Promise<void>;
+  /** Writes a draft phiếu whose version is still `expectedVersion`; false when it changed meanwhile. */
+  update(s: ScoreSheet, expectedVersion: number): Promise<boolean>;
+  lines(scoreSheetId: string): Promise<ScoreSheetLine[]>;
+  /** Inserts or replaces one dòng with its files (the database refuses it unless the phiếu is draft). */
+  saveLine(line: ScoreSheetLine): Promise<void>;
   /** The phiếu not yet superseded of a hồ sơ already loaded within scope, one per Phân công at most. */
   current(dossierId: string): Promise<ScoreSheet[]>;
   /** Whether any hồ sơ of the đợt has a Phiếu chấm, whatever its state: from then on the đợt's grading config is fixed. */
