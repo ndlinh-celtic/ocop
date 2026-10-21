@@ -78,12 +78,13 @@ export function fixtures(t: TestApp, wardId: () => string) {
   /**
    * Imports and publishes a Phiên bản tiêu chí with two Bộ tiêu chí; returns its id and its sets by name.
    * `exclusions` is the "Hồ sơ bị loại khi…" header of both sets, split into Điều kiện loại on import.
+   * `productGroups` names the Nhóm sản phẩm of each set; both are "Thực phẩm" by default.
    */
-  async function publishedVersion(legalBasis: string, opts: { exclusions?: string } = {}) {
+  async function publishedVersion(legalBasis: string, opts: { exclusions?: string; productGroups?: [string, string] } = {}) {
     const set = (bo: number, name: string) => ({
       bo,
       ten_bo: name,
-      san_pham: "Thực phẩm",
+      san_pham: opts.productGroups?.[bo - 1] ?? "Thực phẩm",
       nhom: "Thực phẩm tươi sống",
       ghi_chu_dau_phieu: opts.exclusions ?? "",
       tong_diem: 100,

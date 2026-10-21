@@ -4,7 +4,7 @@ import { legalStanding } from "../entities/legal";
 import { entityNotFound } from "../entities/model";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
-import { isPastSubmissionDeadline, type Round } from "../rounds/model";
+import { isPastSubmissionDeadline, vnDateOf, type Round } from "../rounds/model";
 import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
@@ -66,6 +66,12 @@ async function verifiedEntity(tx: Tx, actor: UserActor, now: Date) {
 const setNotApplicable = () =>
   new DomainError("criteria_set_not_applicable", "Bộ tiêu chí không thuộc phiên bản tiêu chí đang áp dụng, hãy chọn lại");
 
+/** Story 19, SO-03: the mã hồ sơ, HS-<năm>-<số>, the year in giờ Việt Nam and the số running within it. */
+async function nextDossierCode(tx: Tx, now: Date): Promise<string> {
+  const year = Number(vnDateOf(now).slice(0, 4));
+  return `HS-${year}-${String(await tx.dossiers.nextCodeNumber(year)).padStart(4, "0")}`;
+}
+
 /**
  * A new Nháp on a Bộ tiêu chí of the applicable version, with what it is created from: its thông tin sản
  * phẩm and, for a copy, the hồ sơ it comes from and the files of its kho minh chứng, all on the record of
@@ -96,6 +102,10 @@ async function newDraft(
     receivedBy: null,
     handlerUserId: null,
     firstForwardedAt: null,
+    code: await nextDossierCode(tx, now),
+    provinceReceivedAt: null,
+    provinceReceivedBy: null,
+    firstProvinceReceivedAt: null,
     supplementDeadline: null,
     copiedFrom: from.copiedFrom,
     deletedAt: null,

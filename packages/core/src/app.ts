@@ -42,6 +42,7 @@ import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./d
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
 import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { receiveAtProvince } from "./dossiers/province";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { roundTransferTargets, transferRound } from "./dossiers/round-transfer";
@@ -180,6 +181,7 @@ export function createCore(deps: CoreDeps) {
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
       requestSupplement: requestSupplement(deps),
       returnFromProvince: returnFromProvince(deps),
+      receiveAtProvince: receiveAtProvince(deps),
       requestReturn: requestReturn(deps),
       returnRequests: listReturnRequests(deps),
       respondSupplementItem: respondSupplementItem(deps),
