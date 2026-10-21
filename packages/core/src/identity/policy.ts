@@ -52,9 +52,14 @@ const ROLE_ACTIONS = {
   "dossier.create": ["entity_owner"],
   // Any change to an existing hồ sơ starts here: the Vai trò that work on hồ sơ at all. Which change, on
   // which hồ sơ, is then the transition table's row and the Phạm vi, checked by transition().
-  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary"],
+  "dossier.write": ["entity_owner", "ward_officer", "province_officer", "council_secretary", "advisory_member"],
   // L09 HD-02 (stories 24 to 29): the Phân công of a hồ sơ of the Hội đồng, and the members to choose from.
   "dossier.assignment.read": ["council_chair", "council_secretary"],
+  // L10, L11 (#56 stories 49, 63): the Báo cáo Tổ tư vấn nháp is the Tổ tư vấn's alone; its issued phiên bản,
+  // and the minh chứng and tệp đính kèm they cite, are for every Vai trò hội đồng whose Phạm vi covers the hồ sơ.
+  "dossier.advisory_report.draft": ["advisory_member"],
+  "dossier.advisory_report.read": ["council_chair", "council_secretary", "council_member", "advisory_member"],
+  "dossier.advisory_report.upload": ["advisory_member"],
   // Story 79: counts by xã and state of the hồ sơ not yet at the province, never their rows.
   "dossier.overview": ["province_officer"],
   // Story 59: the đề nghị trả về between the xã and the Sở; the Chủ thể does not read them.
@@ -63,7 +68,7 @@ const ROLE_ACTIONS = {
   // L05 XA-02: the Cán bộ xã of their own xã, to choose a Cán bộ phụ trách from.
   "dossier.handler.list": ["ward_officer"],
   // #37: the Phiếu đăng ký and Báo cáo tự đánh giá of a Phiên bản nộp, for whoever's Phạm vi covers the hồ sơ.
-  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer"],
+  "dossier.document.download": ["entity_owner", "ward_officer", "province_officer", "council_chair", "council_secretary", "council_member", "advisory_member"],
   // L06 XA-07 (#42): the Cán bộ xã generates the Báo cáo đánh giá cấp xã and uploads its signed PDF.
   "dossier.ward_report.generate": ["ward_officer"],
   "dossier.ward_report.upload": ["ward_officer"],

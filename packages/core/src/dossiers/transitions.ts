@@ -60,6 +60,9 @@ export const DOSSIER_ACTIONS = [
   "dossier.assignment.edit",
   "dossier.grading.start_advisory",
   "dossier.grading.start_direct",
+  "dossier.advisory_report.edit",
+  "dossier.advisory_report.issue",
+  "dossier.advisory_report.reissue",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -91,6 +94,8 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.province_received",
   "dossier.assignment_changed",
   "dossier.grading_started",
+  "dossier.advisory_report_saved",
+  "dossier.advisory_report_issued",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -301,6 +306,14 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       timeline: true,
       guard: provinceReceived,
     }),
+  ),
+  // L10 TM-02, TM-05, TM-06 (stories 44 to 50): the Tổ tư vấn Phân công write their shared nháp. Off the timeline.
+  { action: "dossier.advisory_report.edit", from: "advisory_review", to: "advisory_review", roles: ["advisory_member"], event: "dossier.advisory_report_saved", timeline: false },
+  // L11 TM-07 (stories 56 to 59): phát hành phiên bản 1; that the actor is the Tổ trưởng is checked by issueAdvisoryReport.
+  { action: "dossier.advisory_report.issue", from: "advisory_review", to: "advisory_report_issued", roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true },
+  // L11 (stories 60, 61): phiên bản N+1 until Đã chốt điểm, which has no row.
+  ...(["advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.advisory_report.reissue", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true }),
   ),
 ];
 
