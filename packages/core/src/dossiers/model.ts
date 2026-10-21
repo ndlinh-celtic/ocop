@@ -145,6 +145,8 @@ export interface DossierListFilter {
   /** The Nhóm sản phẩm of the hồ sơ's Bộ tiêu chí. */
   productGroupId?: string;
   handlerUserId?: string;
+  /** Tổ tư vấn thẩm định with a đề nghị trả về of the Tổ tư vấn since its Giao chấm (#57 story 52). */
+  advisoryReturnRequested?: boolean;
   /** Chờ đợt sau at this instant: Đã nộp xã, and the Hạn gửi tỉnh of its đợt is before it (story 68). */
   awaitingNextRoundAt?: Date;
 }
@@ -214,6 +216,10 @@ export interface DossierRepo {
   insertReturnRequest(r: ReturnRequest): Promise<void>;
   /** Every đề nghị trả về of a hồ sơ already loaded within scope, oldest first. */
   returnRequests(dossierId: string): Promise<ReturnRequest[]>;
+  /** Appends a đề nghị trả về of the Tổ tư vấn (TM-03); the app may not change or delete it afterwards. */
+  insertAdvisoryReturnRequest(r: ReturnRequest): Promise<void>;
+  /** Every đề nghị trả về of the Tổ tư vấn on a hồ sơ already loaded within scope, oldest first. */
+  advisoryReturnRequests(dossierId: string): Promise<ReturnRequest[]>;
   /** The newest signed Báo cáo đánh giá cấp xã of a hồ sơ already loaded within scope, with its file name. */
   latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string; fileStatus: FileStatus }) | null>;
 }
