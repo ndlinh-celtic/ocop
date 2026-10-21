@@ -103,7 +103,7 @@ export const NAV: Record<Role, NavItem[]> = {
   advisory_member: [
     HOME,
     { href: "/to-tu-van/hang-doi", label: "Hàng đợi thẩm định", icon: Inbox, ready: true },
-    { href: "/to-tu-van/sao-chep", label: "Sao chép sang phiếu chấm", icon: Copy, ready: false },
+    { href: "/to-tu-van/sao-chep", label: "Sao chép sang phiếu chấm", icon: Copy, ready: true },
     CRITERIA,
     ...COMMON,
   ],

@@ -17,6 +17,7 @@ const lineInput = z.object({
   levelId: z.string().min(1).nullable(),
   comment: z.string().max(10_000),
   evidenceFileIds: z.array(z.string().min(1)).max(50),
+  adjustReason: z.string().max(10_000).nullable().optional(),
 });
 const saveInput = z.object({ dossierId: z.string().min(1), expectedVersion: z.number().int().positive(), lines: z.array(lineInput).min(1).max(500) });
 

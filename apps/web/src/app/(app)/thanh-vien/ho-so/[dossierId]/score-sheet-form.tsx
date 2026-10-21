@@ -1,7 +1,7 @@
 "use client";
 
 import { DEFAULT_ALLOWED_TYPES, rankStoredSet, type OwnSheetView, type SheetCriterion } from "@ocop/core";
-import { Lock, Paperclip, Upload, X } from "lucide-react";
+import { Copy, Lock, Paperclip, PencilLine, RotateCcw, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { DownloadButton } from "@/components/download-button";
@@ -27,7 +27,12 @@ interface Line {
   levelId: string | null;
   comment: string;
   files: SheetCriterion["files"];
+  /** TV-04: why the Mức điểm leaves the Tổ tư vấn's Điểm đề xuất. */
+  adjustReason: string;
 }
+
+/** TV-04 (story 85): a dòng copied from the Tổ tư vấn whose Mức điểm is no longer the Mức điểm gốc. */
+const adjusted = (c: SheetCriterion, line: Line) => c.advisory !== null && line.levelId !== c.advisory.levelId;
 
 const accept = Object.entries(DEFAULT_ALLOWED_TYPES)
   .flatMap(([mime, exts]) => [mime, ...exts.map((e) => `.${e}`)])
@@ -42,7 +47,7 @@ const stars = (n: number) => "★".repeat(n);
  */
 export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetView; submitted: Record<string, SubmittedCriterion>; writable: boolean }) {
   const router = useRouter();
-  const initial = useMemo(() => new Map(view.criteria.map((c): [string, Line] => [c.criterionId, { levelId: c.levelId, comment: c.comment, files: c.files }])), [view]);
+  const initial = useMemo(() => new Map(view.criteria.map((c): [string, Line] => [c.criterionId, { levelId: c.levelId, comment: c.comment, files: c.files, adjustReason: c.adjustReason ?? "" }])), [view]);
   const [lines, setLines] = useState(initial);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const version = useRef(view.sheet?.version ?? 0);
@@ -71,6 +76,9 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
     return rankStoredSet({ set: view.set, thresholds: view.thresholds, scores });
   }, [lines, view]);
   const unscored = view.criteria.filter((c) => !lines.get(c.criterionId)?.levelId).map((c) => c.code);
+  const unexplained = view.criteria.filter((c) => adjusted(c, lines.get(c.criterionId)!) && !lines.get(c.criterionId)!.adjustReason.trim()).map((c) => c.code);
+  // L13 TV-02 (story 84): the Tổ tư vấn's tổng over the dòng copied from it, to compare with this phiếu.
+  const advisoryTotal = view.criteria.some((c) => c.advisory) ? view.criteria.reduce((n, c) => n + (c.advisory?.points ?? 0), 0) : null;
 
   async function save(): Promise<boolean> {
     if (dirty.size === 0) return true;
@@ -82,7 +90,8 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
         expectedVersion: version.current,
         lines: [...dirty].map((criterionId) => {
           const l = lines.get(criterionId)!;
-          return { criterionId, levelId: l.levelId, comment: l.comment, evidenceFileIds: l.files.map((f) => f.fileId) };
+          const c = view.criteria.find((x) => x.criterionId === criterionId)!;
+          return { criterionId, levelId: l.levelId, comment: l.comment, evidenceFileIds: l.files.map((f) => f.fileId), adjustReason: adjusted(c, l) ? l.adjustReason : null };
         }),
       });
       if ("version" in res) {
@@ -159,7 +168,13 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
           <span className="text-amber" title="Hạng sao ước lượng của phiếu này">
             {stars(estimate.star)} ước lượng
           </span>
+          {advisoryTotal !== null && (
+            <span className="text-text-2" data-testid="advisory-total">
+              Tổ tư vấn đề xuất: <b>{advisoryTotal}</b>
+            </span>
+          )}
           {unscored.length > 0 && <span className="text-text-3">Chưa chấm: {unscored.join(", ")}</span>}
+          {unexplained.length > 0 && <span className="text-danger">Thiếu lý do điều chỉnh: {unexplained.join(", ")}</span>}
         </div>
         {writable && (
           <div className="ml-auto flex gap-2">
@@ -168,8 +183,10 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
             </button>
             <button
               type="button"
-              disabled={disabled || unscored.length > 0}
-              title={unscored.length > 0 ? "Chọn Mức điểm cho mọi Tiêu chí trước khi xác nhận" : undefined}
+              disabled={disabled || unscored.length > 0 || unexplained.length > 0}
+              title={
+                unscored.length > 0 ? "Chọn Mức điểm cho mọi Tiêu chí trước khi xác nhận" : unexplained.length > 0 ? "Ghi lý do cho mọi điều chỉnh khác Điểm đề xuất" : undefined
+              }
               onClick={async () => {
                 if (await save()) setConfirming(true);
               }}
@@ -246,8 +263,20 @@ function CriterionCard({
   };
   return (
     <article className="rounded-lg border bg-surface p-4 shadow-card" data-testid="sheet-criterion">
-      <h3 className="font-medium">
-        <span className="font-mono">{c.code}</span> {c.name} <span className="text-sm font-normal text-text-3">(tối đa {c.maxPoints} điểm)</span>
+      <h3 className="flex flex-wrap items-center gap-2 font-medium">
+        <span>
+          <span className="font-mono">{c.code}</span> {c.name} <span className="text-sm font-normal text-text-3">(tối đa {c.maxPoints} điểm)</span>
+        </span>
+        {c.advisory &&
+          (adjusted(c, line) ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-soft px-2 py-0.5 text-xs font-normal text-amber" data-testid="badge-adjusted">
+              <PencilLine className="size-3" aria-hidden /> Đã chỉnh · Tổ tư vấn: <s>{c.advisory.points} điểm</s>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-normal text-text-2" data-testid="badge-advisory">
+              <Copy className="size-3" aria-hidden /> Từ Tổ tư vấn, phiên bản {c.advisory.number}
+            </span>
+          ))}
       </h3>
       {submitted && (
         <details className="mt-1 text-sm text-text-2">
@@ -270,6 +299,30 @@ function CriterionCard({
           </label>
         ))}
       </fieldset>
+      {c.advisory && adjusted(c, line) && (
+        <div className="mt-3 text-sm">
+          <label className="block">
+            <span className="text-text-2">
+              Lý do điều chỉnh <span className="text-danger">*</span> (Tổ tư vấn đề xuất {c.advisory.points} điểm · {c.advisory.description})
+            </span>
+            <textarea
+              value={line.adjustReason}
+              disabled={disabled}
+              required
+              aria-invalid={!line.adjustReason.trim()}
+              onChange={(e) => onChange({ adjustReason: e.target.value })}
+              rows={2}
+              maxLength={10_000}
+              className={`mt-1 w-full rounded-md border px-2 py-1 ${line.adjustReason.trim() ? "" : "border-danger"}`}
+            />
+          </label>
+          {!disabled && (
+            <button type="button" onClick={() => onChange({ levelId: c.advisory!.levelId, adjustReason: "" })} className="mt-1 inline-flex items-center gap-1 text-brand">
+              <RotateCcw className="size-3" aria-hidden /> Khôi phục theo Tổ tư vấn
+            </button>
+          )}
+        </div>
+      )}
       <label className="mt-3 block text-sm">
         <span className="text-text-2">Nhận xét</span>
         <textarea
