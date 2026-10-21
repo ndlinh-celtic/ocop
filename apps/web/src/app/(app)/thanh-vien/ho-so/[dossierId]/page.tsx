@@ -58,6 +58,11 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
         </Link>
       </div>
 
+      {scores.sheet?.state === "draft" && scores.sheet.attempt > 1 && (
+        <p role="status" className="rounded-lg border border-amber bg-amber-soft px-4 py-2 text-sm" data-testid="sheet-returned">
+          Hội đồng đã Trả phiếu: đây là lần chấm {scores.sheet.attempt}, điền sẵn từ phiếu trước. Lý do có trong thông báo. Sửa phần cần rồi xác nhận lại.
+        </p>
+      )}
       {scores.sheet?.state === "confirmed" && (
         <p role="status" className="rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand" data-testid="sheet-locked">
           Phiếu đã xác nhận lúc {formatVnDateTime(scores.sheet.confirmedAt!)} và đã khóa. Muốn sửa phải có Trả phiếu của hội đồng.

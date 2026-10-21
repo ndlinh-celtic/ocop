@@ -5,6 +5,7 @@ import { AggregateTable } from "@/components/scoring/aggregate-table";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
+import { ReturnPanel } from "./return-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
     app().core.scoring.readDossierScores(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "progress_only")) notFound();
+  const history = await app().core.scoring.scoreSheetHistory(actor, { dossierId });
   const ready = (await app().core.scoring.gradingProgress(actor)).filter((r) => r.state === "member_confirmed").map((r) => r.dossierId);
   const at = ready.indexOf(dossierId);
   const prev = at > 0 ? ready[at - 1] : undefined;
@@ -65,6 +67,10 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
           Chưa đủ phiếu: {scores.progress.filter((p) => p.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Điểm của các thành viên hiện khi hồ
           sơ Sẵn sàng chốt.
         </p>
+      )}
+
+      {(dossier.state === "member_review" || dossier.state === "member_confirmed") && (
+        <ReturnPanel dossierId={dossierId} graders={scores.kind === "full" ? scores.graders : scores.progress} history={history} />
       )}
     </div>
   );
