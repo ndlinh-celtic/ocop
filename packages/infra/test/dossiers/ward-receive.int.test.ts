@@ -216,6 +216,17 @@ describe("L05 thông báo (story 86)", () => {
     expect(await latestFor(officerY, dossierId)).toBeUndefined();
   });
 
+  it("emails each Cán bộ xã once even when the SMTP server fails midway and the job is retried", async () => {
+    const { dossierId } = await f.submitted(sets["Rau củ quả"]);
+    t.mailbox.failNext(1, { after: 1 });
+    await t.drainJobs();
+    await t.drainJobs({ includeRetries: true });
+
+    for (const officer of [officerX, officerX2]) {
+      expect(t.mailbox.to(officer.email).filter((m) => m.text.includes(`/xa/ho-so/${dossierId}`))).toHaveLength(1);
+    }
+  });
+
   it("tells the Chủ thể, in the app and by email, that its hồ sơ was Tiếp nhận", async () => {
     const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
     await t.app.dossiers.receive(officerX, { dossierId, expectedVersion: version });

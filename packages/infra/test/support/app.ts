@@ -10,12 +10,18 @@ import { renderingMailer, type MailTransport, type OutgoingEmail } from "../../s
 import type { TestDatabase } from "./database";
 import { s3TestSettings } from "./s3";
 
-/** Captures rendered emails instead of sending them; can be told to fail the next N deliveries. */
+/**
+ * Captures rendered emails instead of sending them; can be told to fail the next N deliveries, optionally
+ * after letting some through first.
+ */
 export class Mailbox implements MailTransport {
   private sent: OutgoingEmail[] = [];
   private failures = 0;
+  private passes = 0;
   async deliver(email: OutgoingEmail) {
-    if (this.failures > 0) {
+    if (this.failures > 0 && this.passes > 0) {
+      this.passes--;
+    } else if (this.failures > 0) {
       this.failures--;
       throw new Error("SMTP unavailable (simulated)");
     }
@@ -27,8 +33,9 @@ export class Mailbox implements MailTransport {
   to(address: string) {
     return this.sent.filter((e) => e.to.toLowerCase() === address.toLowerCase());
   }
-  failNext(n: number) {
+  failNext(n: number, opts: { after?: number } = {}) {
     this.failures = n;
+    this.passes = opts.after ?? 0;
   }
 }
 

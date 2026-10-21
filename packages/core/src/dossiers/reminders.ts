@@ -2,7 +2,7 @@ import { auditEntry } from "../audit/audit";
 import type { User } from "../identity/model";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { emit } from "../platform/emit";
-import { sendEmail } from "../platform/send-email";
+import { sendEmailOnce } from "../platform/send-email";
 import { vnDateOf } from "../rounds/model";
 import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -173,7 +173,7 @@ export async function emailReminder(c: ConsumerContext): Promise<void> {
   const notice = await reminderOf(c);
   if (!notice) return;
   for (const user of notice.recipients) {
-    await sendEmail(c, {
+    await sendEmailOnce(c, {
       to: user.email,
       template: "dossier_notice",
       data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },

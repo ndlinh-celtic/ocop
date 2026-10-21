@@ -1,6 +1,6 @@
 import { isAssignmentActive, type User } from "../identity/model";
 import type { ConsumerContext } from "../platform/consumer-context";
-import { sendEmail } from "../platform/send-email";
+import { sendEmailOnce } from "../platform/send-email";
 import type { Tx } from "../shared/uow";
 import { wardOfficersOf } from "./ward";
 
@@ -274,7 +274,7 @@ export async function notifyDossierEvent(c: ConsumerContext): Promise<void> {
 export async function emailDossierEvent(c: ConsumerContext): Promise<void> {
   for (const notice of await noticesOf(c)) {
     for (const user of notice.recipients) {
-      await sendEmail(c, {
+      await sendEmailOnce(c, {
         to: user.email,
         template: "dossier_notice",
         data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },

@@ -26,4 +26,6 @@ export interface EmailDelivery {
 export interface EmailDeliveries {
   record(d: EmailDelivery): Promise<void>;
   list(filter: { to?: string; limit?: number }): Promise<EmailDelivery[]>;
+  /** Whether a delivery of this event by this consumer to this recipient was recorded as sent. */
+  wasSent(eventId: string, consumer: string, recipient: string): Promise<boolean>;
 }
