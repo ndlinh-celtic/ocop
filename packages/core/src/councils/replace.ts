@@ -69,14 +69,14 @@ export function replaceAssignment(deps: CoreDeps) {
       const now = deps.clock.now();
       const { before, current } = await begin(tx, actor, input.dossierId);
       const old = current.find((a) => a.userId === input.userId && a.effectiveAt !== null);
-      if (!old) throw new DomainError("assignment_not_found", "Người này không có Phân công đang hiệu lực trên hồ sơ");
       // transition() first, so a wrong state, Vai trò or version is reported as such.
       const after = await transition(deps, tx, actor, before, {
         action: "dossier.assignment.replace",
         expectedVersion: input.expectedVersion,
         reason,
-        metadata: { kind: old.kind, replacedUserId: old.userId, newUserId: input.newUserId },
+        metadata: { kind: old?.kind ?? null, replacedUserId: input.userId, newUserId: input.newUserId },
       });
+      if (!old) throw new DomainError("assignment_not_found", "Người này không có Phân công đang hiệu lực trên hồ sơ");
       await checkNewcomer(deps, tx, before, current, input.newUserId, old.kind, now);
 
       // Story 35: a phiếu đã xác nhận is never dropped quietly.
