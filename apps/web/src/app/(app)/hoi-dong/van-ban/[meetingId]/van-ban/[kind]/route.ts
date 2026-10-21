@@ -1,5 +1,6 @@
-import { DOCX_TYPE, MEETING_DOCUMENT_KINDS, type MeetingDocumentKind } from "@ocop/core";
+import { DOCX_TYPE, MEETING_DOCUMENT_KINDS } from "@ocop/core";
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
@@ -13,11 +14,12 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ meetingId: string; kind: string }> }) {
   const actor = await requireActor();
-  const { meetingId, kind } = await params;
-  if (!(MEETING_DOCUMENT_KINDS as readonly string[]).includes(kind)) notFound();
+  const parsed = z.object({ meetingId: z.string().min(1), kind: z.enum(MEETING_DOCUMENT_KINDS) }).safeParse(await params);
+  if (!parsed.success) notFound();
+  const { kind } = parsed.data;
   let doc;
   try {
-    doc = await app().core.scoring.generateMeetingDocument(actor, { meetingId, kind: kind as MeetingDocumentKind }).catch(orNotFound);
+    doc = await app().core.scoring.generateMeetingDocument(actor, parsed.data).catch(orNotFound);
   } catch (err) {
     return new Response(domainMessage(err), { status: 409, headers: { "content-type": "text/plain; charset=utf-8" } });
   }

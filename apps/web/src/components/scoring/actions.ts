@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { app } from "@/server/app";
 import { domainMessage } from "@/server/errors";
 import { requireActor } from "@/server/session";
@@ -10,8 +11,10 @@ import { requireActor } from "@/server/session";
  */
 export async function downloadAdvisoryFileAction(dossierId: string, fileId: string): Promise<{ url?: string; error?: string }> {
   const actor = await requireActor();
+  const parsed = z.object({ dossierId: z.string().min(1), fileId: z.string().min(1) }).safeParse({ dossierId, fileId });
+  if (!parsed.success) return { error: "Không tìm thấy tệp" };
   try {
-    const { url } = await app().core.scoring.downloadAdvisoryFile(actor, { dossierId, fileId });
+    const { url } = await app().core.scoring.downloadAdvisoryFile(actor, parsed.data);
     return { url };
   } catch (err) {
     return { error: domainMessage(err) };
