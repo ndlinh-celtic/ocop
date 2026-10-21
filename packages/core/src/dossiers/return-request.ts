@@ -18,7 +18,7 @@ const MAX_REASON = 2_000;
 /** Story 59: sends the Sở a đề nghị trả về of a hồ sơ Đã chuyển tỉnh, with its lý do. */
 export function requestReturn(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const reason = typeof input.reason === "string" ? input.reason.trim() : "";
     if (reason === "") throw new DomainError("reason_required", "Nhập lý do đề nghị trả về");
     if (reason.length > MAX_REASON) throw new DomainError("field_too_long", "Lý do quá dài");

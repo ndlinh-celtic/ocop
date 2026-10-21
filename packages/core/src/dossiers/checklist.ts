@@ -59,7 +59,7 @@ export interface ChecklistResultInput {
  */
 export function assessChecklist(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; results: readonly ChecklistResultInput[] }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const { items } = await checklistOf(tx, before);

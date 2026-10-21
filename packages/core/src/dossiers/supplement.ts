@@ -45,7 +45,7 @@ export const returnFromProvince = (deps: CoreDeps) => askForMore(deps, "dossier.
 /** Opens a yêu cầu bổ sung through `action`: the xã's own, or the Sở trả về. */
 function askForMore(deps: CoreDeps, action: "dossier.supplement.request" | "dossier.province_return") {
   return async (actor: Actor, input: RequestSupplementInput): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const deadline = parseDeadline(input.deadline);
     const now = deps.clock.now();
     if (deadline.getTime() < now.getTime()) throw new DomainError("invalid_deadline", "Hạn bổ sung đã qua");
@@ -121,7 +121,7 @@ const itemNotFound = () => new DomainError("not_found", "Không tìm thấy nộ
 /** L04 CT-11 (story 51): the Chủ thể answers one nội dung of the open yêu cầu bổ sung, replacing any earlier answer. */
 export function respondSupplementItem(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; itemId: string; response: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const response = typeof input.response === "string" ? input.response.trim() : "";
     if (response.length > MAX_TEXT) throw new DomainError("field_too_long", "Nội dung quá dài");
     return deps.uow.run(async (tx) => {
@@ -146,7 +146,7 @@ export function respondSupplementItem(deps: CoreDeps) {
  */
 export function closeUnsupplemented(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       // The Lý do loại sơ bộ "Không bổ sung" (story 63), in the shape rejectionOf() reads.

@@ -30,7 +30,7 @@ export interface UpdateProductInput extends Partial<ProductInfo> {
  */
 export function updateProduct(deps: CoreDeps) {
   return async (actor: Actor, input: UpdateProductInput): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     const patch: Partial<ProductInfo> = {};
     for (const field of PRODUCT_FIELDS) {
       const value = input[field];
@@ -58,7 +58,7 @@ export function updateProduct(deps: CoreDeps) {
  */
 export function addEvidenceFile(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; fileId: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const file = isUuid(input.fileId) ? await tx.files.findById(input.fileId) : null;
@@ -81,7 +81,7 @@ export function addEvidenceFile(deps: CoreDeps) {
 /** Story 26: deletes a Nháp that was never submitted. It disappears from every list; its events stay. */
 export function deleteDossier(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<void> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     await deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       await transition(deps, tx, actor, before, {

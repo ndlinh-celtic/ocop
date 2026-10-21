@@ -101,7 +101,7 @@ function wardReportData(s: Submission, c: Pick<WardReportData, "wardName" | "rou
  */
 export function attachSignedWardReport(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; fileId: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       assertIdShape(input.fileId, fileNotFound);
@@ -211,7 +211,7 @@ export function downloadSignedWardReport(deps: CoreDeps) {
  */
 export function forwardToProvince(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const now = deps.clock.now();

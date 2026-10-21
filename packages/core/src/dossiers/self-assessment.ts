@@ -51,7 +51,7 @@ interface Edit {
  */
 export function linkEvidence(deps: CoreDeps) {
   return async (actor: Actor, input: Edit & { fileId: string; criterionIds: readonly string[] }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const file = (await tx.dossiers.evidence(before.id)).find((e) => e.fileId === input.fileId);
@@ -79,7 +79,7 @@ const evidenceNotInKho = () => new DomainError("evidence_not_found", "Tệp khô
  */
 export function removeEvidenceFile(deps: CoreDeps) {
   return async (actor: Actor, input: Edit & { fileId: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       if (!(await tx.dossiers.evidence(before.id)).some((e) => e.fileId === input.fileId)) throw evidenceNotInKho();
@@ -97,7 +97,7 @@ export function removeEvidenceFile(deps: CoreDeps) {
 /** Story 23, 25: picks the Mức điểm of a Tiêu chí for tự chấm thử (null clears it), with or without minh chứng. */
 export function selfScore(deps: CoreDeps) {
   return async (actor: Actor, input: Edit & { criterionId: string; levelId: string | null }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const rows = await setOf(tx, before);
@@ -125,7 +125,7 @@ export function selfScore(deps: CoreDeps) {
 /** Story 21: the giải trình of a Tiêu chí, saved as the editor autosaves. */
 export function explainCriterion(deps: CoreDeps) {
   return async (actor: Actor, input: Edit & { criterionId: string; explanation: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     if (typeof input.explanation !== "string" || input.explanation.length > MAX_EXPLANATION) throw new DomainError("field_too_long", "Nội dung quá dài");
     const explanation = input.explanation.trim();
     return deps.uow.run(async (tx) => {

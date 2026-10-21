@@ -36,7 +36,7 @@ async function assertHandler(tx: Tx, dossier: Dossier, userId: unknown, now: Dat
  */
 export function receiveDossier(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; handlerUserId?: string | null }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const now = deps.clock.now();
@@ -58,7 +58,7 @@ export function receiveDossier(deps: CoreDeps) {
  */
 export function changeHandler(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; handlerUserId: string }): Promise<{ version: number }> => {
-    authorize(actor, "dossier.read");
+    authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const handlerUserId = await assertHandler(tx, before, input.handlerUserId, deps.clock.now());
