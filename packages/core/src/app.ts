@@ -41,7 +41,7 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
-import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { listAdvisoryReturnRequests, listReturnRequests, requestAdvisoryReturn, requestReturn } from "./dossiers/return-request";
 import { receiveAtProvince } from "./dossiers/province";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
@@ -189,6 +189,8 @@ export function createCore(deps: CoreDeps) {
       receiveAtProvince: receiveAtProvince(deps),
       requestReturn: requestReturn(deps),
       returnRequests: listReturnRequests(deps),
+      requestAdvisoryReturn: requestAdvisoryReturn(deps),
+      advisoryReturnRequests: listAdvisoryReturnRequests(deps),
       respondSupplementItem: respondSupplementItem(deps),
       supplementRequests: listSupplementRequests(deps),
       closeUnsupplemented: closeUnsupplemented(deps),
