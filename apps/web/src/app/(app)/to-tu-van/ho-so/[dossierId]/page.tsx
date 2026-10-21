@@ -6,6 +6,7 @@ import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
 import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { downloadAdvisoryFileAction } from "@/components/scoring/actions";
+import { formatPoints } from "@/components/scoring/aggregate-table";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -34,6 +35,8 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
   const latest = submissions.at(-1);
   const download = downloadAdvisoryFileAction.bind(null, dossierId);
   const editable = ws.state === "advisory_review";
+  // Story 123 (#60): after chốt, the kết quả without any thành viên's phiếu.
+  const scores = await app().core.scoring.readDossierScores(actor, { dossierId });
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,6 +58,14 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
           {ws.versions.length > 0 && <span className="text-text-2">Đã phát hành {ws.versions.length} phiên bản.</span>}
         </p>
       </div>
+      {scores.kind === "aggregate_only" && (
+        <section role="status" className="rounded-lg border border-line-strong bg-surface-2 px-4 py-3 text-sm" data-testid="advisory-final-result">
+          <p className="font-medium">
+            Hội đồng đã chốt điểm: {scores.aggregate.star} sao, {formatPoints(scores.aggregate.total)} điểm ({scores.aggregate.parts.map((p) => `Phần ${p.code} ${formatPoints(p.total)}`).join(", ")}).
+          </p>
+          <p className="text-text-2">Chốt lúc {formatVnDateTime(scores.result.finalizedAt)}.</p>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
