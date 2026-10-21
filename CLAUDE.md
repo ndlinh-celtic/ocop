@@ -48,7 +48,7 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 - **State machine hồ sơ**: bảng chuyển trạng thái dạng dữ liệu `{from, to, action, guard, roles}` theo đúng 15 trạng thái ở luồng xử lý mục 1.2 (14 gốc + Đã rút, ADR 0007). Mọi chuyển trạng thái đi qua một hàm `transition()`: optimistic lock (`version`), ghi `dossier_event`, ghi outbox, trong một transaction.
 - **Bộ tiêu chí có phiên bản** (L19, ADR 0006): `criteria_version` draft → published (bất biến sau publish) chứa cây Nhóm sản phẩm → Phân nhóm → Bộ tiêu chí; mỗi bộ gồm Phần A/B/C → Mục → Nhóm tiêu chí (tùy chọn) → Tiêu chí → Mức điểm (điểm, Sao tối thiểu, nhãn nhánh). Phiếu chấm gắn FK tới Mức điểm của phiên bản đã publish. Trigger chặn UPDATE/DELETE trên phiên bản đã publish. Hồ sơ gắn cố định với một Bộ tiêu chí từ lúc tạo.
 - **Hạng sao** = min(hạng theo Ngưỡng hạng của điểm, hạng cao nhất mà mọi Sao tối thiểu đều đạt); luôn lưu 1 đến 5 sao, dưới 3 sao là không đạt.
-- **Sao chép dữ liệu Tổ tư vấn** sang phiếu thành viên (L12): phiếu `prefilled` thì cập nhật; `edited`/`confirmed`/`locked` thì bỏ qua và báo lại. Lưu `source`, `advisory_version_id`, `advisory_value_original`, `adjust_reason`. Điều chỉnh khác giá trị gốc mà thiếu lý do thì từ chối (TV-04).
+- **Sao chép dữ liệu Tổ tư vấn** sang phiếu thành viên (L12): xét **theo từng tiêu chí**: dòng còn `prefilled` thì cập nhật, dòng thành viên đã sửa (`edited`) thì giữ và báo lại; phiếu `confirmed`/`locked` thì bỏ qua toàn bộ. Lưu `source`, `advisory_version_id`, `advisory_value_original`, `adjust_reason`. Điều chỉnh khác giá trị gốc mà thiếu lý do thì từ chối (TV-04).
 - **Khóa ba lớp**: domain từ chối + trigger DB chặn UPDATE khi `state in ('confirmed','locked')` + user DB của app không có quyền tắt trigger. Báo cáo Tổ tư vấn đã phát hành thì bất biến; sửa = tạo version N+1 có lý do.
 - **Xác thực lại (step-up)** bằng TOTP trong 5 phút trước khi xác nhận phiếu và chốt điểm; nếu cấu hình triển khai tắt bắt buộc TOTP thì dùng mật khẩu, audit ghi phương thức (ADR 0003).
 - Khi chốt (HD-08): lưu `aggregate_result` kèm snapshot JSONB toàn bộ phiếu và hash SHA-256.
@@ -73,7 +73,7 @@ Giữ chúng ở dạng cấu hình (trong `criteria_version` / `round_config`),
 - Bộ tiêu chí QĐ 26/2026/QĐ-TTg (26 bộ, A/B/C = 40/25/35, Ngưỡng hạng 30/50/70/90) đã bóc tách ở `docs/tieu-chi/` từ bản scan; các chỗ cần soát nằm ở sheet "Cần rà soát". 18 tiêu chí mẫu trong prototype chỉ là minh họa.
 - Điểm tổng hợp = trung bình cộng các thành viên; Sao tối thiểu so bằng điểm trung bình của tiêu chí.
 - Mức "Không đáp ứng, 0 điểm" tự thêm cho tiêu chí mà phiếu QĐ 26 không có mức 0.
-- Trước khi đủ phiếu, thư ký và thành viên không thấy điểm của người khác.
+- Quyền xem điểm (L13–L15, TV-06, TV-08; luồng xử lý tự mâu thuẫn giữa "họp xem điểm của nhau rồi chốt" và "chỉ xem sau khi chốt"): thành viên thấy phiếu người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch, Thư ký trước đó chỉ thấy tiến độ; Tổ tư vấn thấy điểm tổng hợp sau khi chốt; Chủ thể, xã, Sở không bao giờ thấy phiếu từng thành viên. Cần đối chiếu quy chế hội đồng.
 - Quy chế hội đồng: số thành viên chấm, quy tắc tổng hợp (trung bình, loại điểm lệch, ngưỡng cờ chênh lệch).
 - Cấp độ an toàn thông tin của hệ thống (dự kiến cấp 2 hoặc 3) và yêu cầu với nhà cung cấp cloud.
 - Thời hạn lưu audit, hồ sơ, minh chứng.
