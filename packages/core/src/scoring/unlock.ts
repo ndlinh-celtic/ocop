@@ -1,4 +1,5 @@
-import { dossierNotFound, type DossierState } from "../dossiers/model";
+import { ownUpload } from "../files/attach";
+import { dossierNotFound, versionConflict, type DossierState } from "../dossiers/model";
 import { transitionByLookup } from "../dossiers/transition";
 import { authorize } from "../identity/policy";
 import { requireRecentAuth } from "../identity/reauth";
@@ -6,7 +7,7 @@ import { dataScopeOf } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
-import { assertIdShape, isUuid } from "../shared/ids";
+import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import type { UnlockRequest } from "./meeting-model";
 
@@ -112,12 +113,7 @@ export function unlockFinalized(deps: CoreDeps) {
       const before = await tx.dossiers.stateRow({ id: input.dossierId }, true);
       if (!before) throw dossierNotFound();
       const proof = await requireRecentAuth(deps, tx, actor);
-      const file = isUuid(input.requestFileId) ? await tx.files.findById(input.requestFileId) : null;
-      if (!file || file.ownerUserId !== actor.userId || file.purpose !== "unlock_request") {
-        throw new DomainError("file_required", "Tải lên văn bản yêu cầu Mở khóa của Hội đồng (PDF)");
-      }
-      if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa được tải lên xong");
-      if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp đã bị chặn vì không an toàn, hãy tải lên bản khác");
+      const file = await ownUpload(tx, actor, input.requestFileId, "unlock_request", () => new DomainError("file_required", "Tải lên văn bản yêu cầu Mở khóa của Hội đồng (PDF)"));
 
       const result = before.state === "score_finalized" ? await tx.aggregateResults.current(before.id) : null;
       const now = deps.clock.now();
@@ -142,7 +138,7 @@ export function unlockFinalized(deps: CoreDeps) {
         reauthMethod: proof.method,
       });
       // Story 128: the kết quả stays as it was, superseded; story 129: no phiếu is touched.
-      if (!(await tx.aggregateResults.supersede(result.id, now, unlockId))) throw new DomainError("version_conflict", "Kết quả chốt vừa thay đổi, vui lòng tải lại");
+      if (!(await tx.aggregateResults.supersede(result.id, now, unlockId))) throw versionConflict();
       return { unlockId, dossierState: after.state, supersededN: result.n };
     });
   };

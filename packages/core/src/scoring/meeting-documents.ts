@@ -1,3 +1,4 @@
+import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
 import type { RankThresholds } from "../criteria/model";
 import type { DocumentTemplate, MeetingDocumentData, MeetingDocumentRow } from "../documents/renderer";
@@ -8,7 +9,6 @@ import { vnDateOf } from "../rounds/model";
 import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
-import { assertIdShape } from "../shared/ids";
 import { emit } from "../platform/emit";
 import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
@@ -161,11 +161,7 @@ export function attachMeetingMinutes(deps: CoreDeps) {
     authorize(actor, "scoring.meeting.minutes.upload");
     return deps.uow.run(async (tx) => {
       const meeting = await ownMeeting(tx, actor, input.meetingId, true);
-      assertIdShape(input.fileId, minutesNotFound);
-      const file = await tx.files.findById(input.fileId);
-      if (!file || file.ownerUserId !== actor.userId || file.purpose !== "meeting_minutes") throw minutesNotFound();
-      if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa được tải lên xong");
-      if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp đã bị chặn vì không an toàn, hãy tải lên bản khác");
+      const file = await ownUpload(tx, actor, input.fileId, "meeting_minutes", minutesNotFound);
       const number = ((await tx.meetings.minutes(meeting.id))[0]?.number ?? 0) + 1;
       const now = deps.clock.now();
       if (!(await tx.meetings.insertMinutes({ id: deps.ids.next(), meetingId: meeting.id, number, fileId: file.id, uploadedBy: actor.userId, uploadedAt: now }))) {

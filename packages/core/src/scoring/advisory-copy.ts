@@ -1,3 +1,4 @@
+import { isMemberInForce } from "../councils/assignment-model";
 import { lockDossier } from "../dossiers/edit";
 import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -128,7 +129,7 @@ async function planOf(tx: Tx, dossier: Dossier, scope: AdvisoryCopyScope, adviso
   const inScope = order.filter((c) => wanted === "all" || wanted.includes(c.code));
   const proposed = new Map(version.snapshot.lines.map((l) => [l.criterionId, l]));
 
-  const members = (await tx.assignments.current(dossier.id)).filter((a) => a.kind === "member" && a.effectiveAt !== null);
+  const members = (await tx.assignments.current(dossier.id)).filter(isMemberInForce);
   const chosen = scope.recipients === "all" ? members : members.filter((a) => (scope.recipients as string[]).includes(a.userId));
   if (chosen.length === 0) throw new DomainError("recipient_not_assigned", "Không có thành viên chấm nào được chọn trong Phân công của hồ sơ");
   const sheets = await tx.scoreSheets.current(dossier.id);
@@ -319,7 +320,7 @@ export function advisoryCopyBoard(deps: CoreDeps) {
           }
         }
         const members = [];
-        for (const a of (await tx.assignments.current(dossier.id)).filter((x) => x.kind === "member" && x.effectiveAt !== null)) {
+        for (const a of (await tx.assignments.current(dossier.id)).filter(isMemberInForce)) {
           members.push({ userId: a.userId, fullName: (await tx.users.findById(a.userId))?.fullName ?? "", sheet: sheets.find((s) => s.assignmentId === a.id)?.state ?? null });
         }
         out.push({

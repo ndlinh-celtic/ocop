@@ -1,3 +1,4 @@
+import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
 import { assembleSet } from "../criteria/detail";
 import { criteriaOf } from "../criteria/model";
@@ -138,10 +139,7 @@ async function validContent(tx: Tx, actor: UserActor, rows: SetRows, latest: Sub
   for (const id of attachmentFileIds) {
     // A file the nháp already holds stays, whoever uploaded it; a new one is the actor's own upload.
     if (kept.includes(id)) continue;
-    const file = isUuid(id) ? await tx.files.findById(id) : null;
-    if (!file || file.ownerUserId !== actor.userId || file.purpose !== "advisory_attachment") throw new DomainError("file_required", "Tải lên tệp đính kèm của Tổ tư vấn");
-    if (file.status === "awaiting_upload") throw new DomainError("file_not_ready", "Tệp chưa tải lên xong");
-    if (file.status === "blocked") throw new DomainError("file_blocked", "Tệp bị chặn vì không an toàn");
+    await ownUpload(tx, actor, id, "advisory_attachment", () => new DomainError("file_required", "Tải lên tệp đính kèm của Tổ tư vấn"));
   }
   const order = rows.criteria.map((c) => c.id);
   const lines = [...byId.values()].sort((a, b) => order.indexOf(a.criterionId) - order.indexOf(b.criterionId));
