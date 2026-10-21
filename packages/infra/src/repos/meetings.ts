@@ -1,7 +1,7 @@
 import type { AggregateResult, AggregateResultRepo, MeetingRepo } from "@ocop/core";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { aggregateResult, meeting, meetingDossier, unlockRequest } from "../db/schema";
+import { aggregateResult, meeting, meetingDossier, meetingMinutes, unlockRequest } from "../db/schema";
 
 /** Phiên họp (#60): the DB keeps one pending row per hồ sơ and fixes the row of a hồ sơ chốt. */
 export function meetingRepo(db: Db): MeetingRepo {
@@ -53,6 +53,13 @@ export function meetingRepo(db: Db): MeetingRepo {
         .update(meetingDossier)
         .set({ resultId })
         .where(and(eq(meetingDossier.meetingId, meetingId), eq(meetingDossier.dossierId, dossierId), isNull(meetingDossier.resultId)));
+    },
+    async minutes(meetingId) {
+      return db.select().from(meetingMinutes).where(eq(meetingMinutes.meetingId, meetingId)).orderBy(desc(meetingMinutes.number));
+    },
+    async insertMinutes(m) {
+      const inserted = await db.insert(meetingMinutes).values(m).onConflictDoNothing({ target: meetingMinutes.fileId }).returning({ id: meetingMinutes.id });
+      return inserted.length === 1;
     },
   };
 }

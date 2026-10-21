@@ -71,6 +71,9 @@ const ROLE_ACTIONS = {
   // L15 HD-08, HD-09 (#60 stories 107 to 109, 116, 117, 64): Phiên họp of the Hội đồng and chốt điểm; never the Tổ tư vấn.
   "scoring.meeting.manage": ["council_chair", "council_secretary"],
   "scoring.finalize": ["council_chair", "council_secretary"],
+  // L15 HD-09, TM-11 (#62 stories 110 to 115): văn bản họp, read by both; the Thư ký uploads the biên bản đã ký.
+  "scoring.meeting.document": ["council_chair", "council_secretary"],
+  "scoring.meeting.minutes.upload": ["council_secretary"],
   // L15 HD-05 (stories 102 to 106): Trả phiếu before chốt, and the phiếu bị thay thế it leaves behind.
   "scoring.sheet.return": ["council_chair", "council_secretary"],
   // L15 Mở khóa sau chốt (#63 stories 127 to 132): Quản trị alone, on the Hội đồng's văn bản yêu cầu; it reads no

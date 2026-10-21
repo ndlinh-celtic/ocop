@@ -700,6 +700,16 @@ export const aggregateResult = scoringSchema.table("aggregate_result", {
   supersededByUnlock: uuid("superseded_by_unlock"),
 });
 
+// Biên bản đã ký of a Phiên họp (0040_meeting_minutes.sql): insert only.
+export const meetingMinutes = scoringSchema.table("meeting_minutes", {
+  id: uuid("id").primaryKey(),
+  meetingId: uuid("meeting_id").notNull(),
+  number: integer("number").notNull(),
+  fileId: uuid("file_id").notNull(),
+  uploadedBy: uuid("uploaded_by").notNull(),
+  uploadedAt: ts("uploaded_at").notNull(),
+});
+
 /** Mở khóa sau chốt (#63): append-only; the kết quả it superseded points back at it. */
 export const unlockRequest = scoringSchema.table("unlock_request", {
   id: uuid("id").primaryKey(),
