@@ -6,8 +6,9 @@ import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { lockDossier } from "./edit";
-import { dossierNotFound, type DossierState, type ReturnRequest } from "./model";
+import { DOSSIER_STATES, dossierNotFound, type DossierState, type ReturnRequest } from "./model";
 import { transition } from "./transition";
+import { ruleFor } from "./transitions";
 
 /*
  * L04 (#44, story 59): a Cán bộ xã who finds a mistake in a hồ sơ already gửi tỉnh asks the Sở to trả về
@@ -63,8 +64,11 @@ export function listReturnRequests(deps: CoreDeps) {
  * changes: the Sở decides, and its trả về is returnFromProvince. Only the Sở and the Tổ tư vấn read them.
  */
 
-/** The states the Sở can still trả về a hồ sơ from once it is Giao chấm: until the first sao chép (#69). */
-const RETURNABLE_STATES: readonly DossierState[] = ["advisory_review", "advisory_report_issued"];
+/**
+ * The states a Thành viên Tổ tư vấn can đề nghị trả về in, read off the transition table so the table stays the one
+ * place that says until when (the first sao chép, #69). The Sở's hồ sơ list filters by the same list.
+ */
+export const ADVISORY_RETURNABLE_STATES: readonly DossierState[] = DOSSIER_STATES.filter((state) => ruleFor("dossier.advisory_return_request", state) !== undefined);
 
 /** Story 51: sends the Sở a đề nghị trả về of a hồ sơ the Sở can still trả về, with its lý do. */
 export function requestAdvisoryReturn(deps: CoreDeps) {
@@ -82,8 +86,8 @@ export function requestAdvisoryReturn(deps: CoreDeps) {
 
 /**
  * Story 52: the đề nghị trả về of the Tổ tư vấn on a hồ sơ within the reader's Phạm vi, oldest first. One is
- * pending while the hồ sơ is still in the lượt Giao chấm it was sent in and the Sở can still trả về it: Tổ tư vấn
- * thẩm định or Đã có báo cáo Tổ tư vấn, before the first sao chép (#69).
+ * pending while the hồ sơ has not left the Giao chấm it was sent in and the Sở can still trả về it: Tổ tư vấn thẩm
+ * định or Đã có báo cáo Tổ tư vấn, before the first sao chép (#69).
  */
 export function listAdvisoryReturnRequests(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string }): Promise<ReturnRequestView[]> => {
@@ -94,7 +98,7 @@ export function listAdvisoryReturnRequests(deps: CoreDeps) {
       const dossier = await tx.dossiers.findById(scope, input.dossierId);
       if (!dossier) throw dossierNotFound();
       const requests = await tx.dossiers.advisoryReturnRequests(dossier.id);
-      const since = RETURNABLE_STATES.includes(dossier.state) ? dossier.gradingStartedAt : null;
+      const since = ADVISORY_RETURNABLE_STATES.includes(dossier.state) ? dossier.gradingStartedAt : null;
       return withNames(tx, requests, (r) => !!since && r.requestedAt >= since);
     });
   };

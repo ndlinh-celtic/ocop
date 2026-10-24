@@ -231,6 +231,9 @@ describe("#69 the Sở trả về a hồ sơ Đã có báo cáo Tổ tư vấn, 
     const d = await issued();
     expect(await t.app.dossiers.get(province, { dossierId: d.dossierId })).toMatchObject({ state: "advisory_report_issued" });
 
+    const assignmentsBefore = await t.app.councils.assignments(A.secretary, { dossierId: d.dossierId });
+    // The xã's own đề nghị (story 59) is for a hồ sơ Đã chuyển tỉnh only; the Tổ tư vấn's is open here.
+    await expect(t.app.dossiers.requestReturn(ward, { dossierId: d.dossierId, expectedVersion: d.version, reason: "Xã xin lại" })).rejects.toMatchObject({ code: "invalid_state" });
     let { version } = await t.app.dossiers.requestAdvisoryReturn(d.leader, { dossierId: d.dossierId, expectedVersion: d.version, reason: "Thiếu hồ sơ" });
     expect(await t.app.dossiers.advisoryReturnRequests(province, { dossierId: d.dossierId })).toEqual([expect.objectContaining({ reason: "Thiếu hồ sơ", pending: true })]);
     expect((await t.app.dossiers.list(province, { filter: "advisory_return_requested" })).map((x) => x.id)).toContain(d.dossierId);
@@ -254,6 +257,7 @@ describe("#69 the Sở trả về a hồ sơ Đã có báo cáo Tổ tư vấn, 
     const [again] = (await t.app.councils.startGrading(A.secretary, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }] })).dossiers;
 
     expect(again).toMatchObject({ state: "advisory_review" });
+    expect(await t.app.councils.assignments(A.secretary, { dossierId: d.dossierId })).toEqual(assignmentsBefore);
     expect((await t.app.scoring.advisoryReport(d.leader, { dossierId: d.dossierId })).draftVersion).toBe(1);
     // Phiên bản 1 is issued, so the next phát hành is phiên bản 2 and, as any sửa after phát hành, carries a reason.
     await expect(t.app.scoring.issueAdvisoryReport(d.leader, { dossierId: d.dossierId, expectedVersion: again!.version })).rejects.toMatchObject({ code: "reason_required" });

@@ -221,7 +221,7 @@ export {
 export type { RejectInput } from "./dossiers/reject-transfer";
 // #44: the province's view of hồ sơ, the Sở trả về and the đề nghị trả về of the xã.
 export { FINISHED_STATES, type ReturnRequest } from "./dossiers/model";
-export type { ReturnRequestView } from "./dossiers/return-request";
+export { ADVISORY_RETURNABLE_STATES, type ReturnRequestView } from "./dossiers/return-request";
 export type { DossierOverviewRow } from "./dossiers/read";
 export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
 export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";

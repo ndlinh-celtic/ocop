@@ -29,6 +29,7 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
   ]);
   if (!dossier || !ws || !versions) notFound();
   const latest = versions.at(-1);
+  const nextNumber = (latest?.number ?? 0) + 1;
   const mayIssue = ws.isLeader && ws.state === "advisory_review";
   const mayReissue = ws.isLeader && latest !== undefined && REISSUE_STATES.includes(ws.state);
   // Phiên bản N+1 starts from the content of phiên bản N (story 60).
@@ -67,7 +68,7 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
             Ước lượng: {ws.estimate.parts.map((p) => `Phần ${p.code}: ${p.total}`).join(" · ")} · Tổng {ws.estimate.total} · {ws.estimate.star} sao
           </p>
           {mayIssue ? (
-            <IssueButton dossierId={dossierId} version={ws.dossierVersion} number={versions.length + 1} blocked={ws.missing.length > 0} />
+            <IssueButton dossierId={dossierId} dossierVersion={ws.dossierVersion} reportNumber={nextNumber} blocked={ws.missing.length > 0} />
           ) : (
             <p className="text-text-3">Chỉ Tổ trưởng Tổ tư vấn phát hành được báo cáo.</p>
           )}
@@ -109,16 +110,15 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
 
       {mayReissue && (
         <section className="flex flex-col gap-3">
-          <h2 className="font-semibold">Phát hành phiên bản {latest.number + 1}</h2>
+          <h2 className="font-semibold">Phát hành phiên bản {nextNumber}</h2>
           <p className="text-sm text-text-2">Nội dung bắt đầu từ phiên bản {latest.number}. Thành viên được phân công sẽ nhận thông báo.</p>
           <AdvisoryEditor
-            key={latest.number}
             dossierId={dossierId}
             criteria={fromLatest}
             summary={latest.report.summary}
             notes={latest.report.notes}
             attachments={latest.report.attachments.map((a) => ({ ...a, status: "clean" }))}
-            mode={{ kind: "reissue", dossierVersion: ws.dossierVersion, nextNumber: latest.number + 1 }}
+            mode={{ kind: "reissue", dossierVersion: ws.dossierVersion, nextNumber }}
           />
         </section>
       )}

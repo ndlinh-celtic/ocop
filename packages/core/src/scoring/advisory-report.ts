@@ -275,8 +275,22 @@ async function assertLeader(tx: Tx, actor: UserActor, dossier: Dossier, now: Dat
   }
 }
 
-/** Writes phiên bản N from the nháp as it now is, refused while a Tiêu chí lacks Điểm đề xuất or căn cứ (story 57). */
-async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier, draft: AdvisoryReportDraft, reason: string | null, now: Date) {
+/**
+ * The lý do of a phát hành: trimmed, at most 2000 chữ; required for phiên bản N+1 (stories 60, 61), where `required`
+ * says whether the caller already knows this is one.
+ */
+function reasonOf(value: unknown, required: boolean): string | null {
+  const reason = typeof value === "string" ? value.trim() : "";
+  if (reason === "") {
+    if (required) throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
+    return null;
+  }
+  if (reason.length > 2000) throw new DomainError("field_too_long", "Lý do quá dài");
+  return reason;
+}
+
+/** Writes phiên bản `number` from the nháp as it now is, refused while a Tiêu chí lacks Điểm đề xuất or căn cứ (story 57). */
+async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier, draft: AdvisoryReportDraft, number: number, reason: string | null, now: Date) {
   const latest = await tx.dossiers.latestSubmission(dossier.id);
   const composed = await compose(tx, dossier, draft, latest);
   if (composed.missing.length > 0) throw new AdvisoryReportIncomplete(composed.missing);
@@ -307,7 +321,6 @@ async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier,
     attachments,
     estimate: composed.estimate as AdvisoryReportSnapshot["estimate"],
   };
-  const number = (await tx.advisoryReports.versions(dossier.id)).length + 1;
   const version: AdvisoryReportVersion = { id: deps.ids.next(), dossierId: dossier.id, number, snapshot, issuedBy: actor.userId, issuedAt: now, reason };
   await tx.advisoryReports.insertVersion(version);
   // The reason stays off the timeline the Chủ thể reads; the audit keeps it with the phiên bản.
@@ -331,8 +344,7 @@ async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier,
 export function issueAdvisoryReport(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; reason?: string | null }): Promise<{ version: number; number: number }> => {
     authorize(actor, "dossier.advisory_report.write");
-    const reason = typeof input.reason === "string" && input.reason.trim() !== "" ? input.reason.trim() : null;
-    if (reason !== null && reason.length > 2000) throw new DomainError("field_too_long", "Lý do quá dài");
+    const reason = reasonOf(input.reason, false);
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const before = await lockDossier(tx, actor, input.dossierId);
@@ -341,8 +353,8 @@ export function issueAdvisoryReport(deps: CoreDeps) {
       await assertLeader(tx, actor, before, now);
       if (number > 1 && reason === null) throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
       const draft = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
-      const issued = await issue(deps, tx, actor, before, draft, number > 1 ? reason : null, now);
-      return { version: after.version, number: issued };
+      await issue(deps, tx, actor, before, draft, number, number > 1 ? reason : null, now);
+      return { version: after.version, number };
     });
   };
 }
@@ -355,24 +367,19 @@ export function issueAdvisoryReport(deps: CoreDeps) {
 export function reissueAdvisoryReport(deps: CoreDeps) {
   return async (actor: Actor, input: AdvisoryReportContent & { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number; number: number }> => {
     authorize(actor, "dossier.advisory_report.write");
-    const reason = typeof input.reason === "string" ? input.reason.trim() : "";
-    if (reason === "") throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
-    if (reason.length > 2000) throw new DomainError("field_too_long", "Lý do quá dài");
+    const reason = reasonOf(input.reason, true)!;
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const before = await lockDossier(tx, actor, input.dossierId);
       const versions = await tx.advisoryReports.versions(before.id);
-      const after = await transition(deps, tx, actor, before, {
-        action: "dossier.advisory_report.reissue",
-        expectedVersion: input.expectedVersion,
-        metadata: { number: versions.length + 1 },
-      });
+      const number = versions.length + 1;
+      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.reissue", expectedVersion: input.expectedVersion, metadata: { number } });
       await assertLeader(tx, actor, before, now);
       if (versions.length === 0) throw new DomainError("no_issued_version", "Hồ sơ chưa có Báo cáo Tổ tư vấn đã phát hành");
       const stored = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
       const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
       const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: now, updatedBy: actor.userId };
-      const number = await issue(deps, tx, actor, before, draft, reason, now);
+      await issue(deps, tx, actor, before, draft, number, reason, now);
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();
       return { version: after.version, number };
     });

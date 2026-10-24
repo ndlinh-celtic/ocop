@@ -1,4 +1,4 @@
-import { FINISHED_STATES, type AssignmentKind, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
+import { ADVISORY_RETURNABLE_STATES, FINISHED_STATES, type AssignmentKind, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
 import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import {
@@ -155,7 +155,7 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.awaitingProvinceReceipt ? and(eq(dossier.state, "forwarded_to_province"), isNull(dossier.provinceReceivedAt)) : undefined,
         filter.advisoryReturnRequested
           ? and(
-              inArray(dossier.state, ["advisory_review", "advisory_report_issued"]),
+              inArray(dossier.state, [...ADVISORY_RETURNABLE_STATES]),
               sql`EXISTS (SELECT 1 FROM dossier.advisory_return_request r WHERE r.dossier_id = "dossier"."dossier"."id" AND r.requested_at >= "dossier"."dossier"."grading_started_at")`,
             )
           : undefined,
