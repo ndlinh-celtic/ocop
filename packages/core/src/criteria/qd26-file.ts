@@ -80,6 +80,8 @@ export interface ImportIssue {
 
 /** The file was refused; `issues` lists every problem found, each with its location. */
 export class CriteriaImportError extends DomainError {
+  static override readonly brand = "CriteriaImportError";
+
   constructor(readonly issues: ImportIssue[]) {
     const shown = issues.slice(0, 5).map((i) => `${i.location}: ${i.message}`);
     const more = issues.length > shown.length ? ` (và ${issues.length - shown.length} lỗi khác)` : "";

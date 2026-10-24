@@ -1,3 +1,4 @@
+import type { AssignmentKind } from "../councils/assignment-model";
 import type { EntityKind } from "../entities/model";
 import type { FileStatus } from "../files/model";
 import type { DataScope } from "../identity/scope";
@@ -83,6 +84,22 @@ export interface Dossier extends ProductInfo {
   handlerUserId: string | null;
   /** When it first reached Đã chuyển tỉnh: from then on the province sees it (story 78). */
   firstForwardedAt: Date | null;
+  /** Mã hồ sơ, HS-<năm>-<số>, given at creation and never changed (story 19, SO-03; ADR 0004). */
+  code: string;
+  /** L08 SO-02: the Tiếp nhận tại tỉnh of the current lượt gửi tỉnh; null again after every Sở trả về. */
+  provinceReceivedAt: Date | null;
+  provinceReceivedBy: string | null;
+  /** The first Tiếp nhận tại tỉnh ever; never reset, so the Hội đồng keeps seeing the hồ sơ (spec #49). */
+  firstProvinceReceivedAt: Date | null;
+  /** L09 HD-06: when Giao chấm put the hồ sơ into Tổ tư vấn thẩm định or Thành viên xem xét; null again after a Sở trả về. */
+  gradingStartedAt: Date | null;
+  /**
+   * Derived when loaded, never written: the Hội đồng gán to the hồ sơ's đợt, and the kind of the reader's
+   * own Phân công in force on it (null unless the reader's DataScope is `assigned`). The DataScope checks of
+   * policy read them (spec #49 "DataScope và policy").
+   */
+  councilId: string | null;
+  readerAssignment: AssignmentKind | null;
   /** Hạn bổ sung of the open yêu cầu bổ sung: set exactly while the hồ sơ is Yêu cầu bổ sung (#39). */
   supplementDeadline: Date | null;
   copiedFrom: string | null;
@@ -121,7 +138,15 @@ export interface DossierListFilter {
   state?: DossierState;
   /** Đã nộp xã and not yet Tiếp nhận: "Chờ tiếp nhận" (story 39). */
   awaitingReceipt?: boolean;
+  /** Đã chuyển tỉnh and not yet Tiếp nhận tại tỉnh in this lượt gửi tỉnh: "Chờ tiếp nhận" of the Sở (#51 story 13). */
+  awaitingProvinceReceipt?: boolean;
+  roundId?: string;
+  wardId?: string;
+  /** The Nhóm sản phẩm of the hồ sơ's Bộ tiêu chí. */
+  productGroupId?: string;
   handlerUserId?: string;
+  /** Tổ tư vấn thẩm định with a đề nghị trả về of the Tổ tư vấn since its Giao chấm (#57 story 52). */
+  advisoryReturnRequested?: boolean;
   /** Chờ đợt sau at this instant: Đã nộp xã, and the Hạn gửi tỉnh of its đợt is before it (story 68). */
   awaitingNextRoundAt?: Date;
 }
@@ -134,17 +159,29 @@ export interface DossierListFilter {
 export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardingDeadline: Date } | null, now: Date) =>
   d.state === "submitted_to_ward" && round !== null && now > round.forwardingDeadline;
 
+/** What the narrow lookup of DossierRepo.stateRow loads: the mã and state, and what a transition records. */
+export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId">;
+
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.
  * Out-of-scope rows come back as absent.
  */
 export interface DossierRepo {
   insert(d: Dossier): Promise<void>;
+  /** The next số of the mã hồ sơ in `year`, 1 for the first; taken in the caller's transaction. */
+  nextCodeNumber(year: number): Promise<number>;
   findById(scope: DataScope, id: string): Promise<Dossier | null>;
   /** findById with the row locked FOR UPDATE until the transaction ends. */
   lock(scope: DataScope, id: string): Promise<Dossier | null>;
   /** Writes every mutable field, only while the stored version is still `expectedVersion`; false otherwise. */
   update(d: Dossier, expectedVersion: number): Promise<boolean>;
+  /**
+   * The narrow lookup of a Vai trò with no DataScope over hồ sơ (Mở khóa sau chốt, spec #49): by id or mã, no Phạm vi
+   * and nothing of the hồ sơ's content; locked FOR UPDATE when `lock`.
+   */
+  stateRow(by: { id: string } | { code: string }, lock?: boolean): Promise<DossierStateRow | null>;
+  /** Moves a hồ sơ loaded by stateRow: state, version + 1 and updated_at only, while the version is still `expectedVersion`. */
+  updateState(id: string, expectedVersion: number, state: DossierState, updatedAt: Date): Promise<boolean>;
   /** Newest first, narrowed by `filter` in the same query. */
   list(scope: DataScope, filter?: DossierListFilter): Promise<Dossier[]>;
   /**
@@ -189,6 +226,10 @@ export interface DossierRepo {
   insertReturnRequest(r: ReturnRequest): Promise<void>;
   /** Every đề nghị trả về of a hồ sơ already loaded within scope, oldest first. */
   returnRequests(dossierId: string): Promise<ReturnRequest[]>;
+  /** Appends a đề nghị trả về of the Tổ tư vấn (TM-03); the app may not change or delete it afterwards. */
+  insertAdvisoryReturnRequest(r: ReturnRequest): Promise<void>;
+  /** Every đề nghị trả về of the Tổ tư vấn on a hồ sơ already loaded within scope, oldest first. */
+  advisoryReturnRequests(dossierId: string): Promise<ReturnRequest[]>;
   /** The newest signed Báo cáo đánh giá cấp xã of a hồ sơ already loaded within scope, with its file name. */
   latestWardReport(dossierId: string): Promise<(WardReport & { fileName: string; fileStatus: FileStatus }) | null>;
 }

@@ -55,7 +55,11 @@ function askForMore(deps: CoreDeps, action: "dossier.supplement.request" | "doss
       const after = await transition(deps, tx, actor, before, {
         action,
         expectedVersion: input.expectedVersion,
-        patch: { supplementDeadline: deadline },
+        // L08 (story 18): a Sở trả về ends the lượt gửi tỉnh, so the next one is Tiếp nhận tại tỉnh afresh.
+        patch:
+          action === "dossier.province_return"
+            ? { supplementDeadline: deadline, provinceReceivedAt: null, provinceReceivedBy: null, gradingStartedAt: null }
+            : { supplementDeadline: deadline },
         metadata: { deadline: deadline.toISOString(), itemCount: items.length },
       });
       const set = items.some((i) => i.criterionId) ? await tx.criteriaVersions.findSet(before.criteriaSetId) : null;

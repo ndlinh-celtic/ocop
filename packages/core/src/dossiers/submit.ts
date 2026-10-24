@@ -43,6 +43,8 @@ export type SubmissionBlocker = { message: string } & (
 );
 
 export class SubmissionBlockedError extends DomainError {
+  static override readonly brand = "SubmissionBlockedError";
+
   constructor(readonly blockers: readonly SubmissionBlocker[]) {
     super("submission_blocked", `Chưa nộp được hồ sơ: ${blockers.map((b) => b.message).join("; ")}`);
   }

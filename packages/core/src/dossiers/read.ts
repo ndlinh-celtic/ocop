@@ -1,4 +1,5 @@
 import { authorize } from "../identity/policy";
+import { ROLES, SCOPE_OF_ROLE } from "../identity/roles";
 import { dataScopeOf, type DataScope } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -12,6 +13,10 @@ export interface DossierSummary extends Dossier {
   criteriaSet: { id: string; code: string; name: string };
   criteriaVersion: { id: string; legalBasis: string };
   entity: { id: string; name: string };
+  /** The Nhóm sản phẩm of its Bộ tiêu chí (story 13). */
+  productGroup: { id: string; name: string } | null;
+  ward: { id: string; name: string } | null;
+  round: { id: string; name: string } | null;
   /** When it was last nộp or nộp lại; null for a Nháp never submitted. */
   submittedAt: Date | null;
   handler: { userId: string; fullName: string } | null;
@@ -19,10 +24,16 @@ export interface DossierSummary extends Dossier {
   awaitingNextRound: boolean;
 }
 
-/** What a list of hồ sơ may be narrowed to (story 39): Chờ tiếp nhận, của tôi, or one state. */
+/**
+ * What a list of hồ sơ may be narrowed to (story 39): Chờ tiếp nhận at the xã, của tôi, Chờ đợt sau, or
+ * Chờ tiếp nhận at the province (#51 story 13); and to one state, đợt, xã or Nhóm sản phẩm.
+ */
 export interface DossierListInput {
-  filter?: "awaiting_receipt" | "mine" | "awaiting_next_round";
+  filter?: "awaiting_receipt" | "mine" | "awaiting_next_round" | "awaiting_province_receipt" | "advisory_return_requested";
   state?: DossierState;
+  roundId?: string;
+  wardId?: string;
+  productGroupId?: string;
 }
 
 export interface DossierView extends Omit<DossierSummary, "copiedFrom"> {
@@ -71,7 +82,10 @@ async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Dat
   }
   const entities = new Map((await tx.entities.list(scope)).map((e) => [e.id, e.name]));
   const submittedAt = await tx.dossiers.lastSubmittedAt(dossiers.map((d) => d.id));
-  const rounds = new Map<string, { forwardingDeadline: Date }>();
+  const groups = new Map<string, { id: string; name: string } | null>();
+  for (const id of new Set(dossiers.map((d) => d.criteriaSetId))) groups.set(id, await productGroupOf(tx, id));
+  const wards = dossiers.some((d) => d.wardId) ? new Map((await tx.wards.list()).map((w) => [w.id, w.name])) : new Map<string, string>();
+  const rounds = new Map<string, { name: string; forwardingDeadline: Date }>();
   for (const id of new Set(dossiers.flatMap((d) => (d.roundId ? [d.roundId] : [])))) {
     const found = await tx.rounds.findById(id);
     if (found) rounds.set(id, found);
@@ -85,10 +99,20 @@ async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Dat
     criteriaSet: sets.get(d.criteriaSetId) ?? { id: d.criteriaSetId, code: "", name: "" },
     criteriaVersion: { id: d.criteriaVersionId, legalBasis: versions.get(d.criteriaVersionId)?.legalBasis ?? "" },
     entity: { id: d.entityId, name: entities.get(d.entityId) ?? "" },
+    productGroup: groups.get(d.criteriaSetId) ?? null,
+    ward: d.wardId ? { id: d.wardId, name: wards.get(d.wardId) ?? "" } : null,
+    round: d.roundId ? { id: d.roundId, name: rounds.get(d.roundId)?.name ?? "" } : null,
     submittedAt: submittedAt.get(d.id) ?? null,
     handler: d.handlerUserId ? { userId: d.handlerUserId, fullName: handlers.get(d.handlerUserId) ?? "" } : null,
     awaitingNextRound: isAwaitingNextRound(d, (d.roundId && rounds.get(d.roundId)) || null, now),
   }));
+}
+
+async function productGroupOf(tx: Tx, setId: string) {
+  const set = (await tx.criteriaVersions.findNode("set", setId))?.row;
+  const subgroup = set && (await tx.criteriaVersions.findNode("subgroup", set.subgroupId))?.row;
+  const group = subgroup && (await tx.criteriaVersions.findNode("productGroup", subgroup.productGroupId))?.row;
+  return group ? { id: group.id, name: group.name } : null;
 }
 
 /** The hồ sơ within the reader's Phạm vi; any other is not found, whether or not it exists (story 80). */
@@ -129,7 +153,16 @@ export function listDossiers(deps: CoreDeps) {
       ...(input.state && (DOSSIER_STATES as readonly string[]).includes(input.state) ? { state: input.state } : {}),
       ...(input.filter === "awaiting_receipt" ? { awaitingReceipt: true } : {}),
       ...(input.filter === "mine" ? { handlerUserId: actor.userId } : {}),
+      ...(input.filter === "awaiting_province_receipt" ? { awaitingProvinceReceipt: true } : {}),
+      ...(input.filter === "advisory_return_requested" ? { advisoryReturnRequested: true } : {}),
     };
+    // An id that cannot exist narrows to nothing rather than reaching the database.
+    for (const key of ["roundId", "wardId", "productGroupId"] as const) {
+      const id = input[key];
+      if (id === undefined || id === "") continue;
+      if (!isUuid(id)) return [];
+      filter[key] = id;
+    }
     const now = deps.clock.now();
     if (input.filter === "awaiting_next_round") filter.awaitingNextRoundAt = now;
     return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter), now));
@@ -144,10 +177,15 @@ export function dossierTimeline(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       assertIdShape(input.dossierId, dossierNotFound);
       if (!(await tx.dossiers.findById(scope, input.dossierId))) throw dossierNotFound();
-      return tx.dossiers.events(scope, input.dossierId);
+      const events = await tx.dossiers.events(scope, input.dossierId);
+      // Spec #49 (story 137): the Chủ thể sees the Hội đồng's milestones, never who in the Hội đồng took them.
+      if (scope.kind !== "entity") return events;
+      return events.map((e) => (e.actorRole !== null && COUNCIL_ROLES.has(e.actorRole) ? { ...e, actorUserId: null, actorRole: null } : e));
     });
   };
 }
+
+const COUNCIL_ROLES: ReadonlySet<string> = new Set(ROLES.filter((r) => SCOPE_OF_ROLE[r] === "council"));
 
 /** One cell of the số liệu tổng hợp: how many hồ sơ of a xã are in a state. */
 export interface DossierOverviewRow {

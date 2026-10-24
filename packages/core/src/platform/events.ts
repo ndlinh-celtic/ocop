@@ -1,3 +1,4 @@
+import type { AssignmentKind } from "../councils/assignment-model";
 import type { DraftChangeAction, DraftChangePayload } from "../criteria/draft-events";
 import type { DossierState } from "../dossiers/model";
 import type { ReminderPayload } from "../dossiers/reminder-model";
@@ -31,6 +32,16 @@ export type DomainEventBody =
   | { type: "round.aggregation_changed"; payload: { roundId: string } }
   | { type: "round.ended"; payload: { roundId: string } }
   | { type: "round.checklist_configured"; payload: { roundId: string } }
+  | { type: "round.council_assigned"; payload: { roundId: string; fromCouncilId: string | null; toCouncilId: string } }
+  | { type: "council.created" | "council.updated"; payload: { councilId: string } }
+  | {
+      // L09 HD-03 (#55): a Phân công changed after Giao chấm; `replacedUserId` is null for a bổ sung.
+      type: "council.assignment.replaced" | "council.assignment.added";
+      payload: { dossierId: string; entityId: string; kind: AssignmentKind; replacedUserId: string | null; newUserId: string };
+    }
+  | { type: "council.leader_changed"; payload: { councilId: string; fromUserId: string | null; toUserId: string } }
+  | { type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed"; payload: { meetingId: string; councilId: string; roundId: string } }
+  | { type: "scoring.meeting_minutes_attached"; payload: { meetingId: string; councilId: string; number: number; fileId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
   | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
   | { type: "entity.updated"; payload: { entityId: string } }
@@ -38,10 +49,15 @@ export type DomainEventBody =
   | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
   | { type: "system.setting_changed"; payload: { key: string } }
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
+  // L15 HD-05 (story 103): who got a phiếu back and why, for their notice; the hồ sơ event names neither.
+  | { type: "scoring.score_sheet_returned"; payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string } }
   | {
       type: DossierEventType;
-      /** `actorUserId`: who made the move; absent on events recorded before it was added. */
-      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string };
+      /**
+       * `actorUserId`: who made the move; absent on events recorded before it was added. `recipientUserIds`: who
+       * its notices go to, when only the use case knows them (sao chép, L12).
+       */
+      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string; recipientUserIds?: string[] };
     };
 
 export type EventType = DomainEventBody["type"];

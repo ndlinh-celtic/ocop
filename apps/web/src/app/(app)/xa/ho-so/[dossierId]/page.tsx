@@ -72,6 +72,7 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
         </h1>
         <p className="text-sm text-text-2">
+          Mã hồ sơ <b className="font-mono">{dossier.code}</b> ·{" "}
           <Link href={`/xa/chu-the/${dossier.entity.id}`} className="text-brand underline-offset-2 hover:underline">
             {dossier.entity.name}
           </Link>{" "}

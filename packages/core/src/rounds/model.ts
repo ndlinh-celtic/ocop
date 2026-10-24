@@ -73,6 +73,8 @@ export interface Round extends RoundDeadlines {
   aggregation: AggregationRule;
   /** Checklist sơ bộ the xã assesses each hồ sơ of the round against (L06 XA-04); fixed once the round leaves Nháp. */
   checklist: ChecklistItem[];
+  /** The Hội đồng responsible for the round (L09); set by Cán bộ Sở, changeable until the first Giao chấm. */
+  councilId: string | null;
   createdAt: Date;
   createdBy: string;
   updatedAt: Date;

@@ -3,7 +3,7 @@ import { authorize } from "../identity/policy";
 import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
-import { DomainError } from "../shared/errors";
+import { DomainError, forbidden } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { checkedAggregation, roundNotFound, sameAggregation } from "./manage";
@@ -13,10 +13,11 @@ import { GRADING_MODES, type AggregationRule, type GradingMode, type Round } fro
  * Chế độ chấm and Quy tắc tổng hợp change after opening only while the round is Đang nhận nộp or
  * Đã đóng nộp, and only until its first phiếu chấm (spec #16 stories 49-50). A Nháp round is edited as a whole.
  */
-async function lockConfigurable(deps: CoreDeps, tx: Tx, roundId: string): Promise<Round> {
+async function lockConfigurable(deps: CoreDeps, tx: Tx, roundId: string, mayConfigure: (round: Round) => boolean = () => true): Promise<Round> {
   assertIdShape(roundId, roundNotFound);
   const round = await tx.rounds.lock(roundId);
   if (!round) throw roundNotFound();
+  if (!mayConfigure(round)) throw forbidden();
   if (round.status !== "open_for_submission" && round.status !== "submission_closed") {
     throw new DomainError("round_not_configurable", "Chỉ đổi được cấu hình khi đợt Đang nhận nộp hoặc Đã đóng nộp");
   }
@@ -26,13 +27,18 @@ async function lockConfigurable(deps: CoreDeps, tx: Tx, roundId: string): Promis
   return round;
 }
 
-/** L07 HD-06: Cán bộ Sở changes the Chế độ chấm until the round's first phiếu chấm. */
+/**
+ * L07, L09 HD-06 (stories 20, 21, 23): the Cán bộ Sở, or the Thư ký hội đồng of the Hội đồng gán to the đợt,
+ * confirms or changes the Chế độ chấm until the round's first phiếu chấm. Confirming the mode it already
+ * has changes nothing. The Thư ký of another Hội đồng is refused.
+ */
 export function changeGradingMode(deps: CoreDeps) {
   return async (actor: Actor, input: { roundId: string; gradingMode: GradingMode }): Promise<void> => {
-    authorize(actor, "round.manage");
+    authorize(actor, "round.grading_mode.change");
     if (!GRADING_MODES.includes(input.gradingMode)) throw new DomainError("invalid_grading_mode", "Chế độ chấm không hợp lệ");
+    const secretaryOf = actor.activeRole === "council_secretary" ? (actor.activeScope?.type === "council" ? actor.activeScope.id : "") : null;
     return deps.uow.run(async (tx) => {
-      const before = await lockConfigurable(deps, tx, input.roundId);
+      const before = await lockConfigurable(deps, tx, input.roundId, (r) => secretaryOf === null || r.councilId === secretaryOf);
       if (before.gradingMode === input.gradingMode) return;
       const now = deps.clock.now();
       const after: Round = { ...before, gradingMode: input.gradingMode, updatedAt: now };

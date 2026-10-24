@@ -74,10 +74,55 @@ export interface WardReportData {
   generatedOn: string;
 }
 
+/** One hồ sơ of a Phiên họp in a văn bản họp (L15 HD-09, #62); values formatted for reading. */
+export interface MeetingDocumentRow {
+  index: string;
+  code: string;
+  entityName: string;
+  address: string;
+  productName: string;
+  /** "<mã> - <tên>" of the Bộ tiêu chí. */
+  criteriaSet: string;
+  /** Tổng điểm of each thành viên chấm, or "Vắng" / "Chưa xác nhận". */
+  graders: { fullName: string; points: string }[];
+  total: string;
+  star: string;
+  /** "Lệch điểm lớn (N điểm)" under a Cờ chênh lệch, else empty. */
+  flag: string;
+  unmet: string;
+  absent: string;
+  /** Nhận xét tổng hợp of the Báo cáo Tổ tư vấn (story 114). */
+  advisorySummary: string;
+  /** "Đã chốt" or "Tạm tính". */
+  status: string;
+  /** Dự thảo quyết định: "Đề nghị xét 5 sao" from the 5-sao Ngưỡng hạng up. */
+  note: string;
+}
+
+/**
+ * The three văn bản họp of a Phiên họp (#62, stories 110 to 114): bảng tổng hợp điểm, dự thảo biên bản and dự thảo
+ * quyết định công nhận share this data; the quyết định gets only the hồ sơ from 3 sao.
+ */
+export interface MeetingDocumentData {
+  councilName: string;
+  roundName: string;
+  meetingTitle: string;
+  heldOn: string;
+  location: string;
+  /** Whether the số liệu are final, or a bản nháp with hồ sơ not yet chốt. */
+  status: string;
+  count: string;
+  dossiers: MeetingDocumentRow[];
+  generatedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
   ward_report: WardReportData;
+  meeting_score_table: MeetingDocumentData;
+  meeting_minutes_draft: MeetingDocumentData;
+  recognition_decision_draft: MeetingDocumentData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;

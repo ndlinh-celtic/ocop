@@ -5,7 +5,8 @@ import { createTestApp, createTestDatabase, systemActor, type TestApp, type Test
 import { ADMIN, entityIdOf, fixtures } from "./fixtures";
 
 /*
- * #14 permission matrix rows for the Cán bộ Sở and Quản trị (#44, spec #30 stories 57 to 59, 78, 79, 83),
+ * #14 permission matrix rows for the Cán bộ Sở and Quản trị (#44, spec #30 stories 57 to 59, 78, 79, 83;
+ * Tiếp nhận tại tỉnh #51, spec #49 story 15),
  * beside the Chủ thể and Cán bộ xã rows of permission-matrix.int.test.ts. Each row: who, action, state of
  * a hồ sơ of Chủ thể A (registered in xã X), expected outcome.
  */
@@ -31,7 +32,8 @@ type Action =
   | "gửi tỉnh"
   | "trả về"
   | "đề nghị trả về"
-  | "xem đề nghị trả về";
+  | "xem đề nghị trả về"
+  | "Tiếp nhận tại tỉnh";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state";
 
 const actors = {} as Record<Who, UserActor>;
@@ -55,6 +57,9 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ Sở", "Tiếp nhận", "Đã chuyển tỉnh", "forbidden"],
   ["Cán bộ Sở", "gửi tỉnh", "Đã chuyển tỉnh", "forbidden"],
   ["Cán bộ Sở", "đề nghị trả về", "Đã chuyển tỉnh", "forbidden"],
+  ["Cán bộ Sở", "Tiếp nhận tại tỉnh", "Đã nộp xã", "not_found"],
+  ["Cán bộ Sở", "Tiếp nhận tại tỉnh", "Đã chuyển tỉnh", "allowed"],
+  ["Cán bộ Sở", "Tiếp nhận tại tỉnh", "Sở trả về, Yêu cầu bổ sung", "invalid_state"],
   ["Cán bộ Sở", "đọc hồ sơ", "Sở trả về, Yêu cầu bổ sung", "allowed"],
   ["Cán bộ Sở", "thấy trong danh sách", "Sở trả về, Yêu cầu bổ sung", "allowed"],
   ["Cán bộ Sở", "yêu cầu bổ sung đã có", "Sở trả về, Yêu cầu bổ sung", "allowed"],
@@ -70,6 +75,7 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Quản trị", "yêu cầu bổ sung đã có", "Sở trả về, Yêu cầu bổ sung", "forbidden"],
   ["Quản trị", "xem đề nghị trả về", "Đã chuyển tỉnh", "forbidden"],
   ["Quản trị", "trả về", "Đã chuyển tỉnh", "forbidden"],
+  ["Quản trị", "Tiếp nhận tại tỉnh", "Đã chuyển tỉnh", "forbidden"],
   // The xã keeps its hồ sơ after gửi tỉnh and may only ask for a trả về (story 59).
   ["Cán bộ xã X", "đọc hồ sơ", "Đã chuyển tỉnh", "allowed"],
   ["Cán bộ xã X", "trả về", "Đã chuyển tỉnh", "forbidden"],
@@ -78,6 +84,9 @@ const MATRIX: [Who, Action, State, Outcome][] = [
   ["Cán bộ xã X", "đề nghị trả về", "Đã nộp xã", "invalid_state"],
   ["Cán bộ xã X", "đề nghị trả về", "Sở trả về, Yêu cầu bổ sung", "invalid_state"],
   ["Cán bộ xã X", "đọc hồ sơ", "Sở trả về, Yêu cầu bổ sung", "allowed"],
+  ["Cán bộ xã X", "Tiếp nhận tại tỉnh", "Đã chuyển tỉnh", "forbidden"],
+  ["Cán bộ xã Y", "Tiếp nhận tại tỉnh", "Đã chuyển tỉnh", "not_found"],
+  ["Chủ thể A", "Tiếp nhận tại tỉnh", "Đã chuyển tỉnh", "forbidden"],
   ["Cán bộ xã Y", "đề nghị trả về", "Đã chuyển tỉnh", "not_found"],
   ["Cán bộ xã Y", "xem đề nghị trả về", "Đã chuyển tỉnh", "not_found"],
   ["Chủ thể A", "trả về", "Đã chuyển tỉnh", "forbidden"],
@@ -138,6 +147,8 @@ async function attempt(who: Who, action: Action, d: Subject): Promise<void> {
       return void (await t.app.dossiers.requestReturn(actor, { dossierId, expectedVersion, reason: "Thử quyền" }));
     case "xem đề nghị trả về":
       return void (await t.app.dossiers.returnRequests(actor, { dossierId }));
+    case "Tiếp nhận tại tỉnh":
+      return void (await t.app.dossiers.receiveAtProvince(actor, { dossierId, expectedVersion }));
   }
 }
 
@@ -153,8 +164,9 @@ beforeAll(async () => {
   t.clock.set(new Date("2026-10-19T02:00:00Z"));
   const version = await f.publishedVersion("26/2026/QĐ-TTg");
   setId = version.sets["Rau củ quả"];
-  await f.openRound(version.versionId);
+  const roundId = await f.openRound(version.versionId);
   actors["Cán bộ Sở"] = await f.staff("province_officer");
+  await t.app.rounds.assignCouncil(actors["Cán bộ Sở"], { roundId, councilId: await f.council(actors["Cán bộ Sở"]) });
   actors["Quản trị"] = await f.admin();
   actors["Cán bộ xã X"] = await f.staff("ward_officer", wardX);
   actors["Cán bộ xã Y"] = await f.staff("ward_officer", wardY);

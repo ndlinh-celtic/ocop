@@ -28,6 +28,8 @@ export {
   type RegistrationFormData,
   type SelfAssessmentReportData,
   type WardReportData,
+  type MeetingDocumentData,
+  type MeetingDocumentRow,
 } from "./documents/renderer";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
@@ -180,6 +182,7 @@ export {
   type DossierEvent,
   type DossierRepo,
   type DossierState,
+  type DossierStateRow,
   type ChecklistResult,
   type ChecklistResultValue,
   type CriterionEntry,
@@ -223,3 +226,49 @@ export type { DossierOverviewRow } from "./dossiers/read";
 export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
 export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
 export type { SystemSettingRepo } from "./system/settings-model";
+export type { Council, CouncilRepo } from "./councils/model";
+export type { CouncilInput } from "./councils/manage";
+export { COUNCIL_ROLES, type CouncilDetail, type CouncilMember, type CouncilRole } from "./councils/read";
+export { ASSIGNMENT_KINDS, type Assignment, type AssignmentKind, type AssignmentRepo } from "./councils/assignment-model";
+export type { AssignmentCandidate, AssignmentView, EditAssignmentsInput } from "./councils/assignments";
+export type { StartGradingInput } from "./councils/grading";
+export type { AddAssignmentInput, ReplaceAssignmentInput, ReplacedAssignmentView } from "./councils/replace";
+export {
+  EVIDENCE_ASSESSMENTS,
+  EVIDENCE_ASSESSMENT_LABEL,
+  type AdvisoryReportDraft,
+  type AdvisoryReportLine,
+  type AdvisoryReportRepo,
+  type AdvisoryReportSnapshot,
+  type AdvisoryReportVersion,
+  type EvidenceAssessment,
+} from "./scoring/advisory-report-model";
+export {
+  AdvisoryReportIncomplete,
+  type AdvisoryCriterionView,
+  type AdvisoryReportContent,
+  type AdvisoryReportLineInput,
+  type AdvisoryReportVersionSummary,
+  type AdvisoryReportVersionView,
+  type AdvisoryReportWorkspace,
+} from "./scoring/advisory-report";
+export { SCORE_SHEET_STATES, type ScoreSheet, type ScoreSheetLine, type ScoreSheetRepo, type ScoreSheetState } from "./scoring/score-sheet-model";
+export { ScoreSheetIncompleteError, type SaveScoreSheetInput, type ScoreSheetLineInput } from "./scoring/sheets";
+export {
+  AdvisoryCopyRefused,
+  type AdvisoryCopyBoardRow,
+  type AdvisoryCopyPlan,
+  type AdvisoryCopyRecipient,
+  type CopyAdvisoryInput,
+  type CopySheetOutcome,
+  type PreviewAdvisoryCopyInput,
+} from "./scoring/advisory-copy";
+export { scoresVisibility, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
+export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
+export type { AggregateOnlyView, FinalizedResultView } from "./scoring/read";
+export { MEETING_STATES, type AggregateResult, type AggregateResultRepo, type FinalizedSnapshot, type Meeting, type MeetingDossier, type MeetingMinutes, type MeetingRepo, type MeetingState, type SnapshotGrader, type UnlockRequest } from "./scoring/meeting-model";
+export type { CreateMeetingInput, MeetingDossierView, MeetingMinutesView, MeetingSummary, MeetingView } from "./scoring/meetings";
+export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
+export { MEETING_DOCUMENT_KINDS, MEETING_DOCUMENT_LABEL, type MeetingDocumentKind } from "./scoring/meeting-documents";
+export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";
+export { type FinalizedResultSummary, type UnlockInput, type UnlockTarget, type UnlockView } from "./scoring/unlock";

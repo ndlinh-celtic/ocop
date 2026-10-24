@@ -3,6 +3,7 @@ import { emit } from "../platform/emit";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
+import { isUuid } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import type { RoleAssignment } from "./model";
 import { authorize } from "./policy";
@@ -20,7 +21,10 @@ export interface GrantRoleInput {
 
 const SCOPE_WITHOUT_ID: readonly ScopeType[] = ["province", "system"];
 
-/** Checks that the Phạm vi exists. Chủ thể and hội đồng have no catalogue yet (steps 3 and 4). */
+/**
+ * Checks that the Phạm vi exists. A Phạm vi Hội đồng is any recorded Hội đồng (L09 HD-01); Chủ thể are
+ * granted their Vai trò by registration (entities), never by Quản trị.
+ */
 async function assertScope(tx: Tx, scopeType: ScopeType, scopeId: string | null) {
   if (SCOPE_WITHOUT_ID.includes(scopeType)) {
     if (scopeId !== null) throw new DomainError("scope_mismatch", "Vai trò này không gắn với một đơn vị cụ thể");
@@ -31,7 +35,11 @@ async function assertScope(tx: Tx, scopeType: ScopeType, scopeId: string | null)
     if (!(await tx.wards.findById(scopeId))) throw new DomainError("scope_not_found", "Không tìm thấy xã/phường");
     return;
   }
-  throw new DomainError("scope_not_available", "Chưa thể gán phạm vi chủ thể hoặc hội đồng ở phiên bản này");
+  if (scopeType === "council") {
+    if (!isUuid(scopeId) || !(await tx.councils.findById(scopeId))) throw new DomainError("scope_not_found", "Không tìm thấy hội đồng");
+    return;
+  }
+  throw new DomainError("scope_not_available", "Vai trò Chủ thể được cấp khi đăng ký, không gán ở đây");
 }
 
 export async function scopeLabel(tx: Tx, a: Pick<RoleAssignment, "scopeType" | "scopeId">): Promise<string> {
@@ -39,6 +47,7 @@ export async function scopeLabel(tx: Tx, a: Pick<RoleAssignment, "scopeType" | "
   if (a.scopeType === "province") return "Toàn tỉnh";
   if (a.scopeType === "ward" && a.scopeId) return (await tx.wards.findById(a.scopeId))?.name ?? "Xã/phường đã xóa";
   if (a.scopeType === "entity" && a.scopeId) return (await tx.entities.findById({ kind: "entity", entityId: a.scopeId }, a.scopeId))?.name ?? "Chủ thể";
+  if (a.scopeType === "council" && a.scopeId) return (await tx.councils.findById(a.scopeId))?.name ?? "Hội đồng";
   return a.scopeId ?? "";
 }
 

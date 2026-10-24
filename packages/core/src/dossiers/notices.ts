@@ -39,6 +39,12 @@ async function activeHolders(tx: Tx, role: Role, scopeType: ScopeType, scopeId: 
   return users.filter((u): u is User => u !== null && u.status === "active");
 }
 
+/** The active Chủ tịch and Thư ký of a Hội đồng, once each. */
+async function councilLeaders(tx: Tx, councilId: string, now: Date): Promise<User[]> {
+  const users = [...(await activeHolders(tx, "council_chair", "council", councilId, now)), ...(await activeHolders(tx, "council_secretary", "council", councilId, now))];
+  return [...new Map(users.map((u) => [u.id, u])).values()];
+}
+
 /** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
 export function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
   return activeHolders(tx, "entity_owner", "entity", entityId, now);
@@ -58,6 +64,16 @@ export const NOTICE_EVENTS = [
   "dossier.forwarded",
   "dossier.returned_by_province",
   "dossier.return_requested",
+  "dossier.grading_started",
+  "dossier.advisory_report_issued",
+  "dossier.advisory_copied",
+  "dossier.members_confirmed",
+  "dossier.score_finalized",
+  "scoring.score_sheet_returned",
+  "council.assignment.replaced",
+  "council.assignment.added",
+  "dossier.advisory_return_requested",
+  "dossier.unlocked",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -285,6 +301,164 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           link: `/so/ho-so/${dossier.id}`,
         },
       ];
+    // L10 TM-03 (#57 story 52): the Sở hears of a đề nghị trả về of the Tổ tư vấn; the lý do is read in the app.
+    case "dossier.advisory_return_requested":
+      return [
+        {
+          recipients: await provinceOfficers(tx, now),
+          kind: "dossier_advisory_return_requested",
+          title: `Tổ tư vấn đề nghị trả về hồ sơ: ${product}`,
+          body: `Tổ tư vấn đề nghị Sở trả hồ sơ ${dossier.code} về xã để bổ sung. Xem lý do trong hồ sơ.`,
+          emailSubject: "Tổ tư vấn đề nghị trả về một hồ sơ OCOP",
+          emailLine: "Tổ tư vấn Hội đồng vừa đề nghị Sở trả về xã một hồ sơ OCOP đang thẩm định.",
+          link: `/so/ho-so/${dossier.id}`,
+        },
+      ];
+    // L09 HD-06 (story 40): Giao chấm tells everyone whose Phân công is in force, each with a link to their list.
+    case "dossier.grading_started": {
+      const inForce = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null);
+      const usersOf = async (kind: "member" | "advisory") => {
+        const users = await Promise.all(inForce.filter((a) => a.kind === kind).map((a) => tx.users.findById(a.userId)));
+        return users.filter((u): u is User => u?.status === "active");
+      };
+      const notice = (recipients: User[], role: string, link: string): Notice => ({
+        recipients,
+        kind: "dossier_grading_started",
+        title: `Hồ sơ được Giao chấm: ${product}`,
+        body: `Anh/chị được Phân công ${role} hồ sơ ${dossier.code}.`,
+        emailSubject: "Anh/chị được Giao chấm một hồ sơ OCOP",
+        emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
+        link,
+      });
+      return [
+        notice(await usersOf("advisory"), "thẩm định (Tổ tư vấn)", "/to-tu-van/hang-doi"),
+        notice(await usersOf("member"), "chấm điểm", "/thanh-vien/ho-so"),
+      ];
+    }
+    // L09 HD-03 (stories 38, 39): the person replaced loses the hồ sơ, so their notice names only its mã;
+    // the newcomer hears like a Giao chấm.
+    case "council.assignment.replaced":
+    case "council.assignment.added": {
+      const { kind, replacedUserId, newUserId } = event.payload;
+      const active = async (id: string | null) => {
+        const u = id ? await tx.users.findById(id) : null;
+        return u?.status === "active" ? [u] : [];
+      };
+      const role = kind === "advisory" ? "thẩm định (Tổ tư vấn)" : "chấm điểm";
+      return [
+        {
+          recipients: await active(replacedUserId),
+          kind: "dossier_assignment_replaced",
+          title: `Anh/chị không còn phụ trách hồ sơ ${dossier.code}`,
+          body: `Thư ký hội đồng đã thay người ${role} hồ sơ ${dossier.code}. Anh/chị không còn xem được hồ sơ này.`,
+          emailSubject: "Anh/chị không còn phụ trách một hồ sơ OCOP",
+          emailLine: "Thư ký hội đồng đã thay anh/chị khỏi Phân công một hồ sơ OCOP.",
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : "/thanh-vien/ho-so",
+        },
+        {
+          recipients: await active(newUserId),
+          kind: "dossier_assigned",
+          title: `Anh/chị được Phân công hồ sơ: ${product}`,
+          body: `Anh/chị được Phân công ${role} hồ sơ ${dossier.code}.`,
+          emailSubject: "Anh/chị được Phân công một hồ sơ OCOP",
+          emailLine: `Anh/chị vừa được Phân công ${role} một hồ sơ OCOP của Hội đồng.`,
+          link: kind === "advisory" ? "/to-tu-van/hang-doi" : `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
+    }
+    // L11 (story 62): each phiên bản issued tells the thành viên chấm whose Phân công is in force.
+    case "dossier.advisory_report_issued": {
+      const members = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null && a.kind === "member");
+      const users = (await Promise.all(members.map((a) => tx.users.findById(a.userId)))).filter((u): u is User => u?.status === "active");
+      return [
+        {
+          recipients: users,
+          kind: "dossier_advisory_report_issued",
+          title: `Có báo cáo Tổ tư vấn mới: ${product}`,
+          body: `Tổ tư vấn đã phát hành báo cáo cho hồ sơ ${dossier.code}.`,
+          emailSubject: "Có báo cáo Tổ tư vấn mới",
+          emailLine: "Tổ tư vấn vừa phát hành báo cáo cho một hồ sơ OCOP anh/chị được Phân công chấm.",
+          link: `/thanh-vien/ho-so/${dossier.id}/bao-cao-to-tu-van`,
+        },
+      ];
+    }
+    // L12 (story 75): a sao chép tells the thành viên chấm it wrote a dòng for, as copyAdvisory named them.
+    case "dossier.advisory_copied": {
+      const ids = "recipientUserIds" in event.payload ? (event.payload.recipientUserIds ?? []) : [];
+      const users = (await Promise.all(ids.map((id) => tx.users.findById(id)))).filter((u): u is User => u?.status === "active");
+      return [
+        {
+          recipients: users,
+          kind: "dossier_advisory_copied",
+          title: `Phiếu chấm đã được điền sẵn: ${product}`,
+          body: `Tổ tư vấn đã sao chép Điểm đề xuất vào Phiếu chấm của anh/chị cho hồ sơ ${dossier.code}.`,
+          emailSubject: "Phiếu chấm OCOP của anh/chị đã được điền sẵn",
+          emailLine: "Tổ tư vấn vừa sao chép Điểm đề xuất vào Phiếu chấm của anh/chị cho một hồ sơ OCOP.",
+          link: `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
+    }
+    // L15 Mở khóa sau chốt (story 130): the Chủ tịch and Thư ký Trả phiếu and chốt again; the lý do stays in the audit.
+    case "dossier.unlocked": {
+      if (!dossier.councilId) return [];
+      return [
+        {
+          recipients: await councilLeaders(tx, dossier.councilId, now),
+          kind: "dossier_unlocked",
+          title: `Hồ sơ được Mở khóa sau chốt: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã được Mở khóa sau chốt theo văn bản yêu cầu của Hội đồng; kết quả chốt cũ bị thay thế. Trả phiếu cho người cần chấm lại rồi chốt lại trong một Phiên họp mới.`,
+          emailSubject: "Một hồ sơ OCOP được Mở khóa sau chốt",
+          emailLine: "Một hồ sơ OCOP của Hội đồng đã được Mở khóa sau chốt và cần chốt lại.",
+          link: `/hoi-dong/chot-diem/${dossier.id}`,
+        },
+      ];
+    }
+    // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.
+    case "dossier.members_confirmed": {
+      if (!dossier.councilId) return [];
+      return [
+        {
+          recipients: await councilLeaders(tx, dossier.councilId, now),
+          kind: "dossier_members_confirmed",
+          title: `Hồ sơ Sẵn sàng chốt: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã đủ số phiếu đã xác nhận theo Quy tắc tổng hợp.`,
+          emailSubject: "Một hồ sơ OCOP đã Sẵn sàng chốt",
+          emailLine: "Một hồ sơ OCOP của Hội đồng đã đủ số phiếu đã xác nhận để đưa vào Phiên họp.",
+          link: "/hoi-dong/tien-do",
+        },
+      ];
+    }
+    // L15 HD-08 (story 121): chốt điểm, for the thành viên chấm and the Tổ tư vấn whose Phân công is in force.
+    case "dossier.score_finalized": {
+      const inForce = (await tx.assignments.current(dossier.id)).filter((a) => a.effectiveAt !== null);
+      const usersOf = async (kind: "member" | "advisory") =>
+        (await Promise.all(inForce.filter((a) => a.kind === kind).map((a) => tx.users.findById(a.userId)))).filter((u): u is User => u?.status === "active");
+      const notice = (recipients: User[], link: string): Notice => ({
+        recipients,
+        kind: "dossier_score_finalized",
+        title: `Hồ sơ đã chốt điểm: ${product}`,
+        body: `Hội đồng đã chốt điểm hồ sơ ${dossier.code}.`,
+        emailSubject: "Một hồ sơ OCOP đã được chốt điểm",
+        emailLine: "Hội đồng vừa chốt điểm một hồ sơ OCOP anh/chị được Phân công.",
+        link,
+      });
+      return [notice(await usersOf("member"), `/thanh-vien/diem-tong-hop/${dossier.id}`), notice(await usersOf("advisory"), `/to-tu-van/ho-so/${dossier.id}`)];
+    }
+    // L15 HD-05 (story 103): the thành viên given their phiếu back hears why in the app; the email has only a link.
+    case "scoring.score_sheet_returned": {
+      const user = await tx.users.findById(event.payload.userId);
+      return [
+        {
+          recipients: user?.status === "active" ? [user] : [],
+          kind: "dossier_score_sheet_returned",
+          title: `Phiếu chấm được Trả phiếu: ${product}`,
+          body: `Hội đồng Trả phiếu của anh/chị cho hồ sơ ${dossier.code} để chấm lại. Lý do: ${event.payload.reason}`,
+          emailSubject: "Phiếu chấm của anh/chị được Trả phiếu",
+          emailLine: "Hội đồng vừa Trả phiếu chấm của anh/chị cho một hồ sơ OCOP để chấm lại.",
+          link: `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
+    }
     default:
       return [];
   }

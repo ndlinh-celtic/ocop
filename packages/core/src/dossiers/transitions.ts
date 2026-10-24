@@ -26,10 +26,16 @@ export interface TransitionRule {
    * action `<action>_on_behalf`. Such a move is always a row of the timeline (story 74).
    */
   onBehalf?: true;
+  /**
+   * Mở khóa sau chốt (spec #49): the row of a Vai trò with no DataScope over hồ sơ (Quản trị). Its use case loads the
+   * hồ sơ through the narrow DossierRepo.stateRow and moves it with transitionByLookup; transition() and can() never
+   * pass it, since that Vai trò's Phạm vi covers no hồ sơ.
+   */
+  lookup?: true;
 }
 
 /** What policy needs of a hồ sơ: its state and what decides whose Phạm vi covers it. */
-export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt">;
+export type DossierRef = Pick<Dossier, "state" | "entityId" | "wardId" | "firstForwardedAt" | "firstProvinceReceivedAt" | "councilId" | "readerAssignment">;
 
 /** Actions on an existing hồ sơ; their audit action is the same string, with `_on_behalf` for Nhập hộ. */
 export const DOSSIER_ACTIONS = [
@@ -56,6 +62,23 @@ export const DOSSIER_ACTIONS = [
   "dossier.forward",
   "dossier.province_return",
   "dossier.return_request",
+  "dossier.province_receive",
+  "dossier.assignment.edit",
+  "dossier.grading.start_advisory",
+  "dossier.grading.start_direct",
+  "dossier.advisory_report.edit",
+  "dossier.advisory_report.issue",
+  "dossier.advisory_report.reissue",
+  "dossier.advisory_copy",
+  "dossier.score_sheet.edit",
+  "dossier.score_sheet.confirm",
+  "dossier.score_sheet.confirm_ready",
+  "dossier.finalize",
+  "dossier.score_sheet.return",
+  "dossier.score_sheet.return_unready",
+  "dossier.assignment.replace",
+  "dossier.advisory_return_request",
+  "dossier.unlock",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -84,6 +107,19 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.forwarded",
   "dossier.returned_by_province",
   "dossier.return_requested",
+  "dossier.province_received",
+  "dossier.assignment_changed",
+  "dossier.grading_started",
+  "dossier.advisory_report_saved",
+  "dossier.advisory_report_issued",
+  "dossier.advisory_copied",
+  "dossier.score_sheet_saved",
+  "dossier.score_sheet_confirmed",
+  "dossier.members_confirmed",
+  "dossier.score_finalized",
+  "dossier.score_sheet_returned",
+  "dossier.advisory_return_requested",
+  "dossier.unlocked",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -232,15 +268,18 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     guard: (d) => (d.receivedAt !== null ? null : new DomainError("not_received", "Hồ sơ chưa được tiếp nhận")),
   },
   // L04 (story 57): the Sở trả về a hồ sơ Đã chuyển tỉnh as a yêu cầu bổ sung of its own, so the Chủ thể
-  // answers one list; the nộp lại brings it back to Đã nộp xã for the xã to review (story 58).
-  {
-    action: "dossier.province_return",
-    from: "forwarded_to_province",
-    to: "supplement_requested",
-    roles: ["province_officer"],
-    event: "dossier.returned_by_province",
-    timeline: true,
-  },
+  // answers one list; the nộp lại brings it back to Đã nộp xã for the xã to review (story 58). L10 TM-03
+  // (#57 stories 52, 55): also while the Tổ tư vấn thẩm định it, never once Phiếu chấm are being written.
+  ...(["forwarded_to_province", "advisory_review"] as const).map(
+    (from): TransitionRule => ({
+      action: "dossier.province_return",
+      from,
+      to: "supplement_requested",
+      roles: ["province_officer"],
+      event: "dossier.returned_by_province",
+      timeline: true,
+    }),
+  ),
   // L04 (story 59): the xã asks the Sở to trả về a hồ sơ it has gửi tỉnh. The state stays; it is a matter
   // between the xã and the Sở, so not a row of the timeline the Chủ thể reads.
   {
@@ -251,7 +290,135 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     event: "dossier.return_requested",
     timeline: false,
   },
+  // L08 SO-02 (stories 15, 16, 137): Tiếp nhận tại tỉnh, once per lượt gửi tỉnh; a Sở trả về clears it
+  // (returnFromProvince), so the hồ sơ is Tiếp nhận again when it is back. That the đợt has a Hội đồng is
+  // checked by receiveAtProvince, which knows the đợt.
+  {
+    action: "dossier.province_receive",
+    from: "forwarded_to_province",
+    to: "forwarded_to_province",
+    roles: ["province_officer"],
+    event: "dossier.province_received",
+    timeline: true,
+    guard: (d) =>
+      d.provinceReceivedAt === null ? null : new DomainError("already_province_received", "Hồ sơ đã được tiếp nhận tại tỉnh trong lượt gửi tỉnh này"),
+  },
+  // L09 HD-02 (stories 25 to 29): the Thư ký writes the Phân công nháp of a hồ sơ Tiếp nhận tại tỉnh in this
+  // lượt; who may be chosen is checked by editAssignments, which knows the Hội đồng. Not on the timeline the
+  // Chủ thể reads (story 137).
+  {
+    action: "dossier.assignment.edit",
+    from: "forwarded_to_province",
+    to: "forwarded_to_province",
+    roles: ["council_secretary"],
+    event: "dossier.assignment_changed",
+    timeline: false,
+    guard: provinceReceived,
+  },
+  // L09 HD-06 (stories 30 to 33): Giao chấm, into Tổ tư vấn thẩm định or Thành viên xem xét by the Chế độ chấm
+  // of the đợt at that moment; startGrading picks the row and checks the Phân công, which it knows. Two
+  // actions because ruleFor looks a row up by action and state. A row of the Chủ thể's timeline (story 137).
+  ...(
+    [
+      ["dossier.grading.start_advisory", "advisory_review"],
+      ["dossier.grading.start_direct", "member_review"],
+    ] as const
+  ).map(
+    ([action, to]): TransitionRule => ({
+      action,
+      from: "forwarded_to_province",
+      to,
+      roles: ["council_secretary"],
+      event: "dossier.grading_started",
+      timeline: true,
+      guard: provinceReceived,
+    }),
+  ),
+  // L10 TM-02, TM-05, TM-06 (stories 44 to 50): the Tổ tư vấn Phân công write their shared nháp. Off the timeline.
+  { action: "dossier.advisory_report.edit", from: "advisory_review", to: "advisory_review", roles: ["advisory_member"], event: "dossier.advisory_report_saved", timeline: false },
+  // L10 TM-03 (#57 story 51): a Thành viên Tổ tư vấn Phân công asks the Sở to trả về; the state stays. A matter
+  // between the Tổ tư vấn and the Sở, so not on the timeline the Chủ thể reads (story 53).
+  {
+    action: "dossier.advisory_return_request",
+    from: "advisory_review",
+    to: "advisory_review",
+    roles: ["advisory_member"],
+    event: "dossier.advisory_return_requested",
+    timeline: false,
+  },
+  // L11 TM-07 (stories 56 to 59): phát hành phiên bản 1; that the actor is the Tổ trưởng is checked by issueAdvisoryReport.
+  { action: "dossier.advisory_report.issue", from: "advisory_review", to: "advisory_report_issued", roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true },
+  // L11 (stories 60, 61): phiên bản N+1 until Đã chốt điểm, which has no row.
+  ...(["advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.advisory_report.reissue", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true }),
+  ),
+  // L12 TM-08, TM-09 (stories 65 to 74): sao chép an issued phiên bản into the Phiếu chấm; the first one opens
+  // grading, later ones leave the state. That the đợt is dựa trên Tổ tư vấn is checked by copyAdvisory. Off the timeline.
+  { action: "dossier.advisory_copy", from: "advisory_report_issued", to: "member_review", roles: ["advisory_member"], event: "dossier.advisory_copied", timeline: false },
+  ...(["member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.advisory_copy", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_copied", timeline: false }),
+  ),
+  // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
+  // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.
+  // The xác nhận that brings the phiếu đã xác nhận to người chấm tối thiểu is its own action because ruleFor
+  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49). The edit rows are only
+  // checked (assertTransitionAllowed): a nháp writes the phiếu, never the hồ sơ, so their event is not emitted.
+  ...(["member_review", "member_confirmed"] as const).flatMap((from) =>
+    (
+      [
+        ["dossier.score_sheet.edit", "dossier.score_sheet_saved"],
+        ["dossier.score_sheet.confirm", "dossier.score_sheet_confirmed"],
+      ] as const
+    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["council_member"], event, timeline: false })),
+  ),
+  {
+    action: "dossier.score_sheet.confirm_ready",
+    from: "member_review",
+    to: "member_confirmed",
+    roles: ["council_member"],
+    event: "dossier.members_confirmed",
+    timeline: false,
+  },
+  // L15 HD-08 (stories 116 to 120, 137): chốt điểm of a hồ sơ Sẵn sàng chốt; that it waits in an open Phiên họp is
+  // checked by finalizeDossier, which knows the Phiên họp. A row of the Chủ thể's timeline.
+  {
+    action: "dossier.finalize",
+    from: "member_confirmed",
+    to: "score_finalized",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.score_finalized",
+    timeline: true,
+  },
+  // L15 Mở khóa sau chốt (stories 127 to 131, ADR 0008): Quản trị takes a hồ sơ Đã chốt điểm back to Sẵn sàng chốt on
+  // the Hội đồng's văn bản yêu cầu; unlockFinalized supersedes the kết quả. Off the Chủ thể's timeline (spec #49).
+  { action: "dossier.unlock", from: "score_finalized", to: "member_confirmed", roles: ["admin"], event: "dossier.unlocked", timeline: false, lookup: true },
+  // L15 HD-05 (stories 102 to 105): Trả phiếu by the Chủ tịch or Thư ký before chốt. The one that leaves the phiếu
+  // đã xác nhận below người chấm tối thiểu takes the hồ sơ back to Thành viên xem xét, its own action because ruleFor
+  // looks a row up by action and state; returnScoreSheet picks it. Off the Chủ thể's timeline (story 137).
+  ...(["member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.score_sheet.return", from, to: from, roles: ["council_chair", "council_secretary"], event: "dossier.score_sheet_returned", timeline: false }),
+  ),
+  {
+    action: "dossier.score_sheet.return_unready",
+    from: "member_confirmed",
+    to: "member_review",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.score_sheet_returned",
+    timeline: false,
+  },
+  // L09 HD-03 (stories 34 to 39): after Giao chấm and before chốt điểm, the Thư ký thay or bổ sung a thành viên
+  // chấm or Thành viên Tổ tư vấn, with a reason; replaceAssignment/addAssignment check the Phân công and phiếu.
+  // Đã chuyển tỉnh too, for a hồ sơ the Sở trả về from Tổ tư vấn thẩm định: it keeps its Phân công in force (story
+  // 54), so they are changed this way before Giao chấm again; the use cases refuse it while none is in force.
+  ...(["forwarded_to_province", "advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.assignment.replace", from, to: from, roles: ["council_secretary"], event: "dossier.assignment_changed", timeline: false }),
+  ),
 ];
+
+/** Guard of the Hội đồng rows: Tiếp nhận tại tỉnh in the current lượt gửi tỉnh. */
+function provinceReceived(d: Dossier): DomainError | null {
+  return d.provinceReceivedAt !== null ? null : new DomainError("not_province_received", "Hồ sơ chưa được tiếp nhận tại tỉnh trong lượt gửi tỉnh này");
+}
 
 /** Whether the hạn bổ sung is over at `now`; its last second still counts, like the Hạn nộp xã. */
 export const isPastSupplementDeadline = (d: Pick<Dossier, "supplementDeadline">, now: Date) =>
@@ -293,6 +460,12 @@ export function dossierInScope(scope: DataScope, d: DossierRef): boolean {
       // xã đăng ký is not on the hồ sơ: the repository checks it when it loads the row, and a row in hand
       // was loaded within this scope.
       return d.entityId === scope.entityId && (d.wardId === null || d.wardId === scope.wardId);
+    case "council":
+      // The đợt is the Hội đồng's, and the hồ sơ has been Tiếp nhận tại tỉnh at least once (story 24).
+      return d.councilId === scope.councilId && d.firstProvinceReceivedAt !== null;
+    case "assigned":
+      // The reader's own Phân công in force, of the kind of their Vai trò, loaded with the row (stories 41, 79).
+      return d.councilId === scope.councilId && d.readerAssignment === scope.as;
     case "none":
       return false;
     default: {

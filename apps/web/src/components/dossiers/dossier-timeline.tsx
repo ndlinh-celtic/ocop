@@ -15,6 +15,15 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.ward_transfer": "Chuyển xã",
   "dossier.forward": "Xã gửi tỉnh",
   "dossier.province_return": "Sở trả về để bổ sung",
+  "dossier.province_receive": "Sở tiếp nhận tại tỉnh",
+  // L09 HD-06 (story 137): the milestone only; who is Phân công never shows here.
+  "dossier.grading.start_advisory": "Hội đồng giao thẩm định",
+  "dossier.grading.start_direct": "Hội đồng giao chấm",
+  // L11 TM-07 (#56): the phát hành, without the Điểm đề xuất or the lý do of a phiên bản mới.
+  "dossier.advisory_report.issue": "Tổ tư vấn phát hành báo cáo",
+  "dossier.advisory_report.reissue": "Tổ tư vấn phát hành báo cáo phiên bản mới",
+  // L15 HD-08 (story 137): chốt điểm, without the points.
+  "dossier.finalize": "Hội đồng chốt điểm",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

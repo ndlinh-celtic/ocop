@@ -55,7 +55,7 @@ export async function DossierEditor({ actor, dossierId, onBehalf, back, notice }
             {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
           </h1>
           <p className="text-sm text-text-2">
-            Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
+            Mã hồ sơ <b className="font-mono">{dossier.code}</b> · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
             {dossier.criteriaSet.name}, căn cứ {dossier.criteriaVersion.legalBasis}
           </p>
           {dossier.copiedFrom && (

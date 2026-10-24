@@ -4,11 +4,20 @@ import { ROLE_LABEL, ROLES, SCOPE_OF_ROLE, type Role } from "@ocop/core";
 import { useActionState, useState } from "react";
 import { grantRoleAction, type GrantState } from "./actions";
 
-/** Chủ thể and hội đồng scopes have no catalogue until steps 3 and 4. */
-const GRANTABLE = ROLES.filter((r) => ["ward", "province", "system"].includes(SCOPE_OF_ROLE[r]));
+/** Chủ thể get their Vai trò by registering; every other Vai trò is granted here. */
+const GRANTABLE = ROLES.filter((r) => SCOPE_OF_ROLE[r] !== "entity");
 const DEFAULT_ROLE: Role = "ward_officer";
 
-export function GrantRoleForm({ userId, wards }: { userId: string; wards: { id: string; code: string; name: string }[] }) {
+export function GrantRoleForm({
+  userId,
+  wards,
+  councils,
+}: {
+  userId: string;
+  wards: { id: string; code: string; name: string }[];
+  /** L09 HD-01 story 6: a Phạm vi Hội đồng is chosen by the Hội đồng's tên. */
+  councils: { id: string; name: string; decisionNumber: string }[];
+}) {
   const [role, setRole] = useState<Role>(DEFAULT_ROLE);
   const [state, action, pending] = useActionState<GrantState, FormData>(async (prev, form) => {
     const next = await grantRoleAction(userId, prev, form);
@@ -41,9 +50,26 @@ export function GrantRoleForm({ userId, wards }: { userId: string; wards: { id: 
           </select>
         </label>
       )}
+      {SCOPE_OF_ROLE[role] === "council" && (
+        <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+          Hội đồng
+          <select name="scopeId" required className="rounded-md border border-line-strong bg-surface px-3 py-2">
+            <option value="">{councils.length === 0 ? "Chưa có hội đồng nào được Sở ghi nhận" : "Chọn hội đồng"}</option>
+            {councils.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} (QĐ {c.decisionNumber})
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="flex flex-col gap-1 text-sm font-medium">
         Hiệu lực từ (bỏ trống: ngay)
         <input name="validFrom" type="date" className="rounded-md border border-line-strong bg-surface px-3 py-2" />
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-medium">
+        Hiệu lực đến (bỏ trống: không thời hạn)
+        <input name="validTo" type="date" className="rounded-md border border-line-strong bg-surface px-3 py-2" />
       </label>
       <button type="submit" disabled={pending} className="rounded-lg bg-brand text-brand-ink px-4 py-2 font-semibold disabled:opacity-60">
         Gán vai trò

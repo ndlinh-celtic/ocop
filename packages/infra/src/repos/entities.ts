@@ -2,6 +2,7 @@ import type { DataScope, Entity, EntityRepo, LegalDocumentRecord, LegalDocumentR
 import { and, asc, eq, isNull, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { dossier, entity, file, legalDocument, legalDocumentType } from "../db/schema";
+import { inScope as dossierInScopeSql } from "./dossiers";
 
 /**
  * The reader's DataScope as a WHERE clause: rows outside it are never loaded (#14). The switch is
@@ -24,6 +25,10 @@ function inScope(scope: DataScope): SQL {
     case "on_behalf":
       // Nhập hộ (story 75): the one Chủ thể, only while it is đăng ký ở xã of the officer.
       return and(eq(entity.id, scope.entityId), eq(entity.wardId, scope.wardId))!;
+    case "council":
+    case "assigned":
+      // A Chủ thể with a hồ sơ the Hội đồng reader sees (spec #49): the same rule as the hồ sơ repository.
+      return sql`exists (select 1 from ${dossier} where ${dossier.entityId} = ${entity.id} and ${dossierInScopeSql(scope)})`;
     case "none":
       return sql`false`;
     default: {

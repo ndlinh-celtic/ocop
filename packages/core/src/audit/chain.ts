@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { canonical } from "../shared/canonical";
 import { auditEntry, type AuditEntry } from "./audit";
 import type { AuditSeal } from "./chain-repo";
 import { authorize } from "../identity/policy";
@@ -9,18 +10,6 @@ export const GENESIS_HASH = createHash("sha256").update("ocop-audit-genesis").di
 /** Rows younger than this may still belong to transactions that have not committed (ADR 0002). */
 export const SEAL_DELAY_MS = 30_000;
 const BATCH = 5000;
-
-/** Key-sorted JSON so the same row always hashes the same, whatever order the driver returns keys in. */
-function canonical(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
-  if (value instanceof Date) return JSON.stringify(value.toISOString());
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  const obj = value as Record<string, unknown>;
-  return `{${Object.keys(obj)
-    .sort()
-    .map((k) => `${JSON.stringify(k)}:${canonical(obj[k])}`)
-    .join(",")}}`;
-}
 
 export function chainHash(prevHash: string, row: AuditEntry): string {
   return createHash("sha256").update(prevHash).update("\n").update(canonical(row)).digest("hex");

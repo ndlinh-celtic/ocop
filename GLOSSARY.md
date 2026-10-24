@@ -176,6 +176,64 @@ _Avoid_: Phiếu tự chấm, điểm tự chấm (khi nói về văn bản)
 Báo cáo của UBND xã/phường về một hồ sơ, xác nhận các nội dung thuộc thẩm quyền địa bàn (Mẫu 03 hoặc mẫu của tỉnh); sinh từ mẫu, ký số ngoài hệ thống rồi tải lên; bắt buộc trước khi gửi tỉnh. Mỗi hồ sơ một báo cáo.
 _Avoid_: Biên bản sơ bộ, biên bản đánh giá sơ bộ, văn bản đề xuất (theo lô, làm ngoài hệ thống)
 
+## Cấp tỉnh và chấm điểm
+
+**Hội đồng**:
+Hội đồng đánh giá, phân hạng cấp tỉnh do Chủ tịch UBND tỉnh quyết định thành lập, gồm Chủ tịch, Thư ký, các Thành viên hội đồng và Tổ tư vấn; mỗi Đợt đánh giá được gán đúng một Hội đồng, một Hội đồng có thể phục vụ nhiều đợt.
+_Avoid_: Hội đồng của đợt (khi nói về thực thể), council
+
+**Tổ tư vấn**:
+Nhóm Thành viên Tổ tư vấn thuộc một Hội đồng, thành lập cùng quyết định; thẩm định hồ sơ và đề xuất điểm, không chấm điểm chính thức.
+_Avoid_: Tổ thẩm định, Tổ giúp việc, Tổ thường trực
+
+**Tổ trưởng**:
+Thành viên Tổ tư vấn được Hội đồng chỉ định là người duy nhất phát hành Báo cáo Tổ tư vấn; là chức danh trong Hội đồng, không phải Vai trò.
+_Avoid_: Trưởng nhóm, Vai trò Tổ trưởng
+
+**Tiếp nhận tại tỉnh**:
+Việc Cán bộ Sở ghi nhận đã nhận một hồ sơ Đã chuyển tỉnh để đưa vào phân công; không phải một trạng thái, mỗi lượt gửi tỉnh có một lần.
+_Avoid_: Sở duyệt, Tiếp nhận (khi nói về xã)
+
+**Giao chấm**:
+Việc Thư ký hội đồng chốt các Phân công của một hồ sơ đã Tiếp nhận tại tỉnh và đưa hồ sơ vào chấm theo Chế độ chấm của đợt.
+_Avoid_: Phân công (khi nói về việc bắt đầu chấm), mở chấm
+
+**Báo cáo Tổ tư vấn**:
+Báo cáo thẩm định chung của Tổ tư vấn cho một hồ sơ: đánh giá minh chứng và Mức điểm đề xuất theo từng Tiêu chí, kèm căn cứ và nhận xét; mỗi lần phát hành là một phiên bản bất biến.
+_Avoid_: Báo cáo thẩm tra, báo cáo thẩm định (khi lẫn với Báo cáo đánh giá cấp xã), phiếu Tổ tư vấn
+
+**Điểm đề xuất**:
+Mức điểm Tổ tư vấn đề xuất cho một Tiêu chí trong Báo cáo Tổ tư vấn; không phải điểm chính thức.
+_Avoid_: Điểm Tổ tư vấn (khi nói như điểm chính thức)
+
+**Phiếu chấm**:
+Bản chấm chính thức của một Thành viên hội đồng cho một hồ sơ: một Mức điểm cho mỗi Tiêu chí, kèm nhận xét; có thể được điền sẵn từ Báo cáo Tổ tư vấn.
+_Avoid_: Phiếu điểm, bảng điểm, phiếu đánh giá
+
+**Sẵn sàng chốt**:
+Tình trạng của hồ sơ khi số Phiếu chấm đã xác nhận đạt số người chấm tối thiểu của Quy tắc tổng hợp; tương ứng trạng thái Thành viên xác nhận.
+_Avoid_: Đủ phiếu (mơ hồ giữa tối thiểu và tất cả)
+
+**Vắng**:
+Phiếu chấm chưa được xác nhận khi hội đồng chốt điểm; không tính vào điểm tổng hợp và được ghi vào biên bản.
+_Avoid_: Bỏ phiếu trắng, phiếu hủy
+
+**Trả phiếu**:
+Việc Chủ tịch hoặc Thư ký hội đồng, trước khi chốt điểm, yêu cầu một thành viên chấm lại một Phiếu chấm đã xác nhận, có lý do; phiếu cũ giữ nguyên và bị thay bằng lần chấm mới.
+_Avoid_: Mở khóa phiếu, sửa phiếu đã xác nhận
+
+**Cờ chênh lệch**:
+Dấu hiệu trên hồ sơ khi tổng điểm cao nhất và thấp nhất giữa các Phiếu chấm đã xác nhận lệch quá ngưỡng của Quy tắc tổng hợp; chỉ để hội đồng thảo luận, không chặn chốt.
+_Avoid_: Điểm lệch (khi nói về cờ)
+
+**Phiên họp**:
+Một cuộc họp của Hội đồng trong một Đợt đánh giá, xét nhiều hồ sơ Sẵn sàng chốt; bảng tổng hợp điểm, biên bản và dự thảo quyết định công nhận lập theo Phiên họp, còn chốt điểm làm theo từng hồ sơ.
+_Avoid_: Cuộc họp (khi nói chung), kỳ họp
+
+**Mở khóa sau chốt**:
+Việc Quản trị mở lại điểm đã chốt của một hồ sơ theo văn bản yêu cầu của Hội đồng, có lý do; xử lý sự cố, không phải nghiệp vụ thường.
+_Avoid_: Sửa điểm, hủy chốt
+
 ## Quan hệ
 
 - Một **Chủ thể** có đúng một **Người dùng** đại diện ở giai đoạn phát hành 1, liên kết qua một **Phân vai** Chủ thể.
@@ -205,3 +263,18 @@ _Avoid_: Biên bản sơ bộ, biên bản đánh giá sơ bộ, văn bản đ�
 - **Chủ thể** tự đổi xã đăng ký; hồ sơ đã nộp không đổi xã. Cán bộ xã thấy Chủ thể đăng ký ở xã mình hoặc có hồ sơ đang thuộc xã mình, nhưng chỉ **Nhập hộ** cho Chủ thể đăng ký ở xã mình. Cán bộ Sở thấy Chủ thể có ít nhất một hồ sơ đã lên tỉnh.
 - Mã số thuế hoặc số định danh của **Chủ thể** là duy nhất; trùng thì Chủ thể khôi phục qua Cán bộ xã, hệ thống không tiết lộ tài khoản cũ.
 - **Chế độ chấm** do Sở đặt khi tạo đợt; Thư ký hội đồng đổi được cho đến khi đợt có phiếu chấm đầu tiên.
+- Thành viên của **Hội đồng** và **Tổ tư vấn** là các **Phân vai** còn hiệu lực trên Phạm vi Hội đồng đó; không có danh sách thành viên nào khác. Cán bộ Sở ghi nhận Hội đồng (kèm quyết định thành lập và **Tổ trưởng**), Quản trị cấp Phân vai.
+- **Phân công** chỉ có hiệu lực từ khi **Giao chấm**; Giao chấm cần **Tiếp nhận tại tỉnh**, đủ số người chấm tối thiểu, và ở chế độ dựa trên Tổ tư vấn có ít nhất một Thành viên Tổ tư vấn. Sau Giao chấm, Thư ký vẫn thay được một thành viên (có lý do) đến khi người đó xác nhận Phiếu chấm.
+- Một Người dùng có thể vừa là Thành viên Tổ tư vấn vừa là Thành viên hội đồng của cùng Hội đồng, nhưng không được Phân công cả hai vai trên cùng một hồ sơ.
+- Mỗi hồ sơ có một **Báo cáo Tổ tư vấn** chung; mọi Thành viên Tổ tư vấn được Phân công cùng soạn nháp, chỉ **Tổ trưởng** phát hành. Sửa sau phát hành là phát hành phiên bản tiếp theo, có lý do.
+- Tổ tư vấn và Thành viên hội đồng đều chọn **Mức điểm**, không nhập điểm số tự do.
+- Tổ tư vấn đề nghị Sở trả hồ sơ về xã khi đang thẩm định; hồ sơ lên tỉnh lại giữ Phân công và nháp Báo cáo Tổ tư vấn, nhưng phải Tiếp nhận tại tỉnh và Giao chấm lại. Từ Thành viên xem xét trở đi hồ sơ không trả về xã được.
+- Phiếu chấm còn chưa xác nhận khi chốt điểm là **Vắng**.
+- Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký trước đó chỉ thấy tiến độ. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên.
+- **Hạng sao** tính từ điểm tổng hợp, hội đồng không sửa tay; muốn đổi hạng thì **Trả phiếu** để chấm lại trước khi chốt.
+- Sao chép lại từ một phiên bản Báo cáo Tổ tư vấn mới cập nhật từng Tiêu chí mà thành viên chưa sửa; Tiêu chí đã sửa được giữ và báo lại, Phiếu chấm đã xác nhận được giữ toàn bộ.
+- Chủ tịch hoặc Thư ký chốt điểm từng hồ sơ Sẵn sàng chốt, có **Xác thực lại**; Phiếu chấm chưa xác nhận lúc đó là **Vắng**.
+- **Mở khóa sau chốt** đưa hồ sơ về Thành viên xác nhận và giữ kết quả cũ là bị thay thế; Quản trị không sửa điểm. Chỉ mở khóa được trước khi hồ sơ có kết quả công nhận hoặc không đạt.
+- Mỗi **Đợt đánh giá** được Cán bộ Sở gán một **Hội đồng** trước khi Tiếp nhận tại tỉnh; đổi được đến lần Giao chấm đầu tiên của đợt.
+- Chủ tịch và Thư ký thấy hồ sơ của các đợt gán cho Hội đồng mình từ khi Tiếp nhận tại tỉnh; Thành viên hội đồng và Thành viên Tổ tư vấn chỉ thấy hồ sơ mình có **Phân công** đã Giao chấm và chưa bị thay.
+- Ở chế độ dựa trên Tổ tư vấn, thành viên chỉ chấm được sau lần sao chép đầu tiên từ **Báo cáo Tổ tư vấn** đã phát hành; Tổ tư vấn phát hành phiên bản mới được đến khi chốt điểm.

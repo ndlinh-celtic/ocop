@@ -21,6 +21,7 @@ import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignIn
 import { handleEvent } from "./platform/consumers";
 import { listDeliveries } from "./platform/deliveries";
 import { configureChecklist } from "./rounds/checklist";
+import { assignCouncil } from "./rounds/council";
 import { closeDueSubmissions } from "./rounds/close-due";
 import { changeAggregationRule, changeGradingMode, endRound } from "./rounds/configure";
 import { extendDeadline, listDeadlineExtensions } from "./rounds/extension";
@@ -40,7 +41,8 @@ import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
-import { listReturnRequests, requestReturn } from "./dossiers/return-request";
+import { listAdvisoryReturnRequests, listReturnRequests, requestAdvisoryReturn, requestReturn } from "./dossiers/return-request";
+import { receiveAtProvince } from "./dossiers/province";
 import { closeUnsupplemented, listSupplementRequests, requestSupplement, respondSupplementItem, returnFromProvince } from "./dossiers/supplement";
 import { rejectDossier, transferWard } from "./dossiers/reject-transfer";
 import { roundTransferTargets, transferRound } from "./dossiers/round-transfer";
@@ -48,6 +50,20 @@ import { assessChecklist, dossierChecklist } from "./dossiers/checklist";
 import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, generateWardReport, wardReportStatus } from "./dossiers/ward-report";
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
+import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
+import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvisoryReport, reissueAdvisoryReport, saveAdvisoryDraft } from "./scoring/advisory-report";
+import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
+import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
+import { startGrading } from "./councils/grading";
+import { addAssignment, assignmentHistory, replaceAssignment } from "./councils/replace";
+import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
+import { gradingProgress, readDossierScores } from "./scoring/read";
+import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
+import { finalizeDossier } from "./scoring/finalize";
+import { attachMeetingMinutes, downloadMeetingMinutes, generateMeetingDocument } from "./scoring/meeting-documents";
+import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
+import { finalizedResults, unlockFinalized, unlockTarget } from "./scoring/unlock";
+import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -134,6 +150,7 @@ export function createCore(deps: CoreDeps) {
       extendDeadline: extendDeadline(deps),
       listDeadlineExtensions: listDeadlineExtensions(deps),
       configureChecklist: configureChecklist(deps),
+      assignCouncil: assignCouncil(deps),
     },
     entities: {
       register: registerEntity(deps),
@@ -176,8 +193,11 @@ export function createCore(deps: CoreDeps) {
       downloadSubmissionDocument: downloadSubmissionDocument(deps),
       requestSupplement: requestSupplement(deps),
       returnFromProvince: returnFromProvince(deps),
+      receiveAtProvince: receiveAtProvince(deps),
       requestReturn: requestReturn(deps),
       returnRequests: listReturnRequests(deps),
+      requestAdvisoryReturn: requestAdvisoryReturn(deps),
+      advisoryReturnRequests: listAdvisoryReturnRequests(deps),
       respondSupplementItem: respondSupplementItem(deps),
       supplementRequests: listSupplementRequests(deps),
       closeUnsupplemented: closeUnsupplemented(deps),
@@ -190,6 +210,58 @@ export function createCore(deps: CoreDeps) {
       forwardToProvince: forwardToProvince(deps),
       provinceOverview: provinceOverview(deps),
       sendDueReminders: sendDueReminders(deps),
+    },
+    councils: {
+      create: createCouncil(deps),
+      update: updateCouncil(deps),
+      setLeader: setCouncilLeader(deps),
+      list: listCouncils(deps),
+      get: getCouncil(deps),
+      downloadDecision: downloadCouncilDecision(deps),
+      editAssignments: editAssignments(deps),
+      assignments: listAssignments(deps),
+      assignmentCandidates: assignmentCandidates(deps),
+      startGrading: startGrading(deps),
+      replaceAssignment: replaceAssignment(deps),
+      addAssignment: addAssignment(deps),
+      assignmentHistory: assignmentHistory(deps),
+    },
+    scoring: {
+      readDossierScores: readDossierScores(deps),
+      saveScoreSheet: saveScoreSheet(deps),
+      confirmScoreSheet: confirmScoreSheet(deps),
+      gradingProgress: gradingProgress(deps),
+      // L10, L11 Báo cáo Tổ tư vấn (#56).
+      advisoryReport: advisoryReport(deps),
+      saveAdvisoryDraft: saveAdvisoryDraft(deps),
+      issueAdvisoryReport: issueAdvisoryReport(deps),
+      reissueAdvisoryReport: reissueAdvisoryReport(deps),
+      advisoryReportVersions: advisoryReportVersions(deps),
+      downloadAdvisoryFile: downloadAdvisoryFile(deps),
+      // L15 Phiên họp and chốt điểm (#60).
+      createMeeting: createMeeting(deps),
+      addMeetingDossiers: addMeetingDossiers(deps),
+      removeMeetingDossier: removeMeetingDossier(deps),
+      closeMeeting: closeMeeting(deps),
+      listMeetings: listMeetings(deps),
+      getMeeting: getMeeting(deps),
+      meetingOf: meetingOf(deps),
+      finalize: finalizeDossier(deps),
+      // L15 HD-09 văn bản họp and biên bản đã ký (#62).
+      generateMeetingDocument: generateMeetingDocument(deps),
+      attachMeetingMinutes: attachMeetingMinutes(deps),
+      downloadMeetingMinutes: downloadMeetingMinutes(deps),
+      // L15 Trả phiếu (#61).
+      returnScoreSheet: returnScoreSheet(deps),
+      scoreSheetHistory: scoreSheetHistory(deps),
+      // L15 Mở khóa sau chốt (#63).
+      unlockTarget: unlockTarget(deps),
+      unlockFinalized: unlockFinalized(deps),
+      finalizedResults: finalizedResults(deps),
+      // L12 sao chép sang Phiếu chấm (#58).
+      advisoryCopyBoard: advisoryCopyBoard(deps),
+      previewAdvisoryCopy: previewAdvisoryCopy(deps),
+      copyAdvisory: copyAdvisory(deps),
     },
     system: {
       recordStartup: recordStartup(deps),
