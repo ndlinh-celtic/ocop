@@ -361,7 +361,8 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
   // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.
   // The xác nhận that brings the phiếu đã xác nhận to người chấm tối thiểu is its own action because ruleFor
-  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49).
+  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49). The edit rows are only
+  // checked (assertTransitionAllowed): a nháp writes the phiếu, never the hồ sơ, so their event is not emitted.
   ...(["member_review", "member_confirmed"] as const).flatMap((from) =>
     (
       [

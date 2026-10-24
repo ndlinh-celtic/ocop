@@ -35,17 +35,8 @@ export interface TransitionInput {
  * the row; the version check then refuses the one that arrives second with a stale version.
  */
 export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, before: Dossier, input: TransitionInput): Promise<Dossier> {
-  if (!dossierInScope(dataScopeOf(actor), before)) throw dossierNotFound();
-  const rule = ruleFor(input.action, before.state);
-  if (!rule) {
-    if (!TRANSITIONS.some((r) => r.action === input.action && ruleAllows(r, actor))) throw forbidden();
-    throw new DomainError("invalid_state", `Không thể thực hiện thao tác này khi hồ sơ đang ở trạng thái ${DOSSIER_STATE_LABEL[before.state]}`);
-  }
-  if (!can(actor, input.action, before)) throw forbidden();
-  if (input.expectedVersion !== before.version) throw versionConflict();
   const now = deps.clock.now();
-  const refusal = rule.guard?.(before, now);
-  if (refusal) throw refusal;
+  const rule = allowedRule(actor, before, input.action, now, input.expectedVersion);
 
   const after: Dossier = { ...before, ...input.patch, state: rule.to, version: before.version + 1, updatedAt: now };
   if (!(await tx.dossiers.update(after, before.version))) throw versionConflict();
@@ -60,6 +51,29 @@ export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, befor
     notify: input.notify,
   });
   return after;
+}
+
+/**
+ * The checks transition() makes, for a same-state row whose use case changes something beside the hồ sơ and so writes
+ * nothing on it (a nháp of a Phiếu chấm, which has its own version): Phạm vi, the row from the current state, the Vai
+ * trò and the guard. `before` must still have been loaded with `tx.dossiers.lock(scope, id)`.
+ */
+export function assertTransitionAllowed(actor: UserActor, before: Dossier, action: DossierAction, now: Date): void {
+  allowedRule(actor, before, action, now, before.version);
+}
+
+function allowedRule(actor: UserActor, before: Dossier, action: DossierAction, now: Date, expectedVersion: number) {
+  if (!dossierInScope(dataScopeOf(actor), before)) throw dossierNotFound();
+  const rule = ruleFor(action, before.state);
+  if (!rule) {
+    if (!TRANSITIONS.some((r) => r.action === action && ruleAllows(r, actor))) throw forbidden();
+    throw new DomainError("invalid_state", `Không thể thực hiện thao tác này khi hồ sơ đang ở trạng thái ${DOSSIER_STATE_LABEL[before.state]}`);
+  }
+  if (!can(actor, action, before)) throw forbidden();
+  if (expectedVersion !== before.version) throw versionConflict();
+  const refusal = rule.guard?.(before, now);
+  if (refusal) throw refusal;
+  return rule;
 }
 
 /**

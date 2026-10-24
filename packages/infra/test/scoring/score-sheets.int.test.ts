@@ -90,14 +90,16 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     expect(again.unscored).toEqual(["3.1"]);
   });
 
-  it("is audited with outbox in the same transaction, off the Chủ thể's timeline", async () => {
+  it("is audited, leaves the hồ sơ and its version alone, emits no event and stays off the Chủ thể's timeline", async () => {
     const d = await w.graded([m(0), m(1)]);
+    const before = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
     await save(m(0), d.dossierId, 1, [{ code: "1.1", points: 20 }]);
 
     const [row] = await w.t.app.audit.search(await w.f.admin(), { action: ["dossier.score_sheet.edit"], targetId: d.dossierId });
     expect(row).toMatchObject({ actorUserId: m(0).userId, actorRole: "council_member", metadata: { criterionIds: [w.criterionId("1.1")] } });
     const outbox = await w.db.admin.query("SELECT count(*)::int AS n FROM platform.outbox WHERE type = 'dossier.score_sheet_saved' AND payload->>'dossierId' = $1", [d.dossierId]);
-    expect(outbox.rows[0].n).toBe(1);
+    expect(outbox.rows[0].n).toBe(0);
+    expect((await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version).toBe(before.version);
     const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
     expect(timeline.map((e) => e.action)).not.toContain("dossier.score_sheet.edit");
   });
