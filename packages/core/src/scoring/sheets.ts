@@ -1,8 +1,9 @@
+import { auditEntry } from "../audit/audit";
 import { ownUpload } from "../files/attach";
 import { isMemberInForce, type Assignment } from "../councils/assignment-model";
 import { lockDossier } from "../dossiers/edit";
 import { versionConflict, type Dossier, type DossierState } from "../dossiers/model";
-import { transition } from "../dossiers/transition";
+import { assertTransitionAllowed, transition } from "../dossiers/transition";
 import { assembleSet, type StoredCriterion } from "../criteria/detail";
 import { criteriaOf } from "../criteria/model";
 import type { SetRows } from "../criteria/version";
@@ -18,8 +19,10 @@ import type { ScoreSheet } from "./score-sheet-model";
 /*
  * L14 TV-01, TV-05, TV-06, TV-07 (spec #49 stories 83, 86 to 91, 94): a thành viên chấm writes and xác nhận
  * the Phiếu chấm of their own Phân công. The hồ sơ is locked for the write, so writes on it queue; the
- * optimistic lock the thành viên sees is the phiếu's own version, so thành viên chấm the same hồ sơ at once
- * without refusing one another. A phiếu đã xác nhận is never changed (ADR 0008; the database refuses it too).
+ * optimistic lock the thành viên sees is the phiếu's own version. Saving a nháp checks the hồ sơ's state, Vai trò and
+ * Phạm vi as transition() would but writes nothing on the hồ sơ (no version bump, timeline row or outbox event; an
+ * audit row only), so thành viên chấm refuse neither one another nor the Chủ tịch, Thư ký or Tổ tư vấn holding the
+ * hồ sơ version. Xác nhận is a transition. A phiếu đã xác nhận is never changed (ADR 0008; the database refuses it too).
  */
 
 const MAX_COMMENT = 10_000;
@@ -82,17 +85,13 @@ export function saveScoreSheet(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const { sheet } = await ownSheet(tx, actor, before.id);
-      // transition() first, so a wrong state or Vai trò is reported as such. The hồ sơ version is not the
-      // thành viên's concern: the lock queues writers and the phiếu has its own version.
-      await transition(deps, tx, actor, before, {
-        action: "dossier.score_sheet.edit",
-        expectedVersion: before.version,
-        metadata: { scoreSheetId: sheet?.id ?? null, criterionIds: lines.map((l) => l.criterionId) },
-      });
+      const now = deps.clock.now();
+      // The row checks first, so a wrong state or Vai trò is reported as such. A nháp changes the phiếu, not the hồ
+      // sơ: no transition, so the hồ sơ version others hold (Chốt điểm, Trả phiếu, Thay thành viên) stays valid.
+      assertTransitionAllowed(actor, before, "dossier.score_sheet.edit", now);
       const current = writable(sheet, input.expectedVersion);
       const rows = await setRowsOf(tx, before);
       const stored = new Map((await tx.scoreSheets.lines(current.id)).map((l) => [l.criterionId, l]));
-      const now = deps.clock.now();
       for (const l of lines) {
         if (!isUuid(l.criterionId) || !rows.criteria.some((c) => c.id === l.criterionId)) {
           throw new DomainError("criterion_not_in_set", "Tiêu chí không thuộc Bộ tiêu chí của hồ sơ");
@@ -123,6 +122,16 @@ export function saveScoreSheet(deps: CoreDeps) {
       }
       const version = current.version + 1;
       if (!(await tx.scoreSheets.update({ ...current, version, updatedAt: now }, current.version))) throw versionConflict();
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, {
+          action: "dossier.score_sheet.edit",
+          targetType: "dossier",
+          targetId: before.id,
+          before: { scoreSheetVersion: current.version },
+          after: { scoreSheetVersion: version },
+          metadata: { scoreSheetId: current.id, criterionIds: lines.map((l) => l.criterionId) },
+        }),
+      );
       return { version };
     });
   };

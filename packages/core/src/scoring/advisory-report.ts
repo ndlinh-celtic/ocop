@@ -23,6 +23,7 @@ import {
   type AdvisoryReportVersion,
   type EvidenceAssessment,
 } from "./advisory-report-model";
+import { setRowsOf } from "./sheets";
 
 /*
  * L10 TM-01, TM-02, TM-05, TM-06 and L11 TM-07, TM-12 (#56, spec #49 stories 42 to 50, 56 to 64): the Báo cáo
@@ -101,13 +102,6 @@ export interface AdvisoryReportWorkspace {
   versions: AdvisoryReportVersionSummary[];
 }
 
-/** The Bộ tiêu chí of the hồ sơ, fixed at creation in a published Phiên bản tiêu chí. */
-async function setOf(tx: Tx, dossier: Dossier): Promise<SetRows> {
-  const found = await tx.criteriaVersions.findSet(dossier.criteriaSetId);
-  if (!found) throw new Error(`criteria set ${dossier.criteriaSetId} of dossier ${dossier.id} is missing`);
-  return found.rows;
-}
-
 const blankLine = (criterionId: string): AdvisoryReportLine => ({ criterionId, levelId: null, basis: "", evidenceFileIds: [], evidenceAssessment: null });
 
 /** Checks the content against the hồ sơ's Bộ tiêu chí and newest Phiên bản nộp, and returns it as lines in sheet order. */
@@ -148,7 +142,7 @@ async function validContent(tx: Tx, actor: UserActor, rows: SetRows, latest: Sub
 
 /** The nháp joined with the Bộ tiêu chí: lines in sheet order, the estimate and what phát hành still lacks. */
 async function compose(tx: Tx, dossier: Dossier, draft: Pick<AdvisoryReportDraft, "lines">, latest: Submission | null) {
-  const rows = await setOf(tx, dossier);
+  const rows = await setRowsOf(tx, dossier);
   const thresholds = await tx.criteriaVersions.thresholds(dossier.criteriaVersionId);
   const set = assembleSet(rows);
   const lineOf = new Map(draft.lines.map((l) => [l.criterionId, l]));
@@ -252,7 +246,7 @@ export function saveAdvisoryDraft(deps: CoreDeps) {
       // The nháp's own version is the lock between colleagues; the hồ sơ row lock queues them.
       const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.edit", expectedVersion: before.version, metadata: { draftVersion: stored.version + 1 } });
       if (input.draftVersion !== stored.version) throw versionConflict();
-      const content = await validContent(tx, actor, await setOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
+      const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
       const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: after.updatedAt, updatedBy: actor.userId };
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();
       return { draftVersion: draft.version };
@@ -356,7 +350,7 @@ export function reissueAdvisoryReport(deps: CoreDeps) {
       await assertLeader(tx, actor, before, now);
       if (versions.length === 0) throw new DomainError("no_issued_version", "Hồ sơ chưa có Báo cáo Tổ tư vấn đã phát hành");
       const stored = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
-      const content = await validContent(tx, actor, await setOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
+      const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
       const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: now, updatedBy: actor.userId };
       const number = await issue(deps, tx, actor, before, draft, reason, now);
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();

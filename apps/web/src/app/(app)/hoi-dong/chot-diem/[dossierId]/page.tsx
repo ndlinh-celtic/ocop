@@ -26,11 +26,16 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
     app().core.scoring.readDossierScores(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "progress_only")) notFound();
-  const meeting = scores.kind === "full" && !scores.result ? await app().core.scoring.meetingOf(actor, { dossierId }) : null;
-  const history = await app().core.scoring.scoreSheetHistory(actor, { dossierId });
+  const [meeting, history, results, readyDossiers] = await Promise.all([
+    scores.kind === "full" && !scores.result ? app().core.scoring.meetingOf(actor, { dossierId }) : null,
+    app().core.scoring.scoreSheetHistory(actor, { dossierId }),
+    app().core.scoring.finalizedResults(actor, { dossierId }),
+    // Ids only, for Hồ sơ trước sau: the list, not gradingProgress, which computes every aggregate.
+    app().core.dossiers.list(actor, { state: "member_confirmed" }),
+  ]);
   // L15 Mở khóa sau chốt (#63, story 130): earlier kết quả chốt, superseded, with the request that superseded them.
-  const superseded = (await app().core.scoring.finalizedResults(actor, { dossierId })).filter((r) => r.supersededAt !== null);
-  const ready = (await app().core.scoring.gradingProgress(actor)).filter((r) => r.state === "member_confirmed").map((r) => r.dossierId);
+  const superseded = results.filter((r) => r.supersededAt !== null);
+  const ready = readyDossiers.map((d) => d.id);
   const at = ready.indexOf(dossierId);
   const prev = at > 0 ? ready[at - 1] : undefined;
   const next = at >= 0 && at < ready.length - 1 ? ready[at + 1] : undefined;

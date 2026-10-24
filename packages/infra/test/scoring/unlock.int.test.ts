@@ -130,6 +130,34 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
     expect((await full(w.A.secretary, d.dossierId)).result).toMatchObject({ n: 2, absent: [] });
   });
 
+  it("lets the Thư ký add the hồ sơ again to the open Phiên họp it was chốt in, and chốt it there as kết quả 2 (spec #49, ADR 0008)", async () => {
+    const d = await w.graded([m(0), m(1)]);
+    await scoreAndConfirm(m(0), d.dossierId, [40, 25, 35]);
+    await scoreAndConfirm(m(1), d.dossierId, [20, 25, 0]);
+    const { meetingId } = await meetingWith(w.A.secretary, "Phiên họp còn mở", [d.dossierId]);
+    await finalize(w.A.secretary, d.dossierId);
+    await unlock(d.dossierId);
+
+    const before = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
+    expect(before.dossiers.find((x) => x.dossierId === d.dossierId)!.result).toBeNull();
+    expect(before.finalizedCount).toBe(0);
+    expect(before.candidates.map((c) => c.dossierId)).toContain(d.dossierId);
+
+    await w.t.app.scoring.addMeetingDossiers(w.A.secretary, { meetingId, dossierIds: [d.dossierId] });
+    expect(await w.t.app.scoring.meetingOf(w.A.secretary, { dossierId: d.dossierId })).toMatchObject({ id: meetingId });
+    await expect(w.t.app.scoring.closeMeeting(w.A.secretary, { meetingId })).rejects.toMatchObject({ code: "meeting_has_pending_dossiers" });
+    expect(await finalize(w.A.secretary, d.dossierId)).toMatchObject({ n: 2 });
+
+    const after = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
+    expect(after.dossiers).toEqual([expect.objectContaining({ dossierId: d.dossierId, result: expect.objectContaining({ n: 2 }) })]);
+    expect(after.finalizedCount).toBe(1);
+    const results = await w.t.app.scoring.finalizedResults(w.A.secretary, { dossierId: d.dossierId });
+    expect(results.map((r) => [r.n, r.supersededAt !== null])).toEqual([
+      [1, true],
+      [2, false],
+    ]);
+  });
+
   it("is refused when the hồ sơ is not Đã chốt điểm, and needs the văn bản, người yêu cầu and lý do (stories 127, 131)", async () => {
     const d = await w.graded([m(0), m(1)]);
     await scoreAndConfirm(m(0), d.dossierId, [40, 25, 35]);

@@ -107,7 +107,7 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     for (const blank of ["Thành phần tham dự: ....", "Ý kiến thảo luận: ....", "Kết luận của Hội đồng: ...."]) expect(doc).toContain(blank);
   });
 
-  it("sinh the dự thảo quyết định with the hồ sơ from 3 sao only, and đề nghị xét 5 sao from 90 điểm (story 112)", async () => {
+  it("sinh the dự thảo quyết định with the hồ sơ from 3 sao only, and đề nghị xét 5 sao for a hồ sơ 5 sao (story 112)", async () => {
     const { meetingId, done, best, low } = await meeting();
 
     const doc = await text(w.A.secretary, meetingId, "decision");
@@ -137,6 +137,22 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     const audited = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.meeting.document_generated"], targetId: meetingId });
     expect(audited).toHaveLength(2);
     expect(audited[0]).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { kind: "score_table", pending: 1 } });
+  });
+
+  it("never prints a kết quả chốt a Mở khóa sau chốt superseded as Đã chốt (ADR 0008)", async () => {
+    const { meetingId, done } = await meeting();
+    const admin = await w.f.admin();
+    const requestFileId = await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf");
+    await w.t.app.scoring.unlockFinalized(admin, { dossierId: done.dossierId, requestFileId, requestedBy: "Chủ tịch Hội đồng A", reason: "Sai sót" });
+
+    const doc = await text(w.A.secretary, meetingId, "score_table");
+    expect(doc).not.toContain("Đã chốt");
+    expect(doc).toContain("| 72,5 | 4 sao | Lệch điểm lớn (55 điểm) | Đã mở khóa, chờ chốt lại |");
+    expect(doc).toContain("Bản nháp: còn 3 hồ sơ chưa chốt điểm");
+    expect(await text(w.A.secretary, meetingId, "minutes")).not.toContain("Tình trạng: Đã chốt.");
+    const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
+    expect(view.finalizedCount).toBe(0);
+    expect(view.dossiers.find((x) => x.dossierId === done.dossierId)!.result).toBeNull();
   });
 
   describe("biên bản đã ký (story 115)", () => {
@@ -191,6 +207,32 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
   it("gives a Phiên họp of another Hội đồng as not found", async () => {
     const { meetingId } = await meeting();
     await expect(w.t.app.scoring.generateMeetingDocument(w.B.secretary, { meetingId, kind: "minutes" })).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("L15 dự thảo quyết định when a Sao tối thiểu caps the Hạng sao (#62, story 112)", () => {
+  const w = scoringWorld({ minGraders: 2, fiveStarMinimum: true });
+  const m = (i: number) => w.A.members[i]!;
+
+  it("notes Đề nghị xét 5 sao only for a hồ sơ whose Hạng sao is 5, not one at 90 điểm capped to 4 sao", async () => {
+    const d = await w.graded([m(0), m(1)]);
+    for (const [actor, a] of [
+      [m(0), 40],
+      [m(1), 20],
+    ] as const) {
+      const view = await w.t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId });
+      if (view.kind !== "own_sheet") throw new Error(view.kind);
+      const lines = ([["1.1", a], ["2.1", 25], ["3.1", 35]] as const).map(([code, points]) => ({ criterionId: w.criterionId(code), levelId: w.level(`${code}:${points}`), comment: "", evidenceFileIds: [] }));
+      const { version } = await w.t.app.scoring.saveScoreSheet(actor, { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
+      await w.t.app.scoring.confirmScoreSheet(actor, { dossierId: d.dossierId, expectedVersion: version });
+    }
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+
+    const { bytes } = await w.t.app.scoring.generateMeetingDocument(w.A.secretary, { meetingId, kind: "decision" });
+
+    const doc = docxText(bytes);
+    expect(doc).toContain("| 90 | 4 sao |  |");
+    expect(doc).not.toContain("Đề nghị xét 5 sao");
   });
 });
 

@@ -1,5 +1,5 @@
 import { lockDossier } from "../dossiers/edit";
-import { dossierNotFound, type Dossier } from "../dossiers/model";
+import { DOSSIER_STATE_LABEL, dossierNotFound, type Dossier } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
@@ -14,7 +14,8 @@ import { checkEligible, conflictOfRoles, eligibleOf } from "./assignments";
 import { openScoreSheets } from "./grading";
 
 /*
- * L09 HD-03 (spec #49 stories 34 to 39): after Giao chấm and until chốt điểm, the Thư ký hội đồng thay a thành
+ * L09 HD-03 (spec #49 stories 34 to 39): after Giao chấm and until chốt điểm (and in Đã chuyển tỉnh after a Sở trả
+ * về from Tổ tư vấn thẩm định, which keeps the Phân công in force, story 54), the Thư ký hội đồng thay a thành
  * viên chấm whose Phiếu chấm is not yet xác nhận, or a Thành viên Tổ tư vấn, and bổ sung either, always with a
  * reason (xung đột lợi ích is declared on paper, outside the system). The old Phân công is kept and marked
  * replaced, which ends the person's DataScope `assigned` on the hồ sơ; their nháp is superseded, never deleted
@@ -76,6 +77,7 @@ export function replaceAssignment(deps: CoreDeps) {
         reason,
         metadata: { kind: old?.kind ?? null, replacedUserId: input.userId, newUserId: input.newUserId },
       });
+      assertGradedBefore(before, current);
       if (!old) throw new DomainError("assignment_not_found", "Người này không có Phân công đang hiệu lực trên hồ sơ");
       await checkNewcomer(deps, tx, before, current, input.newUserId, old.kind, now);
 
@@ -117,6 +119,7 @@ export function addAssignment(deps: CoreDeps) {
         reason,
         metadata: { kind: input.kind, replacedUserId: null, newUserId: input.userId },
       });
+      assertGradedBefore(before, current);
       await checkNewcomer(deps, tx, before, current, input.userId, input.kind, now);
       await insertInForce(deps, tx, actor, before, input.userId, input.kind, now);
       await emit(deps, tx, {
@@ -161,6 +164,16 @@ export function assignmentHistory(deps: CoreDeps) {
 async function begin(tx: Tx, actor: UserActor, dossierId: string) {
   const before = await lockDossier(tx, actor, dossierId);
   return { before, current: await tx.assignments.current(before.id) };
+}
+
+/**
+ * Đã chuyển tỉnh has the row only for a hồ sơ the Sở trả về after Giao chấm, whose Phân công stayed in force (story 54).
+ * One never Giao chấm has only nháp, changed with editAssignments: refused as the state it is in.
+ */
+function assertGradedBefore(before: Dossier, current: Assignment[]) {
+  if (before.state === "forwarded_to_province" && !current.some((a) => a.effectiveAt !== null)) {
+    throw new DomainError("invalid_state", `Không thể thực hiện thao tác này khi hồ sơ đang ở trạng thái ${DOSSIER_STATE_LABEL[before.state]}`);
+  }
 }
 
 /**

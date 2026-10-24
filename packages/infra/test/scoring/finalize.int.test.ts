@@ -63,6 +63,23 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect(snapshotHash(after.result!.snapshot)).toBe(after.result!.sha256);
   });
 
+  it("is not refused because a thành viên still saved a nháp after the Chủ tịch opened the hồ sơ (story 87)", async () => {
+    const d = await ready();
+    await meetingWith(w.A.chair, [d.dossierId]);
+    const { dossierVersion } = await full(w.A.chair, d.dossierId);
+    const view = await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId });
+    if (view.kind !== "own_sheet") throw new Error(view.kind);
+    await w.t.app.scoring.saveScoreSheet(m(2), {
+      dossierId: d.dossierId,
+      expectedVersion: view.sheet!.version,
+      lines: [{ criterionId: w.criterionId("1.1"), levelId: w.level("1.1:20"), comment: "", evidenceFileIds: [] }],
+    });
+
+    await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
+
+    expect((await full(w.A.chair, d.dossierId)).dossierState).toBe("score_finalized");
+  });
+
   it("is refused while the hồ sơ is not Sẵn sàng chốt, or not in an open Phiên họp (story 117)", async () => {
     const early = await w.graded([m(0), m(1), m(2)]);
     await scoreAndConfirm(m(0), early.dossierId, [40, 25, 35]);

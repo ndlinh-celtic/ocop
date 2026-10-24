@@ -183,6 +183,29 @@ describe("L10 TM-03 the Sở trả về a hồ sơ the Tổ tư vấn thẩm đ�
       ["Lần 2", true],
     ]);
   });
+
+  it("lets the Thư ký thay or bổ sung a Phân công kept from the earlier lượt before Giao chấm again (stories 34, 36, 54)", async () => {
+    const d = await underReview();
+    let { version } = await t.app.dossiers.returnFromProvince(province, { dossierId: d.dossierId, expectedVersion: d.version, ...RETURN });
+    ({ version } = await t.app.dossiers.submit(d.a, { dossierId: d.dossierId, expectedVersion: version }));
+    const fileId = await f.uploadPdf(ward, "signed_ward_report", "BC xã đã ký lần 2.pdf");
+    ({ version } = await t.app.dossiers.attachSignedWardReport(ward, { dossierId: d.dossierId, expectedVersion: version, fileId }));
+    ({ version } = await t.app.dossiers.forwardToProvince(ward, { dossierId: d.dossierId, expectedVersion: version }));
+    const [gone, comer] = A.advisors as [UserActor, UserActor];
+
+    ({ version } = await t.app.councils.replaceAssignment(A.secretary, { dossierId: d.dossierId, expectedVersion: version, userId: gone.userId, newUserId: comer.userId, reason: "Xung đột lợi ích" }));
+
+    await expect(t.app.dossiers.get(gone, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
+    expect((await t.app.councils.assignments(A.secretary, { dossierId: d.dossierId })).map((a) => [a.userId, a.kind])).toEqual([
+      [A.members[0]!.userId, "member"],
+      [comer.userId, "advisory"],
+    ]);
+    t.clock.advance(hours(24));
+    ({ version } = await t.app.dossiers.receiveAtProvince(province, { dossierId: d.dossierId, expectedVersion: version }));
+    const [again] = (await t.app.councils.startGrading(A.secretary, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }] })).dossiers;
+    expect(again).toMatchObject({ state: "advisory_review" });
+    expect(await t.app.dossiers.get(comer, { dossierId: d.dossierId })).toMatchObject({ state: "advisory_review" });
+  });
 });
 
 const sheets = async (dossierId: string) =>

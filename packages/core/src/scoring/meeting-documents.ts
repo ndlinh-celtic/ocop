@@ -1,6 +1,5 @@
 import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
-import type { RankThresholds } from "../criteria/model";
 import type { DocumentTemplate, MeetingDocumentData, MeetingDocumentRow } from "../documents/renderer";
 import { dossierNotFound } from "../dossiers/model";
 import { authorize } from "../identity/policy";
@@ -14,7 +13,7 @@ import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
-import { ownMeeting } from "./meetings";
+import { chotResultOf, ownMeeting } from "./meetings";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -49,8 +48,6 @@ function pointsLabel(state: ScoreSheetState | null, total: number | null): strin
 
 interface Row extends MeetingDocumentRow {
   starValue: number;
-  totalValue: number;
-  thresholds: RankThresholds;
 }
 
 async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ rows: Row[]; pending: number }> {
@@ -62,20 +59,19 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
     if (!d) throw dossierNotFound();
     const submission = await tx.dossiers.latestSubmission(d.id);
     const versions = await tx.advisoryReports.versions(d.id);
-    const result = md.resultId ? (await tx.aggregateResults.list(d.id)).find((r) => r.id === md.resultId) : undefined;
+    const result = await chotResultOf(tx, md);
     let graders: { fullName: string; state: ScoreSheetState | null; total: number | null }[];
     let aggregate: AggregateScores;
-    let thresholds: RankThresholds;
     let absent: string;
     let advisory = versions.at(-1) ?? null;
     if (result) {
-      ({ graders, aggregate, thresholds } = result.snapshot);
+      ({ graders, aggregate } = result.snapshot);
       absent = result.snapshot.absent.map((a) => a.fullName).join(", ") || "Không";
       const used = result.snapshot.advisoryReportVersion;
       advisory = used ? (versions.find((v) => v.id === used.id) ?? null) : null;
     } else {
       pending += 1;
-      ({ graders, aggregate, thresholds } = await aggregateOf(tx, d));
+      ({ graders, aggregate } = await aggregateOf(tx, d));
       const unconfirmed = graders.filter((g) => g.state !== "confirmed").map((g) => g.fullName);
       absent = unconfirmed.length ? `chưa chốt; chưa xác nhận phiếu: ${unconfirmed.join(", ")}` : "Không";
     }
@@ -94,11 +90,11 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       unmet: aggregate.unmet.map((u) => `${u.code} (${u.star} sao cần ${formatDecimalVn(u.required)}, đạt ${formatDecimalVn(u.actual)})`).join("; ") || "Không",
       absent,
       advisorySummary: advisory ? `${advisory.snapshot.summary} (Báo cáo Tổ tư vấn phiên bản ${advisory.number})` : "Không có Báo cáo Tổ tư vấn",
-      status: result ? "Đã chốt" : "Tạm tính",
-      note: aggregate.total >= thresholds[5] ? "Đề nghị xét 5 sao" : "",
+      // A kết quả a Mở khóa superseded is not printed: the hồ sơ is tạm tính until chốt again (ADR 0008).
+      status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
+      // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
+      note: aggregate.star === 5 ? "Đề nghị xét 5 sao" : "",
       starValue: aggregate.star,
-      totalValue: aggregate.total,
-      thresholds,
     });
   }
   rows.sort((a, b) => a.code.localeCompare(b.code));
@@ -106,7 +102,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
 }
 
 const reindex = (rows: Row[]): MeetingDocumentRow[] =>
-  rows.map(({ starValue: _s, totalValue: _t, thresholds: _th, ...r }, i) => ({ ...r, index: String(i + 1) }));
+  rows.map(({ starValue: _s, ...r }, i) => ({ ...r, index: String(i + 1) }));
 
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, " ").trim();
 

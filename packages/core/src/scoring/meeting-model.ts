@@ -26,7 +26,10 @@ export interface Meeting {
   closedAt: Date | null;
 }
 
-/** A hồ sơ of a Phiên họp: pending until chốt sets `resultId`. */
+/**
+ * A hồ sơ of a Phiên họp: pending until chốt sets `resultId`. A `resultId` a Mở khóa superseded is not chốt any more
+ * (`chotResultOf`); adding the hồ sơ again sets it back to null.
+ */
 export interface MeetingDossier {
   meetingId: string;
   dossierId: string;
@@ -56,7 +59,10 @@ export interface MeetingRepo {
   dossiers(meetingId: string): Promise<MeetingDossier[]>;
   /** The row where the hồ sơ waits for chốt, if any (it is in an open Phiên họp). */
   pendingOf(dossierId: string): Promise<MeetingDossier | null>;
-  /** False when the hồ sơ already waits in a Phiên họp (the DB keeps one pending row per hồ sơ). */
+  /**
+   * False when the hồ sơ already waits in a Phiên họp (the DB keeps one pending row per hồ sơ). A row of this Phiên họp
+   * whose kết quả a Mở khóa superseded becomes pending again; one with a kết quả hiện hành stays and gives false.
+   */
   addDossier(row: MeetingDossier): Promise<boolean>;
   /** Gỡ a pending hồ sơ; false when it is not pending there. */
   removeDossier(meetingId: string, dossierId: string): Promise<boolean>;

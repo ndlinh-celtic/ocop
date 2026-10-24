@@ -36,7 +36,8 @@ export default async function DossierAssignmentPage({ params }: { params: Promis
   const current: CurrentPerson[] = assignments
     .filter((a) => a.effectiveAt !== null)
     .map((a) => ({ userId: a.userId, fullName: a.fullName, kind: a.kind, confirmed: a.kind === "member" && sheets.get(a.userId) === "confirmed" }));
-  const editable = can(actor, "dossier.assignment.replace", dossier);
+  // In Đã chuyển tỉnh only after a Sở trả về that kept the Phân công in force; before Giao chấm they are nháp.
+  const editable = can(actor, "dossier.assignment.replace", dossier) && (dossier.state !== "forwarded_to_province" || current.length > 0);
 
   return (
     <div className="flex flex-col gap-6">

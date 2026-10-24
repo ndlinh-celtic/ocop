@@ -21,10 +21,11 @@ const criterion = (phan: "A" | "B" | "C", points: number, ma: string, levels: { 
   ghi_chu: "",
   lua_chon: levels.map((l, i) => ({ thu_tu: i + 1, ...l })),
 });
-const CRITERIA = [
+/** With `fiveStarMinimum`, 1.1 "Đầy đủ" (40) is also the Sao tối thiểu of 5 sao. */
+const criteriaOf = (fiveStarMinimum: boolean) => [
   criterion("A", 40, "1.1", [
     { mo_ta: "Một phần", diem: 20, sao_toi_thieu: 3 },
-    { mo_ta: "Đầy đủ", diem: 40, sao_toi_thieu: null },
+    { mo_ta: "Đầy đủ", diem: 40, sao_toi_thieu: fiveStarMinimum ? 5 : null },
   ]),
   criterion("B", 25, "2.1", [{ mo_ta: "Đạt", diem: 25, sao_toi_thieu: null }]),
   criterion("C", 35, "3.1", [{ mo_ta: "Đạt", diem: 35, sao_toi_thieu: null }]),
@@ -49,9 +50,9 @@ export interface ScoringWorld {
 
 /**
  * One database for a describe: Hội đồng A (4 thành viên, `advisors` Tổ tư vấn, default 1) and B (2, 1); a đợt Đang nhận nộp on a
- * three-Tiêu chí Bộ tiêu chí, gán to A, with `gradingMode` (chấm trực tiếp) and `minGraders` (2).
+ * three-Tiêu chí Bộ tiêu chí, gán to A, with `gradingMode` (chấm trực tiếp), `minGraders` (2) and `fiveStarMinimum` (no).
  */
-export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean; advisors?: number } = {}): ScoringWorld {
+export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean; advisors?: number; fiveStarMinimum?: boolean } = {}): ScoringWorld {
   const w = {} as ScoringWorld;
   beforeAll(async () => {
     w.db = await createTestDatabase();
@@ -62,7 +63,7 @@ export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: num
     w.f = fixtures(w.t, () => wardId);
     w.t.clock.set(START);
     const admin = await w.f.admin();
-    const set = (bo: number, ten_bo: string) => ({ bo, ten_bo, san_pham: "Thực phẩm", nhom: "Thực phẩm tươi sống", ghi_chu_dau_phieu: "", tong_diem: 100, tieu_chi: CRITERIA });
+    const set = (bo: number, ten_bo: string) => ({ bo, ten_bo, san_pham: "Thực phẩm", nhom: "Thực phẩm tươi sống", ghi_chu_dau_phieu: "", tong_diem: 100, tieu_chi: criteriaOf(opts.fiveStarMinimum ?? false) });
     const content = JSON.stringify({ van_ban: "26/2026/QĐ-TTg", ngay_ban_hanh: "2026-01-02", hieu_luc: "2026-02-01", bo_tieu_chi: [set(1, "Rau củ quả")] });
     const { versionId } = await w.t.app.criteria.importVersion(admin, { fileName: "tieu-chi.json", content });
     await w.t.app.criteria.publishVersion(admin, { versionId });

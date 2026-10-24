@@ -361,7 +361,8 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
   // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.
   // The xác nhận that brings the phiếu đã xác nhận to người chấm tối thiểu is its own action because ruleFor
-  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49).
+  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49). The edit rows are only
+  // checked (assertTransitionAllowed): a nháp writes the phiếu, never the hồ sơ, so their event is not emitted.
   ...(["member_review", "member_confirmed"] as const).flatMap((from) =>
     (
       [
@@ -407,7 +408,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   },
   // L09 HD-03 (stories 34 to 39): after Giao chấm and before chốt điểm, the Thư ký thay or bổ sung a thành viên
   // chấm or Thành viên Tổ tư vấn, with a reason; replaceAssignment/addAssignment check the Phân công and phiếu.
-  ...(["advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+  // Đã chuyển tỉnh too, for a hồ sơ the Sở trả về from Tổ tư vấn thẩm định: it keeps its Phân công in force (story
+  // 54), so they are changed this way before Giao chấm again; the use cases refuse it while none is in force.
+  ...(["forwarded_to_province", "advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
     (from): TransitionRule => ({ action: "dossier.assignment.replace", from, to: from, roles: ["council_secretary"], event: "dossier.assignment_changed", timeline: false }),
   ),
 ];

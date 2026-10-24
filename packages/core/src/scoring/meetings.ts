@@ -12,12 +12,13 @@ import { DomainError, forbidden } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import type { FileStatus } from "../files/model";
-import type { Meeting, MeetingState } from "./meeting-model";
+import type { AggregateResult, Meeting, MeetingDossier, MeetingState } from "./meeting-model";
 
 /*
  * L15 HD-09 Phiên họp (spec #49 stories 107 to 109): the Chủ tịch or Thư ký of a Hội đồng lập a Phiên họp in a đợt
  * of the Hội đồng, with hồ sơ Sẵn sàng chốt; adds or gỡ hồ sơ not yet chốt; closes it once each hồ sơ is chốt or gỡ.
- * A hồ sơ waits in one open Phiên họp at a time (the DB keeps one pending row per hồ sơ, too).
+ * A hồ sơ waits in one open Phiên họp at a time (the DB keeps one pending row per hồ sơ, too). A hồ sơ chốt here and
+ * then unlocked is not chốt any more: it may be added again, here while open or to another Phiên họp.
  */
 
 const MAX_TEXT = 500;
@@ -36,6 +37,16 @@ export async function ownMeeting(tx: Tx, actor: UserActor, meetingId: unknown, l
   const meeting = lock ? await tx.meetings.lock(meetingId) : await tx.meetings.findById(meetingId);
   if (!meeting || meeting.councilId !== councilOf(actor)) throw meetingNotFound();
   return meeting;
+}
+
+/**
+ * The kết quả a hồ sơ was chốt with in this Phiên họp, while it is still the kết quả hiện hành; null while the hồ sơ
+ * waits, and once a Mở khóa sau chốt superseded it (ADR 0008).
+ */
+export async function chotResultOf(tx: Tx, row: MeetingDossier): Promise<AggregateResult | null> {
+  if (!row.resultId) return null;
+  const current = await tx.aggregateResults.current(row.dossierId);
+  return current?.id === row.resultId ? current : null;
 }
 
 const open = (meeting: Meeting) => {
@@ -156,7 +167,7 @@ export interface MeetingDossierView {
   code: string;
   productName: string;
   state: DossierState;
-  /** Set once chốt in this Phiên họp. */
+  /** Set once chốt in this Phiên họp; null again once a Mở khóa sau chốt superseded it. */
   result: { n: number; total: number; star: number; flagged: boolean; finalizedAt: Date } | null;
 }
 
@@ -212,7 +223,7 @@ async function summaryOf(tx: Tx, m: Meeting): Promise<MeetingSummary> {
     location: m.location,
     state: m.state,
     dossierCount: rows.length,
-    finalizedCount: rows.filter((r) => r.resultId !== null).length,
+    finalizedCount: (await Promise.all(rows.map((r) => chotResultOf(tx, r)))).filter((r) => r !== null).length,
   };
 }
 
@@ -242,7 +253,7 @@ export function getMeeting(deps: CoreDeps) {
       for (const row of await tx.meetings.dossiers(meeting.id)) {
         const d = await tx.dossiers.findById(scope, row.dossierId);
         if (!d) throw dossierNotFound();
-        const r = row.resultId ? (await tx.aggregateResults.list(d.id)).find((x) => x.id === row.resultId) : undefined;
+        const r = await chotResultOf(tx, row);
         dossiers.push({
           dossierId: d.id,
           code: d.code,
