@@ -44,11 +44,16 @@ export async function saveAdvisoryDraftAction(dossierId: string, draftVersion: n
   }
 }
 
-/** Stories 56, 57: phát hành phiên bản 1; refused with the Tiêu chí still lacking Điểm đề xuất or căn cứ. */
-export async function issueAdvisoryReportAction(dossierId: string, expectedVersion: number, _prev: { error?: string }, _form: FormData): Promise<{ error?: string }> {
+/**
+ * Stories 56, 57: phát hành phiên bản 1; refused with the Tiêu chí still lacking Điểm đề xuất or căn cứ. After a Sở trả
+ * về (#69) it is phiên bản N+1 and the form carries its reason.
+ */
+export async function issueAdvisoryReportAction(dossierId: string, expectedVersion: number, _prev: { error?: string }, form: FormData): Promise<{ error?: string }> {
   const actor = await requireActor();
+  const reason = z.string().max(2000).safeParse(form.get("reason") ?? "");
+  if (!reason.success) return { error: "Lý do không hợp lệ" };
   try {
-    await app().core.scoring.issueAdvisoryReport(actor, { dossierId, expectedVersion });
+    await app().core.scoring.issueAdvisoryReport(actor, { dossierId, expectedVersion, reason: reason.data });
   } catch (err) {
     return { error: domainMessage(err) };
   }
@@ -58,17 +63,17 @@ export async function issueAdvisoryReportAction(dossierId: string, expectedVersi
 }
 
 /** Stories 60, 61: phiên bản N+1 from the content edited from phiên bản N, with its reason. */
-export async function reissueAdvisoryReportAction(dossierId: string, expectedVersion: number, reason: string, input: AdvisoryContentInput): Promise<{ error?: string }> {
+export async function reissueAdvisoryReportAction(dossierId: string, expectedVersion: number, reason: string, input: AdvisoryContentInput): Promise<{ error?: string; version?: number; number?: number }> {
   const actor = await requireActor();
   const parsed = content.safeParse(input);
   if (!parsed.success) return { error: "Nội dung báo cáo không hợp lệ" };
   try {
-    await app().core.scoring.reissueAdvisoryReport(actor, { dossierId, expectedVersion, reason, ...parsed.data });
+    const issued = await app().core.scoring.reissueAdvisoryReport(actor, { dossierId, expectedVersion, reason, ...parsed.data });
+    paths(dossierId);
+    return issued;
   } catch (err) {
     return { error: domainMessage(err) };
   }
-  paths(dossierId);
-  return {};
 }
 
 const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });

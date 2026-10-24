@@ -275,8 +275,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   },
   // L04 (story 57): the Sở trả về a hồ sơ Đã chuyển tỉnh as a yêu cầu bổ sung of its own, so the Chủ thể
   // answers one list; the nộp lại brings it back to Đã nộp xã for the xã to review (story 58). L10 TM-03
-  // (#57 stories 52, 55): also while the Tổ tư vấn thẩm định it, never once Phiếu chấm are being written.
-  ...(["forwarded_to_province", "advisory_review"] as const).map(
+  // (#57 stories 52, 55; #69): also while the Tổ tư vấn thẩm định it and once its báo cáo is issued, until the
+  // first sao chép; never once Phiếu chấm are being written. The issued phiên bản stay.
+  ...(["forwarded_to_province", "advisory_review", "advisory_report_issued"] as const).map(
     (from): TransitionRule => ({
       action: "dossier.province_return",
       from,
@@ -343,16 +344,11 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   // L10 TM-02, TM-05, TM-06 (stories 44 to 50): the Tổ tư vấn Phân công write their shared nháp. Off the timeline;
   // checkOnly, since the nháp has its own version.
   { action: "dossier.advisory_report.edit", from: "advisory_review", to: "advisory_review", roles: ["advisory_member"], event: "dossier.advisory_report_saved", timeline: false, checkOnly: true },
-  // L10 TM-03 (#57 story 51): a Thành viên Tổ tư vấn Phân công asks the Sở to trả về; the state stays. A matter
-  // between the Tổ tư vấn and the Sở, so not on the timeline the Chủ thể reads (story 53).
-  {
-    action: "dossier.advisory_return_request",
-    from: "advisory_review",
-    to: "advisory_review",
-    roles: ["advisory_member"],
-    event: "dossier.advisory_return_requested",
-    timeline: false,
-  },
+  // L10 TM-03 (#57 story 51, #69): a Thành viên Tổ tư vấn Phân công asks the Sở to trả về, until the first sao chép;
+  // the state stays. A matter between the Tổ tư vấn and the Sở, so not on the timeline the Chủ thể reads (story 53).
+  ...(["advisory_review", "advisory_report_issued"] as const).map(
+    (from): TransitionRule => ({ action: "dossier.advisory_return_request", from, to: from, roles: ["advisory_member"], event: "dossier.advisory_return_requested", timeline: false }),
+  ),
   // L11 TM-07 (stories 56 to 59): phát hành phiên bản 1; that the actor is the Tổ trưởng is checked by issueAdvisoryReport.
   { action: "dossier.advisory_report.issue", from: "advisory_review", to: "advisory_report_issued", roles: ["advisory_member"], event: "dossier.advisory_report_issued", timeline: true },
   // L11 (stories 60, 61): phiên bản N+1 until Đã chốt điểm, which has no row.

@@ -111,6 +111,11 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
       <ReturnRequests requests={returnRequests} />
       <ReturnRequests requests={advisoryReturns} from="advisory" />
 
+      {mayReturn && dossier.state === "advisory_report_issued" && (
+        <p className="rounded-lg border border-amber bg-amber-soft p-3 text-sm text-amber">
+          Báo cáo Tổ tư vấn đã phát hành sẽ được giữ. Khi hồ sơ lên tỉnh lại, Tổ tư vấn phát hành phiên bản mới có lý do (#69).
+        </p>
+      )}
       {mayReturn && snapshot && (
         <RequestSupplementForm
           dossierId={dossier.id}
