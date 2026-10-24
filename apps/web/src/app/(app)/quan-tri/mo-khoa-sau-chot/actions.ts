@@ -37,10 +37,11 @@ export type UnlockOutcome = { unlocked: true } | { unlocked: false; error: strin
 /** L15 Mở khóa sau chốt (stories 127 to 131); asks for Xác thực lại when it is due. */
 export async function unlockAction(input: z.infer<typeof unlockInput>) {
   const actor = await requireActor();
-  const parsed = unlockInput.parse(input);
+  const parsed = unlockInput.safeParse(input);
   return withReauth(async (): Promise<UnlockOutcome> => {
+    if (!parsed.success) return { unlocked: false, error: "Nhập đủ hồ sơ, văn bản yêu cầu, người yêu cầu và lý do" };
     try {
-      await app().core.scoring.unlockFinalized(actor, parsed);
+      await app().core.scoring.unlockFinalized(actor, parsed.data);
       revalidatePath(PAGE);
       return { unlocked: true };
     } catch (err) {
