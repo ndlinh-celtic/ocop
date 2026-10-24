@@ -111,7 +111,7 @@ async function dossierIn(state: State): Promise<Subject> {
     notes: "",
     attachmentFileIds: [],
   });
-  let version = ws.dossierVersion + 1;
+  let version = ws.dossierVersion;
   if (state === "Đã có báo cáo Tổ tư vấn") ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version }));
   return { a: d.a, dossierId: d.dossierId, version };
 }

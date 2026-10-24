@@ -37,6 +37,7 @@ export interface TransitionInput {
 export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, before: Dossier, input: TransitionInput): Promise<Dossier> {
   const now = deps.clock.now();
   const rule = allowedRule(actor, before, input.action, now, input.expectedVersion);
+  if (rule.checkOnly) throw new Error(`${input.action} is checkOnly: call assertTransitionAllowed, not transition()`);
 
   const after: Dossier = { ...before, ...input.patch, state: rule.to, version: before.version + 1, updatedAt: now };
   if (!(await tx.dossiers.update(after, before.version))) throw versionConflict();
@@ -54,12 +55,13 @@ export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, befor
 }
 
 /**
- * The checks transition() makes, for a same-state row whose use case changes something beside the hồ sơ and so writes
- * nothing on it (a nháp of a Phiếu chấm, which has its own version): Phạm vi, the row from the current state, the Vai
- * trò and the guard. `before` must still have been loaded with `tx.dossiers.lock(scope, id)`.
+ * The checks transition() makes, for a row marked checkOnly, whose use case changes something beside the hồ sơ and so
+ * writes nothing on it (a nháp with its own version): Phạm vi, the row from the current state, the Vai trò and the
+ * guard. `before` must still have been loaded with `tx.dossiers.lock(scope, id)`.
  */
 export function assertTransitionAllowed(actor: UserActor, before: Dossier, action: DossierAction, now: Date): void {
-  allowedRule(actor, before, action, now, before.version);
+  const rule = allowedRule(actor, before, action, now, before.version);
+  if (!rule.checkOnly) throw new Error(`${action} moves the hồ sơ: call transition(), not assertTransitionAllowed`);
 }
 
 function allowedRule(actor: UserActor, before: Dossier, action: DossierAction, now: Date, expectedVersion: number) {

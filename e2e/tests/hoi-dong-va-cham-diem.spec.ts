@@ -597,7 +597,7 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
         `SELECT (after->>'version')::int AS v, count(*) FROM platform.audit_log WHERE target_type = 'dossier' AND target_id = '${id}' AND after ? 'version' GROUP BY v ORDER BY v`,
       );
       expect(audited.map(([v, n]) => [Number(v), Number(n)])).toEqual(Array.from({ length: Number(version) }, (_, i) => [i + 1, 1]));
-      // Each audited transition of the hồ sơ has its outbox event; a Phiếu chấm nháp save is audited but moves no version.
+      // Each audited transition of the hồ sơ has its outbox event; a nháp save (Phiếu chấm, Báo cáo Tổ tư vấn) is audited but moves no version.
       const [[auditCount]] = sql(`SELECT count(*) FROM platform.audit_log WHERE target_type = 'dossier' AND target_id = '${id}' AND action LIKE 'dossier.%' AND after ? 'version'`) as [[string]];
       const [[outboxCount]] = sql(`SELECT count(*) FROM platform.outbox WHERE payload->>'dossierId' = '${id}' AND type LIKE 'dossier.%'`) as [[string]];
       expect(Number(outboxCount)).toBeGreaterThanOrEqual(Number(auditCount));

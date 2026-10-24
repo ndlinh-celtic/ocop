@@ -12,7 +12,8 @@
     "lint:deps": "depcruise apps packages --config .dependency-cruiser.cjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:int": "turbo run test:int"
+    "test:int": "turbo run test:int",
+    "e2e": "bash scripts/e2e.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

@@ -159,6 +159,19 @@ describe("L10 TM-02, TM-05, TM-06 Báo cáo Tổ tư vấn nháp (stories 44 to 
     });
     expect((await report(colleague, d.dossierId)).summary).toBe("Bản của Tổ trưởng");
   });
+
+  it("leaves the hồ sơ version alone, so a colleague's save never refuses the Tổ trưởng's phát hành (story 50)", async () => {
+    const d = await complete();
+    const { draftVersion } = await report(colleague, d.dossierId);
+    await t.app.scoring.saveAdvisoryDraft(colleague, { dossierId: d.dossierId, draftVersion, lines: await lines(colleague, d.dossierId, { "1.1": { points: 40 }, "1.2": { points: 10 }, "2.1": { points: 20 } }), summary: "Sửa lại", notes: "", attachmentFileIds: [] });
+
+    expect((await report(leader, d.dossierId)).dossierVersion).toBe(d.version);
+    await expect(issue(leader, d)).resolves.toMatchObject({ number: 1 });
+    const [saved] = await t.app.audit.search(await f.admin(), { action: ["dossier.advisory_report.edit"], targetId: d.dossierId });
+    expect(saved).toMatchObject({ actorUserId: colleague.userId, after: { draftVersion: draftVersion + 1 } });
+    const outbox = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.advisory_report_saved' AND payload->>'dossierId' = $1", [d.dossierId]);
+    expect(outbox.rows).toEqual([]);
+  });
 });
 
 /** A hồ sơ under review whose nháp has every Tiêu chí filled: 40 + 10 + 20 = 70 points. */
