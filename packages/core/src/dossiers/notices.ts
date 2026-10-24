@@ -39,6 +39,12 @@ async function activeHolders(tx: Tx, role: Role, scopeType: ScopeType, scopeId: 
   return users.filter((u): u is User => u !== null && u.status === "active");
 }
 
+/** The active Chủ tịch and Thư ký of a Hội đồng, once each. */
+async function councilLeaders(tx: Tx, councilId: string, now: Date): Promise<User[]> {
+  const users = [...(await activeHolders(tx, "council_chair", "council", councilId, now)), ...(await activeHolders(tx, "council_secretary", "council", councilId, now))];
+  return [...new Map(users.map((u) => [u.id, u])).values()];
+}
+
 /** The Người dùng holding an active Phân vai Chủ thể on the Chủ thể. */
 export function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]> {
   return activeHolders(tx, "entity_owner", "entity", entityId, now);
@@ -392,17 +398,12 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
-    // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.
+    // L15 Mở khóa sau chốt (story 130): the Chủ tịch and Thư ký Trả phiếu and chốt again; the lý do stays in the audit.
     case "dossier.unlocked": {
-      // L15 Mở khóa sau chốt (story 130): the Chủ tịch and Thư ký Trả phiếu and chốt again; the lý do stays in the audit.
       if (!dossier.councilId) return [];
-      const recipients = [
-        ...(await activeHolders(tx, "council_chair", "council", dossier.councilId, now)),
-        ...(await activeHolders(tx, "council_secretary", "council", dossier.councilId, now)),
-      ];
       return [
         {
-          recipients: [...new Map(recipients.map((u) => [u.id, u])).values()],
+          recipients: await councilLeaders(tx, dossier.councilId, now),
           kind: "dossier_unlocked",
           title: `Hồ sơ được Mở khóa sau chốt: ${product}`,
           body: `Hồ sơ ${dossier.code} đã được Mở khóa sau chốt theo văn bản yêu cầu của Hội đồng; kết quả chốt cũ bị thay thế. Trả phiếu cho người cần chấm lại rồi chốt lại trong một Phiên họp mới.`,
@@ -412,15 +413,12 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
+    // L15 (story 96): Sẵn sàng chốt, for the Chủ tịch and Thư ký of the Hội đồng.
     case "dossier.members_confirmed": {
       if (!dossier.councilId) return [];
-      const recipients = [
-        ...(await activeHolders(tx, "council_chair", "council", dossier.councilId, now)),
-        ...(await activeHolders(tx, "council_secretary", "council", dossier.councilId, now)),
-      ];
       return [
         {
-          recipients: [...new Map(recipients.map((u) => [u.id, u])).values()],
+          recipients: await councilLeaders(tx, dossier.councilId, now),
           kind: "dossier_members_confirmed",
           title: `Hồ sơ Sẵn sàng chốt: ${product}`,
           body: `Hồ sơ ${dossier.code} đã đủ số phiếu đã xác nhận theo Quy tắc tổng hợp.`,
