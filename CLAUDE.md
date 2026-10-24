@@ -59,12 +59,16 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 
 ## Thứ tự xây dựng
 
-1. Nền tảng: monorepo, CI, Compose, `identity` (đăng nhập, TOTP, vai trò + phạm vi), audit, outbox + pg-boss, `FileStore` S3, khung UI theo vai trò.
-2. Tiêu chí và đợt: `criteria` có phiên bản + trình soạn (AD-03..05), `round` (SO-01, AD-06).
-3. Chủ thể và xã: L01 đến L06.
-4. Cấp tỉnh và chấm điểm: L07 đến L15. Viết test ma trận phân quyền và test trigger khóa trước khi làm UI.
-5. Kết quả: L16, L17, xuất Excel/PDF (DC-05).
+Bước 1 đến 4 đã xong: nền tảng, tiêu chí và đợt, chủ thể và xã (L01–L06), cấp tỉnh và chấm điểm (L07–L15).
+
+5. Kết quả: L16, L17, xuất Excel/PDF (DC-05). Viết test ma trận phân quyền và test trigger trước khi làm UI.
 6. Đợt 2: QR, trang xác thực công khai, thống kê SO-06.
+
+## Chạy kiểm tra
+
+- Trong lúc TDD chỉ chạy file test đang làm, ví dụ `pnpm --filter @ocop/infra exec vitest run --config vitest.int.config.ts test/scoring/finalize.int.test.ts`. Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
+- Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` trước khi push (cần Docker, cổng 8080 trống).
+- Điều phối nhiều implementer: tối đa 3 chạy cùng lúc.
 
 ## Giả định đang mở (cần chủ đầu tư xác nhận)
 
