@@ -155,7 +155,7 @@ export function dossierRepo(db: Db): DossierRepo {
         filter.awaitingProvinceReceipt ? and(eq(dossier.state, "forwarded_to_province"), isNull(dossier.provinceReceivedAt)) : undefined,
         filter.advisoryReturnRequested
           ? and(
-              eq(dossier.state, "advisory_review"),
+              inArray(dossier.state, ["advisory_review", "advisory_report_issued"]),
               sql`EXISTS (SELECT 1 FROM dossier.advisory_return_request r WHERE r.dossier_id = "dossier"."dossier"."id" AND r.requested_at >= "dossier"."dossier"."grading_started_at")`,
             )
           : undefined,

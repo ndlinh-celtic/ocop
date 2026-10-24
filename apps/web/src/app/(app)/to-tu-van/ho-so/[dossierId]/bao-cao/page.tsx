@@ -67,7 +67,7 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
             Ước lượng: {ws.estimate.parts.map((p) => `Phần ${p.code}: ${p.total}`).join(" · ")} · Tổng {ws.estimate.total} · {ws.estimate.star} sao
           </p>
           {mayIssue ? (
-            <IssueButton dossierId={dossierId} version={ws.dossierVersion} blocked={ws.missing.length > 0} />
+            <IssueButton dossierId={dossierId} version={ws.dossierVersion} number={versions.length + 1} blocked={ws.missing.length > 0} />
           ) : (
             <p className="text-text-3">Chỉ Tổ trưởng Tổ tư vấn phát hành được báo cáo.</p>
           )}

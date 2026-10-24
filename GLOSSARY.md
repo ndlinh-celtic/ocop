@@ -268,7 +268,7 @@ _Avoid_: Sửa điểm, hủy chốt
 - Một Người dùng có thể vừa là Thành viên Tổ tư vấn vừa là Thành viên hội đồng của cùng Hội đồng, nhưng không được Phân công cả hai vai trên cùng một hồ sơ.
 - Mỗi hồ sơ có một **Báo cáo Tổ tư vấn** chung; mọi Thành viên Tổ tư vấn được Phân công cùng soạn nháp, chỉ **Tổ trưởng** phát hành. Sửa sau phát hành là phát hành phiên bản tiếp theo, có lý do.
 - Tổ tư vấn và Thành viên hội đồng đều chọn **Mức điểm**, không nhập điểm số tự do.
-- Tổ tư vấn đề nghị Sở trả hồ sơ về xã khi đang thẩm định; hồ sơ lên tỉnh lại giữ Phân công và nháp Báo cáo Tổ tư vấn, nhưng phải Tiếp nhận tại tỉnh và Giao chấm lại. Từ Thành viên xem xét trở đi hồ sơ không trả về xã được.
+- Tổ tư vấn đề nghị Sở trả hồ sơ về xã, và Sở trả về được, cho đến trước lần sao chép đầu (Tổ tư vấn thẩm định hoặc Đã có báo cáo Tổ tư vấn); hồ sơ lên tỉnh lại giữ Phân công, nháp và các phiên bản Báo cáo Tổ tư vấn đã phát hành, nhưng phải Tiếp nhận tại tỉnh và Giao chấm lại; phát hành tiếp là phiên bản N+1 có lý do. Từ Thành viên xem xét trở đi hồ sơ không trả về xã được.
 - Phiếu chấm còn chưa xác nhận khi chốt điểm là **Vắng**.
 - Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký trước đó chỉ thấy tiến độ. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên.
 - **Hạng sao** tính từ điểm tổng hợp, hội đồng không sửa tay; muốn đổi hạng thì **Trả phiếu** để chấm lại trước khi chốt.

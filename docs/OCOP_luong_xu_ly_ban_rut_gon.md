@@ -72,6 +72,7 @@ stateDiagram-v2
     ChuyenTinh --> TVXem: Chế độ chấm trực tiếp
     ThamMuu --> BoSung: Sở trả về xã theo đề nghị Tổ tư vấn
     ThamMuu --> PhatHanh: Phát hành báo cáo Tổ tư vấn
+    PhatHanh --> BoSung: Sở trả về xã (trước lần sao chép đầu)
     PhatHanh --> TVXem: Sao chép vào phiếu chấm
     TVXem --> TVXacNhan: Thành viên xác nhận
     TVXacNhan --> ChotDiem: Hội đồng chốt
@@ -168,7 +169,7 @@ flowchart TD
 
 **Ngoại lệ**
 - Quá hạn bổ sung: hệ thống nhắc, sau đó cho phép cán bộ đóng hồ sơ về "Không đạt sơ bộ" với lý do "Không bổ sung".
-- Hồ sơ đã ở tỉnh: chỉ Sở trả về xã, tránh nhiều đầu mối yêu cầu cùng lúc.
+- Hồ sơ đã ở tỉnh: chỉ Sở trả về xã, tránh nhiều đầu mối yêu cầu cùng lúc. Sở trả về được cho đến trước lần sao chép đầu sang phiếu thành viên (kể cả khi báo cáo Tổ tư vấn đã phát hành; các phiên bản đã phát hành được giữ); từ "Thành viên xem xét" trở đi không trả về được.
 
 **Dữ liệu ghi nhận:** danh sách yêu cầu, phản hồi từng mục, các phiên bản hồ sơ.
 
@@ -314,7 +315,7 @@ flowchart TD
 3. Hệ thống khóa nội dung thành **phiên bản N** (bất biến), ghi người phát hành và thời điểm.
 4. Thành viên được phân công nhận thông báo "Có báo cáo Tổ tư vấn mới".
 
-**Sửa sau khi phát hành:** Tổ tư vấn tạo phiên bản N+1 từ phiên bản N, ghi lý do. Việc sao chép lại tuân theo quy tắc ở L12.
+**Sửa sau khi phát hành:** Tổ tư vấn tạo phiên bản N+1 từ phiên bản N, ghi lý do. Việc sao chép lại tuân theo quy tắc ở L12. Hồ sơ bị Sở trả về xã ở trạng thái này rồi lên tỉnh lại thì giữ các phiên bản đã phát hành; lần phát hành tiếp theo cũng là phiên bản N+1 có lý do.
 
 **Phân quyền (TM-12):** vai trò Tổ tư vấn không có quyền chốt điểm chính thức, không có quyền quyết định công nhận, không sửa phiếu chấm đã được thành viên chỉnh hoặc xác nhận.
 

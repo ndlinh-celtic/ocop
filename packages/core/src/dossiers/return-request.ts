@@ -6,7 +6,7 @@ import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { lockDossier } from "./edit";
-import { dossierNotFound, type ReturnRequest } from "./model";
+import { dossierNotFound, type DossierState, type ReturnRequest } from "./model";
 import { transition } from "./transition";
 
 /*
@@ -58,12 +58,15 @@ export function listReturnRequests(deps: CoreDeps) {
 }
 
 /*
- * L10 TM-03 (#57, spec #49 stories 51 to 53): while it thẩm định a hồ sơ, a Thành viên Tổ tư vấn Phân công on it
- * asks the Sở to trả về the hồ sơ to the xã, with a lý do. As with the xã's đề nghị, nothing about the hồ sơ
+ * L10 TM-03 (#57, spec #49 stories 51 to 53; #69): while it thẩm định a hồ sơ, or once its báo cáo is issued but not
+ * yet sao chép, a Thành viên Tổ tư vấn Phân công on it asks the Sở to trả về the hồ sơ to the xã, with a lý do. As with the xã's đề nghị, nothing about the hồ sơ
  * changes: the Sở decides, and its trả về is returnFromProvince. Only the Sở and the Tổ tư vấn read them.
  */
 
-/** Story 51: sends the Sở a đề nghị trả về of a hồ sơ in Tổ tư vấn thẩm định, with its lý do. */
+/** The states the Sở can still trả về a hồ sơ from once it is Giao chấm: until the first sao chép (#69). */
+const RETURNABLE_STATES: readonly DossierState[] = ["advisory_review", "advisory_report_issued"];
+
+/** Story 51: sends the Sở a đề nghị trả về of a hồ sơ the Sở can still trả về, with its lý do. */
 export function requestAdvisoryReturn(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number }> => {
     authorize(actor, "dossier.advisory_report.write");
@@ -79,7 +82,8 @@ export function requestAdvisoryReturn(deps: CoreDeps) {
 
 /**
  * Story 52: the đề nghị trả về of the Tổ tư vấn on a hồ sơ within the reader's Phạm vi, oldest first. One is
- * pending while the hồ sơ is still in the Tổ tư vấn thẩm định it was sent in (since its last Giao chấm).
+ * pending while the hồ sơ is still in the lượt Giao chấm it was sent in and the Sở can still trả về it: Tổ tư vấn
+ * thẩm định or Đã có báo cáo Tổ tư vấn, before the first sao chép (#69).
  */
 export function listAdvisoryReturnRequests(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string }): Promise<ReturnRequestView[]> => {
@@ -90,7 +94,7 @@ export function listAdvisoryReturnRequests(deps: CoreDeps) {
       const dossier = await tx.dossiers.findById(scope, input.dossierId);
       if (!dossier) throw dossierNotFound();
       const requests = await tx.dossiers.advisoryReturnRequests(dossier.id);
-      const since = dossier.state === "advisory_review" ? dossier.gradingStartedAt : null;
+      const since = RETURNABLE_STATES.includes(dossier.state) ? dossier.gradingStartedAt : null;
       return withNames(tx, requests, (r) => !!since && r.requestedAt >= since);
     });
   };

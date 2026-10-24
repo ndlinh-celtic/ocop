@@ -208,5 +208,70 @@ describe("L10 TM-03 the Sở trả về a hồ sơ the Tổ tư vấn thẩm đ�
   });
 });
 
+describe("#69 the Sở trả về a hồ sơ Đã có báo cáo Tổ tư vấn, before the first sao chép", () => {
+  /** A hồ sơ whose Báo cáo Tổ tư vấn phiên bản 1 is issued by the first Thành viên Tổ tư vấn as Tổ trưởng. */
+  async function issued() {
+    const d = await underReview();
+    const leader = A.advisors[0]!;
+    await t.app.councils.setLeader(province, { councilId: A.councilId, userId: leader.userId });
+    const ws = await t.app.scoring.advisoryReport(leader, { dossierId: d.dossierId });
+    await t.app.scoring.saveAdvisoryDraft(leader, {
+      dossierId: d.dossierId,
+      draftVersion: 0,
+      lines: ws.criteria.map((c) => ({ criterionId: c.criterionId, levelId: c.levels[0]!.id, basis: "Căn cứ", evidenceFileIds: [], evidenceAssessment: null })),
+      summary: "Tóm tắt",
+      notes: "",
+      attachmentFileIds: [],
+    });
+    const { version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: ws.dossierVersion });
+    return { ...d, version, leader };
+  }
+
+  it("keeps the issued phiên bản, shows the đề nghị as pending, and back at the province the Tổ trưởng issues phiên bản 2 with a reason", async () => {
+    const d = await issued();
+    expect(await t.app.dossiers.get(province, { dossierId: d.dossierId })).toMatchObject({ state: "advisory_report_issued" });
+
+    let { version } = await t.app.dossiers.requestAdvisoryReturn(d.leader, { dossierId: d.dossierId, expectedVersion: d.version, reason: "Thiếu hồ sơ" });
+    expect(await t.app.dossiers.advisoryReturnRequests(province, { dossierId: d.dossierId })).toEqual([expect.objectContaining({ reason: "Thiếu hồ sơ", pending: true })]);
+    expect((await t.app.dossiers.list(province, { filter: "advisory_return_requested" })).map((x) => x.id)).toContain(d.dossierId);
+
+    ({ version } = await t.app.dossiers.returnFromProvince(province, { dossierId: d.dossierId, expectedVersion: version, ...RETURN }));
+
+    expect(await t.app.dossiers.get(d.a, { dossierId: d.dossierId })).toMatchObject({ state: "supplement_requested", provinceReceivedAt: null, gradingStartedAt: null });
+    expect(await t.app.dossiers.advisoryReturnRequests(province, { dossierId: d.dossierId })).toEqual([expect.objectContaining({ pending: false })]);
+    const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.province_return"], targetId: d.dossierId });
+    expect(entry).toMatchObject({ before: { state: "advisory_report_issued" }, after: { state: "supplement_requested" } });
+    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.returned_by_province' AND payload->>'dossierId' = $1", [d.dossierId]);
+    expect(outbox.rows).toEqual([{ payload: expect.objectContaining({ from: "advisory_report_issued", to: "supplement_requested" }) }]);
+    expect((await t.app.scoring.advisoryReportVersions(d.leader, { dossierId: d.dossierId })).map((v) => v.number)).toEqual([1]);
+
+    ({ version } = await t.app.dossiers.submit(d.a, { dossierId: d.dossierId, expectedVersion: version }));
+    const fileId = await f.uploadPdf(ward, "signed_ward_report", "BC xã đã ký lần 2.pdf");
+    ({ version } = await t.app.dossiers.attachSignedWardReport(ward, { dossierId: d.dossierId, expectedVersion: version, fileId }));
+    ({ version } = await t.app.dossiers.forwardToProvince(ward, { dossierId: d.dossierId, expectedVersion: version }));
+    t.clock.advance(hours(24));
+    ({ version } = await t.app.dossiers.receiveAtProvince(province, { dossierId: d.dossierId, expectedVersion: version }));
+    const [again] = (await t.app.councils.startGrading(A.secretary, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }] })).dossiers;
+
+    expect(again).toMatchObject({ state: "advisory_review" });
+    expect((await t.app.scoring.advisoryReport(d.leader, { dossierId: d.dossierId })).draftVersion).toBe(1);
+    // Phiên bản 1 is issued, so the next phát hành is phiên bản 2 and, as any sửa after phát hành, carries a reason.
+    await expect(t.app.scoring.issueAdvisoryReport(d.leader, { dossierId: d.dossierId, expectedVersion: again!.version })).rejects.toMatchObject({ code: "reason_required" });
+    await expect(t.app.scoring.issueAdvisoryReport(d.leader, { dossierId: d.dossierId, expectedVersion: again!.version, reason: "Hồ sơ đã bổ sung" })).resolves.toMatchObject({ number: 2 });
+    expect((await t.app.scoring.advisoryReportVersions(d.leader, { dossierId: d.dossierId })).map((v) => [v.number, v.reason])).toEqual([
+      [1, null],
+      [2, "Hồ sơ đã bổ sung"],
+    ]);
+  });
+
+  it("is refused once the báo cáo is sao chép to the Phiếu chấm (story 55)", async () => {
+    const d = await issued();
+    const [copied] = (await t.app.scoring.copyAdvisory(d.leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: d.version }], criteria: "all", recipients: "all" })).dossiers;
+
+    await expect(t.app.dossiers.returnFromProvince(province, { dossierId: d.dossierId, expectedVersion: copied!.version, ...RETURN })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(t.app.dossiers.requestAdvisoryReturn(d.leader, { dossierId: d.dossierId, expectedVersion: copied!.version, reason: "Muộn" })).rejects.toMatchObject({ code: "invalid_state" });
+  });
+});
+
 const sheets = async (dossierId: string) =>
   (await db.admin.query("SELECT id, assignment_id, state, attempt, version FROM scoring.score_sheet WHERE dossier_id = $1 ORDER BY id", [dossierId])).rows;

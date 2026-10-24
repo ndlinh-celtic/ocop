@@ -5,8 +5,8 @@ import { createTestApp, createTestDatabase, systemActor, type TestApp, type Test
 import { ADMIN, fixtures } from "./fixtures";
 
 /*
- * #14 permission matrix rows for the đề nghị trả về of the Tổ tư vấn and the Sở trả về from Tổ tư vấn thẩm
- * định (#57, L10 TM-03, spec #49 stories 51 to 55). The đợt is dựa trên Tổ tư vấn and gán to Hội đồng A. Every
+ * #14 permission matrix rows for the đề nghị trả về of the Tổ tư vấn and the Sở trả về before the first sao chép
+ * (#57, #69, L10 TM-03, spec #49 stories 51 to 55). The đợt is dựa trên Tổ tư vấn and gán to Hội đồng A. Every
  * hồ sơ is Phân công to Thành viên A as thành viên chấm and to Tổ trưởng A and Tổ tư vấn A as Thành viên Tổ tư
  * vấn, then Giao chấm; one đề nghị is sent before each row. Hội đồng B is on no đợt.
  */
@@ -34,19 +34,19 @@ const FB = "forbidden";
 const IS = "invalid_state";
 
 /**
- * Outcomes in the order of STATES. Only a Thành viên Tổ tư vấn Phân công asks, and only in Tổ tư vấn thẩm định
- * (story 51); the Sở and that Tổ tư vấn read the đề nghị, nobody else (stories 52, 53); the Sở trả về only from
- * Tổ tư vấn thẩm định, never once Phiếu chấm are being written (story 55).
+ * Outcomes in the order of STATES. Only a Thành viên Tổ tư vấn Phân công asks, and only until the first sao chép
+ * (story 51, #69); the Sở and that Tổ tư vấn read the đề nghị, nobody else (stories 52, 53); the Sở trả về until
+ * the first sao chép too, never once Phiếu chấm are being written (story 55, #69).
  */
 const TABLE: Record<Who, Record<Action, Outcome[]>> = {
-  "Tổ trưởng A, có Phân công": { "đề nghị trả về": [A_, IS, IS, IS, IS], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [FB, FB, FB, FB, FB] },
-  "Tổ tư vấn A, có Phân công": { "đề nghị trả về": [A_, IS, IS, IS, IS], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [FB, FB, FB, FB, FB] },
+  "Tổ trưởng A, có Phân công": { "đề nghị trả về": [A_, A_, IS, IS, IS], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [FB, FB, FB, FB, FB] },
+  "Tổ tư vấn A, có Phân công": { "đề nghị trả về": [A_, A_, IS, IS, IS], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [FB, FB, FB, FB, FB] },
   "Tổ tư vấn A, không Phân công": { "đề nghị trả về": [NF, NF, NF, NF, NF], "xem đề nghị trả về": [NF, NF, NF, NF, NF], "trả về xã": [FB, FB, FB, FB, FB] },
   "Tổ tư vấn B": { "đề nghị trả về": [NF, NF, NF, NF, NF], "xem đề nghị trả về": [NF, NF, NF, NF, NF], "trả về xã": [FB, FB, FB, FB, FB] },
   "Thành viên A, có Phân công": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },
   "Chủ tịch A": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },
   "Thư ký A": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },
-  "Cán bộ Sở": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [A_, IS, IS, IS, IS] },
+  "Cán bộ Sở": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [A_, A_, A_, A_, A_], "trả về xã": [A_, A_, IS, IS, IS] },
   "Cán bộ xã": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },
   "Quản trị": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },
   "Chủ thể": { "đề nghị trả về": [FB, FB, FB, FB, FB], "xem đề nghị trả về": [FB, FB, FB, FB, FB], "trả về xã": [FB, FB, FB, FB, FB] },

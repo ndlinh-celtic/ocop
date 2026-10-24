@@ -323,18 +323,26 @@ async function issue(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: Dossier,
   return number;
 }
 
-/** Stories 56 to 59: the Tổ trưởng issues the nháp as phiên bản 1; the hồ sơ moves to Đã có báo cáo Tổ tư vấn. */
+/**
+ * Stories 56 to 59: the Tổ trưởng issues the nháp as phiên bản 1; the hồ sơ moves to Đã có báo cáo Tổ tư vấn. After a
+ * Sở trả về and Giao chấm again (#69) the hồ sơ is in Tổ tư vấn thẩm định with phiên bản issued, so the phát hành is
+ * phiên bản N+1 and, as any sửa after phát hành, needs a reason.
+ */
 export function issueAdvisoryReport(deps: CoreDeps) {
-  return async (actor: Actor, input: { dossierId: string; expectedVersion: number }): Promise<{ version: number; number: number }> => {
+  return async (actor: Actor, input: { dossierId: string; expectedVersion: number; reason?: string | null }): Promise<{ version: number; number: number }> => {
     authorize(actor, "dossier.advisory_report.write");
+    const reason = typeof input.reason === "string" && input.reason.trim() !== "" ? input.reason.trim() : null;
+    if (reason !== null && reason.length > 2000) throw new DomainError("field_too_long", "Lý do quá dài");
     return deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const before = await lockDossier(tx, actor, input.dossierId);
-      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.issue", expectedVersion: input.expectedVersion, metadata: { number: 1 } });
+      const number = (await tx.advisoryReports.versions(before.id)).length + 1;
+      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.issue", expectedVersion: input.expectedVersion, metadata: { number } });
       await assertLeader(tx, actor, before, now);
+      if (number > 1 && reason === null) throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
       const draft = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
-      const number = await issue(deps, tx, actor, before, draft, null, now);
-      return { version: after.version, number };
+      const issued = await issue(deps, tx, actor, before, draft, number > 1 ? reason : null, now);
+      return { version: after.version, number: issued };
     });
   };
 }
