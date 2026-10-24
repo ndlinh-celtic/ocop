@@ -77,7 +77,7 @@ Giữ chúng ở dạng cấu hình (trong `criteria_version` / `round_config`),
 - Bộ tiêu chí QĐ 26/2026/QĐ-TTg (26 bộ, A/B/C = 40/25/35, Ngưỡng hạng 30/50/70/90) đã bóc tách ở `docs/tieu-chi/` từ bản scan; các chỗ cần soát nằm ở sheet "Cần rà soát". 18 tiêu chí mẫu trong prototype chỉ là minh họa.
 - Điểm tổng hợp = trung bình cộng các thành viên; Sao tối thiểu so bằng điểm trung bình của tiêu chí.
 - Mức "Không đáp ứng, 0 điểm" tự thêm cho tiêu chí mà phiếu QĐ 26 không có mức 0.
-- Quyền xem điểm (L13–L15, TV-06, TV-08; luồng xử lý tự mâu thuẫn giữa "họp xem điểm của nhau rồi chốt" và "chỉ xem sau khi chốt"): thành viên thấy phiếu người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch, Thư ký trước đó chỉ thấy tiến độ; Tổ tư vấn thấy điểm tổng hợp sau khi chốt; Chủ thể, xã, Sở không bao giờ thấy phiếu từng thành viên. Cần đối chiếu quy chế hội đồng.
+- Quyền xem điểm (L13–L15, TV-06, TV-08; luồng xử lý tự mâu thuẫn giữa "họp xem điểm của nhau rồi chốt" và "chỉ xem sau khi chốt"): thành viên thấy phiếu người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch, Thư ký thấy điểm từng phiếu ngay khi phiếu được xác nhận, điểm tổng hợp và Cờ chênh lệch từ Sẵn sàng chốt (chủ đầu tư đã trả lời trong `docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`, #68); Tổ tư vấn thấy điểm tổng hợp sau khi chốt; Chủ thể, xã, Sở không bao giờ thấy phiếu từng thành viên. Cần đối chiếu quy chế hội đồng.
 - Quy chế hội đồng: số thành viên chấm, quy tắc tổng hợp (trung bình, loại điểm lệch, ngưỡng cờ chênh lệch).
 - Cấp độ an toàn thông tin của hệ thống (dự kiến cấp 2 hoặc 3) và yêu cầu với nhà cung cấp cloud.
 - Thời hạn lưu audit, hồ sơ, minh chứng.

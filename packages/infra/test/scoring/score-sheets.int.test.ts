@@ -186,26 +186,46 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     expect((await scoreAndConfirm(m(2), d.dossierId)).dossierState).toBe("member_confirmed");
   });
 
-  it("shows the Chủ tịch and Thư ký progress without points, each thành viên only their own phiếu, and nobody else anything (stories 92, 95)", async () => {
+  it("shows the Chủ tịch and Thư ký each phiếu đã xác nhận as it is confirmed, a nháp by state only, no tổng hợp, each thành viên only their own phiếu, and nobody else anything (stories 92, 95; #68)", async () => {
     const d = await w.graded([m(0), m(1)]);
-    await scoreAndConfirm(m(0), d.dossierId);
-    await save(m(1), d.dossierId, 1, [{ code: "1.1", points: 20 }]);
+    // Before any xác nhận the view shows no points, so opening it is no personal data access (counted below).
+    expect((await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId })).kind).toBe("confirmed_sheets");
+    await scoreAndConfirm(m(0), d.dossierId, [
+      { code: "1.1", points: 20 },
+      { code: "2.1", points: 25 },
+      { code: "3.1", points: 35 },
+    ]);
+    await save(m(1), d.dossierId, 1, [{ code: "1.1", points: 40 }]);
 
     for (const who of [w.A.chair, w.A.secretary]) {
       const view = await w.t.app.scoring.readDossierScores(who, { dossierId: d.dossierId });
-      expect(view).toEqual({
-        kind: "progress_only",
-        dossierId: d.dossierId,
-        minGraders: 2,
-        progress: [
-          { userId: m(0).userId, fullName: m(0).fullName, state: "confirmed", confirmedAt: expect.any(Date), sheetId: expect.any(String) },
-          { userId: m(1).userId, fullName: m(1).fullName, state: "draft", confirmedAt: null, sheetId: expect.any(String) },
-        ].sort((x, y) => x.fullName.localeCompare(y.fullName, "vi")),
-      });
-      expect(JSON.stringify(view)).not.toMatch(/points|levelId/);
+      if (view.kind !== "confirmed_sheets") throw new Error(`expected confirmed_sheets, got ${view.kind}`);
+      expect(view).toMatchObject({ dossierId: d.dossierId, dossierState: "member_review", minGraders: 2 });
+      expect(view.criteria.map((c) => c.code)).toEqual(["1.1", "2.1", "3.1"]);
+      const byUser = new Map(view.graders.map((g) => [g.userId, g]));
+      expect(byUser.get(m(0).userId)).toMatchObject({ state: "confirmed", total: 80 });
+      expect(byUser.get(m(0).userId)!.lines!.map((l) => [l.criterionId, l.points])).toEqual([
+        [w.criterionId("1.1"), 20],
+        [w.criterionId("2.1"), 25],
+        [w.criterionId("3.1"), 35],
+      ]);
+      // The nháp of m(1) (40 on 1.1) stays private: state only.
+      expect(byUser.get(m(1).userId)).toMatchObject({ state: "draft", total: null, lines: null });
+      expect(JSON.stringify(view.graders)).not.toContain(w.level("1.1:40"));
+      // Điểm tổng hợp and Cờ chênh lệch wait for Sẵn sàng chốt.
+      expect(view).not.toHaveProperty("aggregate");
     }
+    // Each opening is a personal data access (NĐ 13/2023): the phiếu name the thành viên.
+    const views = await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: d.dossierId });
+    expect(views.map((v) => [v.actorUserId, v.metadata])).toEqual(
+      expect.arrayContaining([
+        [w.A.chair.userId, { view: "confirmed_sheets" }],
+        [w.A.secretary.userId, { view: "confirmed_sheets" }],
+      ]),
+    );
+    expect(views).toHaveLength(2);
     const mine = await own(m(1), d.dossierId);
-    expect(mine.criteria.map((c) => c.points)).toEqual([20, null, null]);
+    expect(mine.criteria.map((c) => c.points)).toEqual([40, null, null]);
     expect(JSON.stringify(mine)).not.toContain(m(0).userId);
 
     for (const who of [d.a, w.ward, w.province, await w.f.admin()]) {

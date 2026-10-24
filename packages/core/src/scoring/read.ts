@@ -4,6 +4,7 @@ import { assembleSet } from "../criteria/detail";
 import type { RankThresholds } from "../criteria/model";
 import { rankStoredSet, type StoredStarRank } from "../criteria/star-rank";
 import { DOSSIER_STATES, dossierNotFound, type Dossier, type DossierState } from "../dossiers/model";
+import { auditEntry } from "../audit/audit";
 import { authorize } from "../identity/policy";
 import type { Role } from "../identity/roles";
 import { dataScopeOf } from "../identity/scope";
@@ -24,7 +25,7 @@ import type { AggregateResult, FinalizedSnapshot } from "./meeting-model";
  * open assumption (CLAUDE.md) to check against the quy chế hội đồng, so change it there and nowhere else.
  */
 
-export type ScoresVisibility = "progress_only" | "own_sheet" | "full" | "aggregate_only" | "none";
+export type ScoresVisibility = "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "none";
 
 /** Sẵn sàng chốt and every state after chốt (a Mở khóa sau chốt goes back to Sẵn sàng chốt). */
 const READY_OR_LATER: readonly DossierState[] = DOSSIER_STATES.slice(DOSSIER_STATES.indexOf("member_confirmed"));
@@ -42,7 +43,8 @@ export interface VisibilityFacts {
 
 /**
  * The kind of score view a Vai trò đang dùng gets of a hồ sơ already loaded within its Phạm vi. The Chủ tịch and
- * Thư ký see progress only until Sẵn sàng chốt, then everything; a thành viên sees their own phiếu, and everything
+ * Thư ký see each phiếu as soon as it is confirmed, and the tổng hợp from Sẵn sàng chốt (#68, chủ đầu tư's answer
+ * in `docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`); a thành viên sees their own phiếu, and everything
  * once both their phiếu is confirmed and the hồ sơ is Sẵn sàng chốt (L15 step 4 "họp xem điểm của nhau").
  */
 export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly = false, finalized = false }: VisibilityFacts): ScoresVisibility {
@@ -50,7 +52,7 @@ export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly 
   switch (role) {
     case "council_chair":
     case "council_secretary":
-      return ready || finalized ? "full" : "progress_only";
+      return ready || finalized ? "full" : "confirmed_sheets";
     case "council_member":
       // After chốt every thành viên chấm of the hồ sơ sees the kết quả and each phiếu, a Vắng included (story 122, TV-08).
       return !ownSheetOnly && (finalized || (ready && ownSheetConfirmed)) ? "full" : "own_sheet";
@@ -159,9 +161,12 @@ export interface AggregateOnlyView {
   result: { n: number; finalizedAt: Date; sha256: string };
 }
 
+/** #68: the Chủ tịch and Thư ký before Sẵn sàng chốt, each phiếu đã xác nhận with its dòng, no tổng hợp nor Cờ chênh lệch. */
+export type ConfirmedSheetsView = Pick<FullScoresView, "dossierId" | "dossierState" | "minGraders" | "set" | "thresholds" | "criteria" | "graders"> & { kind: "confirmed_sheets" };
+
 export type DossierScores =
   | { kind: "none" }
-  | { kind: "progress_only"; dossierId: string; minGraders: number; progress: GraderProgress[] }
+  | ConfirmedSheetsView
   | OwnSheetView
   | FullScoresView
   | AggregateOnlyView;
@@ -180,9 +185,15 @@ export function readDossierScores(deps: CoreDeps) {
       const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
       const result = await tx.aggregateResults.current(dossier.id);
       switch (scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly: input.ownSheet === true, finalized: result !== null })) {
-        case "progress_only": {
-          const round = dossier.roundId ? await tx.rounds.findById(dossier.roundId) : null;
-          return { kind: "progress_only", dossierId: dossier.id, minGraders: round?.aggregation.minGraders ?? 0, progress: await progressOf(tx, dossier.id) };
+        case "confirmed_sheets": {
+          const { set, thresholds, order, graders, aggregation } = await aggregateOf(tx, dossier);
+          // A thành viên's points shown to another: a personal data access (NĐ 13/2023). Before any xác nhận the view is progress alone.
+          if (graders.some((g) => g.lines !== null)) {
+            await tx.audit.append(
+              auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossier.id, metadata: { view: "confirmed_sheets" } }),
+            );
+          }
+          return { kind: "confirmed_sheets", dossierId: dossier.id, dossierState: dossier.state, minGraders: aggregation.minGraders, set, thresholds, criteria: criteriaOf(order), graders };
         }
         case "full":
           return result ? finalizedView(tx, dossier, result) : fullView(tx, dossier);
@@ -260,6 +271,9 @@ export async function aggregateOf(tx: Tx, dossier: Dossier) {
   return { set, thresholds, order, graders: graded.map((g) => g.grader), graded, aggregation, aggregate };
 }
 
+const criteriaOf = (order: ReturnType<typeof sheetOrder>): FullScoresView["criteria"] =>
+  order.map((c) => ({ criterionId: c.id, code: c.code, name: c.name, partCode: c.partCode, maxPoints: c.maxPoints }));
+
 async function fullView(tx: Tx, dossier: Dossier): Promise<FullScoresView> {
   const { set, thresholds, order, graders, aggregation, aggregate } = await aggregateOf(tx, dossier);
   return {
@@ -270,7 +284,7 @@ async function fullView(tx: Tx, dossier: Dossier): Promise<FullScoresView> {
     ...aggregation,
     set,
     thresholds,
-    criteria: order.map((c) => ({ criterionId: c.id, code: c.code, name: c.name, partCode: c.partCode, maxPoints: c.maxPoints })),
+    criteria: criteriaOf(order),
     graders,
     aggregate,
     result: null,
@@ -290,7 +304,7 @@ async function finalizedView(tx: Tx, dossier: Dossier, result: AggregateResult):
     deviationFlagPoints: snapshot.aggregation.deviationFlagPoints,
     set: assembleSet(rows),
     thresholds: snapshot.thresholds,
-    criteria: sheetOrder(rows).map((c) => ({ criterionId: c.id, code: c.code, name: c.name, partCode: c.partCode, maxPoints: c.maxPoints })),
+    criteria: criteriaOf(sheetOrder(rows)),
     graders: snapshot.graders.map((g) => ({
       userId: g.userId,
       fullName: g.fullName,

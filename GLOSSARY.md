@@ -270,7 +270,7 @@ _Avoid_: Sửa điểm, hủy chốt
 - Tổ tư vấn và Thành viên hội đồng đều chọn **Mức điểm**, không nhập điểm số tự do.
 - Tổ tư vấn đề nghị Sở trả hồ sơ về xã, và Sở trả về được, cho đến trước lần sao chép đầu (Tổ tư vấn thẩm định hoặc Đã có báo cáo Tổ tư vấn); hồ sơ lên tỉnh lại giữ Phân công, nháp và các phiên bản Báo cáo Tổ tư vấn đã phát hành, nhưng phải Tiếp nhận tại tỉnh và Giao chấm lại; phát hành tiếp là phiên bản N+1 có lý do. Từ Thành viên xem xét trở đi hồ sơ không trả về xã được.
 - Phiếu chấm còn chưa xác nhận khi chốt điểm là **Vắng**.
-- Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký trước đó chỉ thấy tiến độ. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên.
+- Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký thấy điểm từng Phiếu chấm ngay khi phiếu được xác nhận (phiếu nháp chỉ hiện trạng thái), còn điểm tổng hợp và Cờ chênh lệch chỉ từ Sẵn sàng chốt. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên.
 - **Hạng sao** tính từ điểm tổng hợp, hội đồng không sửa tay; muốn đổi hạng thì **Trả phiếu** để chấm lại trước khi chốt.
 - Sao chép lại từ một phiên bản Báo cáo Tổ tư vấn mới cập nhật từng Tiêu chí mà thành viên chưa sửa; Tiêu chí đã sửa được giữ và báo lại, Phiếu chấm đã xác nhận được giữ toàn bộ.
 - Chủ tịch hoặc Thư ký chốt điểm từng hồ sơ Sẵn sàng chốt, có **Xác thực lại**; Phiếu chấm chưa xác nhận lúc đó là **Vắng**.

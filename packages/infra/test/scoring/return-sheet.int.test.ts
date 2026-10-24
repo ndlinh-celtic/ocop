@@ -135,6 +135,23 @@ describe("L15 Trả phiếu (#61)", () => {
     expect((await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId })).kind).toBe("own_sheet");
   });
 
+  it("shows the Chủ tịch and Thư ký, back in Thành viên xem xét, the phiếu still confirmed and the lần chấm 2 without points; never the phiếu bị thay thế (#68)", async () => {
+    const d = await graded(2, 2);
+    await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: (await sheetOf(m(1), d.dossierId)).id, reason: "Chấm lại" });
+
+    for (const reader of [w.A.chair, w.A.secretary]) {
+      const view = await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId });
+      if (view.kind !== "confirmed_sheets") throw new Error(`expected confirmed_sheets, got ${view.kind}`);
+      expect(view.graders.map((g) => [g.userId, g.state, g.total]).sort()).toEqual(
+        [
+          [m(0).userId, "confirmed", 80],
+          [m(1).userId, "draft", null],
+        ].sort(),
+      );
+      expect(view.graders.find((g) => g.userId === m(1).userId)!.lines).toBeNull();
+    }
+  });
+
   it("refuses a nháp, a phiếu already returned, another hồ sơ's phiếu and a missing lý do", async () => {
     const d = await graded(3, 2);
     const other = await graded(2, 2);

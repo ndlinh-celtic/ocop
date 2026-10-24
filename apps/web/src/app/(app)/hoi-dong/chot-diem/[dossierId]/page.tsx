@@ -15,8 +15,9 @@ export const dynamic = "force-dynamic";
 /**
  * S43 Tổng hợp điểm và chốt (L15 HD-04, HD-05, HD-08; stories 98 to 101, 116 to 119): the phiếu đã xác nhận of each
  * thành viên chấm side by side with the điểm tổng hợp, the Hạng sao and the Cờ chênh lệch, and the Chốt điểm button
- * once the hồ sơ is Sẵn sàng chốt in an open Phiên họp. Before Sẵn sàng chốt the read model gives progress only, so
- * the page says so and shows no points; after chốt a lock banner names who chốt and when, and the table is the kết quả.
+ * once the hồ sơ is Sẵn sàng chốt in an open Phiên họp. Before Sẵn sàng chốt the read model gives the phiếu đã xác nhận
+ * without tổng hợp (#68), so the page says how many are still missing; after chốt a lock banner names who chốt and when,
+ * and the table is the kết quả.
  */
 export default async function AggregatePage({ params }: { params: Promise<{ dossierId: string }> }) {
   const actor = await requireActor();
@@ -25,7 +26,7 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.scoring.readDossierScores(actor, { dossierId }).catch(orNotFound),
   ]);
-  if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "progress_only")) notFound();
+  if (!dossier || !scores || (scores.kind !== "full" && scores.kind !== "confirmed_sheets")) notFound();
   const [meeting, history, results, readyDossiers] = await Promise.all([
     scores.kind === "full" && !scores.result ? app().core.scoring.meetingOf(actor, { dossierId }) : null,
     app().core.scoring.scoreSheetHistory(actor, { dossierId }),
@@ -116,14 +117,13 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
           />
         </section>
       )}
-      {scores.kind === "full" ? (
-        <AggregateTable view={scores} />
-      ) : (
+      {scores.kind === "confirmed_sheets" && (
         <p role="status" className="rounded-lg border border-amber bg-amber-soft px-4 py-3 text-sm" data-testid="not-ready">
-          Chưa đủ phiếu: {scores.progress.filter((p) => p.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Điểm của các thành viên hiện khi hồ
-          sơ Sẵn sàng chốt.
+          Chưa đủ phiếu: {scores.graders.filter((g) => g.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Bảng hiện điểm các phiếu đã xác nhận;
+          điểm tổng hợp, hạng sao và cờ chênh lệch tính khi hồ sơ Sẵn sàng chốt.
         </p>
       )}
+      <AggregateTable view={scores} />
 
       {superseded.length > 0 && (
         <section className="flex flex-col gap-2 rounded-lg border border-amber bg-amber-soft px-4 py-3 text-sm" data-testid="superseded-results">
@@ -141,7 +141,7 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
         </section>
       )}
       {(dossier.state === "member_review" || dossier.state === "member_confirmed") && (
-        <ReturnPanel dossierId={dossierId} graders={scores.kind === "full" ? scores.graders : scores.progress} history={history} />
+        <ReturnPanel dossierId={dossierId} graders={scores.graders} history={history} />
       )}
     </div>
   );

@@ -25,7 +25,7 @@ type Who =
   | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Tổ tư vấn thẩm định";
 type Action = "lưu phiếu" | "xác nhận phiếu" | "xem điểm";
-type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "progress_only" | "own_sheet" | "full" | "aggregate_only" | "none";
+type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "none";
 
 function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Outcome][]) {
   const actors = {} as Record<Exclude<Who, "Chủ thể">, UserActor>;
@@ -91,7 +91,7 @@ function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Out
   it.each(rows.filter((r) => states.includes(r[2])))("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const run = attempt(who, action, d);
-    if (outcome === "allowed" || outcome === "progress_only" || outcome === "own_sheet" || outcome === "full" || outcome === "aggregate_only" || outcome === "none") await expect(run).resolves.toBe(outcome);
+    if (outcome === "allowed" || outcome === "confirmed_sheets" || outcome === "own_sheet" || outcome === "full" || outcome === "aggregate_only" || outcome === "none") await expect(run).resolves.toBe(outcome);
     else await expect(run).rejects.toMatchObject({ code: outcome });
   });
 }
@@ -129,16 +129,17 @@ const ROWS: [Who, Action, State, Outcome][] = [
   ["Quản trị", "xác nhận phiếu", "Thành viên xem xét", "forbidden"],
   ["Thành viên A, có Phân công", "xác nhận phiếu", "Tổ tư vấn thẩm định", "invalid_state"],
 
-  // Who sees which points (stories 92, 93, 95, 124, 132): `full` from Sẵn sàng chốt, for a thành viên only once confirmed (#59).
+  // Who sees which points (stories 92, 93, 95, 124, 132): `full` from Sẵn sàng chốt, for a thành viên only once confirmed (#59);
+  // before that the Chủ tịch and Thư ký see each phiếu đã xác nhận (#68).
   ["Thành viên A, có Phân công", "xem điểm", "Thành viên xem xét", "own_sheet"],
   ["Thành viên A, có Phân công", "xem điểm", "Sẵn sàng chốt", "own_sheet"],
   ["Thành viên A, có Phân công", "xem điểm", "Tổ tư vấn thẩm định", "own_sheet"],
   ["Thư ký A dùng vai Thành viên", "xem điểm", "Sẵn sàng chốt", "own_sheet"],
   ["Thành viên A, không Phân công", "xem điểm", "Thành viên xem xét", "not_found"],
-  ["Chủ tịch A", "xem điểm", "Thành viên xem xét", "progress_only"],
+  ["Chủ tịch A", "xem điểm", "Thành viên xem xét", "confirmed_sheets"],
   ["Chủ tịch A", "xem điểm", "Sẵn sàng chốt", "full"],
   ["Thư ký A", "xem điểm", "Sẵn sàng chốt", "full"],
-  ["Thư ký A", "xem điểm", "Thành viên xem xét", "progress_only"],
+  ["Thư ký A", "xem điểm", "Thành viên xem xét", "confirmed_sheets"],
   ["Thành viên A, đã xác nhận", "xem điểm", "Sẵn sàng chốt", "full"],
   ["Tổ tư vấn A, có Phân công", "xem điểm", "Tổ tư vấn thẩm định", "none"],
   ["Thành viên B", "xem điểm", "Thành viên xem xét", "not_found"],
