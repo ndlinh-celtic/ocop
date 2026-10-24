@@ -158,7 +158,6 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
           </p>
           {editable ? (
             <AdvisoryEditor
-              key={ws.draftVersion}
               dossierId={dossierId}
               criteria={ws.criteria}
               summary={ws.summary}

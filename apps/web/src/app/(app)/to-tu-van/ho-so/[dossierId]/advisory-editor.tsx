@@ -24,8 +24,11 @@ export interface EditorProps {
  * giá minh chứng, Điểm đề xuất, căn cứ and the minh chứng it cites; nhận xét tổng hợp, điểm cần lưu ý and tệp đính
  * kèm thực địa; with the sums by Phần kept live. The same form, prefilled from phiên bản N, issues N+1 (story 60).
  */
-export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, notes: initialNotes, attachments: initialAttachments, mode }: EditorProps) {
+export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, notes: initialNotes, attachments: initialAttachments, mode: initialMode }: EditorProps) {
   const router = useRouter();
+  // The version a save is made at moves with each save, here rather than through a remount: the form keeps what the
+  // reader typed and the message it was shown. A colleague's save in between is reported as version_conflict (story 50).
+  const [mode, setMode] = useState(initialMode);
   const [lines, setLines] = useState<Record<string, Line>>(() =>
     Object.fromEntries(
       criteria.map((c) => [
@@ -56,11 +59,20 @@ export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, n
     e.preventDefault();
     setBusy(true);
     setMessage({});
-    const r =
-      mode.kind === "draft" ? await saveAdvisoryDraftAction(dossierId, mode.draftVersion, payload()) : await reissueAdvisoryReportAction(dossierId, mode.dossierVersion, reason, payload());
-    setBusy(false);
-    if (r.error) return setMessage({ error: r.error });
-    setMessage({ ok: mode.kind === "draft" ? "Đã lưu nháp." : `Đã phát hành phiên bản ${mode.nextNumber}.` });
+    if (mode.kind === "draft") {
+      const r = await saveAdvisoryDraftAction(dossierId, mode.draftVersion, payload());
+      setBusy(false);
+      if (r.error || r.draftVersion === undefined) return setMessage({ error: r.error ?? "Không lưu được bản nháp" });
+      setMode({ kind: "draft", draftVersion: r.draftVersion });
+      setMessage({ ok: "Đã lưu nháp." });
+    } else {
+      const r = await reissueAdvisoryReportAction(dossierId, mode.dossierVersion, reason, payload());
+      setBusy(false);
+      if (r.error || r.version === undefined || r.number === undefined) return setMessage({ error: r.error ?? "Không phát hành được" });
+      setMode({ kind: "reissue", dossierVersion: r.version, nextNumber: r.number + 1 });
+      setReason("");
+      setMessage({ ok: `Đã phát hành phiên bản ${r.number}.` });
+    }
     router.refresh();
   };
 
