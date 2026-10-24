@@ -32,6 +32,12 @@ export interface TransitionRule {
    * pass it, since that Vai trò's Phạm vi covers no hồ sơ.
    */
   lookup?: true;
+  /**
+   * A same-state row whose use case writes something with its own version beside the hồ sơ (a nháp of a Phiếu chấm or
+   * of the Báo cáo Tổ tư vấn) and nothing on the hồ sơ: assertTransitionAllowed checks it and transition() refuses it, so
+   * a save never bumps the hồ sơ version that Chốt điểm, Phát hành or Phân công hold.
+   */
+  checkOnly?: true;
 }
 
 /** What policy needs of a hồ sơ: its state and what decides whose Phạm vi covers it. */
@@ -334,8 +340,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
       guard: provinceReceived,
     }),
   ),
-  // L10 TM-02, TM-05, TM-06 (stories 44 to 50): the Tổ tư vấn Phân công write their shared nháp. Off the timeline.
-  { action: "dossier.advisory_report.edit", from: "advisory_review", to: "advisory_review", roles: ["advisory_member"], event: "dossier.advisory_report_saved", timeline: false },
+  // L10 TM-02, TM-05, TM-06 (stories 44 to 50): the Tổ tư vấn Phân công write their shared nháp. Off the timeline;
+  // checkOnly, since the nháp has its own version.
+  { action: "dossier.advisory_report.edit", from: "advisory_review", to: "advisory_review", roles: ["advisory_member"], event: "dossier.advisory_report_saved", timeline: false, checkOnly: true },
   // L10 TM-03 (#57 story 51): a Thành viên Tổ tư vấn Phân công asks the Sở to trả về; the state stays. A matter
   // between the Tổ tư vấn and the Sở, so not on the timeline the Chủ thể reads (story 53).
   {
@@ -361,15 +368,14 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   // L14 TV-01, TV-05..07 (stories 83 to 94): a thành viên chấm writes and xác nhận their own Phiếu chấm while
   // the hồ sơ is Thành viên xem xét or Sẵn sàng chốt; the use case finds the phiếu by the reader's Phân công.
   // The xác nhận that brings the phiếu đã xác nhận to người chấm tối thiểu is its own action because ruleFor
-  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49). The edit rows are only
-  // checked (assertTransitionAllowed): a nháp writes the phiếu, never the hồ sơ, so their event is not emitted.
+  // looks a row up by action and state. None is a row of the Chủ thể's timeline (spec #49). The edit rows are checkOnly.
   ...(["member_review", "member_confirmed"] as const).flatMap((from) =>
     (
       [
         ["dossier.score_sheet.edit", "dossier.score_sheet_saved"],
         ["dossier.score_sheet.confirm", "dossier.score_sheet_confirmed"],
       ] as const
-    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["council_member"], event, timeline: false })),
+    ).map(([action, event]): TransitionRule => ({ action, from, to: from, roles: ["council_member"], event, timeline: false, ...(action === "dossier.score_sheet.edit" ? { checkOnly: true as const } : {}) })),
   ),
   {
     action: "dossier.score_sheet.confirm_ready",

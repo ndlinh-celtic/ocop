@@ -147,7 +147,7 @@ describe("L10 TM-03 the Sở trả về a hồ sơ the Tổ tư vấn thẩm đ�
       notes: "",
       attachmentFileIds: [],
     });
-    let { version } = await t.app.dossiers.requestAdvisoryReturn(advisor, { dossierId: d.dossierId, expectedVersion: ws.dossierVersion + 1, reason: "Lần 1" });
+    let { version } = await t.app.dossiers.requestAdvisoryReturn(advisor, { dossierId: d.dossierId, expectedVersion: ws.dossierVersion, reason: "Lần 1" });
     const sheetsBefore = await sheets(d.dossierId);
     const assignmentsBefore = await t.app.councils.assignments(A.secretary, { dossierId: d.dossierId });
     ({ version } = await t.app.dossiers.returnFromProvince(province, { dossierId: d.dossierId, expectedVersion: version, ...RETURN }));

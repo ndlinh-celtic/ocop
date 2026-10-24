@@ -119,7 +119,7 @@ async function dossierIn(state: State): Promise<Subject> {
     notes: "",
     attachmentFileIds: [],
   });
-  ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version + 1 }));
+  ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version }));
   if (state === "Đã có báo cáo Tổ tư vấn") return { a: d.a, dossierId: d.dossierId, version };
   const [copied] = (await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" })).dossiers;
   ({ version } = copied!);

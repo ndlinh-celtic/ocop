@@ -6,7 +6,7 @@ import { rankStoredSet } from "../criteria/star-rank";
 import type { SetRows } from "../criteria/version";
 import { lockDossier } from "../dossiers/edit";
 import { dossierNotFound, versionConflict, type Dossier, type DossierState, type Submission } from "../dossiers/model";
-import { transition } from "../dossiers/transition";
+import { assertTransitionAllowed, transition } from "../dossiers/transition";
 import { authorize } from "../identity/policy";
 import { isAssignmentActive } from "../identity/model";
 import { dataScopeOf } from "../identity/scope";
@@ -243,12 +243,24 @@ export function saveAdvisoryDraft(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       const stored = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
-      // The nháp's own version is the lock between colleagues; the hồ sơ row lock queues them.
-      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.edit", expectedVersion: before.version, metadata: { draftVersion: stored.version + 1 } });
+      const now = deps.clock.now();
+      // The nháp's own version is the lock between colleagues; the hồ sơ row lock queues them. A nháp writes nothing
+      // on the hồ sơ, so the version the Tổ trưởng, Thư ký and Sở hold stays valid.
+      assertTransitionAllowed(actor, before, "dossier.advisory_report.edit", now);
       if (input.draftVersion !== stored.version) throw versionConflict();
       const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
-      const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: after.updatedAt, updatedBy: actor.userId };
+      const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: now, updatedBy: actor.userId };
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, {
+          action: "dossier.advisory_report.edit",
+          targetType: "dossier",
+          targetId: before.id,
+          before: { draftVersion: stored.version },
+          after: { draftVersion: draft.version },
+          metadata: {},
+        }),
+      );
       return { draftVersion: draft.version };
     });
   };
