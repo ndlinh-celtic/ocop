@@ -1,5 +1,5 @@
 import type { AggregateResult, AggregateResultRepo, MeetingRepo } from "@ocop/core";
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { aggregateResult, meeting, meetingDossier, meetingMinutes, unlockRequest } from "../db/schema";
 
@@ -38,7 +38,16 @@ export function meetingRepo(db: Db): MeetingRepo {
       return row ?? null;
     },
     async addDossier(row) {
-      const inserted = await db.insert(meetingDossier).values(row).onConflictDoNothing().returning({ id: meetingDossier.dossierId });
+      // A hồ sơ chốt here whose kết quả a Mở khóa superseded waits here again (migration 0044 lets the row go back).
+      const inserted = await db
+        .insert(meetingDossier)
+        .values(row)
+        .onConflictDoUpdate({
+          target: [meetingDossier.meetingId, meetingDossier.dossierId],
+          set: { resultId: null },
+          setWhere: sql`${meetingDossier.resultId} IN (SELECT ${aggregateResult.id} FROM ${aggregateResult} WHERE ${aggregateResult.supersededAt} IS NOT NULL)`,
+        })
+        .returning({ id: meetingDossier.dossierId });
       return inserted.length === 1;
     },
     async removeDossier(meetingId, dossierId) {

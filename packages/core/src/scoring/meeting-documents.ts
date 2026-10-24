@@ -14,7 +14,7 @@ import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
-import { ownMeeting } from "./meetings";
+import { chotResultOf, ownMeeting } from "./meetings";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -62,7 +62,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
     if (!d) throw dossierNotFound();
     const submission = await tx.dossiers.latestSubmission(d.id);
     const versions = await tx.advisoryReports.versions(d.id);
-    const result = md.resultId ? (await tx.aggregateResults.list(d.id)).find((r) => r.id === md.resultId) : undefined;
+    const result = await chotResultOf(tx, md);
     let graders: { fullName: string; state: ScoreSheetState | null; total: number | null }[];
     let aggregate: AggregateScores;
     let thresholds: RankThresholds;
@@ -94,7 +94,8 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       unmet: aggregate.unmet.map((u) => `${u.code} (${u.star} sao cần ${formatDecimalVn(u.required)}, đạt ${formatDecimalVn(u.actual)})`).join("; ") || "Không",
       absent,
       advisorySummary: advisory ? `${advisory.snapshot.summary} (Báo cáo Tổ tư vấn phiên bản ${advisory.number})` : "Không có Báo cáo Tổ tư vấn",
-      status: result ? "Đã chốt" : "Tạm tính",
+      // A kết quả a Mở khóa superseded is not printed: the hồ sơ is tạm tính until chốt again (ADR 0008).
+      status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
       note: aggregate.total >= thresholds[5] ? "Đề nghị xét 5 sao" : "",
       starValue: aggregate.star,
       totalValue: aggregate.total,

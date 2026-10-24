@@ -139,6 +139,22 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     expect(audited[0]).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { kind: "score_table", pending: 1 } });
   });
 
+  it("never prints a kết quả chốt a Mở khóa sau chốt superseded as Đã chốt (ADR 0008)", async () => {
+    const { meetingId, done } = await meeting();
+    const admin = await w.f.admin();
+    const requestFileId = await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf");
+    await w.t.app.scoring.unlockFinalized(admin, { dossierId: done.dossierId, requestFileId, requestedBy: "Chủ tịch Hội đồng A", reason: "Sai sót" });
+
+    const doc = await text(w.A.secretary, meetingId, "score_table");
+    expect(doc).not.toContain("Đã chốt");
+    expect(doc).toContain("| 72,5 | 4 sao | Lệch điểm lớn (55 điểm) | Đã mở khóa, chờ chốt lại |");
+    expect(doc).toContain("Bản nháp: còn 3 hồ sơ chưa chốt điểm");
+    expect(await text(w.A.secretary, meetingId, "minutes")).not.toContain("Tình trạng: Đã chốt.");
+    const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
+    expect(view.finalizedCount).toBe(0);
+    expect(view.dossiers.find((x) => x.dossierId === done.dossierId)!.result).toBeNull();
+  });
+
   describe("biên bản đã ký (story 115)", () => {
     it("keeps each biên bản đã ký số the Thư ký uploads, numbered 1, 2, …, with audit and event, before chốt is required", async () => {
       const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
