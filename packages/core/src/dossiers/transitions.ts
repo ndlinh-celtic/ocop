@@ -408,7 +408,9 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   },
   // L09 HD-03 (stories 34 to 39): after Giao chấm and before chốt điểm, the Thư ký thay or bổ sung a thành viên
   // chấm or Thành viên Tổ tư vấn, with a reason; replaceAssignment/addAssignment check the Phân công and phiếu.
-  ...(["advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
+  // Đã chuyển tỉnh too, for a hồ sơ the Sở trả về from Tổ tư vấn thẩm định: it keeps its Phân công in force (story
+  // 54), so they are changed this way before Giao chấm again; the use cases refuse it while none is in force.
+  ...(["forwarded_to_province", "advisory_review", "advisory_report_issued", "member_review", "member_confirmed"] as const).map(
     (from): TransitionRule => ({ action: "dossier.assignment.replace", from, to: from, roles: ["council_secretary"], event: "dossier.assignment_changed", timeline: false }),
   ),
 ];
