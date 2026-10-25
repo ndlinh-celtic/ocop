@@ -66,8 +66,8 @@ Bước 1 đến 4 đã xong: nền tảng, tiêu chí và đợt, chủ thể v
 
 ## Chạy kiểm tra
 
-- Trong lúc TDD chỉ chạy file test đang làm, ví dụ `pnpm --filter @ocop/infra exec vitest run --config vitest.int.config.ts test/scoring/finalize.int.test.ts`. Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
-- Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` trước khi push (cần Docker, cổng 8080 trống).
+- Trong lúc TDD chỉ chạy file test đang làm: `pnpm -s int test/scoring/finalize.int.test.ts` (đường dẫn tính từ `packages/infra`, thêm `-t "<tên>"` để lọc). Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
+- Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` một lần, sau khi đã sửa theo `/code-review`, trước khi push (cần Docker, cổng 8080 trống).
 - Điều phối nhiều implementer: tối đa 3 chạy cùng lúc.
 
 ## Giả định đang mở (cần chủ đầu tư xác nhận)

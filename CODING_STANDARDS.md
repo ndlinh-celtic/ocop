@@ -26,6 +26,16 @@ Lỗi đã lọt: PR #65 lỗi 4 (hồ sơ 92 điểm, 4 sao vẫn được ghi 
 
 Lỗi đã lọt: PR #65 lỗi 1 (lưu nháp Phiếu chấm chặn Chốt điểm), rồi cùng lỗi ở nháp Báo cáo Tổ tư vấn.
 
+## Truy cập dữ liệu cá nhân
+
+Một use case đọc ghi `personal_data.viewed` (NĐ 13/2023, trong cùng transaction đọc) khi nó cho người dùng thấy dữ liệu cá nhân của **người khác**: thông tin tài khoản, danh sách thành viên Hội đồng, hồ sơ và giấy tờ của chủ thể (trừ chính chủ thể đó), điểm từng phiếu kèm họ tên thành viên chấm. `metadata.view` đặt tên kiểu xem; chỉ ghi khi dữ liệu đó thực sự hiện (một kiểu xem chưa có phiếu nào đã xác nhận thì không ghi).
+
+- Đang ghi: `identity/staff.ts` (danh sách, chi tiết tài khoản), `councils/read.ts` (thành viên Hội đồng), `entities/read.ts`, `entities/profile.ts` (chủ thể), `scoring/read.ts` kiểu xem `confirmed_sheets`. Kiểu xem `full` còn thiếu: #73.
+- Khi diff thêm một kiểu xem hay mở rộng người được xem, reviewer hỏi: người đọc có thấy dữ liệu cá nhân của người khác không? Có thì phải có dòng audit và test đọc lại nó.
+- Ticket yêu cầu audit "như chỗ khác" thì reviewer kiểm chỗ khác đó có thật trong danh sách trên.
+
+Lỗi đã lọt: #68 viết "ghi audit như các lần xem điểm khác" trong khi chưa kiểu xem điểm nào ghi; kiểu xem `full` lộ họ tên kèm điểm mà không có audit.
+
 ## Server action
 
 Server action parse input bằng `safeParse` và trả lỗi về form; lỗi parse không được ném ra khỏi action.
