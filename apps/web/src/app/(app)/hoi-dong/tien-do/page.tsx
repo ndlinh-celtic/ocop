@@ -62,7 +62,8 @@ export default async function GradingProgressPage() {
                 {rows.map((r) => (
                   <tr key={r.dossierId} className="border-b align-top last:border-0" data-testid="progress-row">
                     <td className="px-3 py-2 font-mono whitespace-nowrap">
-                      {r.state === "member_confirmed" ? (
+                      {/* S43 shows the phiếu đã xác nhận from Thành viên xem xét (#68), the tổng hợp from Sẵn sàng chốt. */}
+                      {r.state === "member_review" || r.state === "member_confirmed" ? (
                         <Link href={`/hoi-dong/chot-diem/${r.dossierId}`} className="text-brand">
                           {r.code}
                         </Link>

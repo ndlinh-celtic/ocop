@@ -97,8 +97,8 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
     await scoreAndConfirm(m(0), d.dossierId, [40, 25, 35]);
     await scoreAndConfirm(m(1), d.dossierId, [20, 25, 35]);
 
-    // Before Sẵn sàng chốt nobody sees another's points, confirmed or not.
-    expect((await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId })).kind).toBe("progress_only");
+    // Before Sẵn sàng chốt no thành viên sees another's points; the Chủ tịch sees the phiếu đã xác nhận, no tổng hợp (#68).
+    expect((await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId })).kind).toBe("confirmed_sheets");
     expect((await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId })).kind).toBe("own_sheet");
 
     await scoreAndConfirm(m(2), d.dossierId, [20, 0, 35]);
