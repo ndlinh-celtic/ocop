@@ -70,11 +70,19 @@ describe("L15 Audit of the full score view (#73)", () => {
     }
     expect(await viewed(d.dossierId)).toEqual([]);
 
-    // m(2) is Vắng in the kết quả chốt and sees it all (TV-08).
-    expect((await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId })).kind).toBe("full");
+    // After chốt the S63 list shows the stored tổng hợp, still without an audit.
+    const listed = (await w.t.app.scoring.aggregateSummaries(m(2))).find((r) => r.dossierId === d.dossierId);
+    expect(listed).toMatchObject({ state: "score_finalized", total: 100, star: 5, flagged: false });
+    expect(await viewed(d.dossierId)).toEqual([]);
+
+    // m(2) is Vắng in the kết quả chốt and sees it all (TV-08), the same tổng hợp as the list.
+    const view = await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId });
+    if (view.kind !== "full") throw new Error(`expected full, got ${view.kind}`);
+    expect(view.aggregate).toMatchObject({ total: listed!.total, star: listed!.star, flagged: listed!.flagged });
     expect(await viewed(d.dossierId)).toEqual([[m(2).userId, "dossier", { view: "full" }]]);
   });
-  it("lists S63 the tổng hợp of each hồ sơ the reader sees in full, without any thành viên's phiếu, so the list writes no audit", async () => {
+
+  it("lists S63 the tổng hợp of each hồ sơ the reader sees in full, without any thành viên's phiếu, so the list writes no audit (story 93)", async () => {
     const d = await ready();
 
     const rows = await w.t.app.scoring.aggregateSummaries(m(0));

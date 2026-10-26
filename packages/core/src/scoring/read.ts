@@ -216,6 +216,7 @@ export function readDossierScores(deps: CoreDeps) {
   };
 }
 
+/** The reader's `scoresVisibility` of a hồ sơ, with the kết quả chốt hiện hành it was decided on (null before chốt). */
 async function visibilityOf(tx: Tx, actor: UserActor, dossier: Dossier, ownSheetOnly: boolean) {
   const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
   const result = await tx.aggregateResults.current(dossier.id);
@@ -258,7 +259,7 @@ export function aggregateSummaries(deps: CoreDeps) {
  * A thành viên's points shown with their name to another reader: a personal data access (NĐ 13/2023, CODING_STANDARDS.md
  * "Truy cập dữ liệu cá nhân"). A view without any phiếu đã xác nhận is progress alone and writes nothing.
  */
-async function auditViewed(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, view: "confirmed_sheets" | "full", graders: GraderScores[]) {
+async function auditViewed(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, view: Extract<ScoresVisibility, "confirmed_sheets" | "full">, graders: GraderScores[]) {
   if (!graders.some((g) => g.lines !== null)) return;
   await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossierId, metadata: { view } }));
 }
