@@ -21,8 +21,8 @@ import type { AggregateResult, FinalizedSnapshot } from "./meeting-model";
 
 /*
  * Who sees which points of a hồ sơ (spec #49 "Tổng hợp, Cờ chênh lệch, quyền xem điểm"; stories 92, 93, 95, 98, 124, 132).
- * The rule lives in one function, `scoresVisibility`; `readDossierScores` builds what it allows. Quyền xem điểm is an
- * open assumption (CLAUDE.md) to check against the quy chế hội đồng, so change it there and nowhere else.
+ * The rule lives in one function, `scoresVisibility`; `readDossierScores` builds what it allows. Quyền xem điểm follows
+ * the chủ đầu tư's answers (`docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`, GLOSSARY.md), so change it there and nowhere else.
  */
 
 export type ScoresVisibility = "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "none";

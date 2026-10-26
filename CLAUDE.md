@@ -66,24 +66,21 @@ Bước 1 đến 4 đã xong: nền tảng, tiêu chí và đợt, chủ thể v
 
 ## Chạy kiểm tra
 
-- Trong lúc TDD chỉ chạy file test đang làm, ví dụ `pnpm --filter @ocop/infra exec vitest run --config vitest.int.config.ts test/scoring/finalize.int.test.ts`. Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
-- Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` trước khi push (cần Docker, cổng 8080 trống).
+- Trong lúc TDD chỉ chạy file test đang làm: `pnpm -s int test/scoring/finalize.int.test.ts` (đường dẫn tính từ `packages/infra`, thêm `-t "<tên>"` để lọc). Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
+- Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` một lần, sau khi đã sửa theo `/code-review`, trước khi push (cần Docker, cổng 8080 trống).
 - Điều phối nhiều implementer: tối đa 3 chạy cùng lúc.
 
-## Giả định đang mở (cần chủ đầu tư xác nhận)
+## Giả định và câu trả lời của chủ đầu tư
 
-Giữ chúng ở dạng cấu hình (trong `criteria_version` / `round_config`), không hard-code.
+Chủ đầu tư đã trả lời bộ câu hỏi về quy chế hội đồng, kết quả và vận hành ngày 24/10/2026: `docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md` là nguồn, quy tắc đã áp dụng ghi ở `GLOSSARY.md`. Con số theo đợt hay theo bộ tiêu chí vẫn là cấu hình (`criteria_version` / `round_config`), không hard-code.
 
-- Bộ tiêu chí QĐ 26/2026/QĐ-TTg (26 bộ, A/B/C = 40/25/35, Ngưỡng hạng 30/50/70/90) đã bóc tách ở `docs/tieu-chi/` từ bản scan; các chỗ cần soát nằm ở sheet "Cần rà soát". 18 tiêu chí mẫu trong prototype chỉ là minh họa.
-- Điểm tổng hợp = trung bình cộng các thành viên; Sao tối thiểu so bằng điểm trung bình của tiêu chí.
-- Mức "Không đáp ứng, 0 điểm" tự thêm cho tiêu chí mà phiếu QĐ 26 không có mức 0.
-- Quyền xem điểm (L13–L15, TV-06, TV-08; luồng xử lý tự mâu thuẫn giữa "họp xem điểm của nhau rồi chốt" và "chỉ xem sau khi chốt"): thành viên thấy phiếu người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch, Thư ký thấy điểm từng phiếu ngay khi phiếu được xác nhận, điểm tổng hợp và Cờ chênh lệch từ Sẵn sàng chốt (chủ đầu tư đã trả lời trong `docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`, #68); Tổ tư vấn thấy điểm tổng hợp sau khi chốt; Chủ thể, xã, Sở không bao giờ thấy phiếu từng thành viên. Cần đối chiếu quy chế hội đồng.
-- Quy chế hội đồng: số thành viên chấm, quy tắc tổng hợp (trung bình, loại điểm lệch, ngưỡng cờ chênh lệch).
-- Cấp độ an toàn thông tin của hệ thống (dự kiến cấp 2 hoặc 3) và yêu cầu với nhà cung cấp cloud.
-- Thời hạn lưu audit, hồ sơ, minh chứng.
-- SMTP của cơ quan hay dịch vụ riêng; tên miền chính thức (in vào QR, không đổi được sau khi in).
-- Nhà cung cấp cloud: GreenNode có PostgreSQL quản lý (vDB cluster); FPT và Viettel chưa kiểm chứng. S3 trong nước có thể lệch chuẩn AWS (checksum SDK v3, path-style, CopyObject + SSE): chạy bộ test tương thích S3 ngay từ bước 1, đặt `requestChecksumCalculation: WHEN_REQUIRED`.
-- Đặc tả Excel: trang bìa đang là trang in đầu của sheet "Chỉ mục"; các ô "UBND tỉnh", "Đơn vị soạn thảo", "Người duyệt" còn trống. Mô tả input/output từng bước là diễn giải, cần rà lại trước khi dùng làm tài liệu chính thức.
+Còn mở:
+
+- Bộ tiêu chí QĐ 26/2026/QĐ-TTg (26 bộ, A/B/C = 40/25/35, Ngưỡng hạng 30/50/70/90) bóc tách ở `docs/tieu-chi/` từ bản scan; chỗ cần soát ở sheet "Cần rà soát". 18 tiêu chí mẫu trong prototype chỉ là minh họa. Mức "Không đáp ứng, 0 điểm" tự thêm cho tiêu chí mà phiếu QĐ 26 không có mức 0.
+- Thời hạn lưu (hồ sơ tối thiểu 10 năm, nhật ký tối thiểu 2 năm) còn *cần kiểm tra* quy định lưu trữ chuyên ngành.
+- Sở sẽ gửi: mẫu giấy chứng nhận, quyết định công nhận, biên bản, bảng tổng hợp (tạm dùng mẫu phần mềm đề xuất); tên tỉnh, UBND, Sở in trên văn bản; tài khoản SMTP của tỉnh; tên miền `ocop.<tên-tỉnh>.gov.vn` (in vào QR, không đổi được sau khi in).
+- Nhà cung cấp cloud chưa chọn. GreenNode có PostgreSQL quản lý (vDB cluster); FPT và Viettel chưa kiểm chứng. S3 trong nước có thể lệch chuẩn AWS (checksum SDK v3, path-style, CopyObject + SSE): chạy bộ test tương thích S3, đặt `requestChecksumCalculation: WHEN_REQUIRED`.
+- Đặc tả Excel: tên cụ thể ở các ô "Đơn vị soạn thảo", "Người duyệt" chờ Sở; mô tả input/output từng bước là diễn giải, cần rà lại trước khi dùng làm tài liệu chính thức.
 
 ## Prototype giao diện
 

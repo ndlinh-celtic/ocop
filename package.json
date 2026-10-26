@@ -13,6 +13,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:int": "turbo run test:int",
+    "int": "pnpm -s --filter @ocop/infra exec vitest run --config vitest.int.config.ts --reporter=dot",
     "e2e": "bash scripts/e2e.sh"
   },
   "devDependencies": {
