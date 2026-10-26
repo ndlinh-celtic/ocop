@@ -25,7 +25,7 @@ export const GRADING_MODE_LABEL: Record<GradingMode, string> = {
   advisory_based: "Dựa trên Tổ tư vấn",
 };
 
-/** Cách tổng hợp; only the mean for now (open assumption in CLAUDE.md). */
+/** Cách tổng hợp: the mean, as the chủ đầu tư answered (`docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`). */
 export const AGGREGATION_METHODS = ["mean"] as const;
 export type AggregationMethod = (typeof AGGREGATION_METHODS)[number];
 
