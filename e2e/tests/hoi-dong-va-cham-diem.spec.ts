@@ -179,6 +179,9 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
     await provincePage.getByLabel("Hạn đánh giá tỉnh").fill(vnDate(60));
     await provincePage.getByLabel("Phiên bản tiêu chí").selectOption({ label: `${LEGAL_BASIS} (ban hành 03/01/2026)` });
     await provincePage.getByRole("radio", { name: new RegExp(mode) }).check();
+    // #75: a new đợt starts from the chủ đầu tư's Quy tắc tổng hợp, 3 người chấm and a cờ from 10 điểm.
+    await expect(provincePage.getByLabel("Số người chấm tối thiểu")).toHaveValue("3");
+    await expect(provincePage.getByLabel("Ngưỡng cờ chênh lệch (điểm)")).toHaveValue("10");
     await provincePage.getByLabel("Số người chấm tối thiểu").fill("2");
     await provincePage.getByRole("button", { name: "Tạo đợt (Nháp)" }).click();
     await provincePage.getByRole("button", { name: "Mở đợt" }).click();

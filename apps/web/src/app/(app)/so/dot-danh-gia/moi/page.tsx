@@ -30,8 +30,8 @@ export default async function NewRoundPage() {
             evaluationDeadline: "",
             criteriaVersionId: versions[0]?.id ?? "",
             gradingMode: "direct",
-            minGraders: 5,
-            deviationFlagPoints: 15,
+            minGraders: 3,
+            deviationFlagPoints: 10,
           }}
         />
       </section>
