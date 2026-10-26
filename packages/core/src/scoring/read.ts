@@ -182,21 +182,18 @@ export function readDossierScores(deps: CoreDeps) {
       assertIdShape(input.dossierId, dossierNotFound);
       const dossier = await tx.dossiers.findById(dataScopeOf(actor), input.dossierId);
       if (!dossier) throw dossierNotFound();
-      const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
-      const result = await tx.aggregateResults.current(dossier.id);
-      switch (scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly: input.ownSheet === true, finalized: result !== null })) {
+      const { visibility, result } = await visibilityOf(tx, actor, dossier, input.ownSheet === true);
+      switch (visibility) {
         case "confirmed_sheets": {
           const { set, thresholds, order, graders, aggregation } = await aggregateOf(tx, dossier);
-          // A thành viên's points shown to another: a personal data access (NĐ 13/2023). Before any xác nhận the view is progress alone.
-          if (graders.some((g) => g.lines !== null)) {
-            await tx.audit.append(
-              auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossier.id, metadata: { view: "confirmed_sheets" } }),
-            );
-          }
+          await auditViewed(deps, tx, actor, dossier.id, "confirmed_sheets", graders);
           return { kind: "confirmed_sheets", dossierId: dossier.id, dossierState: dossier.state, minGraders: aggregation.minGraders, set, thresholds, criteria: criteriaOf(order), graders };
         }
-        case "full":
-          return result ? finalizedView(tx, dossier, result) : fullView(tx, dossier);
+        case "full": {
+          const view = result ? await finalizedView(tx, dossier, result) : await fullView(tx, dossier);
+          await auditViewed(deps, tx, actor, dossier.id, "full", view.graders);
+          return view;
+        }
         case "aggregate_only": {
           const full = await finalizedView(tx, dossier, result!);
           return {
@@ -217,6 +214,53 @@ export function readDossierScores(deps: CoreDeps) {
       }
     });
   };
+}
+
+async function visibilityOf(tx: Tx, actor: UserActor, dossier: Dossier, ownSheetOnly: boolean) {
+  const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
+  const result = await tx.aggregateResults.current(dossier.id);
+  return { visibility: scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly, finalized: result !== null }), result };
+}
+
+export interface AggregateSummaryRow {
+  dossierId: string;
+  code: string;
+  productName: string;
+  state: DossierState;
+  total: number;
+  star: number;
+  flagged: boolean;
+}
+
+/**
+ * S63 list (L15 TV-08; story 93, #73): the tổng hợp of each hồ sơ the reader sees in `full`, without the phiếu nor who
+ * chấm them, so opening the list is no personal data access; the detail page is (`readDossierScores`).
+ */
+export function aggregateSummaries(deps: CoreDeps) {
+  return async (actor: Actor): Promise<AggregateSummaryRow[]> => {
+    if (actor.kind !== "user") throw forbidden();
+    if (!actor.activeRole || !COUNCIL_READERS.includes(actor.activeRole)) return [];
+    authorize(actor, "dossier.read");
+    return deps.uow.run(async (tx) => {
+      const out: AggregateSummaryRow[] = [];
+      for (const d of await tx.dossiers.list(dataScopeOf(actor), {})) {
+        const { visibility, result } = await visibilityOf(tx, actor, d, false);
+        if (visibility !== "full") continue;
+        const { total, star, flagged } = result ? result.snapshot.aggregate : (await aggregateOf(tx, d)).aggregate;
+        out.push({ dossierId: d.id, code: d.code, productName: d.productName, state: d.state, total, star, flagged });
+      }
+      return out;
+    });
+  };
+}
+
+/**
+ * A thành viên's points shown with their name to another reader: a personal data access (NĐ 13/2023, CODING_STANDARDS.md
+ * "Truy cập dữ liệu cá nhân"). A view without any phiếu đã xác nhận is progress alone and writes nothing.
+ */
+async function auditViewed(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, view: "confirmed_sheets" | "full", graders: GraderScores[]) {
+  if (!graders.some((g) => g.lines !== null)) return;
+  await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossierId, metadata: { view } }));
 }
 
 /** Each thành viên chấm in force with their phiếu (not superseded), by name. */

@@ -10,16 +10,12 @@ export const dynamic = "force-dynamic";
 
 /**
  * S63 Điểm tổng hợp (L15 TV-08; story 93), list part: the hồ sơ of the thành viên whose read model is `full`, i.e. their
- * phiếu is confirmed and the hồ sơ Sẵn sàng chốt or later. Others do not appear, so nobody's points leak.
+ * phiếu is confirmed and the hồ sơ Sẵn sàng chốt or later. Others do not appear, so nobody's points leak. The list shows
+ * the tổng hợp alone, no phiếu, so opening it is no personal data access (#73); the detail page is.
  */
 export default async function MemberAggregatesPage() {
   const actor = await requireActor();
-  const dossiers = await app().core.dossiers.list(actor);
-  const views = await Promise.all(dossiers.map((d) => app().core.scoring.readDossierScores(actor, { dossierId: d.id })));
-  const rows = dossiers.flatMap((d, i) => {
-    const v = views[i]!;
-    return v.kind === "full" ? [{ d, v }] : [];
-  });
+  const rows = await app().core.scoring.aggregateSummaries(actor);
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -44,20 +40,20 @@ export default async function MemberAggregatesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ d, v }) => (
-                <tr key={d.id} className="border-b last:border-0">
+              {rows.map((r) => (
+                <tr key={r.dossierId} className="border-b last:border-0">
                   <td className="px-3 py-2 font-mono whitespace-nowrap">
-                    <Link href={`/thanh-vien/diem-tong-hop/${d.id}`} className="text-brand">
-                      {d.code}
+                    <Link href={`/thanh-vien/diem-tong-hop/${r.dossierId}`} className="text-brand">
+                      {r.code}
                     </Link>
                   </td>
-                  <td className="px-3 py-2">{d.productName || "(Chưa đặt tên sản phẩm)"}</td>
+                  <td className="px-3 py-2">{r.productName || "(Chưa đặt tên sản phẩm)"}</td>
                   <td className="px-3 py-2">
-                    <DossierStateTag state={d.state} />
+                    <DossierStateTag state={r.state} />
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatPoints(v.aggregate.total)}</td>
-                  <td className="px-3 py-2 text-amber">{"★".repeat(v.aggregate.star)}</td>
-                  <td className="px-3 py-2">{v.aggregate.flagged ? <span className="text-danger">Lệch điểm lớn</span> : <span className="text-text-3">Không</span>}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatPoints(r.total)}</td>
+                  <td className="px-3 py-2 text-amber">{"★".repeat(r.star)}</td>
+                  <td className="px-3 py-2">{r.flagged ? <span className="text-danger">Lệch điểm lớn</span> : <span className="text-text-3">Không</span>}</td>
                 </tr>
               ))}
             </tbody>
