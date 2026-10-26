@@ -110,6 +110,7 @@ export type { PreviewSetInput } from "./criteria/preview";
 export type { CriteriaSetView, TaxonomyGroup, TaxonomySet, TaxonomySubgroup, VersionDetail } from "./criteria/read";
 export {
   AGGREGATION_METHODS,
+  DEFAULT_AGGREGATION,
   DEFAULT_CHECKLIST,
   endOfVnDay,
   EXTENDABLE_DEADLINE_LABEL,

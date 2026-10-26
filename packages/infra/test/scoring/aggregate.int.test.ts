@@ -74,6 +74,7 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
   });
 
   it("raises the Cờ chênh lệch when the phiếu totals differ by the đợt's ngưỡng or more (story 100, \"từ … trở lên\")", async () => {
+    // The fixtures' ngưỡng is 15, so 10 sits below it and 15 on it.
     const below = await ready([
       [0, 25, 35],
       [40, 25, 0],

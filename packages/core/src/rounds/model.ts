@@ -38,6 +38,9 @@ export interface AggregationRule {
   deviationFlagPoints: number;
 }
 
+/** The Quy tắc tổng hợp a new round starts with, as the chủ đầu tư answered: 3 người chấm, a cờ from 10 điểm (#75). */
+export const DEFAULT_AGGREGATION: AggregationRule = { method: "mean", minGraders: 3, deviationFlagPoints: 10 };
+
 /** One item of the Checklist sơ bộ of a round; `code` keys the results of each hồ sơ. */
 export interface ChecklistItem {
   code: string;
