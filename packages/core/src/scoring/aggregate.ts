@@ -14,7 +14,7 @@ export interface AggregateScores extends StoredStarRank {
   sheetCount: number;
   /** Highest minus lowest tổng điểm of the counted phiếu; 0 with fewer than two. */
   deviation: number;
-  /** Cờ chênh lệch: `deviation` at or above the đợt's `deviationFlagPoints` ("từ … trở lên"); never on fewer than two phiếu. */
+  /** Cờ chênh lệch: `deviation` at or above the đợt's `deviationFlagPoints` ("từ … trở lên"), which is above 0, so never on fewer than two phiếu. */
   flagged: boolean;
 }
 
@@ -34,5 +34,5 @@ export function aggregateScores({ set, thresholds, sheets, deviationFlagPoints }
   const rank = rankStoredSet({ set, thresholds, scores: new Map(Object.entries(averages)) });
   const totals = sheets.map((scores) => rankStoredSet({ set, thresholds, scores }).total);
   const deviation = totals.length < 2 ? 0 : round9(Math.max(...totals) - Math.min(...totals));
-  return { ...rank, averages, sheetCount: sheets.length, deviation, flagged: totals.length >= 2 && deviation >= deviationFlagPoints };
+  return { ...rank, averages, sheetCount: sheets.length, deviation, flagged: deviation >= deviationFlagPoints };
 }

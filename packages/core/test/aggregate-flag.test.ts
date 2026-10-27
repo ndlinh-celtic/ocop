@@ -45,12 +45,12 @@ describe("L15 HD-05 Cờ chênh lệch: tổng điểm lệch từ ngưỡng tr�
     [[60, 50.01], 10, false],
     [[60, 50], 10, true],
     [[60, 55, 70], 10, true],
-    [[60, 60], 0, true],
+    [[60, 60], 0.01, false],
   ])("phiếu totalling %j against ngưỡng %d: cờ %s", (totals, threshold, flagged) => {
     expect(flagOf(totals, threshold)).toBe(flagged);
   });
 
-  it("raises no cờ on a single phiếu: there is nothing to differ from, even at ngưỡng 0", () => {
-    expect(flagOf([60], 0)).toBe(false);
+  it("raises no cờ on a single phiếu: there is nothing to differ from, even at the smallest ngưỡng", () => {
+    expect(flagOf([60], 0.01)).toBe(false);
   });
 });

@@ -48,9 +48,10 @@ export function checkedAggregation({ method, minGraders, deviationFlagPoints }: 
   if (!Number.isInteger(minGraders) || minGraders < 1 || minGraders > 50) {
     throw new DomainError("invalid_aggregation", "Số người chấm tối thiểu phải là số nguyên từ 1 đến 50");
   }
+  // Above 0: a Cờ chênh lệch is raised "từ ngưỡng trở lên", so 0 would flag phiếu that agree.
   const flag = points.safeParse(deviationFlagPoints);
-  if (!flag.success) {
-    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm từ 0 đến 99999.99, tối đa hai chữ số thập phân");
+  if (!flag.success || twoDecimals(flag.data) <= 0) {
+    throw new DomainError("invalid_aggregation", "Ngưỡng cờ chênh lệch phải là số điểm lớn hơn 0, tối đa 99999.99, tối đa hai chữ số thập phân");
   }
   return { method, minGraders, deviationFlagPoints: twoDecimals(flag.data) };
 }

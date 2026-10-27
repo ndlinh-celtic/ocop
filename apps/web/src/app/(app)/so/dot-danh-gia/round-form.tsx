@@ -101,7 +101,7 @@ export function RoundForm({
         </label>
         <label className={label}>
           Ngưỡng cờ chênh lệch (điểm)
-          <input name="deviationFlagPoints" type="number" required min={0} step={0.5} defaultValue={values.deviationFlagPoints} className={input} />
+          <input name="deviationFlagPoints" type="number" required min={0.5} step={0.5} defaultValue={values.deviationFlagPoints} className={input} />
         </label>
       </fieldset>
       <div className="flex items-center gap-3">
