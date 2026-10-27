@@ -5,7 +5,7 @@ const rule = (deviationFlagPoints: number) => ({ method: "mean" as const, minGra
 
 describe("L07 HD-06 Quy tắc tổng hợp: ngưỡng cờ chênh lệch", () => {
   it.each([
-    [0, 0],
+    [0.01, 0.01],
     [15, 15],
     [12.5, 12.5],
     [99999.99, 99999.99],
@@ -16,6 +16,8 @@ describe("L07 HD-06 Quy tắc tổng hợp: ngưỡng cờ chênh lệch", () =>
   });
 
   it.each([
+    // "Lệch từ ngưỡng trở lên": at 0 every hồ sơ with two phiếu would be flagged, even when they agree.
+    ["zero", 0],
     ["negative", -1],
     ["above numeric(7,2)", 100000],
     ["three decimals", 1.234],

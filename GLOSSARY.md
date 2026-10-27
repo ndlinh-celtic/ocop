@@ -223,7 +223,7 @@ Việc Chủ tịch hoặc Thư ký hội đồng, trước khi chốt điểm, 
 _Avoid_: Mở khóa phiếu, sửa phiếu đã xác nhận
 
 **Cờ chênh lệch**:
-Dấu hiệu trên hồ sơ khi tổng điểm cao nhất và thấp nhất giữa các Phiếu chấm đã xác nhận lệch quá ngưỡng của Quy tắc tổng hợp; chỉ để hội đồng thảo luận, không chặn chốt.
+Dấu hiệu trên hồ sơ khi tổng điểm cao nhất và thấp nhất giữa các Phiếu chấm đã xác nhận lệch từ ngưỡng của Quy tắc tổng hợp trở lên; chỉ để hội đồng thảo luận, không chặn chốt.
 _Avoid_: Điểm lệch (khi nói về cờ)
 
 **Phiên họp**:

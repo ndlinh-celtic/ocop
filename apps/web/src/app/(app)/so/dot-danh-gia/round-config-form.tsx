@@ -86,7 +86,7 @@ export function RoundConfigForms({
               name="deviationFlagPoints"
               type="number"
               required
-              min={0}
+              min={0.5}
               step={0.5}
               defaultValue={aggregation.deviationFlagPoints}
               className={input}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DEFAULT_AGGREGATION } from "@ocop/core";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { createRoundAction } from "../actions";
@@ -30,8 +31,8 @@ export default async function NewRoundPage() {
             evaluationDeadline: "",
             criteriaVersionId: versions[0]?.id ?? "",
             gradingMode: "direct",
-            minGraders: 5,
-            deviationFlagPoints: 15,
+            minGraders: DEFAULT_AGGREGATION.minGraders,
+            deviationFlagPoints: DEFAULT_AGGREGATION.deviationFlagPoints,
           }}
         />
       </section>

@@ -5,7 +5,7 @@ import { scoringWorld } from "./world";
 /*
  * L15 HD-04, HD-05 (#59, spec #49 stories 93, 98 to 101): once the hồ sơ is Sẵn sàng chốt, the điểm tổng hợp is
  * the mean of the phiếu đã xác nhận per Tiêu chí, ranked by rankStars, with a Cờ chênh lệch when the highest and
- * lowest phiếu totals differ by more than the đợt's ngưỡng (15 in the fixtures). The Chủ tịch, Thư ký and every
+ * lowest phiếu totals differ by the đợt's ngưỡng or more (15 in the fixtures). The Chủ tịch, Thư ký and every
  * thành viên who confirmed see each phiếu, the tổng hợp and the cờ; a thành viên who has not confirmed sees only theirs.
  * Bộ tiêu chí of the world: 1.1 (A, 0/20/40, Sao tối thiểu 3 needs 20), 2.1 (B, 0/25), 3.1 (C, 0/35); Ngưỡng hạng 30/50/70/90.
  */
@@ -73,23 +73,24 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
     expect(aggregate.unmet[0]!.actual).toBeCloseTo(6.6667, 4);
   });
 
-  it("raises the Cờ chênh lệch only when the phiếu totals differ by more than the đợt's ngưỡng (story 100)", async () => {
+  it("raises the Cờ chênh lệch when the phiếu totals differ by the đợt's ngưỡng or more (story 100, \"từ … trở lên\")", async () => {
+    // The fixtures' ngưỡng is 15, so 10 sits below it and 15 on it.
+    const below = await ready([
+      [0, 25, 35],
+      [40, 25, 0],
+      [20, 0, 35],
+    ]);
     const atThreshold = await ready([
       [0, 25, 35],
       [0, 25, 35],
       [20, 25, 0],
     ]);
-    const above = await ready([
-      [0, 25, 35],
-      [0, 25, 35],
-      [40, 0, 0],
-    ]);
 
-    expect((await full(w.A.secretary, atThreshold.dossierId)).aggregate).toMatchObject({ deviation: 15, flagged: false });
-    expect((await full(w.A.secretary, above.dossierId)).aggregate).toMatchObject({ deviation: 20, flagged: true });
+    expect((await full(w.A.secretary, below.dossierId)).aggregate).toMatchObject({ deviation: 10, flagged: false });
+    expect((await full(w.A.secretary, atThreshold.dossierId)).aggregate).toMatchObject({ deviation: 15, flagged: true });
     const progress = await w.t.app.scoring.gradingProgress(w.A.chair);
-    expect(progress.find((r) => r.dossierId === atThreshold.dossierId)?.flagged).toBe(false);
-    expect(progress.find((r) => r.dossierId === above.dossierId)?.flagged).toBe(true);
+    expect(progress.find((r) => r.dossierId === below.dossierId)?.flagged).toBe(false);
+    expect(progress.find((r) => r.dossierId === atThreshold.dossierId)?.flagged).toBe(true);
   });
 
   it("shows each phiếu, the tổng hợp and the cờ to the Chủ tịch, the Thư ký and every thành viên who confirmed, from Sẵn sàng chốt (story 93)", async () => {

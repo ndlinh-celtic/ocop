@@ -193,8 +193,12 @@ describe("L15 Trả phiếu (#61)", () => {
     const notices = (await w.t.app.notifications.list(m(0))).filter((n) => n.kind === "dossier_score_sheet_returned" && n.link === `/thanh-vien/ho-so/${d.dossierId}`);
     expect(notices).toHaveLength(1);
     expect(notices[0]!.body).toContain("Lý do riêng tư của hội đồng");
-    const email = w.t.mailbox.to(m(0).email).at(-1)!;
-    expect(email.text).toContain(`/thanh-vien/ho-so/${d.dossierId}`);
+    // By subject and hồ sơ, not position: the drained jobs may deliver m(0)'s Giao chấm email after this one.
+    const returned = w.t.mailbox
+      .to(m(0).email)
+      .filter((e) => e.subject === "Phiếu chấm của anh/chị được Trả phiếu" && e.text.includes(`/thanh-vien/ho-so/${d.dossierId}`));
+    expect(returned).toHaveLength(1);
+    const email = returned[0]!;
     expect(email.text).not.toContain("Lý do riêng tư");
     expect((await w.t.app.notifications.list(m(1))).filter((n) => n.kind === "dossier_score_sheet_returned" && n.link?.includes(d.dossierId))).toEqual([]);
 
