@@ -139,6 +139,25 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     expect(audited[0]).toMatchObject({ actorUserId: w.A.secretary.userId, metadata: { kind: "score_table", pending: 1 } });
   });
 
+  it("records a personal data access on each hồ sơ whose thành viên and điểm the bảng tổng hợp or dự thảo biên bản prints, none for the dự thảo quyết định (#73)", async () => {
+    const { meetingId, done, best, low } = await meeting();
+    const printed = async () =>
+      (await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"] }))
+        .filter((v) => v.metadata.view === "meeting_document")
+        .map((v) => [v.actorUserId, v.targetType, v.targetId, v.metadata.kind, v.metadata.meetingId]);
+
+    await text(w.A.secretary, meetingId, "decision");
+    expect(await printed()).toEqual([]);
+
+    for (const kind of ["score_table", "minutes"] as const) {
+      await text(w.A.chair, meetingId, kind);
+      expect((await printed()).filter((r) => r[3] === kind)).toEqual(
+        expect.arrayContaining([done, best, low].map((d) => [w.A.chair.userId, "dossier", d.dossierId, kind, meetingId])),
+      );
+    }
+    expect(await printed()).toHaveLength(6);
+  });
+
   it("never prints a kết quả chốt a Mở khóa sau chốt superseded as Đã chốt (ADR 0008)", async () => {
     const { meetingId, done } = await meeting();
     const admin = await w.f.admin();

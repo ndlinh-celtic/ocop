@@ -244,7 +244,8 @@ export function aggregateSummaries(deps: CoreDeps) {
     authorize(actor, "dossier.read");
     return deps.uow.run(async (tx) => {
       const out: AggregateSummaryRow[] = [];
-      for (const d of await tx.dossiers.list(dataScopeOf(actor), {})) {
+      // `full` needs Sẵn sàng chốt or a kết quả chốt, which only a hồ sơ from Sẵn sàng chốt on has: skip the rest unread.
+      for (const d of (await tx.dossiers.list(dataScopeOf(actor), {})).filter((d) => READY_OR_LATER.includes(d.state))) {
         const { visibility, result } = await visibilityOf(tx, actor, d, false);
         if (visibility !== "full") continue;
         const { total, star, flagged } = result ? result.snapshot.aggregate : (await aggregateOf(tx, d)).aggregate;
@@ -257,10 +258,10 @@ export function aggregateSummaries(deps: CoreDeps) {
 
 /**
  * A thành viên's points shown with their name to another reader: a personal data access (NĐ 13/2023, CODING_STANDARDS.md
- * "Truy cập dữ liệu cá nhân"). A view without any phiếu đã xác nhận is progress alone and writes nothing.
+ * "Truy cập dữ liệu cá nhân"). A view whose only phiếu đã xác nhận is the reader's own, or has none, writes nothing.
  */
 async function auditViewed(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, view: Extract<ScoresVisibility, "confirmed_sheets" | "full">, graders: GraderScores[]) {
-  if (!graders.some((g) => g.lines !== null)) return;
+  if (!graders.some((g) => g.lines !== null && g.userId !== actor.userId)) return;
   await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossierId, metadata: { view } }));
 }
 

@@ -48,7 +48,13 @@ function pointsLabel(state: ScoreSheetState | null, total: number | null): strin
 
 interface Row extends MeetingDocumentRow {
   starValue: number;
+  dossierId: string;
+  /** Whether the row prints a thành viên's points by name (a phiếu đã xác nhận). */
+  showsPoints: boolean;
 }
+
+/** The văn bản that print each thành viên chấm with their points; the dự thảo quyết định prints the tổng hợp alone. */
+const NAMES_GRADERS: readonly MeetingDocumentKind[] = ["score_table", "minutes"];
 
 async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ rows: Row[]; pending: number }> {
   const scope = dataScopeOf(actor);
@@ -95,6 +101,8 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
       note: aggregate.star === 5 ? "Đề nghị xét 5 sao" : "",
       starValue: aggregate.star,
+      dossierId: d.id,
+      showsPoints: graders.some((g) => g.state === "confirmed" && g.total !== null),
     });
   }
   rows.sort((a, b) => a.code.localeCompare(b.code));
@@ -102,7 +110,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
 }
 
 const reindex = (rows: Row[]): MeetingDocumentRow[] =>
-  rows.map(({ starValue: _s, ...r }, i) => ({ ...r, index: String(i + 1) }));
+  rows.map(({ starValue: _s, dossierId: _d, showsPoints: _p, ...r }, i) => ({ ...r, index: String(i + 1) }));
 
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, " ").trim();
 
@@ -141,6 +149,19 @@ export function generateMeetingDocument(deps: CoreDeps) {
           metadata: { kind: input.kind, dossiers: listed.length, pending },
         }),
       );
+      // Each thành viên's points by name, as in the `full` view (CODING_STANDARDS.md "Truy cập dữ liệu cá nhân"), per hồ sơ.
+      if (NAMES_GRADERS.includes(input.kind)) {
+        for (const r of listed.filter((r) => r.showsPoints)) {
+          await tx.audit.append(
+            auditEntry(actor, deps.ids.next(), now, {
+              action: "personal_data.viewed",
+              targetType: "dossier",
+              targetId: r.dossierId,
+              metadata: { view: "meeting_document", kind: input.kind, meetingId: meeting.id },
+            }),
+          );
+        }
+      }
       return { fileName: `${MEETING_DOCUMENT_LABEL[input.kind]} - ${safeName(meeting.title)}.docx`, bytes };
     });
   };

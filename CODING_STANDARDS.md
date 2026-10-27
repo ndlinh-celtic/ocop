@@ -30,7 +30,7 @@ Lỗi đã lọt: PR #65 lỗi 1 (lưu nháp Phiếu chấm chặn Chốt điể
 
 Một use case đọc ghi `personal_data.viewed` (NĐ 13/2023, trong cùng transaction đọc) khi nó cho người dùng thấy dữ liệu cá nhân của **người khác**: thông tin tài khoản, danh sách thành viên Hội đồng, hồ sơ và giấy tờ của chủ thể (trừ chính chủ thể đó), điểm từng phiếu kèm họ tên thành viên chấm. `metadata.view` đặt tên kiểu xem; chỉ ghi khi dữ liệu đó thực sự hiện (một kiểu xem chưa có phiếu nào đã xác nhận thì không ghi).
 
-- Đang ghi: `identity/staff.ts` (danh sách, chi tiết tài khoản), `councils/read.ts` (thành viên Hội đồng), `entities/read.ts`, `entities/profile.ts` (chủ thể), `scoring/read.ts` kiểu xem `confirmed_sheets` và `full` (danh sách S63 dùng `aggregateSummaries`, chỉ có điểm tổng hợp, không ghi).
+- Đang ghi: `identity/staff.ts` (danh sách, chi tiết tài khoản), `councils/read.ts` (thành viên Hội đồng), `entities/read.ts`, `entities/profile.ts` (chủ thể), `scoring/read.ts` kiểu xem `confirmed_sheets` và `full` (không ghi khi phiếu có điểm duy nhất là của chính người đọc; danh sách S63 dùng `aggregateSummaries`, chỉ có điểm tổng hợp, không ghi), `scoring/meeting-documents.ts` bảng tổng hợp điểm và dự thảo biên bản (mỗi hồ sơ một dòng, `view: "meeting_document"`).
 - Khi diff thêm một kiểu xem hay mở rộng người được xem, reviewer hỏi: người đọc có thấy dữ liệu cá nhân của người khác không? Có thì phải có dòng audit và test đọc lại nó.
 - Ticket yêu cầu audit "như chỗ khác" thì reviewer kiểm chỗ khác đó có thật trong danh sách trên.
 

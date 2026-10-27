@@ -96,6 +96,28 @@ describe("L15 Audit of the full score view (#73)", () => {
   });
 });
 
+describe("L15 No audit for a reader's own phiếu alone (#73)", () => {
+  const w = scoringWorld({ minGraders: 1 });
+  const m = (i: number) => w.A.members[i]!;
+
+  it("writes nothing when the only phiếu đã xác nhận in the full view is the reader's own", async () => {
+    const d = await w.graded([m(0), m(1)]);
+    const view = await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId });
+    if (view.kind !== "own_sheet") throw new Error(view.kind);
+    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+    const { version } = await w.t.app.scoring.saveScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
+    await w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version });
+
+    // One phiếu đã xác nhận of a minimum of 1: Sẵn sàng chốt, and m(0) sees the full view with only their own points.
+    expect((await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId })).kind).toBe("full");
+    expect(await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: d.dossierId })).toEqual([]);
+
+    // The Chủ tịch sees m(0)'s points: that is someone else's.
+    await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId });
+    expect((await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: d.dossierId })).map((v) => v.actorUserId)).toEqual([w.A.chair.userId]);
+  });
+});
+
 describe("L15 No audit for the Tổ tư vấn's kết quả chốt (#73, story 123)", () => {
   const w = scoringWorld({ gradingMode: "advisory_based", minGraders: 2 });
   const PICKS = ["1.1:20", "2.1:25", "3.1:35"];
