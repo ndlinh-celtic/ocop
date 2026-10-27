@@ -22,7 +22,12 @@ export async function registerFailure(deps: CoreDeps, tx: Tx, user: User, actor:
   await tx.users.update(user.id, { failedCount: 0, failedWindowStart: null, lockedUntil: until });
   await tx.sessions.revokeAllForUser(user.id, at);
   await tx.audit.append(
-    auditEntry(actor, deps.ids.next(), at, { action: "identity.user.locked", targetType: "user", targetId: user.id, metadata: { until: until.toISOString(), failures: count } }),
+    auditEntry(actor, deps.ids.next(), at, {
+      action: "identity.user.locked",
+      targetType: "user",
+      targetId: user.id,
+      metadata: { until: until.toISOString(), failures: count },
+    }),
   );
   await emit(deps, tx, { type: "identity.user.locked", payload: { userId: user.id, until: until.toISOString() } });
   return true;

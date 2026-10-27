@@ -38,7 +38,9 @@ export default async function CriteriaSetPage({ params }: { params: Promise<{ ve
             code: p.code,
             name: p.name,
             points: p.points,
-            criteria: p.sections.flatMap((sc) => sc.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i]))).map((c) => ({ id: c.id, code: c.code, name: c.name, maxPoints: c.maxPoints, levels: [...c.levels] })),
+            criteria: p.sections
+              .flatMap((sc) => sc.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i])))
+              .map((c) => ({ id: c.id, code: c.code, name: c.name, maxPoints: c.maxPoints, levels: [...c.levels] })),
           }))}
         />
       )}

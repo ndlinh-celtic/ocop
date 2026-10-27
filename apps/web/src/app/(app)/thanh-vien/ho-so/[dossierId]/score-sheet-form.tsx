@@ -47,7 +47,16 @@ const stars = (n: number) => "★".repeat(n);
  */
 export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetView; submitted: Record<string, SubmittedCriterion>; writable: boolean }) {
   const router = useRouter();
-  const initial = useMemo(() => new Map(view.criteria.map((c): [string, Line] => [c.criterionId, { levelId: c.levelId, comment: c.comment, files: c.files, adjustReason: c.adjustReason ?? "" }])), [view]);
+  const initial = useMemo(
+    () =>
+      new Map(
+        view.criteria.map((c): [string, Line] => [
+          c.criterionId,
+          { levelId: c.levelId, comment: c.comment, files: c.files, adjustReason: c.adjustReason ?? "" },
+        ]),
+      ),
+    [view],
+  );
   const [lines, setLines] = useState(initial);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const version = useRef(view.sheet?.version ?? 0);
@@ -91,7 +100,13 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
         lines: [...dirty].map((criterionId) => {
           const l = lines.get(criterionId)!;
           const c = view.criteria.find((x) => x.criterionId === criterionId)!;
-          return { criterionId, levelId: l.levelId, comment: l.comment, evidenceFileIds: l.files.map((f) => f.fileId), adjustReason: adjusted(c, l) ? l.adjustReason : null };
+          return {
+            criterionId,
+            levelId: l.levelId,
+            comment: l.comment,
+            evidenceFileIds: l.files.map((f) => f.fileId),
+            adjustReason: adjusted(c, l) ? l.adjustReason : null,
+          };
         }),
       });
       if ("version" in res) {
@@ -178,14 +193,23 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
         </div>
         {writable && (
           <div className="ml-auto flex gap-2">
-            <button type="button" onClick={() => void save()} disabled={disabled || dirty.size === 0} className="rounded-md border border-line-strong px-4 py-2 disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={disabled || dirty.size === 0}
+              className="rounded-md border border-line-strong px-4 py-2 disabled:opacity-60"
+            >
               {pending ? "Đang lưu…" : saved && dirty.size === 0 ? "Đã lưu nháp" : "Lưu nháp"}
             </button>
             <button
               type="button"
               disabled={disabled || unscored.length > 0 || unexplained.length > 0}
               title={
-                unscored.length > 0 ? "Chọn Mức điểm cho mọi Tiêu chí trước khi xác nhận" : unexplained.length > 0 ? "Ghi lý do cho mọi điều chỉnh khác Điểm đề xuất" : undefined
+                unscored.length > 0
+                  ? "Chọn Mức điểm cho mọi Tiêu chí trước khi xác nhận"
+                  : unexplained.length > 0
+                    ? "Ghi lý do cho mọi điều chỉnh khác Điểm đề xuất"
+                    : undefined
               }
               onClick={async () => {
                 if (await save()) setConfirming(true);
@@ -205,11 +229,12 @@ export function ScoreSheetForm({ view, submitted, writable }: { view: OwnSheetVi
               <Lock className="size-5" aria-hidden /> Xác nhận phiếu chấm?
             </h2>
             <p className="mb-2 text-sm">
-              Tổng điểm <b>{estimate.total}</b> ({estimate.parts.map((p) => `Phần ${p.code}: ${p.total}`).join(", ")}), Hạng sao ước lượng {stars(estimate.star)}.
+              Tổng điểm <b>{estimate.total}</b> ({estimate.parts.map((p) => `Phần ${p.code}: ${p.total}`).join(", ")}), Hạng sao ước lượng{" "}
+              {stars(estimate.star)}.
             </p>
             <p className="mb-4 text-sm text-text-2">
-              Phiếu sẽ bị khóa. Muốn sửa phải có Trả phiếu của hội đồng. Khi đủ số phiếu đã xác nhận, Chủ tịch và Thư ký hội đồng được thông báo hồ sơ Sẵn sàng chốt. Anh/chị cần xác
-              thực lại nếu đã đăng nhập quá 5 phút.
+              Phiếu sẽ bị khóa. Muốn sửa phải có Trả phiếu của hội đồng. Khi đủ số phiếu đã xác nhận, Chủ tịch và Thư ký hội đồng được thông báo hồ sơ Sẵn sàng
+              chốt. Anh/chị cần xác thực lại nếu đã đăng nhập quá 5 phút.
             </p>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setConfirming(false)} className="rounded-md border border-line-strong px-4 py-2">
@@ -317,7 +342,11 @@ function CriterionCard({
             />
           </label>
           {!disabled && (
-            <button type="button" onClick={() => onChange({ levelId: c.advisory!.levelId, adjustReason: "" })} className="mt-1 inline-flex items-center gap-1 text-brand">
+            <button
+              type="button"
+              onClick={() => onChange({ levelId: c.advisory!.levelId, adjustReason: "" })}
+              className="mt-1 inline-flex items-center gap-1 text-brand"
+            >
               <RotateCcw className="size-3" aria-hidden /> Khôi phục theo Tổ tư vấn
             </button>
           )}

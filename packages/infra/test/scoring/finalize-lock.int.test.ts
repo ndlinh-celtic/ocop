@@ -14,7 +14,12 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
   async function confirmAll(actor: UserActor, dossierId: string) {
     const view = await w.t.app.scoring.readDossierScores(actor, { dossierId });
     if (view.kind !== "own_sheet") throw new Error(view.kind);
-    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      comment: "",
+      evidenceFileIds: [],
+    }));
     const { version } = await w.t.app.scoring.saveScoreSheet(actor, { dossierId, expectedVersion: view.sheet!.version, lines });
     await w.t.app.scoring.confirmScoreSheet(actor, { dossierId, expectedVersion: version });
   }
@@ -23,7 +28,13 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
   async function finalized() {
     const d = await w.graded([w.A.members[0]!, w.A.members[1]!]);
     for (const m of [w.A.members[0]!, w.A.members[1]!]) await confirmAll(m, d.dossierId);
-    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
     const view = await w.t.app.scoring.readDossierScores(w.A.secretary, { dossierId: d.dossierId });
     if (view.kind !== "full") throw new Error(view.kind);
     const { resultId } = await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: view.dossierVersion });
@@ -45,7 +56,9 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
     await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET star = 5 WHERE id = $1`, [resultId])).rejects.toThrow(/permission denied/);
     await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now() WHERE id = $1`, [resultId])).resolves.toBeDefined();
     // Superseded is final.
-    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now() + interval '1 day' WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
+    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now() + interval '1 day' WHERE id = $1`, [resultId])).rejects.toThrow(
+      /immutable/,
+    );
     await expect(w.db.admin.query(`UPDATE scoring.aggregate_result SET superseded_at = NULL WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
   });
 
@@ -55,7 +68,9 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
     await expect(w.db.app.query(`DELETE FROM scoring.aggregate_result WHERE id = $1`, [resultId])).rejects.toThrow(/permission denied/);
     await expect(w.db.admin.query(`DELETE FROM scoring.aggregate_result WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
     await expect(w.db.admin.query(`TRUNCATE scoring.aggregate_result CASCADE`)).rejects.toThrow(/immutable/);
-    await expect(w.db.app.query(`DELETE FROM scoring.meeting_dossier WHERE meeting_id = $1 AND dossier_id = $2`, [meetingId, dossierId])).rejects.toThrow(/fixed/);
+    await expect(w.db.app.query(`DELETE FROM scoring.meeting_dossier WHERE meeting_id = $1 AND dossier_id = $2`, [meetingId, dossierId])).rejects.toThrow(
+      /fixed/,
+    );
     await expect(w.db.app.query(`UPDATE scoring.meeting_dossier SET result_id = NULL WHERE meeting_id = $1`, [meetingId])).rejects.toThrow(/fixed/);
   });
 
@@ -75,19 +90,35 @@ describe("Kết quả chốt triggers (#60, stories 119, 135)", () => {
     await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_by_unlock = NULL WHERE id = $1`, [resultId])).rejects.toThrow(/immutable/);
     // A kết quả points only at a Mở khóa that exists.
     const second = await finalized();
-    await expect(w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now(), superseded_by_unlock = gen_random_uuid() WHERE id = $1`, [second.resultId])).rejects.toThrow(
-      /aggregate_result_superseded_by_unlock_fkey/,
-    );
+    await expect(
+      w.db.app.query(`UPDATE scoring.aggregate_result SET superseded_at = now(), superseded_by_unlock = gen_random_uuid() WHERE id = $1`, [second.resultId]),
+    ).rejects.toThrow(/aggregate_result_superseded_by_unlock_fkey/);
     await expect(w.db.app.query(`ALTER TABLE scoring.unlock_request DISABLE TRIGGER unlock_request_immutable`)).rejects.toThrow(/must be owner/);
   });
 
   it("keeps one pending row per hồ sơ across Phiên họp, and the application cannot switch the triggers off", async () => {
     const d = await w.graded([w.A.members[0]!, w.A.members[1]!]);
     for (const m of [w.A.members[0]!, w.A.members[1]!]) await confirmAll(m, d.dossierId);
-    const first = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Họp 1", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
-    const second = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Họp 2", heldOn: "2026-10-26", location: "Sở", dossierIds: [] });
+    const first = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Họp 1",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
+    const second = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Họp 2",
+      heldOn: "2026-10-26",
+      location: "Sở",
+      dossierIds: [],
+    });
     await expect(
-      w.db.app.query(`INSERT INTO scoring.meeting_dossier (meeting_id, dossier_id, added_by, added_at) VALUES ($1, $2, $3, now())`, [second.meetingId, d.dossierId, w.A.secretary.userId]),
+      w.db.app.query(`INSERT INTO scoring.meeting_dossier (meeting_id, dossier_id, added_by, added_at) VALUES ($1, $2, $3, now())`, [
+        second.meetingId,
+        d.dossierId,
+        w.A.secretary.userId,
+      ]),
     ).rejects.toThrow(/meeting_dossier_pending_key/);
     expect(first.meetingId).not.toBe(second.meetingId);
 

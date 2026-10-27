@@ -11,7 +11,10 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
           <ResetForm token={token} />
         ) : (
           <p role="alert" className="text-sm text-danger">
-            Thiếu liên kết. <Link href="/quen-mat-khau" className="text-brand underline">Yêu cầu liên kết mới</Link>
+            Thiếu liên kết.{" "}
+            <Link href="/quen-mat-khau" className="text-brand underline">
+              Yêu cầu liên kết mới
+            </Link>
           </p>
         )}
       </div>

@@ -108,11 +108,13 @@ async function dossierIn(state: State): Promise<Subject> {
     return { owner: s.a, dossierId: s.dossierId, version: s.version };
   }
   const s = await f.provinceReceived(ward, actors["Cán bộ Sở"], setId, wardX);
-  let { version } = await t.app.councils.editAssignments(actors["Thư ký A"], {
-    dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
-    members: [actors["Thành viên A, Phân công nháp"].userId, actors["Thư ký A"].userId],
-    advisors: [actors["Tổ tư vấn A, Phân công nháp"].userId],
-  }).then((r) => r.dossiers[0]!);
+  let { version } = await t.app.councils
+    .editAssignments(actors["Thư ký A"], {
+      dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
+      members: [actors["Thành viên A, Phân công nháp"].userId, actors["Thư ký A"].userId],
+      advisors: [actors["Tổ tư vấn A, Phân công nháp"].userId],
+    })
+    .then((r) => r.dossiers[0]!);
   if (state === "Sở trả về sau tiếp nhận") {
     ({ version } = await t.app.dossiers.returnFromProvince(actors["Cán bộ Sở"], {
       dossierId: s.dossierId,

@@ -104,7 +104,13 @@ export function LegalDocumentForm({
         </label>
       </div>
       {progress !== null && (
-        <div role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} className="h-2 overflow-hidden rounded-full bg-surface-3">
+        <div
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="h-2 overflow-hidden rounded-full bg-surface-3"
+        >
           <div className="h-full bg-brand transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       )}
@@ -114,7 +120,11 @@ export function LegalDocumentForm({
         </p>
       )}
       <div>
-        <button type="submit" disabled={progress !== null} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={progress !== null}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60"
+        >
           <Upload className="size-4" aria-hidden />
           {replaces ? "Thay giấy tờ" : "Thêm giấy tờ"}
         </button>

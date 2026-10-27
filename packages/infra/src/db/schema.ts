@@ -1,4 +1,15 @@
-import type { AssignmentKind, ScoreSheetState, ChecklistItem, ChecklistResultValue, DossierState, ReminderKind, StoredFilePurpose, SubmissionFileRole, SubmissionSnapshot, SupplementOutcome } from "@ocop/core";
+import type {
+  AssignmentKind,
+  ScoreSheetState,
+  ChecklistItem,
+  ChecklistResultValue,
+  DossierState,
+  ReminderKind,
+  StoredFilePurpose,
+  SubmissionFileRole,
+  SubmissionSnapshot,
+  SupplementOutcome,
+} from "@ocop/core";
 import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";

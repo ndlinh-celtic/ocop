@@ -24,7 +24,12 @@ export default async function MeetingsPage() {
   const candidates = [];
   for (const r of progress.filter((p) => p.state === "member_confirmed")) {
     if (await app().core.scoring.meetingOf(actor, { dossierId: r.dossierId })) continue;
-    candidates.push({ dossierId: r.dossierId, code: r.code, productName: `${r.productName || "(Chưa đặt tên sản phẩm)"}${r.round ? ` · ${r.round.name}` : ""}`, roundId: r.round?.id ?? null });
+    candidates.push({
+      dossierId: r.dossierId,
+      code: r.code,
+      productName: `${r.productName || "(Chưa đặt tên sản phẩm)"}${r.round ? ` · ${r.round.name}` : ""}`,
+      roundId: r.round?.id ?? null,
+    });
   }
 
   return (

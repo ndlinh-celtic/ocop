@@ -3,7 +3,15 @@
 import { useState } from "react";
 
 /** Asks the server for a short-lived link to a clean file, then follows it. */
-export function DownloadButton({ fileId, download, label = "Tải xuống" }: { fileId: string; download: (fileId: string) => Promise<{ url?: string; error?: string }>; label?: string }) {
+export function DownloadButton({
+  fileId,
+  download,
+  label = "Tải xuống",
+}: {
+  fileId: string;
+  download: (fileId: string) => Promise<{ url?: string; error?: string }>;
+  label?: string;
+}) {
   const [error, setError] = useState<string>();
   return (
     <span className="flex items-center gap-2">

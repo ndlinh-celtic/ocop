@@ -7,7 +7,12 @@ import { app } from "@/server/app";
 import { anonymous } from "@/server/request";
 import { sessionToken } from "@/server/session";
 
-const input = z.object({ code: z.string().trim().regex(/^\d{6}$/) });
+const input = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/),
+});
 
 export async function confirmEnrollmentAction(_prev: CodeFormState, form: FormData): Promise<CodeFormState> {
   const token = await sessionToken();

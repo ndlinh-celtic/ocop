@@ -109,7 +109,12 @@ describe("L06 số liệu tổng hợp of hồ sơ not yet at the province (stor
     expect(after(otherWardId, "submitted_to_ward")).toBe(baseline.y + 1);
     expect(after(wardId, "forwarded_to_province")).toBe(baseline.fwd);
     expect(rows.some((r) => r.state === "draft")).toBe(false);
-    expect(rows.find((r) => r.wardId === otherWardId)).toEqual({ wardId: otherWardId, wardName: "Xã Bình Lợi", state: "submitted_to_ward", count: after(otherWardId, "submitted_to_ward") });
+    expect(rows.find((r) => r.wardId === otherWardId)).toEqual({
+      wardId: otherWardId,
+      wardName: "Xã Bình Lợi",
+      state: "submitted_to_ward",
+      count: after(otherWardId, "submitted_to_ward"),
+    });
     for (const r of rows) expect(Object.keys(r).sort()).toEqual(["count", "state", "wardId", "wardName"]);
   });
 
@@ -131,7 +136,12 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
     const seen = await t.app.dossiers.get(province, { dossierId: up.dossierId });
     expect(seen).toMatchObject({ state: "supplement_requested", supplementDeadline: new Date("2026-10-31T16:59:59Z"), firstForwardedAt: START });
     const request = (await t.app.dossiers.supplementRequests(up.a, { dossierId: up.dossierId })).at(-1);
-    expect(request).toMatchObject({ requestedBy: province.userId, requestedRole: "province_officer", deadline: new Date("2026-10-31T16:59:59Z"), closedAt: null });
+    expect(request).toMatchObject({
+      requestedBy: province.userId,
+      requestedRole: "province_officer",
+      deadline: new Date("2026-10-31T16:59:59Z"),
+      closedAt: null,
+    });
     expect(request!.items.map((i) => i.content)).toEqual(RETURN.items.map((i) => i.content));
     expect((await t.app.dossiers.timeline(up.a, { dossierId: up.dossierId })).at(-1)).toMatchObject({
       action: "dossier.province_return",
@@ -141,7 +151,9 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
     });
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.province_return"], targetId: up.dossierId });
     expect(entry).toMatchObject({ actorUserId: province.userId, actorRole: "province_officer", after: { state: "supplement_requested" } });
-    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.returned_by_province' AND payload->>'dossierId' = $1", [up.dossierId]);
+    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.returned_by_province' AND payload->>'dossierId' = $1", [
+      up.dossierId,
+    ]);
     expect(rowCount).toBe(1);
   });
 
@@ -153,12 +165,15 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
     expect(await t.app.notifications.list(up.a)).toContainEqual(
       expect.objectContaining({ kind: "dossier_returned_by_province", link: `/chu-the/ho-so/${up.dossierId}` }),
     );
-    expect(await t.app.notifications.list(ward)).toContainEqual(expect.objectContaining({ kind: "dossier_returned_by_province", link: `/xa/ho-so/${up.dossierId}` }));
+    expect(await t.app.notifications.list(ward)).toContainEqual(
+      expect.objectContaining({ kind: "dossier_returned_by_province", link: `/xa/ho-so/${up.dossierId}` }),
+    );
     expect(t.mailbox.to(up.a.email).at(-1)!.text).toContain(`/chu-the/ho-so/${up.dossierId}`);
 
     await t.app.dossiers.submit(up.a, { dossierId: up.dossierId, expectedVersion: version });
     await t.drainJobs();
-    const resubmitted = async (u: UserActor) => (await t.app.notifications.list(u)).filter((n) => n.kind === "dossier_resubmitted" && n.link?.includes(up.dossierId));
+    const resubmitted = async (u: UserActor) =>
+      (await t.app.notifications.list(u)).filter((n) => n.kind === "dossier_resubmitted" && n.link?.includes(up.dossierId));
     expect(await resubmitted(ward)).toHaveLength(1);
     expect(await resubmitted(province)).toHaveLength(0);
   });
@@ -173,7 +188,8 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
     await t.app.dossiers.submit(up.a, { dossierId: up.dossierId, expectedVersion: version });
     await t.drainJobs();
 
-    const resubmitted = async (u: UserActor) => (await t.app.notifications.list(u)).filter((n) => n.kind === "dossier_resubmitted" && n.link?.includes(up.dossierId));
+    const resubmitted = async (u: UserActor) =>
+      (await t.app.notifications.list(u)).filter((n) => n.kind === "dossier_resubmitted" && n.link?.includes(up.dossierId));
     expect(await resubmitted(ward)).toHaveLength(1);
     expect(await resubmitted(handler)).toHaveLength(0);
   });
@@ -184,11 +200,17 @@ describe("L04 Sở trả về (stories 57, 58)", () => {
 
     const { version: resubmitted } = await t.app.dossiers.submit(up.a, { dossierId: up.dossierId, expectedVersion: returned });
 
-    expect(await t.app.dossiers.get(ward, { dossierId: up.dossierId })).toMatchObject({ state: "submitted_to_ward", supplementDeadline: null, handler: { userId: ward.userId } });
+    expect(await t.app.dossiers.get(ward, { dossierId: up.dossierId })).toMatchObject({
+      state: "submitted_to_ward",
+      supplementDeadline: null,
+      handler: { userId: ward.userId },
+    });
     expect((await t.app.dossiers.supplementRequests(ward, { dossierId: up.dossierId })).at(-1)).toMatchObject({ outcome: "resubmitted" });
     // Still the province's to see while the xã reviews it again (story 78).
     expect(await t.app.dossiers.get(province, { dossierId: up.dossierId })).toMatchObject({ state: "submitted_to_ward" });
-    await expect(t.app.dossiers.forwardToProvince(ward, { dossierId: up.dossierId, expectedVersion: resubmitted })).rejects.toMatchObject({ code: "ward_report_missing" });
+    await expect(t.app.dossiers.forwardToProvince(ward, { dossierId: up.dossierId, expectedVersion: resubmitted })).rejects.toMatchObject({
+      code: "ward_report_missing",
+    });
     const fileId = await f.uploadPdf(ward, "signed_ward_report", "BC lần 2.pdf");
     const { version: signed } = await t.app.dossiers.attachSignedWardReport(ward, { dossierId: up.dossierId, expectedVersion: resubmitted, fileId });
     t.clock.set(new Date("2026-11-02T02:00:00Z"));
@@ -223,10 +245,19 @@ describe("L04 đề nghị trả về of the xã (story 59)", () => {
     const up = await f.forwarded(ward, setId);
     const { rowCount: before } = await db.admin.query("SELECT 1 FROM dossier.dossier_event WHERE dossier_id = $1", [up.dossierId]);
 
-    const { version } = await t.app.dossiers.requestReturn(ward, { dossierId: up.dossierId, expectedVersion: up.version, reason: "  Sai số liệu lao động địa phương  " });
+    const { version } = await t.app.dossiers.requestReturn(ward, {
+      dossierId: up.dossierId,
+      expectedVersion: up.version,
+      reason: "  Sai số liệu lao động địa phương  ",
+    });
 
     expect(await t.app.dossiers.get(province, { dossierId: up.dossierId })).toMatchObject({ state: "forwarded_to_province", version });
-    const expected = { reason: "Sai số liệu lao động địa phương", requestedBy: { userId: ward.userId, fullName: ward.fullName }, requestedAt: START, pending: true };
+    const expected = {
+      reason: "Sai số liệu lao động địa phương",
+      requestedBy: { userId: ward.userId, fullName: ward.fullName },
+      requestedAt: START,
+      pending: true,
+    };
     expect(await t.app.dossiers.returnRequests(province, { dossierId: up.dossierId })).toEqual([expect.objectContaining(expected)]);
     expect(await t.app.dossiers.returnRequests(ward, { dossierId: up.dossierId })).toEqual([expect.objectContaining(expected)]);
     // A matter between the xã and the Sở: not on the Chủ thể's timeline.
@@ -235,11 +266,15 @@ describe("L04 đề nghị trả về of the xã (story 59)", () => {
     await expect(t.app.dossiers.returnRequests(up.a, { dossierId: up.dossierId })).rejects.toMatchObject({ code: "forbidden" });
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.return_request"], targetId: up.dossierId });
     expect(entry).toMatchObject({ actorUserId: ward.userId, metadata: { reason: "Sai số liệu lao động địa phương" } });
-    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.return_requested' AND payload->>'dossierId' = $1", [up.dossierId]);
+    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.return_requested' AND payload->>'dossierId' = $1", [
+      up.dossierId,
+    ]);
     expect(rowCount).toBe(1);
 
     await t.drainJobs();
-    expect(await t.app.notifications.list(province)).toContainEqual(expect.objectContaining({ kind: "dossier_return_requested", link: `/so/ho-so/${up.dossierId}` }));
+    expect(await t.app.notifications.list(province)).toContainEqual(
+      expect.objectContaining({ kind: "dossier_return_requested", link: `/so/ho-so/${up.dossierId}` }),
+    );
 
     await t.app.dossiers.returnFromProvince(province, { dossierId: up.dossierId, expectedVersion: version, ...RETURN });
     expect((await t.app.dossiers.returnRequests(province, { dossierId: up.dossierId }))[0]).toMatchObject({ pending: false });
@@ -247,7 +282,8 @@ describe("L04 đề nghị trả về of the xã (story 59)", () => {
 
   it("needs a lý do, a Cán bộ xã of the hồ sơ's xã and a hồ sơ Đã chuyển tỉnh", async () => {
     const up = await f.forwarded(ward, setId);
-    const ask = (actor: UserActor, reason = "Phát hiện sai sót") => t.app.dossiers.requestReturn(actor, { dossierId: up.dossierId, expectedVersion: up.version, reason });
+    const ask = (actor: UserActor, reason = "Phát hiện sai sót") =>
+      t.app.dossiers.requestReturn(actor, { dossierId: up.dossierId, expectedVersion: up.version, reason });
 
     await expect(ask(ward, "   ")).rejects.toMatchObject({ code: "reason_required" });
     await expect(ask(province)).rejects.toMatchObject({ code: "forbidden" });
@@ -255,7 +291,9 @@ describe("L04 đề nghị trả về of the xã (story 59)", () => {
     await expect(ask(await f.staff("ward_officer", otherWardId))).rejects.toMatchObject({ code: "not_found" });
     const s = await f.submitted(setId);
     const { version } = await t.app.dossiers.receive(ward, { dossierId: s.dossierId, expectedVersion: s.version });
-    await expect(t.app.dossiers.requestReturn(ward, { dossierId: s.dossierId, expectedVersion: version, reason: "Thử" })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(t.app.dossiers.requestReturn(ward, { dossierId: s.dossierId, expectedVersion: version, reason: "Thử" })).rejects.toMatchObject({
+      code: "invalid_state",
+    });
   });
 
   it("keeps a đề nghị trả về once sent: the DB refuses to change or delete it", async () => {

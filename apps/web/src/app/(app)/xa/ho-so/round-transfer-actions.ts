@@ -12,7 +12,12 @@ const LIST = "/xa/ho-so";
 const transferInput = z.object({ roundId: z.string().trim().min(1), reason: z.string().trim().min(1).max(2000) });
 
 /** L06 XA-08 (story 69): chuyển đợt; the hồ sơ stays at this xã, in another đợt. */
-export async function transferRoundAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function transferRoundAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   const parsed = transferInput.safeParse({ roundId: form.get("roundId") ?? "", reason: form.get("reason") ?? "" });
   if (!parsed.success) return { error: "Chọn đợt nhận hồ sơ và nhập lý do chuyển" };

@@ -6,7 +6,15 @@ import { formatVnDate, formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
-import { assignCouncilAction, changeAggregationRuleAction, changeGradingModeAction, deleteRoundAction, endRoundAction, openRoundAction, updateRoundAction } from "../actions";
+import {
+  assignCouncilAction,
+  changeAggregationRuleAction,
+  changeGradingModeAction,
+  deleteRoundAction,
+  endRoundAction,
+  openRoundAction,
+  updateRoundAction,
+} from "../actions";
 import { CouncilPicker } from "./council-picker";
 import { RoundActionButton } from "../round-buttons";
 import { RoundConfigForms } from "../round-config-form";
@@ -107,7 +115,11 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
                 </p>
               )}
               <p className="mb-3 mt-1 text-sm text-text-2">Đổi được cho đến lần Giao chấm đầu tiên của đợt.</p>
-              <CouncilPicker action={assignCouncilAction.bind(null, round.id)} councils={councils.map((c) => ({ id: c.id, name: c.name }))} current={round.council?.id ?? null} />
+              <CouncilPicker
+                action={assignCouncilAction.bind(null, round.id)}
+                councils={councils.map((c) => ({ id: c.id, name: c.name }))}
+                current={round.council?.id ?? null}
+              />
             </>
           )}
         </section>

@@ -28,7 +28,11 @@ export function meetingRepo(db: Db): MeetingRepo {
         .orderBy(desc(meeting.heldOn), desc(meeting.createdAt), desc(meeting.id));
     },
     async dossiers(meetingId) {
-      return db.select().from(meetingDossier).where(eq(meetingDossier.meetingId, meetingId)).orderBy(asc(meetingDossier.addedAt), asc(meetingDossier.dossierId));
+      return db
+        .select()
+        .from(meetingDossier)
+        .where(eq(meetingDossier.meetingId, meetingId))
+        .orderBy(asc(meetingDossier.addedAt), asc(meetingDossier.dossierId));
     },
     async pendingOf(dossierId) {
       const [row] = await db

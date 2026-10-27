@@ -16,9 +16,9 @@ const ADMIN = { email: "Admin@Tinh.gov.vn", fullName: "Nguyễn Văn Quản", pa
 describe("L20 AD-01 first admin and password sign-in", () => {
   it("creates the first Quản trị once; a second bootstrap is refused", async () => {
     await t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), ADMIN);
-    await expect(
-      t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), { ...ADMIN, email: "other@tinh.gov.vn" }),
-    ).rejects.toMatchObject({ code: "admin_already_exists" });
+    await expect(t.app.identity.bootstrapFirstAdmin(systemActor("bootstrap"), { ...ADMIN, email: "other@tinh.gov.vn" })).rejects.toMatchObject({
+      code: "admin_already_exists",
+    });
   });
 
   it("signs in with email in any letter case and the right password, and the session authenticates", async () => {

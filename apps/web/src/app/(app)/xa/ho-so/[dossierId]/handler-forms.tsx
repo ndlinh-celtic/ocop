@@ -48,7 +48,11 @@ export function ReceiveForm({ dossierId, version, officers, me }: { dossierId: s
       <p className="mb-3 text-sm text-text-2">Sau khi tiếp nhận, Chủ thể không rút hồ sơ được nữa và được thông báo.</p>
       <form action={action} className="flex flex-col gap-3">
         <OfficerSelect officers={officers} selected={me} />
-        <button type="submit" disabled={pending} className="flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60"
+        >
           <Inbox className="size-4" aria-hidden /> Tiếp nhận
         </button>
         <Feedback state={state} saved="Đã tiếp nhận hồ sơ." />
@@ -58,7 +62,17 @@ export function ReceiveForm({ dossierId, version, officers, me }: { dossierId: s
 }
 
 /** L05 XA-03: another Cán bộ phụ trách, kept on the dòng thời gian (story 41). */
-export function ChangeHandlerForm({ dossierId, version, officers, current }: { dossierId: string; version: number; officers: Officer[]; current: string | null }) {
+export function ChangeHandlerForm({
+  dossierId,
+  version,
+  officers,
+  current,
+}: {
+  dossierId: string;
+  version: number;
+  officers: Officer[];
+  current: string | null;
+}) {
   const [state, action, pending] = useActionState<WardDossierFormState, FormData>(changeHandlerAction.bind(null, dossierId, version), {});
   return (
     <form action={action} className="flex flex-col gap-3">

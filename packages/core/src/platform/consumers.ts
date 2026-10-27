@@ -83,4 +83,3 @@ export function handleEvent(deps: CoreDeps) {
       return "handled" as const;
     });
 }
-

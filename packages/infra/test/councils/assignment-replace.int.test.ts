@@ -51,7 +51,13 @@ describe("L09 thay và bổ sung thành viên chấm, chấm trực tiếp (#55)
       [m(2).userId, "member"],
     ]);
     expect(await w.t.app.councils.assignmentHistory(w.A.secretary, { dossierId: d.dossierId })).toEqual([
-      expect.objectContaining({ userId: m(1).userId, kind: "member", replacedAt: w.t.clock.now(), replacedBy: { userId: w.A.secretary.userId, fullName: w.A.secretary.fullName }, reason: REASON }),
+      expect.objectContaining({
+        userId: m(1).userId,
+        kind: "member",
+        replacedAt: w.t.clock.now(),
+        replacedBy: { userId: w.A.secretary.userId, fullName: w.A.secretary.fullName },
+        reason: REASON,
+      }),
     ]);
     const sheet = await w.db.admin.query("SELECT state, superseded_reason FROM scoring.score_sheet WHERE id = $1", [old.id]);
     expect(sheet.rows).toEqual([{ state: "superseded", superseded_reason: REASON }]);
@@ -82,7 +88,9 @@ describe("L09 thay và bổ sung thành viên chấm, chấm trực tiếp (#55)
     expect(view.sheet).toMatchObject({ state: "draft", attempt: 1 });
     expect(view.unscored).toEqual(["1.1", "2.1", "3.1"]);
     await w.t.drainJobs();
-    expect((await w.t.app.notifications.list(m(3))).filter((n) => n.kind === "dossier_assigned" && n.link === `/thanh-vien/ho-so/${d.dossierId}`)).toHaveLength(1);
+    expect((await w.t.app.notifications.list(m(3))).filter((n) => n.kind === "dossier_assigned" && n.link === `/thanh-vien/ho-so/${d.dossierId}`)).toHaveLength(
+      1,
+    );
     expect(w.t.mailbox.to(m(3).email).some((mail) => mail.subject.includes("Phân công"))).toBe(true);
   });
 
@@ -97,7 +105,9 @@ describe("L09 thay và bổ sung thành viên chấm, chấm trực tiếp (#55)
       after: { state: "member_review" },
       metadata: expect.objectContaining({ kind: "member", replacedUserId: m(1).userId, newUserId: m(2).userId, reason: REASON }),
     });
-    const outbox = await w.db.admin.query("SELECT type FROM platform.outbox WHERE payload->>'dossierId' = $1 AND type LIKE '%assignment%' ORDER BY type", [d.dossierId]);
+    const outbox = await w.db.admin.query("SELECT type FROM platform.outbox WHERE payload->>'dossierId' = $1 AND type LIKE '%assignment%' ORDER BY type", [
+      d.dossierId,
+    ]);
     // dossier.assignment_changed once for the Phân công nháp, once for the thay thế.
     expect(outbox.rows.map((r) => r.type)).toEqual(["council.assignment.replaced", "dossier.assignment_changed", "dossier.assignment_changed"]);
     expect((await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId })).map((e) => e.action)).not.toContain("dossier.assignment.replace");
@@ -143,7 +153,13 @@ describe("L09 thay và bổ sung thành viên chấm, chấm trực tiếp (#55)
     const d = await w.graded([m(0), m(1)]);
 
     await expect(
-      w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: d.version - 1, userId: m(1).userId, newUserId: m(2).userId, reason: REASON }),
+      w.t.app.councils.replaceAssignment(w.A.secretary, {
+        dossierId: d.dossierId,
+        expectedVersion: d.version - 1,
+        userId: m(1).userId,
+        newUserId: m(2).userId,
+        reason: REASON,
+      }),
     ).rejects.toMatchObject({ code: "version_conflict" });
   });
 
@@ -158,7 +174,11 @@ describe("L09 thay và bổ sung thành viên chấm, chấm trực tiếp (#55)
 
     expect(await w.t.app.dossiers.get(m(2), { dossierId: d.dossierId })).toMatchObject({ state: "member_confirmed" });
     expect((await sheetOf(m(2), d.dossierId)).sheet).toMatchObject({ state: "draft", attempt: 1 });
-    expect((await w.t.app.councils.assignments(w.A.secretary, { dossierId: d.dossierId })).map((a) => a.userId)).toEqual([m(0).userId, m(1).userId, m(2).userId]);
+    expect((await w.t.app.councils.assignments(w.A.secretary, { dossierId: d.dossierId })).map((a) => a.userId)).toEqual([
+      m(0).userId,
+      m(1).userId,
+      m(2).userId,
+    ]);
     await w.t.drainJobs();
     expect(await noticesOf(m(2), "dossier_assigned")).toBe(before + 1);
     // Thay a thành viên of a hồ sơ Sẵn sàng chốt while their phiếu is still a nháp.
@@ -176,7 +196,13 @@ describe("L09 thay và bổ sung Thành viên Tổ tư vấn, chấm dựa trên
   it("replaces a Thành viên Tổ tư vấn while Tổ tư vấn thẩm định: the old one loses the hồ sơ, the new one has it (story 36)", async () => {
     const d = await w.graded([m(0), m(1)], [adv(0)]);
 
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, newUserId: adv(1).userId, reason: REASON });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: adv(0).userId,
+      newUserId: adv(1).userId,
+      reason: REASON,
+    });
 
     await expect(w.t.app.dossiers.get(adv(0), { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
     expect(await w.t.app.dossiers.get(adv(1), { dossierId: d.dossierId })).toMatchObject({ state: "advisory_review" });
@@ -188,8 +214,20 @@ describe("L09 thay và bổ sung Thành viên Tổ tư vấn, chấm dựa trên
   it("adds a Thành viên Tổ tư vấn, and a thành viên chấm whose Phiếu chấm trống waits for the sao chép (stories 36, 37)", async () => {
     const d = await w.graded([m(0), m(1)], [adv(0)]);
 
-    await w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(2).userId, kind: "advisory", reason: REASON });
-    await w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: m(2).userId, kind: "member", reason: REASON });
+    await w.t.app.councils.addAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: adv(2).userId,
+      kind: "advisory",
+      reason: REASON,
+    });
+    await w.t.app.councils.addAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: m(2).userId,
+      kind: "member",
+      reason: REASON,
+    });
 
     expect((await w.t.app.councils.assignments(w.A.secretary, { dossierId: d.dossierId })).map((a) => [a.userId, a.kind, a.effectiveAt !== null])).toEqual([
       [m(0).userId, "member", true],
@@ -216,7 +254,13 @@ describe("L09 thay và bổ sung Thành viên Tổ tư vấn, chấm dựa trên
       w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: v, userId: m(0).userId, kind: "advisory", reason: REASON }),
     ).rejects.toMatchObject({ code: "conflict_of_roles" });
     await expect(
-      w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: v, userId: adv(0).userId, newUserId: m(1).userId, reason: REASON }),
+      w.t.app.councils.replaceAssignment(w.A.secretary, {
+        dossierId: d.dossierId,
+        expectedVersion: v,
+        userId: adv(0).userId,
+        newUserId: m(1).userId,
+        reason: REASON,
+      }),
     ).rejects.toMatchObject({ code: "conflict_of_roles" });
   });
 
@@ -224,32 +268,63 @@ describe("L09 thay và bổ sung Thành viên Tổ tư vấn, chấm dựa trên
     const d = await w.graded([m(0), m(1)], [adv(0)]);
     await w.f.grant(adv(0), "council_member", w.A.councilId);
     await w.f.grant(m(1), "advisory_member", w.A.councilId);
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, newUserId: adv(1).userId, reason: REASON });
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: m(1).userId, newUserId: m(2).userId, reason: REASON });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: adv(0).userId,
+      newUserId: adv(1).userId,
+      reason: REASON,
+    });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: m(1).userId,
+      newUserId: m(2).userId,
+      reason: REASON,
+    });
 
     await expect(
-      w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, kind: "member", reason: REASON }),
+      w.t.app.councils.addAssignment(w.A.secretary, {
+        dossierId: d.dossierId,
+        expectedVersion: await version(d.dossierId),
+        userId: adv(0).userId,
+        kind: "member",
+        reason: REASON,
+      }),
     ).rejects.toMatchObject({ code: "conflict_of_roles" });
     await expect(
-      w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(1).userId, newUserId: m(1).userId, reason: REASON }),
+      w.t.app.councils.replaceAssignment(w.A.secretary, {
+        dossierId: d.dossierId,
+        expectedVersion: await version(d.dossierId),
+        userId: adv(1).userId,
+        newUserId: m(1).userId,
+        reason: REASON,
+      }),
     ).rejects.toMatchObject({ code: "conflict_of_roles" });
   });
 
   it("holds in SQL too: the DB refuses a Phân công of the other kind for someone with any Phân công on the hồ sơ", async () => {
     const d = await w.graded([m(0), m(1)], [adv(0)]);
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await version(d.dossierId), userId: adv(0).userId, newUserId: adv(1).userId, reason: REASON });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await version(d.dossierId),
+      userId: adv(0).userId,
+      newUserId: adv(1).userId,
+      reason: REASON,
+    });
     const insert = (userId: string, kind: string) =>
-      w.db.app.query("INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, now())", [
-        d.dossierId,
-        userId,
-        kind,
-        w.A.secretary.userId,
-      ]);
+      w.db.app.query(
+        "INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, now())",
+        [d.dossierId, userId, kind, w.A.secretary.userId],
+      );
 
     await expect(insert(adv(0).userId, "member")).rejects.toThrow(/both Tổ tư vấn and thành viên chấm/);
-    await expect(w.db.admin.query("INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, 'advisory', $3, now())", [d.dossierId, m(0).userId, w.A.secretary.userId])).rejects.toThrow(
-      /both Tổ tư vấn and thành viên chấm/,
-    );
+    await expect(
+      w.db.admin.query(
+        "INSERT INTO council.assignment (id, dossier_id, user_id, kind, created_by, created_at) VALUES (gen_random_uuid(), $1, $2, 'advisory', $3, now())",
+        [d.dossierId, m(0).userId, w.A.secretary.userId],
+      ),
+    ).rejects.toThrow(/both Tổ tư vấn and thành viên chấm/);
     await expect(w.db.app.query("ALTER TABLE council.assignment DISABLE TRIGGER assignment_one_role")).rejects.toThrow(/must be owner/);
   });
 });

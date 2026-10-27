@@ -30,8 +30,7 @@ export function clamdScanner(opts: { host: string; port: number; timeoutMs?: num
       socket.once("error", reject);
     });
 
-  const write = (socket: net.Socket, buf: Buffer) =>
-    new Promise<void>((resolve, reject) => socket.write(buf, (err) => (err ? reject(err) : resolve())));
+  const write = (socket: net.Socket, buf: Buffer) => new Promise<void>((resolve, reject) => socket.write(buf, (err) => (err ? reject(err) : resolve())));
 
   return {
     async ping(): Promise<void> {

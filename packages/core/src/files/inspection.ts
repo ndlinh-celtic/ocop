@@ -11,10 +11,7 @@ export interface FileInspector {
   inspect(storageKey: string): Promise<FileInspection>;
 }
 
-const OFFICE = [
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-];
+const OFFICE = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
 
 /** Magic bytes must agree with the declared type; Office files may sniff as plain ZIP. */
 export function typeMatches(declared: string, detected: string | null): boolean {

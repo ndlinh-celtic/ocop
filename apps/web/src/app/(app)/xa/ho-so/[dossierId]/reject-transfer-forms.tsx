@@ -20,7 +20,15 @@ function ErrorLine({ state }: { state: WardDossierFormState }) {
  * L05 XA-06 (story 63): loại to Không đạt sơ bộ, citing one Điều kiện loại of the hồ sơ's Bộ tiêu chí or
  * one Lý do loại sơ bộ; a Lý do needs a diễn giải.
  */
-export function RejectForm({ dossierId, version, exclusions }: { dossierId: string; version: number; exclusions: readonly { id: string; description: string }[] }) {
+export function RejectForm({
+  dossierId,
+  version,
+  exclusions,
+}: {
+  dossierId: string;
+  version: number;
+  exclusions: readonly { id: string; description: string }[];
+}) {
   const [state, action, pending] = useActionState<WardDossierFormState, FormData>(rejectDossierAction.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">

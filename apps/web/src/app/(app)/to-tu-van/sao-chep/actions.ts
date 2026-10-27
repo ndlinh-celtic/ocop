@@ -14,7 +14,10 @@ const scope = {
   recipients: z.union([z.literal("all"), z.array(z.string().min(1)).min(1).max(200)]),
 };
 const copyInput = z.object({
-  dossiers: z.array(z.object({ dossierId: z.string().min(1), expectedVersion: z.number().int().positive(), advisoryVersionId: z.string().min(1).optional() })).min(1).max(200),
+  dossiers: z
+    .array(z.object({ dossierId: z.string().min(1), expectedVersion: z.number().int().positive(), advisoryVersionId: z.string().min(1).optional() }))
+    .min(1)
+    .max(200),
   ...scope,
 });
 export type CopyRequest = z.infer<typeof copyInput>;
@@ -28,7 +31,10 @@ export async function previewAdvisoryCopyAction(input: CopyRequest): Promise<Cop
   const actor = await requireActor();
   try {
     const { dossiers, ...rest } = parsed.data;
-    return await app().core.scoring.previewAdvisoryCopy(actor, { ...rest, dossiers: dossiers.map((d) => ({ dossierId: d.dossierId, advisoryVersionId: d.advisoryVersionId })) });
+    return await app().core.scoring.previewAdvisoryCopy(actor, {
+      ...rest,
+      dossiers: dossiers.map((d) => ({ dossierId: d.dossierId, advisoryVersionId: d.advisoryVersionId })),
+    });
   } catch (err) {
     return { error: domainMessage(err) };
   }

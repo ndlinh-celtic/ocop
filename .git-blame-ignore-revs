@@ -1,0 +1,4 @@
+# Mechanical reformats; `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip them locally (GitHub does by default).
+
+# Format the repo with Prettier (#72)
+7031235c2300db64e418954acc71ff50b2c76526

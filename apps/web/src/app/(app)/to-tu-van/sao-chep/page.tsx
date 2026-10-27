@@ -19,7 +19,8 @@ export default async function AdvisoryCopyPage() {
       <div>
         <h1 className="text-xl font-semibold">Sao chép sang phiếu chấm</h1>
         <p className="text-sm text-text-2">
-          Đưa Điểm đề xuất và căn cứ của Báo cáo Tổ tư vấn đã phát hành vào Phiếu chấm của thành viên. Tiêu chí thành viên đã chỉnh và phiếu đã xác nhận được giữ nguyên.
+          Đưa Điểm đề xuất và căn cứ của Báo cáo Tổ tư vấn đã phát hành vào Phiếu chấm của thành viên. Tiêu chí thành viên đã chỉnh và phiếu đã xác nhận được
+          giữ nguyên.
         </p>
       </div>
       {rows.length === 0 ? (

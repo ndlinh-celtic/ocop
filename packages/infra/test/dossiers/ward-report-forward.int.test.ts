@@ -121,7 +121,9 @@ describe("L06 XA-07 bản Báo cáo đánh giá cấp xã đã ký (story 65)", 
     });
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.ward_report.attach"], targetId: dossierId });
     expect(entry).toMatchObject({ actorUserId: officer.userId, metadata: { fileId, submissionNumber: 1 } });
-    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.ward_report_attached' AND payload->>'dossierId' = $1", [dossierId]);
+    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.ward_report_attached' AND payload->>'dossierId' = $1", [
+      dossierId,
+    ]);
     expect(rowCount).toBe(1);
   });
 
@@ -131,16 +133,28 @@ describe("L06 XA-07 bản Báo cáo đánh giá cấp xã đã ký (story 65)", 
     const attach = (fileId: string) => t.app.dossiers.attachSignedWardReport(officer, { dossierId, expectedVersion: version, fileId });
 
     await expect(
-      t.app.files.requestUpload(officer, { purpose: "signed_ward_report", fileName: "BC.docx", contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 10 }),
+      t.app.files.requestUpload(officer, {
+        purpose: "signed_ward_report",
+        fileName: "BC.docx",
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        size: 10,
+      }),
     ).rejects.toMatchObject({ code: "file_type_not_allowed" });
-    const { fileId: pending } = await t.app.files.requestUpload(officer, { purpose: "signed_ward_report", fileName: "Chưa tải.pdf", contentType: "application/pdf", size: 10 });
+    const { fileId: pending } = await t.app.files.requestUpload(officer, {
+      purpose: "signed_ward_report",
+      fileName: "Chưa tải.pdf",
+      contentType: "application/pdf",
+      size: 10,
+    });
     await expect(attach(pending)).rejects.toMatchObject({ code: "file_not_ready" });
     const infected = await f.uploadPdf(officer, "signed_ward_report", "Nhiễm.pdf", { content: Buffer.from(`%PDF-1.7\n${EICAR}`) });
     await expect(attach(infected)).rejects.toMatchObject({ code: "file_blocked" });
     await expect(attach(await f.uploadPdf(a, "evidence", "Minh chứng.pdf"))).rejects.toMatchObject({ code: "not_found" });
     const colleague = await f.staff("ward_officer", wardId);
     await expect(attach(await f.uploadPdf(colleague, "signed_ward_report"))).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.files.requestUpload(a, { purpose: "signed_ward_report", fileName: "BC.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({
+    await expect(
+      t.app.files.requestUpload(a, { purpose: "signed_ward_report", fileName: "BC.pdf", contentType: "application/pdf", size: 10 }),
+    ).rejects.toMatchObject({
       code: "forbidden",
     });
   });

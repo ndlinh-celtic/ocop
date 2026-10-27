@@ -59,7 +59,11 @@ describe("ADR 0002 sealing the audit log", () => {
       expect(broken).toMatchObject({ ok: false, brokenAtSeq: Number(rows[0].seq), reason: "hash_mismatch" });
 
       await client.query("DELETE FROM platform.audit_log WHERE id = $1", [rows[0].audit_id]);
-      await expect(t.app.audit.verify(systemActor("audit.verify"))).resolves.toMatchObject({ ok: false, brokenAtSeq: Number(rows[0].seq), reason: "row_missing" });
+      await expect(t.app.audit.verify(systemActor("audit.verify"))).resolves.toMatchObject({
+        ok: false,
+        brokenAtSeq: Number(rows[0].seq),
+        reason: "row_missing",
+      });
     } finally {
       client.release();
     }

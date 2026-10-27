@@ -58,7 +58,14 @@ const criteriaSet = z.object({
   ghi_chu_dau_phieu: text.default(""),
   ghi_chu_cuoi_phieu: text.default(""),
   ghi_chu_trich_xuat: text.default(""),
-  tong_diem: z.union([points, z.string().trim().regex(/^\d+(\.\d+)?$/, "Phải là số").transform(Number)]),
+  tong_diem: z.union([
+    points,
+    z
+      .string()
+      .trim()
+      .regex(/^\d+(\.\d+)?$/, "Phải là số")
+      .transform(Number),
+  ]),
   tieu_chi: z.array(criterion).min(1, "Bộ tiêu chí phải có ít nhất một tiêu chí"),
 });
 
@@ -152,7 +159,12 @@ export function splitExclusions(header: string): string[] {
   }
   pieces.push(body.slice(start));
   return pieces
-    .map((p) => p.trim().replace(/^hoặc\s+/i, "").replace(/[\s.;,]+$/, ""))
+    .map((p) =>
+      p
+        .trim()
+        .replace(/^hoặc\s+/i, "")
+        .replace(/[\s.;,]+$/, ""),
+    )
     .filter((p) => p.length > 0)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1));
 }
@@ -281,7 +293,15 @@ function sectionFor(out: SetRows, part: PartRow, c: RawCriterion, nextId: () => 
 }
 
 /** Nhóm tiêu chí comes as `nhom_ma`/`nhom_ten`/`nhom_diem`, or as one label `nhom_con` "6.1 Ngoại hình (10đ)". */
-function groupFor(out: SetRows, section: SectionRow, c: RawCriterion, nextId: () => string, report: Report, at: At, slot: () => number): CriterionGroupRow | null {
+function groupFor(
+  out: SetRows,
+  section: SectionRow,
+  c: RawCriterion,
+  nextId: () => string,
+  report: Report,
+  at: At,
+  slot: () => number,
+): CriterionGroupRow | null {
   let declared: { code: string; name: string; points: number } | null = null;
   if (c.nhom_con !== undefined) {
     const m = GROUP_LABEL.exec(c.nhom_con);
@@ -300,7 +320,8 @@ function groupFor(out: SetRows, section: SectionRow, c: RawCriterion, nextId: ()
   if (!declared) return null;
   const found = out.criterionGroups.find((g) => g.sectionId === section.id && g.code === declared.code);
   if (found) {
-    if (found.name !== declared.name || found.points !== declared.points) report(at(c.nhom_con !== undefined ? "nhom_con" : "nhom_diem"), `Nhóm tiêu chí ${declared.code} khai báo khác nhau giữa các tiêu chí`);
+    if (found.name !== declared.name || found.points !== declared.points)
+      report(at(c.nhom_con !== undefined ? "nhom_con" : "nhom_diem"), `Nhóm tiêu chí ${declared.code} khai báo khác nhau giữa các tiêu chí`);
     return found;
   }
   const group = { id: nextId(), setId: out.set.id, sectionId: section.id, ...declared, position: slot() };
@@ -314,7 +335,14 @@ function groupFor(out: SetRows, section: SectionRow, c: RawCriterion, nextId: ()
  * come from an "a. "/"b. " prefix, and must cover all levels or none.
  */
 function levelsFor(c: RawCriterion, setId: string, criterionId: string, nextId: () => string, report: Report, at: At): ScoreLevelRow[] {
-  const make = (description: string, points: number, minimumStar: Star | null, branch: string | null, systemAdded: boolean, position: number): ScoreLevelRow => ({
+  const make = (
+    description: string,
+    points: number,
+    minimumStar: Star | null,
+    branch: string | null,
+    systemAdded: boolean,
+    position: number,
+  ): ScoreLevelRow => ({
     id: nextId(),
     setId,
     criterionId,

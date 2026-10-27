@@ -60,15 +60,27 @@ async function addDossiers(deps: CoreDeps, tx: Tx, actor: UserActor, meeting: Me
     const d = await lockDossier(tx, actor, id);
     if (d.roundId !== meeting.roundId) throw new DomainError("dossier_not_in_round", `Hồ sơ ${d.code} không thuộc đợt của Phiên họp`);
     if (d.state !== "member_confirmed") throw new DomainError("not_ready_to_finalize", `Hồ sơ ${d.code} chưa Sẵn sàng chốt`);
-    const ok = (await tx.meetings.pendingOf(d.id)) === null && (await tx.meetings.addDossier({ meetingId: meeting.id, dossierId: d.id, addedBy: actor.userId, addedAt: deps.clock.now(), resultId: null }));
+    const ok =
+      (await tx.meetings.pendingOf(d.id)) === null &&
+      (await tx.meetings.addDossier({ meetingId: meeting.id, dossierId: d.id, addedBy: actor.userId, addedAt: deps.clock.now(), resultId: null }));
     if (!ok) throw new DomainError("already_in_meeting", `Hồ sơ ${d.code} đã thuộc một Phiên họp chưa kết thúc`);
     added.push(d.id);
   }
   return added;
 }
 
-async function record(deps: CoreDeps, tx: Tx, actor: UserActor, meeting: Meeting, action: string, type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed", metadata: Record<string, unknown>) {
-  await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action, targetType: "meeting", targetId: meeting.id, after: { state: meeting.state }, metadata }));
+async function record(
+  deps: CoreDeps,
+  tx: Tx,
+  actor: UserActor,
+  meeting: Meeting,
+  action: string,
+  type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed",
+  metadata: Record<string, unknown>,
+) {
+  await tx.audit.append(
+    auditEntry(actor, deps.ids.next(), deps.clock.now(), { action, targetType: "meeting", targetId: meeting.id, after: { state: meeting.state }, metadata }),
+  );
   await emit(deps, tx, { type, payload: { meetingId: meeting.id, councilId: meeting.councilId, roundId: meeting.roundId } });
 }
 
@@ -97,10 +109,27 @@ export function createMeeting(deps: CoreDeps) {
       const round = await tx.rounds.findById(input.roundId);
       if (!round || round.councilId !== councilId) throw roundNotFound();
       const now = deps.clock.now();
-      const meeting: Meeting = { id: deps.ids.next(), councilId, roundId: round.id, title, heldOn: input.heldOn, location, state: "open", createdBy: actor.userId, createdAt: now, closedBy: null, closedAt: null };
+      const meeting: Meeting = {
+        id: deps.ids.next(),
+        councilId,
+        roundId: round.id,
+        title,
+        heldOn: input.heldOn,
+        location,
+        state: "open",
+        createdBy: actor.userId,
+        createdAt: now,
+        closedBy: null,
+        closedAt: null,
+      };
       await tx.meetings.insert(meeting);
       const added = await addDossiers(deps, tx, actor, meeting, input.dossierIds ?? []);
-      await record(deps, tx, actor, meeting, "scoring.meeting.created", "scoring.meeting_created", { title, heldOn: meeting.heldOn, location, dossierIds: added });
+      await record(deps, tx, actor, meeting, "scoring.meeting.created", "scoring.meeting_created", {
+        title,
+        heldOn: meeting.heldOn,
+        location,
+        dossierIds: added,
+      });
       return { meetingId: meeting.id };
     });
   };
@@ -194,7 +223,13 @@ async function minutesOf(tx: Tx, meetingId: string): Promise<MeetingMinutesView[
   for (const m of await tx.meetings.minutes(meetingId)) {
     const file = await tx.files.findById(m.fileId);
     const user = await tx.users.findById(m.uploadedBy);
-    out.push({ number: m.number, fileName: file?.fileName ?? "", status: file?.status ?? "blocked", uploadedAt: m.uploadedAt, uploadedBy: { userId: m.uploadedBy, fullName: user?.fullName ?? "" } });
+    out.push({
+      number: m.number,
+      fileName: file?.fileName ?? "",
+      status: file?.status ?? "blocked",
+      uploadedAt: m.uploadedAt,
+      uploadedBy: { userId: m.uploadedBy, fullName: user?.fullName ?? "" },
+    });
   }
   return out;
 }
@@ -268,7 +303,14 @@ export function getMeeting(deps: CoreDeps) {
           if (!(await tx.meetings.pendingOf(d.id))) candidates.push({ dossierId: d.id, code: d.code, productName: d.productName });
         }
       }
-      return { ...(await summaryOf(tx, meeting)), createdAt: meeting.createdAt, closedAt: meeting.closedAt, dossiers, candidates, minutes: await minutesOf(tx, meeting.id) };
+      return {
+        ...(await summaryOf(tx, meeting)),
+        createdAt: meeting.createdAt,
+        closedAt: meeting.closedAt,
+        dossiers,
+        candidates,
+        minutes: await minutesOf(tx, meeting.id),
+      };
     });
   };
 }

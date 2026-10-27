@@ -89,9 +89,7 @@ describe("L01 CT-01 Chủ thể self-registration", () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const [entry] = await t.app.audit.search(admin, { action: ["entity.registered"], targetId: entityId });
     expect(entry).toMatchObject({ actorUserId: owner.userId, targetType: "entity", after: { kind: "enterprise", name: input.name, wardId } });
-    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'entity.registered' AND payload->>'entityId' = $1", [
-      entityId,
-    ]);
+    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'entity.registered' AND payload->>'entityId' = $1", [entityId]);
     expect(outbox.rows).toEqual([{ payload: { entityId, userId: owner.userId } }]);
   });
 });

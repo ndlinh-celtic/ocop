@@ -79,7 +79,9 @@ export function confirmTotpEnrollment(deps: CoreDeps) {
 
       const check = await deps.totp.verify(deps.secretBox.open(secretEnc), code.trim(), now, null);
       if (!check.valid) {
-        await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.totp.failed", targetType: "user", targetId: user.id, metadata: { during: "enrollment" } }));
+        await tx.audit.append(
+          auditEntry(actor, deps.ids.next(), now, { action: "auth.totp.failed", targetType: "user", targetId: user.id, metadata: { during: "enrollment" } }),
+        );
         if (await registerFailure(deps, tx, user, actor, now)) return { ok: false, reason: "locked" };
         return { ok: false, reason: "invalid_code" };
       }

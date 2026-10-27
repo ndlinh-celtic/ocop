@@ -82,15 +82,7 @@ export function RoundConfigForms({
           </label>
           <label className={label}>
             Ngưỡng cờ chênh lệch (điểm)
-            <input
-              name="deviationFlagPoints"
-              type="number"
-              required
-              min={0.5}
-              step={0.5}
-              defaultValue={aggregation.deviationFlagPoints}
-              className={input}
-            />
+            <input name="deviationFlagPoints" type="number" required min={0.5} step={0.5} defaultValue={aggregation.deviationFlagPoints} className={input} />
           </label>
         </div>
       </ConfigForm>

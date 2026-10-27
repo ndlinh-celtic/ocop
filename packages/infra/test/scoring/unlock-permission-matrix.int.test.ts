@@ -80,7 +80,12 @@ describe("Permission matrix: Mở khóa sau chốt (#63)", () => {
   const confirmAll = async (actor: UserActor, dossierId: string) => {
     const view = await w.t.app.scoring.readDossierScores(actor, { dossierId });
     if (view.kind !== "own_sheet") throw new Error(view.kind);
-    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      comment: "",
+      evidenceFileIds: [],
+    }));
     const { version } = await w.t.app.scoring.saveScoreSheet(actor, { dossierId, expectedVersion: view.sheet!.version, lines });
     await w.t.app.scoring.confirmScoreSheet(actor, { dossierId, expectedVersion: version });
   };
@@ -88,7 +93,12 @@ describe("Permission matrix: Mở khóa sau chốt (#63)", () => {
     w.t.app.scoring.createMeeting(actor, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds });
   const dossierOf = (dossierId: string) => w.t.app.dossiers.get(w.A.secretary, { dossierId });
   const unlock = async (dossierId: string, actor = admin) =>
-    w.t.app.scoring.unlockFinalized(actor, { dossierId, requestFileId: await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf"), requestedBy: "Chủ tịch Hội đồng A", reason: "Sai sót" });
+    w.t.app.scoring.unlockFinalized(actor, {
+      dossierId,
+      requestFileId: await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf"),
+      requestedBy: "Chủ tịch Hội đồng A",
+      reason: "Sai sót",
+    });
 
   async function dossierIn(state: State) {
     const d = await w.graded([w.A.members[0]!, w.A.members[1]!, w.A.members[2]!]);

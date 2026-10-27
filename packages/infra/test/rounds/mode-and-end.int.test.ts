@@ -183,7 +183,9 @@ describe("L07 HD-06 đổi Chế độ chấm", () => {
     const officer = await staff();
     const roundId = await openRound(officer);
     await t.app.rounds.changeGradingMode(officer, { roundId, gradingMode: "advisory_based" });
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.grading_mode_changed' AND payload->>'roundId' = $1", [roundId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.grading_mode_changed' AND payload->>'roundId' = $1", [
+      roundId,
+    ]);
     expect(rows.map((r) => r.payload)).toEqual([{ roundId, from: "direct", to: "advisory_based" }]);
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.grading_mode_changed"], targetId: roundId });
     expect(entry).toMatchObject({
@@ -216,7 +218,9 @@ describe("L07 HD-06 đổi Quy tắc tổng hợp", () => {
     const roundId = await openRound(officer);
     await t.app.rounds.changeAggregationRule(officer, { roundId, aggregation: NEW_RULE });
     expect(await t.app.rounds.getRound(officer, { roundId })).toMatchObject({ aggregation: NEW_RULE });
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.aggregation_changed' AND payload->>'roundId' = $1", [roundId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.aggregation_changed' AND payload->>'roundId' = $1", [
+      roundId,
+    ]);
     expect(rows.map((r) => r.payload)).toEqual([{ roundId }]);
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.aggregation_changed"], targetId: roundId });
     expect(entry).toMatchObject({ actorUserId: officer.userId, before: { aggregation: AGGREGATION }, after: { aggregation: NEW_RULE } });
@@ -226,7 +230,9 @@ describe("L07 HD-06 đổi Quy tắc tổng hợp", () => {
     const officer = await staff();
     const roundId = await openRound(officer);
     await t.app.rounds.changeAggregationRule(officer, { roundId, aggregation: { ...AGGREGATION, deviationFlagPoints: 14.999999999 } });
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.aggregation_changed' AND payload->>'roundId' = $1", [roundId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.aggregation_changed' AND payload->>'roundId' = $1", [
+      roundId,
+    ]);
     expect(rows).toEqual([]);
     expect(await t.app.audit.search(await admin(), { action: ["round.aggregation_changed"], targetId: roundId })).toEqual([]);
   });
@@ -307,9 +313,9 @@ describe("L07 SO-01 kết thúc đợt", () => {
       const roundId = await endedRound(await staff());
       for (const pool of [db.app, db.admin]) {
         await expect(pool.query("UPDATE round.round SET name = 'Đổi tên' WHERE id = $1", [roundId])).rejects.toThrow(/has ended/);
-        await expect(pool.query("UPDATE round.round SET status = 'submission_closed', ended_at = NULL, ended_by = NULL WHERE id = $1", [roundId])).rejects.toThrow(
-          /has ended/,
-        );
+        await expect(
+          pool.query("UPDATE round.round SET status = 'submission_closed', ended_at = NULL, ended_by = NULL WHERE id = $1", [roundId]),
+        ).rejects.toThrow(/has ended/);
         await expect(pool.query("DELETE FROM round.round WHERE id = $1", [roundId])).rejects.toThrow(/cannot be deleted|has ended/);
       }
       expect(await t.app.rounds.getRound(await staff(), { roundId })).toMatchObject({ status: "ended", name: expect.not.stringMatching("Đổi tên") });

@@ -9,8 +9,7 @@ export const dynamic = "force-dynamic";
 type Search = Record<string, string | undefined>;
 
 /** Dates in the form are Vietnam days; [from 00:00, to + 1 day) in UTC. */
-const vnDay = (d: string | undefined, plusDays = 0) =>
-  d ? new Date(new Date(`${d}T00:00:00+07:00`).getTime() + plusDays * 86_400_000) : undefined;
+const vnDay = (d: string | undefined, plusDays = 0) => (d ? new Date(new Date(`${d}T00:00:00+07:00`).getTime() + plusDays * 86_400_000) : undefined);
 
 const field = "rounded-md border border-line-strong bg-surface px-3 py-2 text-sm";
 
@@ -87,9 +86,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 <td className="whitespace-nowrap px-3 py-2">{formatVnDateTime(e.occurredAt)}</td>
                 <td className="px-3 py-2">
                   {e.actorUserId ? (byId.get(e.actorUserId)?.fullName ?? e.actorUserId) : "—"}
-                  {e.actorRole && (
-                    <span className="block text-xs text-text-3">{ROLE_LABEL[e.actorRole as Role] ?? e.actorRole}</span>
-                  )}
+                  {e.actorRole && <span className="block text-xs text-text-3">{ROLE_LABEL[e.actorRole as Role] ?? e.actorRole}</span>}
                 </td>
                 <td className="px-3 py-2 font-mono text-xs">{e.action}</td>
                 <td className="px-3 py-2 text-xs">

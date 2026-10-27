@@ -89,7 +89,13 @@ describe("L09 HD-01 Cán bộ Sở corrects a Hội đồng (story 4)", () => {
     const councilId = await f.council(province, "Hội đồng sai tên");
     const before = await t.app.councils.get(province, { councilId });
     const newFile = await f.uploadPdf(province, "council_decision", "QĐ sửa đổi.pdf");
-    await t.app.councils.update(province, { councilId, name: "Hội đồng đúng tên", decisionNumber: "99/QĐ-UBND", decisionDate: "2026-09-15", decisionFileId: newFile });
+    await t.app.councils.update(province, {
+      councilId,
+      name: "Hội đồng đúng tên",
+      decisionNumber: "99/QĐ-UBND",
+      decisionDate: "2026-09-15",
+      decisionFileId: newFile,
+    });
 
     expect(await t.app.councils.get(province, { councilId })).toMatchObject({
       name: "Hội đồng đúng tên",
@@ -98,14 +104,23 @@ describe("L09 HD-01 Cán bộ Sở corrects a Hội đồng (story 4)", () => {
       decisionFile: { id: newFile, fileName: "QĐ sửa đổi.pdf" },
     });
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["council.updated"], targetId: councilId });
-    expect(entry).toMatchObject({ before: { name: "Hội đồng sai tên", decisionFileId: before.decisionFileId }, after: { name: "Hội đồng đúng tên", decisionFileId: newFile } });
+    expect(entry).toMatchObject({
+      before: { name: "Hội đồng sai tên", decisionFileId: before.decisionFileId },
+      after: { name: "Hội đồng đúng tên", decisionFileId: newFile },
+    });
     expect(await outboxCount("council.updated", "councilId", councilId)).toBe(1);
   });
 
   it("keeps the recorded quyết định when only the tên changes", async () => {
     const councilId = await f.council(province);
     const before = await t.app.councils.get(province, { councilId });
-    await t.app.councils.update(province, { councilId, name: "Tên mới", decisionNumber: before.decisionNumber, decisionDate: before.decisionDate, decisionFileId: before.decisionFileId });
+    await t.app.councils.update(province, {
+      councilId,
+      name: "Tên mới",
+      decisionNumber: before.decisionNumber,
+      decisionDate: before.decisionDate,
+      decisionFileId: before.decisionFileId,
+    });
     expect((await t.app.councils.get(province, { councilId })).decisionFile?.id).toBe(before.decisionFileId);
   });
 
@@ -149,7 +164,9 @@ describe("L09 HD-01 Phân vai on Phạm vi Hội đồng (stories 5 to 8)", () =
     await expect(
       t.app.identity.grantRole(admin, { userId: someone.userId, role: "council_member", scopeId: "00000000-0000-4000-8000-000000000000" }),
     ).rejects.toMatchObject({ code: "scope_not_found" });
-    await expect(t.app.identity.grantRole(admin, { userId: someone.userId, role: "council_member", scopeId: null })).rejects.toMatchObject({ code: "scope_required" });
+    await expect(t.app.identity.grantRole(admin, { userId: someone.userId, role: "council_member", scopeId: null })).rejects.toMatchObject({
+      code: "scope_required",
+    });
   });
 
   it("shows the Phạm vi Hội đồng by its tên, in the account page and the Vai trò switcher (story 6)", async () => {
@@ -195,7 +212,9 @@ describe("L09 HD-01 Tổ trưởng (stories 2, 3)", () => {
 
     const entries = await t.app.audit.search(await f.admin(), { action: ["council.leader_changed"], targetId: councilId });
     expect(entries.map((e) => e.after)).toEqual(expect.arrayContaining([{ leaderUserId: first!.userId }, { leaderUserId: second!.userId }]));
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'council.leader_changed' AND payload->>'councilId' = $1", [councilId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'council.leader_changed' AND payload->>'councilId' = $1", [
+      councilId,
+    ]);
     expect(rows.map((r) => r.payload.toUserId)).toEqual(expect.arrayContaining([first!.userId, second!.userId]));
   });
 
@@ -287,7 +306,9 @@ describe("L09 HD-01 permission matrix", () => {
       await expect(t.app.councils.update(actor, { councilId, ...input })).rejects.toMatchObject(forbidden);
       await expect(t.app.councils.setLeader(actor, { councilId, userId: advisors[0]!.userId })).rejects.toMatchObject(forbidden);
       await expect(t.app.rounds.assignCouncil(actor, { roundId, councilId })).rejects.toMatchObject(forbidden);
-      await expect(t.app.files.requestUpload(actor, { purpose: "council_decision", fileName: "QĐ.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject(forbidden);
+      await expect(
+        t.app.files.requestUpload(actor, { purpose: "council_decision", fileName: "QĐ.pdf", contentType: "application/pdf", size: 10 }),
+      ).rejects.toMatchObject(forbidden);
     }
     for (const actor of [ward, owner, chair, secretary, members[0]!, advisors[0]!]) {
       await expect(t.app.councils.list(actor)).rejects.toMatchObject(forbidden);
@@ -301,7 +322,9 @@ describe("L09 HD-01 permission matrix", () => {
     const councilId = await f.council(province);
     const someone = await f.staff("province_officer");
     const { assignmentId } = await t.app.identity.grantRole(await f.admin(), { userId: someone.userId, role: "council_member", scopeId: councilId });
-    await expect(t.app.identity.grantRole(province, { userId: someone.userId, role: "advisory_member", scopeId: councilId })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.identity.grantRole(province, { userId: someone.userId, role: "advisory_member", scopeId: councilId })).rejects.toMatchObject({
+      code: "forbidden",
+    });
     await expect(t.app.identity.revokeRole(province, { assignmentId })).rejects.toMatchObject({ code: "forbidden" });
   });
 });

@@ -42,7 +42,8 @@ export default async function LegalProfilePage() {
         <div role="status" data-testid="verified" className="flex items-start gap-3 rounded-lg bg-brand-soft p-4 text-sm">
           <BadgeCheck className="size-5 shrink-0 text-brand" aria-hidden />
           <p>
-            <b>Đã xác thực.</b> Bạn có đủ giấy tờ bắt buộc còn hiệu lực và có thể lập hồ sơ sản phẩm. Cán bộ xã sẽ kiểm tra tính hợp lệ khi tiếp nhận từng hồ sơ.
+            <b>Đã xác thực.</b> Bạn có đủ giấy tờ bắt buộc còn hiệu lực và có thể lập hồ sơ sản phẩm. Cán bộ xã sẽ kiểm tra tính hợp lệ khi tiếp nhận từng hồ
+            sơ.
           </p>
         </div>
       ) : (

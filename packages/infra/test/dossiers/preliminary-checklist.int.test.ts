@@ -93,7 +93,9 @@ describe("L06 XA-04 Checklist sơ bộ của đợt (story 60)", () => {
   it("refuses to change the items once the round is opened, and the DB refuses it too", async () => {
     const roundId = openRoundId;
     await expect(t.app.rounds.configureChecklist(province, { roundId, items: [{ label: "Mục mới" }] })).rejects.toMatchObject({ code: "round_not_draft" });
-    await expect(db.app.query(`UPDATE round.round SET checklist = '[{"code":"x","label":"x"}]' WHERE id = $1`, [roundId])).rejects.toThrow(/checklist is fixed/);
+    await expect(db.app.query(`UPDATE round.round SET checklist = '[{"code":"x","label":"x"}]' WHERE id = $1`, [roundId])).rejects.toThrow(
+      /checklist is fixed/,
+    );
   });
 
   it("only Cán bộ Sở configures it", async () => {
@@ -128,7 +130,11 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
     expect(partial).toMatchObject({ complete: true, suggestion: "not_eligible" });
     expect(partial.items[3]).toMatchObject({ result: "needs_verification", comment: "Cần xem bảng lương" });
 
-    await t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: v2, results: [{ itemCode: codes[3]!, result: "pass", comment: "Đã xác minh" }] });
+    await t.app.dossiers.assessChecklist(officer, {
+      dossierId,
+      expectedVersion: v2,
+      results: [{ itemCode: codes[3]!, result: "pass", comment: "Đã xác minh" }],
+    });
     const all = await t.app.dossiers.checklist(officer, { dossierId });
     expect(all).toMatchObject({ complete: true, suggestion: "eligible" });
     expect(all.items.every((i) => i.result === "pass")).toBe(true);
@@ -140,7 +146,11 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
     const [item] = (await t.app.dossiers.checklist(officer, { dossierId })).items;
 
     await expect(
-      t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: version, results: [{ itemCode: item!.code, result: "needs_verification", comment: "  " }] }),
+      t.app.dossiers.assessChecklist(officer, {
+        dossierId,
+        expectedVersion: version,
+        results: [{ itemCode: item!.code, result: "needs_verification", comment: "  " }],
+      }),
     ).rejects.toMatchObject({ code: "comment_required" });
     await expect(
       t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: version, results: [{ itemCode: "khong-co", result: "pass" }] }),
@@ -152,11 +162,20 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
     const { dossierId, version } = await received(officer);
     const [item] = (await t.app.dossiers.checklist(officer, { dossierId })).items;
 
-    await t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: version, results: [{ itemCode: item!.code, result: "fail", comment: "Thiếu giấy VSATTP" }] });
+    await t.app.dossiers.assessChecklist(officer, {
+      dossierId,
+      expectedVersion: version,
+      results: [{ itemCode: item!.code, result: "fail", comment: "Thiếu giấy VSATTP" }],
+    });
 
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.checklist.assess"], targetId: dossierId });
-    expect(entry).toMatchObject({ actorUserId: officer.userId, metadata: { results: [{ itemCode: item!.code, result: "fail", comment: "Thiếu giấy VSATTP" }] } });
-    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.checklist_assessed' AND payload->>'dossierId' = $1", [dossierId]);
+    expect(entry).toMatchObject({
+      actorUserId: officer.userId,
+      metadata: { results: [{ itemCode: item!.code, result: "fail", comment: "Thiếu giấy VSATTP" }] },
+    });
+    const { rowCount } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.checklist_assessed' AND payload->>'dossierId' = $1", [
+      dossierId,
+    ]);
     expect(rowCount).toBe(1);
     expect((await t.app.dossiers.timeline(officer, { dossierId })).map((e) => e.action)).not.toContain("dossier.checklist.assess");
   });
@@ -165,7 +184,11 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
     const officer = await f.staff("ward_officer", wardX);
     const { a, dossierId, version } = await received(officer);
     const [item] = (await t.app.dossiers.checklist(officer, { dossierId })).items;
-    await t.app.dossiers.assessChecklist(officer, { dossierId, expectedVersion: version, results: [{ itemCode: item!.code, result: "needs_verification", comment: "GHI-CHU-NOI-BO" }] });
+    await t.app.dossiers.assessChecklist(officer, {
+      dossierId,
+      expectedVersion: version,
+      results: [{ itemCode: item!.code, result: "needs_verification", comment: "GHI-CHU-NOI-BO" }],
+    });
 
     const own = await t.app.dossiers.checklist(a, { dossierId });
     expect(own.items[0]).toMatchObject({ code: item!.code, result: "needs_verification" });
@@ -180,13 +203,19 @@ describe("L06 XA-04 Cán bộ xã đánh giá Checklist sơ bộ của hồ sơ 
     const [item] = (await t.app.dossiers.checklist(officer, { dossierId: s.dossierId })).items;
     const results = [{ itemCode: item!.code, result: "pass" as const }];
 
-    await expect(t.app.dossiers.assessChecklist(officer, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({ code: "not_received" });
-    await expect(t.app.dossiers.assessChecklist(s.a, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.dossiers.assessChecklist(officer, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({
+      code: "not_received",
+    });
+    await expect(t.app.dossiers.assessChecklist(s.a, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({
+      code: "forbidden",
+    });
     await seedWards(db.app, "ma,ten\n00009,Xã Khác\n");
     const otherWard = (await t.app.org.listWards()).find((w) => w.name === "Xã Khác")!.id;
     const stranger = await f.staff("ward_officer", otherWard);
     await expect(t.app.dossiers.checklist(stranger, { dossierId: s.dossierId })).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.dossiers.assessChecklist(stranger, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.dossiers.assessChecklist(stranger, { dossierId: s.dossierId, expectedVersion: s.version, results })).rejects.toMatchObject({
+      code: "not_found",
+    });
   });
 
   it("can be changed until the hồ sơ is gửi tỉnh, not after", async () => {

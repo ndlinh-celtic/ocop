@@ -7,7 +7,19 @@ import { assertIdShape, isUuid } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { isExpired } from "../entities/legal";
 import type { Entity } from "../entities/model";
-import { DOSSIER_STATES, dossierNotFound, isAwaitingNextRound, rejectionOf, type Dossier, type DossierRejection, type DossierEvent, type DossierListFilter, type DossierState, type EvidenceFile, type Submission } from "./model";
+import {
+  DOSSIER_STATES,
+  dossierNotFound,
+  isAwaitingNextRound,
+  rejectionOf,
+  type Dossier,
+  type DossierRejection,
+  type DossierEvent,
+  type DossierListFilter,
+  type DossierState,
+  type EvidenceFile,
+  type Submission,
+} from "./model";
 
 export interface DossierSummary extends Dossier {
   criteriaSet: { id: string; code: string; name: string };
@@ -60,8 +72,7 @@ export type EntityField = (typeof ENTITY_FIELDS)[number];
  * only tells the Cán bộ xã to look again.
  */
 export type DossierFlag =
-  | { kind: "legal_document_expired"; typeCode: string; typeName: string; validUntil: string }
-  | { kind: "entity_changed"; fields: EntityField[] };
+  { kind: "legal_document_expired"; typeCode: string; typeName: string; validUntil: string } | { kind: "entity_changed"; fields: EntityField[] };
 
 function flagsOf(latest: Submission | null, entity: Entity | null, now: Date): DossierFlag[] {
   if (!latest) return [];

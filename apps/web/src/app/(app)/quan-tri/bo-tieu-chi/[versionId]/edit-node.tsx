@@ -130,7 +130,12 @@ export function NodeFormDialog({
 }) {
   const formId = useId();
   return createPortal(
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--overlay)] p-4 text-left text-base font-normal text-text" role="dialog" aria-modal="true" aria-labelledby={`${formId}-title`}>
+    <div
+      className="fixed inset-0 z-40 grid place-items-center bg-[var(--overlay)] p-4 text-left text-base font-normal text-text"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`${formId}-title`}
+    >
       <form action={onSubmit} className="flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto rounded-lg bg-surface p-6 shadow-pop">
         <h2 id={`${formId}-title`} className="text-lg font-semibold">
           {title}

@@ -18,7 +18,12 @@ const result = z.enum(CHECKLIST_RESULTS);
  * L06 XA-04 (story 61): saves the Checklist sơ bộ of a hồ sơ. The form sends every item's code, its
  * result as `result.<code>` and its nhận xét as `comment.<code>`; items left without a result are not sent.
  */
-export async function assessChecklistAction(dossierId: string, expectedVersion: number, _prev: ChecklistFormState, form: FormData): Promise<ChecklistFormState> {
+export async function assessChecklistAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: ChecklistFormState,
+  form: FormData,
+): Promise<ChecklistFormState> {
   const actor = await requireActor();
   const results: ChecklistResultInput[] = [];
   for (const code of form.getAll("itemCode")) {

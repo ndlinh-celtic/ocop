@@ -62,13 +62,34 @@ function NodeStructure({ versionId, node, id, label }: { versionId: string; node
   };
   return (
     <>
-      <button type="button" disabled={pending} onClick={() => move("up")} className={iconButton} aria-label={`Chuyển ${label} lên`} title={`Chuyển ${label} lên`}>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => move("up")}
+        className={iconButton}
+        aria-label={`Chuyển ${label} lên`}
+        title={`Chuyển ${label} lên`}
+      >
         <ChevronUp className="size-3.5" aria-hidden />
       </button>
-      <button type="button" disabled={pending} onClick={() => move("down")} className={iconButton} aria-label={`Chuyển ${label} xuống`} title={`Chuyển ${label} xuống`}>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => move("down")}
+        className={iconButton}
+        aria-label={`Chuyển ${label} xuống`}
+        title={`Chuyển ${label} xuống`}
+      >
         <ChevronDown className="size-3.5" aria-hidden />
       </button>
-      <button type="button" disabled={pending} onClick={remove} className={`${iconButton} hover:text-danger`} aria-label={`Xóa ${label}`} title={`Xóa ${label}`}>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={remove}
+        className={`${iconButton} hover:text-danger`}
+        aria-label={`Xóa ${label}`}
+        title={`Xóa ${label}`}
+      >
         <Trash2 className="size-3.5" aria-hidden />
       </button>
     </>

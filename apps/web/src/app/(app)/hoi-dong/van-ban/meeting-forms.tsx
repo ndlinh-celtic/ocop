@@ -77,7 +77,11 @@ export function CreateMeetingForm({ rounds, candidates }: { rounds: { id: string
         <CandidateList candidates={candidates} />
       </fieldset>
       <div>
-        <button type="submit" disabled={pending || rounds.length === 0} className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={pending || rounds.length === 0}
+          className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60"
+        >
           Lập Phiên họp
         </button>
       </div>

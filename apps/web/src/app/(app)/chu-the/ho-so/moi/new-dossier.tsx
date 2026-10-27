@@ -18,7 +18,11 @@ export async function NewDossier({ actor, tu, onBehalf, back }: { actor: UserAct
   try {
     options = await app().core.dossiers.creationOptions(actor);
   } catch (err) {
-    return <p role="alert" className="rounded-lg border bg-surface p-4 text-sm text-danger">{domainMessage(err)}</p>;
+    return (
+      <p role="alert" className="rounded-lg border bg-surface p-4 text-sm text-danger">
+        {domainMessage(err)}
+      </p>
+    );
   }
 
   return (

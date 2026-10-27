@@ -35,7 +35,11 @@ describe("L15 Audit of the full score view (#73)", () => {
   }
 
   const viewed = async (dossierId: string) =>
-    (await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: dossierId })).map((v) => [v.actorUserId, v.targetType, v.metadata]);
+    (await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: dossierId })).map((v) => [
+      v.actorUserId,
+      v.targetType,
+      v.metadata,
+    ]);
 
   it("writes one personal_data.viewed per reading of the full view, by its reader, before chốt (story 93)", async () => {
     const d = await ready();
@@ -62,7 +66,13 @@ describe("L15 Audit of the full score view (#73)", () => {
     expect((await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId })).kind).toBe("own_sheet");
     expect((await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId, ownSheet: true })).kind).toBe("own_sheet");
     const version = (await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version;
-    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
     await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version });
 
     for (const who of [d.a, w.ward, w.province, await w.f.admin()]) {
@@ -104,7 +114,12 @@ describe("L15 No audit for a reader's own phiếu alone (#73)", () => {
     const d = await w.graded([m(0), m(1)]);
     const view = await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId });
     if (view.kind !== "own_sheet") throw new Error(view.kind);
-    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      comment: "",
+      evidenceFileIds: [],
+    }));
     const { version } = await w.t.app.scoring.saveScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
     await w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version });
 
@@ -114,7 +129,9 @@ describe("L15 No audit for a reader's own phiếu alone (#73)", () => {
 
     // The Chủ tịch sees m(0)'s points: that is someone else's.
     await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId });
-    expect((await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: d.dossierId })).map((v) => v.actorUserId)).toEqual([w.A.chair.userId]);
+    expect((await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"], targetId: d.dossierId })).map((v) => v.actorUserId)).toEqual([
+      w.A.chair.userId,
+    ]);
   });
 });
 
@@ -127,10 +144,30 @@ describe("L15 No audit for the Tổ tư vấn's kết quả chốt (#73, story 1
     const advisor = w.A.advisors[0]!;
     const d = await w.graded([m0, m1], [advisor]);
     await w.t.app.councils.setLeader(w.province, { councilId: w.A.councilId, userId: advisor.userId });
-    const advisoryLines = PICKS.map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), basis: "Căn cứ hồ sơ", evidenceFileIds: [], evidenceAssessment: "sufficient" as const }));
-    await w.t.app.scoring.saveAdvisoryDraft(advisor, { dossierId: d.dossierId, draftVersion: 0, lines: advisoryLines, summary: "Nhận xét", notes: "", attachmentFileIds: [] });
-    const issued = await w.t.app.scoring.issueAdvisoryReport(advisor, { dossierId: d.dossierId, expectedVersion: (await w.t.app.scoring.advisoryReport(advisor, { dossierId: d.dossierId })).dossierVersion });
-    await w.t.app.scoring.copyAdvisory(advisor, { dossiers: [{ dossierId: d.dossierId, expectedVersion: issued.version }], criteria: "all", recipients: "all" });
+    const advisoryLines = PICKS.map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      basis: "Căn cứ hồ sơ",
+      evidenceFileIds: [],
+      evidenceAssessment: "sufficient" as const,
+    }));
+    await w.t.app.scoring.saveAdvisoryDraft(advisor, {
+      dossierId: d.dossierId,
+      draftVersion: 0,
+      lines: advisoryLines,
+      summary: "Nhận xét",
+      notes: "",
+      attachmentFileIds: [],
+    });
+    const issued = await w.t.app.scoring.issueAdvisoryReport(advisor, {
+      dossierId: d.dossierId,
+      expectedVersion: (await w.t.app.scoring.advisoryReport(advisor, { dossierId: d.dossierId })).dossierVersion,
+    });
+    await w.t.app.scoring.copyAdvisory(advisor, {
+      dossiers: [{ dossierId: d.dossierId, expectedVersion: issued.version }],
+      criteria: "all",
+      recipients: "all",
+    });
     for (const m of [m0, m1]) {
       const view = await w.t.app.scoring.readDossierScores(m, { dossierId: d.dossierId });
       if (view.kind !== "own_sheet") throw new Error(view.kind);
@@ -140,7 +177,13 @@ describe("L15 No audit for the Tổ tư vấn's kết quả chốt (#73, story 1
     }
     await w.t.app.identity.reauthenticate(w.A.secretary, { password: PASSWORD });
     const version = (await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version;
-    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
     await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version });
 
     expect((await w.t.app.scoring.readDossierScores(advisor, { dossierId: d.dossierId })).kind).toBe("aggregate_only");

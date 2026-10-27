@@ -19,7 +19,11 @@ export function FlashProvider({ children }: { children: React.ReactNode }) {
   return (
     <FlashContext.Provider value={show}>
       {shown && (
-        <p role="status" data-testid="flash" className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand">
+        <p
+          role="status"
+          data-testid="flash"
+          className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand"
+        >
           {shown}
           <button type="button" onClick={() => setFlash(null)} aria-label="Đóng thông báo">
             <X className="size-4" aria-hidden />

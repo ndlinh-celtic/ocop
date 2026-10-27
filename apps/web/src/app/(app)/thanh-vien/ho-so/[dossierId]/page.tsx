@@ -111,7 +111,9 @@ export default async function ScoreSheetPage({ params }: { params: Promise<{ dos
           {latest && (
             <section className="rounded-lg border bg-surface p-4 shadow-card">
               <h2 className="mb-1 font-semibold">Phiên bản nộp số {latest.number}</h2>
-              <p className="mb-3 text-sm text-text-2">Nộp lúc {formatVnDateTime(latest.submittedAt)}. Giải trình và minh chứng của Chủ thể hiện cạnh từng Tiêu chí của phiếu.</p>
+              <p className="mb-3 text-sm text-text-2">
+                Nộp lúc {formatVnDateTime(latest.submittedAt)}. Giải trình và minh chứng của Chủ thể hiện cạnh từng Tiêu chí của phiếu.
+              </p>
               <SubmissionDocuments dossierId={dossier.id} submissionNumber={latest.number} />
             </section>
           )}

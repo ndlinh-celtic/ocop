@@ -11,7 +11,9 @@ const PAGE = "/so/hoi-dong";
 const fileInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });
 
 /** Step one of a quyết định thành lập: a pre-signed upload, quarantined until scanned. */
-export async function requestDecisionUploadAction(input: z.infer<typeof fileInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestDecisionUploadAction(
+  input: z.infer<typeof fileInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const actor = await requireActor();
   try {
     return await app().core.files.requestUpload(actor, { ...fileInput.parse(input), purpose: "council_decision" });

@@ -90,9 +90,17 @@ export function replaceAssignment(deps: CoreDeps) {
       const created = await insertInForce(deps, tx, actor, before, input.newUserId, old.kind, now);
       if (sheet) {
         const newSheet = created.scoreSheetIds[0]!;
-        const superseded = { ...sheet, state: "superseded" as const, supersededBy: newSheet, supersededReason: reason, version: sheet.version + 1, updatedAt: now };
+        const superseded = {
+          ...sheet,
+          state: "superseded" as const,
+          supersededBy: newSheet,
+          supersededReason: reason,
+          version: sheet.version + 1,
+          updatedAt: now,
+        };
         // A nháp is written like any draft; a phiếu Vắng changes only its state and supersession (ADR 0008).
-        const done = sheet.state === "draft" ? await tx.scoreSheets.update(superseded, sheet.version) : await tx.scoreSheets.supersede(sheet.id, newSheet, reason);
+        const done =
+          sheet.state === "draft" ? await tx.scoreSheets.update(superseded, sheet.version) : await tx.scoreSheets.supersede(sheet.id, newSheet, reason);
         if (!done) throw new Error(`score sheet ${sheet.id} changed under a lock`);
       }
       await emit(deps, tx, {
@@ -208,7 +216,10 @@ async function insertInForce(deps: CoreDeps, tx: Tx, actor: UserActor, dossier: 
   };
   await tx.assignments.insert(a);
   // Dựa trên Tổ tư vấn, past the first sao chép: the Phiếu chấm trống waits for the next one.
-  const awaitingCopy = kind === "member" && (dossier.state === "member_review" || dossier.state === "member_confirmed") && (await tx.rounds.findById(dossier.roundId!))!.gradingMode === "advisory_based";
+  const awaitingCopy =
+    kind === "member" &&
+    (dossier.state === "member_review" || dossier.state === "member_confirmed") &&
+    (await tx.rounds.findById(dossier.roundId!))!.gradingMode === "advisory_based";
   const scoreSheetIds = kind === "member" ? await openScoreSheets(deps, tx, dossier.id, [a.id], now, awaitingCopy) : [];
   return { assignmentId: a.id, scoreSheetIds };
 }

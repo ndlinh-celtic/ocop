@@ -106,7 +106,9 @@ export function AggregateTable({ view }: { view: FullScoresView | ConfirmedSheet
               </tr>
             </tfoot>
           </table>
-          <p className="px-3 py-2 text-xs text-text-3">Dấu * : có nhận xét hoặc lý do điều chỉnh, rê chuột vào ô để xem. Phiếu chưa xác nhận không được tính.</p>
+          <p className="px-3 py-2 text-xs text-text-3">
+            Dấu * : có nhận xét hoặc lý do điều chỉnh, rê chuột vào ô để xem. Phiếu chưa xác nhận không được tính.
+          </p>
         </section>
 
         {aggregate && view.kind === "full" && (

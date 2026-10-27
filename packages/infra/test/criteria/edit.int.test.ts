@@ -101,8 +101,15 @@ async function draft() {
 describe("L19 AD-03 sửa nội dung bản nháp", () => {
   it("edits the Văn bản căn cứ, Ngày ban hành and Ngày hiệu lực", async () => {
     const { a, versionId } = await draft();
-    await t.app.criteria.editDraft(a, { versionId, edit: { node: "version", changes: { legalBasis: " 100/2027/QĐ-TTg ", issuedOn: "2027-03-04", effectiveOn: "2027-04-05" } } });
-    expect(await t.app.criteria.getVersion(a, { versionId })).toMatchObject({ legalBasis: "100/2027/QĐ-TTg", issuedOn: "2027-03-04", effectiveOn: "2027-04-05" });
+    await t.app.criteria.editDraft(a, {
+      versionId,
+      edit: { node: "version", changes: { legalBasis: " 100/2027/QĐ-TTg ", issuedOn: "2027-03-04", effectiveOn: "2027-04-05" } },
+    });
+    expect(await t.app.criteria.getVersion(a, { versionId })).toMatchObject({
+      legalBasis: "100/2027/QĐ-TTg",
+      issuedOn: "2027-03-04",
+      effectiveOn: "2027-04-05",
+    });
   });
 
   it("edits the Ngưỡng hạng", async () => {
@@ -209,7 +216,9 @@ describe("L19 AD-03 từ chối", () => {
     const refused = { code: "version_published" };
     await expect(t.app.criteria.editDraft(a, { versionId, edit: { node: "version", changes: { legalBasis: "Khác" } } })).rejects.toMatchObject(refused);
     await expect(t.app.criteria.editDraft(a, { versionId, edit: { node: "thresholds", changes: { 2: 1 } } })).rejects.toMatchObject(refused);
-    await expect(t.app.criteria.editDraft(a, { versionId, edit: { node: "criterion", id: ids.criterion, changes: { name: "Khác" } } })).rejects.toMatchObject(refused);
+    await expect(t.app.criteria.editDraft(a, { versionId, edit: { node: "criterion", id: ids.criterion, changes: { name: "Khác" } } })).rejects.toMatchObject(
+      refused,
+    );
     expect((await t.app.criteria.getVersion(a, { versionId })).legalBasis).toBe("99/2027/QĐ-TTg");
   });
 
@@ -261,7 +270,9 @@ describe("L19 AD-03 audit và outbox", () => {
       metadata: { node: "criterion", nodeId: ids.criterion },
     });
     expect(entry!.after).toEqual({ name: "Tên mới" });
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'criteria.draft.edited' AND payload->>'versionId' = $1", [versionId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'criteria.draft.edited' AND payload->>'versionId' = $1", [
+      versionId,
+    ]);
     expect(rows).toEqual([{ payload: { versionId, node: "criterion", nodeId: ids.criterion } }]);
   });
 

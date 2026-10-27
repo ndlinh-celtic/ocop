@@ -171,7 +171,9 @@ describe("L06 XA-08 chuyển đợt (stories 69, 70)", () => {
     });
     const [audit] = await t.app.audit.search(await f.admin(), { action: ["dossier.round_transfer"], targetId: received.dossierId });
     expect(audit).toMatchObject({ actorUserId: officer.userId, actorRole: "ward_officer", metadata: { reason: "Quá Hạn gửi tỉnh, xét ở đợt sau" } });
-    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.round_transferred' AND payload->>'dossierId' = $1", [received.dossierId]);
+    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.round_transferred' AND payload->>'dossierId' = $1", [
+      received.dossierId,
+    ]);
     expect(rows).toHaveLength(1);
     expect((await t.app.dossiers.list(officer, { filter: "awaiting_next_round" })).map((d) => d.id)).toEqual([unreceived.dossierId]);
 

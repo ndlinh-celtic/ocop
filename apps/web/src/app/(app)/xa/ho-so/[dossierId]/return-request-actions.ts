@@ -11,7 +11,12 @@ export interface ReturnRequestFormState {
 }
 
 /** L04 (story 59): the xã sends the Sở a đề nghị trả về of a hồ sơ it has gửi tỉnh, with a lý do. */
-export async function requestReturnAction(dossierId: string, expectedVersion: number, _prev: ReturnRequestFormState, form: FormData): Promise<ReturnRequestFormState> {
+export async function requestReturnAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: ReturnRequestFormState,
+  form: FormData,
+): Promise<ReturnRequestFormState> {
   const actor = await requireActor();
   const reason = String(form.get("reason") ?? "").trim();
   if (!reason) return { error: "Nhập lý do đề nghị trả về" };

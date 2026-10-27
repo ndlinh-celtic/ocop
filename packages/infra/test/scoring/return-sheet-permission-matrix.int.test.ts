@@ -9,7 +9,17 @@ import { scoringWorld, type ScoringWorld } from "./world";
  * phiếu bị thay thế; the Tổ tư vấn never does (story 64), nor Quản trị (story 132).
  */
 
-type Who = "Chủ tịch A" | "Thư ký A" | "Thư ký A dùng vai Thành viên" | "Thành viên A, có Phân công" | "Tổ tư vấn A" | "Chủ tịch B" | "Thư ký B" | "Cán bộ Sở" | "Chủ thể" | "Quản trị";
+type Who =
+  | "Chủ tịch A"
+  | "Thư ký A"
+  | "Thư ký A dùng vai Thành viên"
+  | "Thành viên A, có Phân công"
+  | "Tổ tư vấn A"
+  | "Chủ tịch B"
+  | "Thư ký B"
+  | "Cán bộ Sở"
+  | "Chủ thể"
+  | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Tổ tư vấn thẩm định";
 type Action = "Trả phiếu" | "xem phiếu bị thay thế";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state";

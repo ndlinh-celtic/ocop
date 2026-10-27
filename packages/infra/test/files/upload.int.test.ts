@@ -35,7 +35,11 @@ describe("L24 DC-03 direct upload and download", () => {
   it("uploads a small PDF in one presigned PUT and downloads it through a short-lived link", async () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const data = Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(2000)]);
-    const { fileId, upload } = await t.app.files.requestUpload(admin, { fileName: "Giấy phép kinh doanh.pdf", contentType: "application/pdf", size: data.length });
+    const { fileId, upload } = await t.app.files.requestUpload(admin, {
+      fileName: "Giấy phép kinh doanh.pdf",
+      contentType: "application/pdf",
+      size: data.length,
+    });
     expect(upload.kind).toBe("single");
     await browserUpload(upload, data);
     await t.app.files.completeUpload(admin, { fileId });
@@ -67,9 +71,9 @@ describe("L24 DC-03 direct upload and download", () => {
     await expect(t.app.files.requestUpload(admin, { fileName: "a.pdf", contentType: "image/png", size: 100 })).rejects.toMatchObject({
       code: "file_type_not_allowed",
     });
-    await expect(
-      t.app.files.requestUpload(admin, { fileName: "to.pdf", contentType: "application/pdf", size: 101 * 1024 * 1024 }),
-    ).rejects.toMatchObject({ code: "file_too_large" });
+    await expect(t.app.files.requestUpload(admin, { fileName: "to.pdf", contentType: "application/pdf", size: 101 * 1024 * 1024 })).rejects.toMatchObject({
+      code: "file_too_large",
+    });
   });
 
   it("completing an upload that never reached storage, or with another size, is refused", async () => {
@@ -92,9 +96,9 @@ describe("L24 DC-03 direct upload and download", () => {
   });
 
   it("only Quản trị can use the test upload, and every step is audited", async () => {
-    await expect(
-      t.app.files.requestUpload(anonymous(), { fileName: "a.pdf", contentType: "application/pdf", size: 1 }),
-    ).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.files.requestUpload(anonymous(), { fileName: "a.pdf", contentType: "application/pdf", size: 1 })).rejects.toMatchObject({
+      code: "forbidden",
+    });
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const actions = new Set((await t.app.audit.search(admin, { targetType: "file" })).map((e) => e.action));
     expect([...actions].sort()).toEqual(["file.download_issued", "file.scanned_clean", "file.upload_requested", "file.uploaded"]);

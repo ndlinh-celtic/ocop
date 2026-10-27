@@ -24,7 +24,12 @@ interface Person {
   fullName: string;
 }
 const person = (slug: string, fullName: string): Person => ({ email: `${slug}.${stamp}@ocop.local`, fullName: `${fullName} ${stamp}` });
-const owner = { ...person("hd.chu.the", "Hợp tác xã Đồng Xanh"), identifier: String(stamp + 7).padStart(12, "0").slice(-12) };
+const owner = {
+  ...person("hd.chu.the", "Hợp tác xã Đồng Xanh"),
+  identifier: String(stamp + 7)
+    .padStart(12, "0")
+    .slice(-12),
+};
 const wardOfficer = person("hd.can.bo.xa", "Cán bộ Đồng Xanh");
 const provinceOfficer = person("hd.can.bo.so", "Cán bộ Sở HĐ");
 const chair = person("hd.chu.tich", "Chủ tịch HĐ");
@@ -103,7 +108,9 @@ async function activateStaff(browser: Browser, who: Person) {
  * long, clicks `trigger`, answers the dialog with a fresh TOTP code and waits for `done`.
  */
 async function withReauth(page: Page, who: Person, trigger: Locator, done: Locator) {
-  sql(`UPDATE identity.session SET authenticated_at = now() - interval '6 minutes' WHERE revoked_at IS NULL AND user_id = (SELECT id FROM identity.user_account WHERE email = '${who.email}')`);
+  sql(
+    `UPDATE identity.session SET authenticated_at = now() - interval '6 minutes' WHERE revoked_at IS NULL AND user_id = (SELECT id FROM identity.user_account WHERE email = '${who.email}')`,
+  );
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Xác thực lại" });
   await dialog.getByLabel("Mã xác thực").fill(await freshCode(secrets.get(who.email)!));
@@ -381,7 +388,10 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
     return p;
   }
   const levelOf = (p: Page, code: string, points: number) =>
-    p.getByTestId("sheet-criterion").filter({ hasText: code }).getByRole("radio", { name: new RegExp(`^${points} điểm`) });
+    p
+      .getByTestId("sheet-criterion")
+      .filter({ hasText: code })
+      .getByRole("radio", { name: new RegExp(`^${points} điểm`) });
 
   /** TV-07: Xác nhận phiếu, with Xác thực lại when due; the phiếu then shows as locked. */
   async function confirmSheet(who: Person, p: Page) {
@@ -513,7 +523,10 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
   });
 
   await test.step("HD-05 the Thư ký Trả phiếu of the second thành viên with a lý do: the hồ sơ goes back to Thành viên xem xét", async () => {
-    const row = secretaryPage.getByRole("listitem").filter({ hasText: m2.fullName }).filter({ has: secretaryPage.getByTestId("return-sheet") });
+    const row = secretaryPage
+      .getByRole("listitem")
+      .filter({ hasText: m2.fullName })
+      .filter({ has: secretaryPage.getByTestId("return-sheet") });
     await row.getByTestId("return-sheet").click();
     const dialog = secretaryPage.getByRole("dialog");
     await dialog.getByLabel("Lý do").fill("Đề nghị xem lại Tiêu chí 1.1 sau thảo luận");
@@ -584,7 +597,9 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
     ] as const) {
       await ownerPage.goto(url);
       await expect(heading(ownerPage)).toContainText("Đã chốt điểm");
-      const timeline = ownerPage.getByRole("region", { name: "Dòng thời gian" }).or(ownerPage.locator("section").filter({ has: ownerPage.getByRole("heading", { name: "Dòng thời gian" }) }));
+      const timeline = ownerPage
+        .getByRole("region", { name: "Dòng thời gian" })
+        .or(ownerPage.locator("section").filter({ has: ownerPage.getByRole("heading", { name: "Dòng thời gian" }) }));
       for (const m of milestones) await expect(timeline.first()).toContainText(m);
       await expect(timeline.first()).not.toContainText("dossier.");
       for (const who of [m1, m2, m3, leader, secretary]) await expect(ownerPage.getByText(who.fullName)).toHaveCount(0);
@@ -601,13 +616,25 @@ test("L08–L15 the Sở tiếp nhận, the Hội đồng grades in both Chế �
       );
       expect(audited.map(([v, n]) => [Number(v), Number(n)])).toEqual(Array.from({ length: Number(version) }, (_, i) => [i + 1, 1]));
       // Each audited transition of the hồ sơ has its outbox event; a nháp save (Phiếu chấm, Báo cáo Tổ tư vấn) is audited but moves no version.
-      const [[auditCount]] = sql(`SELECT count(*) FROM platform.audit_log WHERE target_type = 'dossier' AND target_id = '${id}' AND action LIKE 'dossier.%' AND after ? 'version'`) as [[string]];
+      const [[auditCount]] = sql(
+        `SELECT count(*) FROM platform.audit_log WHERE target_type = 'dossier' AND target_id = '${id}' AND action LIKE 'dossier.%' AND after ? 'version'`,
+      ) as [[string]];
       const [[outboxCount]] = sql(`SELECT count(*) FROM platform.outbox WHERE payload->>'dossierId' = '${id}' AND type LIKE 'dossier.%'`) as [[string]];
       expect(Number(outboxCount)).toBeGreaterThanOrEqual(Number(auditCount));
       const actions = sql(`SELECT DISTINCT action FROM platform.audit_log WHERE target_id = '${id}' OR metadata->>'dossierId' = '${id}'`).map(([a]) => a);
-      expect(actions).toEqual(expect.arrayContaining(["dossier.province_receive", "dossier.assignment.edit", "dossier.score_sheet.confirm", "dossier.finalize", "scoring.result.finalized"]));
+      expect(actions).toEqual(
+        expect.arrayContaining([
+          "dossier.province_receive",
+          "dossier.assignment.edit",
+          "dossier.score_sheet.confirm",
+          "dossier.finalize",
+          "scoring.result.finalized",
+        ]),
+      );
       const events = sql(`SELECT DISTINCT type FROM platform.outbox WHERE payload->>'dossierId' = '${id}'`).map(([t]) => t);
-      expect(events).toEqual(expect.arrayContaining(["dossier.province_received", "dossier.grading_started", "dossier.score_sheet_confirmed", "dossier.score_finalized"]));
+      expect(events).toEqual(
+        expect.arrayContaining(["dossier.province_received", "dossier.grading_started", "dossier.score_sheet_confirmed", "dossier.score_finalized"]),
+      );
     }
     const advisoryActions = sql(`SELECT DISTINCT action FROM platform.audit_log WHERE target_id = '${advisoryId}'`).map(([a]) => a);
     expect(advisoryActions).toEqual(expect.arrayContaining(["dossier.advisory_report.edit", "dossier.advisory_report.issue", "dossier.advisory_copy"]));

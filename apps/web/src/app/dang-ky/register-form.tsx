@@ -20,8 +20,8 @@ export function RegisterForm({ wards }: { wards: { id: string; name: string }[] 
         <MailCheck className="size-10 text-brand" aria-hidden />
         <h2 className="text-lg font-semibold">Kiểm tra hộp thư của bạn</h2>
         <p className="text-sm text-text-2">
-          Đã gửi liên kết kích hoạt tới <b>{state.sentTo}</b>. Mở email và bấm &quot;Kích hoạt tài khoản&quot; để đặt mật khẩu. Liên kết có hiệu lực trong
-          72 giờ.
+          Đã gửi liên kết kích hoạt tới <b>{state.sentTo}</b>. Mở email và bấm &quot;Kích hoạt tài khoản&quot; để đặt mật khẩu. Liên kết có hiệu lực trong 72
+          giờ.
         </p>
         <p className="text-sm text-text-3">Không thấy email? Kiểm tra mục Thư rác hoặc Quảng cáo.</p>
         <Link href="/dang-nhap" className="text-sm text-brand">
@@ -59,7 +59,14 @@ export function RegisterForm({ wards }: { wards: { id: string; name: string }[] 
       </label>
       <label className={label}>
         {household ? "Số định danh cá nhân của chủ hộ" : "Mã số thuế"}
-        <input name="identifier" defaultValue={v.identifier} inputMode="numeric" required className={input} placeholder={household ? "12 chữ số" : "10 hoặc 13 chữ số"} />
+        <input
+          name="identifier"
+          defaultValue={v.identifier}
+          inputMode="numeric"
+          required
+          className={input}
+          placeholder={household ? "12 chữ số" : "10 hoặc 13 chữ số"}
+        />
         {household && <span className="text-xs font-normal text-text-3">Số định danh chỉ hiển thị đầy đủ cho chính bạn; người khác chỉ thấy 4 số cuối.</span>}
       </label>
       <label className={label}>

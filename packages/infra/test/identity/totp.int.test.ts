@@ -20,7 +20,6 @@ async function passwordStep() {
 }
 
 describe("L20 DC-09 TOTP for roles that require it", () => {
-
   it("a Quản trị without TOTP must enroll before the session is usable", async () => {
     const r = await passwordStep();
     expect(r.stage).toBe("totp_enrollment");
@@ -110,7 +109,9 @@ describe("ADR 0003 deployment flag for mandatory TOTP", () => {
       const first = await app.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });
       if (!first.ok) throw new Error("password step failed");
       const { secret: own } = await app.app.identity.startTotpEnrollment(anonymous(), { sessionToken: first.sessionToken });
-      await expect(app.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: first.sessionToken, code: await totpCode(own, app.clock.now()) })).resolves.toEqual({ ok: true });
+      await expect(
+        app.app.identity.confirmTotpEnrollment(anonymous(), { sessionToken: first.sessionToken, code: await totpCode(own, app.clock.now()) }),
+      ).resolves.toEqual({ ok: true });
 
       app.clock.advance(minutes(1));
       const next = await app.app.identity.signIn(anonymous(), { email: ADMIN.email, password: ADMIN.password });

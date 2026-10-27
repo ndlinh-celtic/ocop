@@ -39,16 +39,66 @@ const IS = "invalid_state";
  * sao chép (stories 64, 81).
  */
 const TABLE: Record<Who, Outcome[][]> = {
-  "Tổ trưởng A, có Phân công": [[IS, IS, FB], [A_, A_, FB], [A_, A_, FB], [A_, A_, FB]],
-  "Tổ tư vấn A, có Phân công": [[IS, IS, FB], [A_, A_, FB], [A_, A_, FB], [A_, A_, FB]],
-  "Tổ tư vấn A, không Phân công": [[NF, NF, FB], [NF, NF, FB], [NF, NF, FB], [NF, NF, FB]],
-  "Tổ tư vấn B": [[NF, NF, FB], [NF, NF, FB], [NF, NF, FB], [NF, NF, FB]],
-  "Thành viên A, có Phân công": [[FB, FB, IS], [FB, FB, IS], [FB, FB, A_], [FB, FB, A_]],
-  "Chủ tịch A": [[FB, FB, FB], [FB, FB, FB], [FB, FB, FB], [FB, FB, FB]],
-  "Thư ký A": [[FB, FB, FB], [FB, FB, FB], [FB, FB, FB], [FB, FB, FB]],
-  "Quản trị": [[FB, FB, FB], [FB, FB, FB], [FB, FB, FB], [FB, FB, FB]],
-  "Cán bộ Sở": [[FB, FB, FB], [FB, FB, FB], [FB, FB, FB], [FB, FB, FB]],
-  "Chủ thể": [[FB, FB, FB], [FB, FB, FB], [FB, FB, FB], [FB, FB, FB]],
+  "Tổ trưởng A, có Phân công": [
+    [IS, IS, FB],
+    [A_, A_, FB],
+    [A_, A_, FB],
+    [A_, A_, FB],
+  ],
+  "Tổ tư vấn A, có Phân công": [
+    [IS, IS, FB],
+    [A_, A_, FB],
+    [A_, A_, FB],
+    [A_, A_, FB],
+  ],
+  "Tổ tư vấn A, không Phân công": [
+    [NF, NF, FB],
+    [NF, NF, FB],
+    [NF, NF, FB],
+    [NF, NF, FB],
+  ],
+  "Tổ tư vấn B": [
+    [NF, NF, FB],
+    [NF, NF, FB],
+    [NF, NF, FB],
+    [NF, NF, FB],
+  ],
+  "Thành viên A, có Phân công": [
+    [FB, FB, IS],
+    [FB, FB, IS],
+    [FB, FB, A_],
+    [FB, FB, A_],
+  ],
+  "Chủ tịch A": [
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+  ],
+  "Thư ký A": [
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+  ],
+  "Quản trị": [
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+  ],
+  "Cán bộ Sở": [
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+  ],
+  "Chủ thể": [
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+    [FB, FB, FB],
+  ],
 };
 
 const MATRIX: [Who, Action, State, Outcome][] = (Object.entries(TABLE) as [Who, Outcome[][]][]).flatMap(([who, byState]) =>
@@ -124,7 +174,8 @@ async function attempt(who: Who, action: Action, d: Subject): Promise<void> {
       return;
     case "lưu Phiếu chấm": {
       // The Mức điểm the dòng already holds (the copied one once copied), so no lý do điều chỉnh is needed.
-      const own = actor === actors["Thành viên A, có Phân công"] ? await t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId, ownSheet: true }) : null;
+      const own =
+        actor === actors["Thành viên A, có Phân công"] ? await t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId, ownSheet: true }) : null;
       const c = own?.kind === "own_sheet" ? own.criteria[0]! : null;
       await t.app.scoring.saveScoreSheet(actor, {
         dossierId: d.dossierId,

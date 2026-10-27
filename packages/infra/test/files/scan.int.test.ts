@@ -5,7 +5,10 @@ import { createTestApp, createTestDatabase, EICAR, systemActor, type TestApp, ty
 let db: TestDatabase;
 let t: TestApp;
 const ADMIN = { email: "admin@tinh.gov.vn", fullName: "Quản Trị", password: "mat-khau-quan-tri-1" };
-const PNG = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7d6a4a00000000049454e44ae426082", "hex");
+const PNG = Buffer.from(
+  "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7d6a4a00000000049454e44ae426082",
+  "hex",
+);
 
 beforeAll(async () => {
   db = await createTestDatabase();

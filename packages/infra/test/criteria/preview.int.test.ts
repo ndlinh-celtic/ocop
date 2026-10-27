@@ -58,10 +58,14 @@ const FILE = JSON.stringify({
 });
 
 let set: CriteriaSetDetail;
-const criteria = () => set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i])))) as StoredCriterion[];
+const criteria = () =>
+  set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "group" ? i.criteria : [i])))) as StoredCriterion[];
 const criterionId = (code: string) => criteria().find((c) => c.code === code)!.id;
 /** The id of the Mức điểm worth `points` on Tiêu chí `code`. */
-const level = (code: string, points: number) => criteria().find((c) => c.code === code)!.levels.find((l) => l.points === points)!.id;
+const level = (code: string, points: number) =>
+  criteria()
+    .find((c) => c.code === code)!
+    .levels.find((l) => l.points === points)!.id;
 
 beforeAll(async () => {
   db = await createTestDatabase();
@@ -130,7 +134,15 @@ describe("L19 AD-03 xem trước Bộ tiêu chí bằng chấm thử", () => {
       setId,
       levelIds: [first!.levels.find((l) => l.points === 30)!.id, renamed!.levels.find((l) => l.points === 40)!.id],
     });
-    expect(result).toMatchObject({ parts: [{ code: "A", total: 30 }, { code: "B", total: 40 }], total: 70, byMinimumStars: 3, star: 3 });
+    expect(result).toMatchObject({
+      parts: [
+        { code: "A", total: 30 },
+        { code: "B", total: 40 },
+      ],
+      total: 70,
+      byMinimumStars: 3,
+      star: 3,
+    });
     expect(result.unmet).toEqual([{ criterionId: first!.id, code: "1.1", name: "Tiêu chí 1.1", star: 4, required: 60, actual: 30 }]);
   });
 

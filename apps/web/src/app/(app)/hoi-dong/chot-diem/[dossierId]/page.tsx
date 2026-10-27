@@ -52,7 +52,8 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
             {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
           </h1>
           <p className="text-sm text-text-2">
-            Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
+            Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí{" "}
+            {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
             {dossier.criteriaSet.name}
             {dossier.round && ` · ${dossier.round.name}`}
           </p>
@@ -76,8 +77,8 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
       {scores.kind === "full" && scores.result && (
         <section role="status" className="flex flex-col gap-1 rounded-lg border border-line-strong bg-surface-2 px-4 py-3 text-sm" data-testid="finalized">
           <p className="flex items-center gap-2 font-medium">
-            <Lock className="size-4" aria-hidden /> Đã chốt điểm{scores.result.n > 1 && ` (lần ${scores.result.n})`}: {scores.aggregate.star} sao, {formatPoints(scores.aggregate.total)}{" "}
-            điểm
+            <Lock className="size-4" aria-hidden /> Đã chốt điểm{scores.result.n > 1 && ` (lần ${scores.result.n})`}: {scores.aggregate.star} sao,{" "}
+            {formatPoints(scores.aggregate.total)} điểm
           </p>
           <p className="text-text-2">
             {scores.result.finalizedBy.fullName} chốt lúc {formatVnDateTime(scores.result.finalizedAt)}, xác thực lại bằng{" "}
@@ -119,8 +120,8 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
       )}
       {scores.kind === "confirmed_sheets" && (
         <p role="status" className="rounded-lg border border-amber bg-amber-soft px-4 py-3 text-sm" data-testid="not-ready">
-          Chưa đủ phiếu: {scores.graders.filter((g) => g.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Bảng hiện điểm các phiếu đã xác nhận;
-          điểm tổng hợp, hạng sao và cờ chênh lệch tính khi hồ sơ Sẵn sàng chốt.
+          Chưa đủ phiếu: {scores.graders.filter((g) => g.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Bảng hiện điểm các phiếu đã xác
+          nhận; điểm tổng hợp, hạng sao và cờ chênh lệch tính khi hồ sơ Sẵn sàng chốt.
         </p>
       )}
       <AggregateTable view={scores} />
@@ -137,7 +138,9 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
               </li>
             ))}
           </ul>
-          {dossier.state !== "score_finalized" && <p className="text-text-2">Trả phiếu cho người cần chấm lại, rồi thêm hồ sơ vào một Phiên họp mới để chốt lại.</p>}
+          {dossier.state !== "score_finalized" && (
+            <p className="text-text-2">Trả phiếu cho người cần chấm lại, rồi thêm hồ sơ vào một Phiên họp mới để chốt lại.</p>
+          )}
         </section>
       )}
       {(dossier.state === "member_review" || dossier.state === "member_confirmed") && (

@@ -18,7 +18,12 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     if (view.kind !== "own_sheet") throw new Error(`expected own_sheet, got ${view.kind}`);
     return view;
   };
-  const save = (actor: UserActor, dossierId: string, expectedVersion: number, lines: { code: string; points: number | null; comment?: string; fileIds?: string[] }[]) =>
+  const save = (
+    actor: UserActor,
+    dossierId: string,
+    expectedVersion: number,
+    lines: { code: string; points: number | null; comment?: string; fileIds?: string[] }[],
+  ) =>
     w.t.app.scoring.saveScoreSheet(actor, {
       dossierId,
       expectedVersion,
@@ -97,7 +102,10 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
 
     const [row] = await w.t.app.audit.search(await w.f.admin(), { action: ["dossier.score_sheet.edit"], targetId: d.dossierId });
     expect(row).toMatchObject({ actorUserId: m(0).userId, actorRole: "council_member", metadata: { criterionIds: [w.criterionId("1.1")] } });
-    const outbox = await w.db.admin.query("SELECT count(*)::int AS n FROM platform.outbox WHERE type = 'dossier.score_sheet_saved' AND payload->>'dossierId' = $1", [d.dossierId]);
+    const outbox = await w.db.admin.query(
+      "SELECT count(*)::int AS n FROM platform.outbox WHERE type = 'dossier.score_sheet_saved' AND payload->>'dossierId' = $1",
+      [d.dossierId],
+    );
     expect(outbox.rows[0].n).toBe(0);
     expect((await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version).toBe(before.version);
     const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
@@ -107,10 +115,18 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
   it("refuses a Mức điểm of another Tiêu chí, a Tiêu chí of another Bộ, and a stale phiếu", async () => {
     const d = await w.graded([m(0), m(1)]);
     await expect(
-      w.t.app.scoring.saveScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: 1, lines: [{ criterionId: w.criterionId("1.1"), levelId: w.level("2.1:25"), comment: "", evidenceFileIds: [] }] }),
+      w.t.app.scoring.saveScoreSheet(m(0), {
+        dossierId: d.dossierId,
+        expectedVersion: 1,
+        lines: [{ criterionId: w.criterionId("1.1"), levelId: w.level("2.1:25"), comment: "", evidenceFileIds: [] }],
+      }),
     ).rejects.toMatchObject({ code: "level_not_in_criterion" });
     await expect(
-      w.t.app.scoring.saveScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: 1, lines: [{ criterionId: crypto.randomUUID(), levelId: null, comment: "", evidenceFileIds: [] }] }),
+      w.t.app.scoring.saveScoreSheet(m(0), {
+        dossierId: d.dossierId,
+        expectedVersion: 1,
+        lines: [{ criterionId: crypto.randomUUID(), levelId: null, comment: "", evidenceFileIds: [] }],
+      }),
     ).rejects.toMatchObject({ code: "criterion_not_in_set" });
 
     await save(m(0), d.dossierId, 1, [{ code: "1.1", points: 20 }]);
@@ -145,7 +161,9 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     const { version } = await save(m(0), d.dossierId, 1, FULL);
     w.t.clock.advance(minutes(6));
 
-    await expect(w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "reauth_required" });
+    await expect(w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version })).rejects.toMatchObject({
+      code: "reauth_required",
+    });
     expect(await w.t.app.identity.reauthenticate(m(0), { password: "mat-khau-nguoi-dung-1" })).toEqual({ ok: true });
     const result = await w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version });
 
@@ -160,7 +178,9 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     const { version } = await scoreAndConfirm(m(0), d.dossierId);
 
     await expect(save(m(0), d.dossierId, version, [{ code: "1.1", points: 20 }])).rejects.toMatchObject({ code: "score_sheet_confirmed" });
-    await expect(w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "score_sheet_confirmed" });
+    await expect(w.t.app.scoring.confirmScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: version })).rejects.toMatchObject({
+      code: "score_sheet_confirmed",
+    });
   });
 
   it("moves the hồ sơ to Thành viên xác nhận at người chấm tối thiểu and tells the Chủ tịch and Thư ký (story 96)", async () => {
@@ -262,7 +282,11 @@ describe("L14 Phiếu chấm and xác nhận (#54)", () => {
     const d = await w.graded([m(0), m(1)]);
     const [latest] = (await w.t.app.dossiers.submissions(m(0), { dossierId: d.dossierId })).slice(-1);
 
-    const doc = await w.t.app.dossiers.downloadSubmissionDocument(m(0), { dossierId: d.dossierId, submissionNumber: latest!.number, document: "self_assessment_report" });
+    const doc = await w.t.app.dossiers.downloadSubmissionDocument(m(0), {
+      dossierId: d.dossierId,
+      submissionNumber: latest!.number,
+      document: "self_assessment_report",
+    });
 
     expect(doc.url).toMatch(/^http/);
     await expect(

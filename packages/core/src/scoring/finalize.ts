@@ -75,7 +75,9 @@ export function finalizeDossier(deps: CoreDeps) {
           lines: g.lines,
         };
       });
-      const absent = snapshotGraders.flatMap((g) => (g.state === "absent" && g.sheetId ? [{ sheetId: g.sheetId, userId: g.userId, fullName: g.fullName }] : []));
+      const absent = snapshotGraders.flatMap((g) =>
+        g.state === "absent" && g.sheetId ? [{ sheetId: g.sheetId, userId: g.userId, fullName: g.fullName }] : [],
+      );
       const counted = snapshotGraders.flatMap((g) => (g.state === "confirmed" && g.sheetId ? [g.sheetId] : []));
       // Through JSON once, so what is hashed is exactly what JSONB keeps (no undefined, no Date).
       const snapshot: FinalizedSnapshot = JSON.parse(
@@ -127,7 +129,12 @@ export function finalizeDossier(deps: CoreDeps) {
           targetType: "dossier",
           targetId: before.id,
           after: { resultId: result.id, n, total: result.total, star: result.star, flagged: result.flagged, sha256: result.sha256 },
-          metadata: { meetingId: meeting.id, countedSheetIds: counted, absentSheetIds: result.absentSheetIds, reauth: { at: proof.at.toISOString(), method: proof.method } },
+          metadata: {
+            meetingId: meeting.id,
+            countedSheetIds: counted,
+            absentSheetIds: result.absentSheetIds,
+            reauth: { at: proof.at.toISOString(), method: proof.method },
+          },
         }),
       );
       return { version: after.version, dossierState: after.state, resultId: result.id, n, total: result.total, star: result.star };

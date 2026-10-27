@@ -149,7 +149,9 @@ export async function respondSupplementAction(
 const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive(), onBehalf });
 
 /** L02 CT-05 step one: a pre-signed upload of a tệp minh chứng, quarantined until the virus scan (story 22). */
-export async function requestEvidenceUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestEvidenceUploadAction(
+  input: z.infer<typeof uploadInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const parsed = uploadInput.safeParse(input);
   if (!parsed.success) return { error: "Chọn tệp minh chứng" };
   const { onBehalf: entityId, ...file } = parsed.data;
@@ -165,7 +167,9 @@ const editInput = z.object({ dossierId: z.string(), expectedVersion: z.number().
 const parts = z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional();
 
 /** Step two: the upload is complete and the file goes into the kho minh chứng of the hồ sơ (story 20). */
-export async function addEvidenceAction(input: z.infer<typeof editInput> & { fileId: string; parts?: { partNumber: number; etag: string }[] }): Promise<SaveResult> {
+export async function addEvidenceAction(
+  input: z.infer<typeof editInput> & { fileId: string; parts?: { partNumber: number; etag: string }[] },
+): Promise<SaveResult> {
   const parsed = editInput.extend({ fileId: z.string(), parts }).safeParse(input);
   if (!parsed.success) return { error: "Nội dung không hợp lệ", conflict: false };
   const { parts: uploaded, onBehalf: entityId, ...add } = parsed.data;

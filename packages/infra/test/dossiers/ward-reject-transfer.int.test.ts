@@ -26,7 +26,9 @@ beforeAll(async () => {
   wardY = wards.find((w) => w.name === "Xã Bình Lợi")!.id;
   f = fixtures(t, () => wardX);
   t.clock.set(START);
-  const version = await f.publishedVersion("26/2026/QĐ-TTg", { exclusions: "Hồ sơ bị loại khi: sản phẩm không có công bố chất lượng; hoặc sử dụng nguyên liệu nhập khẩu" });
+  const version = await f.publishedVersion("26/2026/QĐ-TTg", {
+    exclusions: "Hồ sơ bị loại khi: sản phẩm không có công bố chất lượng; hoặc sử dụng nguyên liệu nhập khẩu",
+  });
   sets = version.sets;
   await f.openRound(version.versionId);
   officerX = await f.staff("ward_officer", wardX);
@@ -47,7 +49,12 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
     const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
     const condition = exclusions[1]!;
 
-    const after = await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, exclusionConditionId: condition.id, explanation: "Nguyên liệu nhập từ nước ngoài" });
+    const after = await t.app.dossiers.reject(officerX, {
+      dossierId,
+      expectedVersion: version,
+      exclusionConditionId: condition.id,
+      explanation: "Nguyên liệu nhập từ nước ngoài",
+    });
 
     expect(after.version).toBe(version + 1);
     const seen = await t.app.dossiers.get(a, { dossierId });
@@ -69,14 +76,21 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
     });
     const [audit] = await t.app.audit.search(await f.admin(), { action: ["dossier.reject"], targetId: dossierId });
     expect(audit).toMatchObject({ actorUserId: officerX.userId, actorRole: "ward_officer", metadata: { exclusionConditionId: condition.id } });
-    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.rejected_preliminary' AND payload->>'dossierId' = $1", [dossierId]);
+    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.rejected_preliminary' AND payload->>'dossierId' = $1", [
+      dossierId,
+    ]);
     expect(rows).toHaveLength(1);
   });
 
   it("rejects with a Lý do loại sơ bộ and its diễn giải, shown to the Chủ thể with the label of the Lý do", async () => {
     const { a, dossierId, version } = await f.received(officerX, sets["Rau củ quả"]);
 
-    await t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "not_eligible", explanation: "Chủ thể là hộ kinh doanh thương mại" });
+    await t.app.dossiers.reject(officerX, {
+      dossierId,
+      expectedVersion: version,
+      reasonCode: "not_eligible",
+      explanation: "Chủ thể là hộ kinh doanh thương mại",
+    });
 
     expect((await t.app.dossiers.get(a, { dossierId })).rejection).toEqual({
       kind: "preliminary_reason",
@@ -93,7 +107,9 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
     const attempt = (input: Record<string, unknown>) => t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, ...input });
 
     await expect(attempt({})).rejects.toMatchObject({ code: "rejection_ground_required" });
-    await expect(attempt({ exclusionConditionId: exclusions[0]!.id, reasonCode: "other", explanation: "Cả hai" })).rejects.toMatchObject({ code: "rejection_ground_required" });
+    await expect(attempt({ exclusionConditionId: exclusions[0]!.id, reasonCode: "other", explanation: "Cả hai" })).rejects.toMatchObject({
+      code: "rejection_ground_required",
+    });
     await expect(attempt({ exclusionConditionId: otherSetExclusion })).rejects.toMatchObject({ code: "invalid_exclusion_condition" });
     await expect(attempt({ exclusionConditionId: "khong-phai-id" })).rejects.toMatchObject({ code: "invalid_exclusion_condition" });
     await expect(attempt({ reasonCode: "other", explanation: "   " })).rejects.toMatchObject({ code: "explanation_required" });
@@ -117,7 +133,9 @@ describe("L05 XA-06 xã loại hồ sơ về Không đạt sơ bộ (stories 35,
   it("comes after Tiếp nhận: a hồ sơ Chờ tiếp nhận cannot be loại yet (XA-06)", async () => {
     const { dossierId, version } = await f.submitted(sets["Rau củ quả"]);
 
-    await expect(t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "other", explanation: "Thử" })).rejects.toMatchObject({ code: "not_received" });
+    await expect(t.app.dossiers.reject(officerX, { dossierId, expectedVersion: version, reasonCode: "other", explanation: "Thử" })).rejects.toMatchObject({
+      code: "not_received",
+    });
     expect((await t.app.dossiers.get(officerX, { dossierId })).state).toBe("submitted_to_ward");
   });
 });

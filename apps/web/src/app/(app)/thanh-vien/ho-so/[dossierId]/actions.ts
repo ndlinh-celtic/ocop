@@ -57,7 +57,9 @@ export async function confirmScoreSheetAction(dossierId: string, expectedVersion
 const uploadInput = z.object({ fileName: z.string().min(1).max(255), contentType: z.string().min(1), size: z.number().int().positive() });
 
 /** Step one of a bằng chứng kiểm tra upload (story 86): where the browser sends the file. */
-export async function requestGradingEvidenceUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestGradingEvidenceUploadAction(
+  input: z.infer<typeof uploadInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const parsed = uploadInput.safeParse(input);
   if (!parsed.success) return { error: "Chọn tệp bằng chứng" };
   const actor = await requireActor();
@@ -69,7 +71,10 @@ export async function requestGradingEvidenceUploadAction(input: z.infer<typeof u
 }
 
 /** Step two: the upload is complete and the scan starts; the form then ties the file to its Tiêu chí. */
-export async function completeGradingEvidenceUploadAction(fileId: string, parts?: { partNumber: number; etag: string }[]): Promise<{ ok: true } | { error: string }> {
+export async function completeGradingEvidenceUploadAction(
+  fileId: string,
+  parts?: { partNumber: number; etag: string }[],
+): Promise<{ ok: true } | { error: string }> {
   const actor = await requireActor();
   try {
     await app().core.files.completeUpload(actor, { fileId, parts });

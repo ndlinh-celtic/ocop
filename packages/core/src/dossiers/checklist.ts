@@ -58,7 +58,10 @@ export interface ChecklistResultInput {
  * and outbox, but stays off the timeline the Chủ thể reads.
  */
 export function assessChecklist(deps: CoreDeps) {
-  return async (actor: Actor, input: { dossierId: string; expectedVersion: number; results: readonly ChecklistResultInput[] }): Promise<{ version: number }> => {
+  return async (
+    actor: Actor,
+    input: { dossierId: string; expectedVersion: number; results: readonly ChecklistResultInput[] },
+  ): Promise<{ version: number }> => {
     authorize(actor, "dossier.write");
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
@@ -70,7 +73,8 @@ export function assessChecklist(deps: CoreDeps) {
         if (!CHECKLIST_RESULTS.includes(r.result)) throw new DomainError("invalid_checklist_result", "Chọn Đạt, Không đạt hoặc Cần xác minh");
         const comment = typeof r.comment === "string" ? r.comment.trim() : "";
         if (comment.length > MAX_COMMENT) throw new DomainError("field_too_long", "Nhận xét quá dài");
-        if (r.result === "needs_verification" && !comment) throw new DomainError("comment_required", "Mục \"Cần xác minh\" phải có nhận xét về nội dung cần xác minh");
+        if (r.result === "needs_verification" && !comment)
+          throw new DomainError("comment_required", 'Mục "Cần xác minh" phải có nhận xét về nội dung cần xác minh');
         return { dossierId: before.id, itemCode: r.itemCode, result: r.result, comment, assessedAt: now, assessedBy: actor.userId };
       });
       if (results.length === 0) throw new DomainError("invalid_checklist_result", "Đánh giá ít nhất một mục");

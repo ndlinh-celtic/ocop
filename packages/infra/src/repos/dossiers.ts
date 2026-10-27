@@ -1,4 +1,13 @@
-import { ADVISORY_RETURNABLE_STATES, FINISHED_STATES, type AssignmentKind, type DataScope, type Dossier, type DossierEvent, type DossierRepo, type Submission } from "@ocop/core";
+import {
+  ADVISORY_RETURNABLE_STATES,
+  FINISHED_STATES,
+  type AssignmentKind,
+  type DataScope,
+  type Dossier,
+  type DossierEvent,
+  type DossierRepo,
+  type Submission,
+} from "@ocop/core";
 import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, isNull, lt, max, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../db/types";
 import {
@@ -239,10 +248,7 @@ export function dossierRepo(db: Db): DossierRepo {
       if (criterionIds.length > 0) await db.insert(evidenceLink).values(criterionIds.map((criterionId) => ({ dossierId, fileId, criterionId })));
     },
     async evidenceLinks(dossierId) {
-      return db
-        .select({ fileId: evidenceLink.fileId, criterionId: evidenceLink.criterionId })
-        .from(evidenceLink)
-        .where(eq(evidenceLink.dossierId, dossierId));
+      return db.select({ fileId: evidenceLink.fileId, criterionId: evidenceLink.criterionId }).from(evidenceLink).where(eq(evidenceLink.dossierId, dossierId));
     },
     async checklistResults(dossierId) {
       return db.select().from(checklistResult).where(eq(checklistResult.dossierId, dossierId));

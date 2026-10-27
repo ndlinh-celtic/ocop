@@ -6,7 +6,13 @@ import { OnBehalfNotice, onBehalfContext } from "../on-behalf";
 export const dynamic = "force-dynamic";
 
 /** L01 Nhập hộ (story 72): S13 Tạo hồ sơ, by the Cán bộ xã for a Chủ thể đăng ký ở xã mình. */
-export default async function OnBehalfNewDossierPage({ params, searchParams }: { params: Promise<{ entityId: string }>; searchParams: Promise<{ tu?: string }> }) {
+export default async function OnBehalfNewDossierPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ entityId: string }>;
+  searchParams: Promise<{ tu?: string }>;
+}) {
   const { entityId } = await params;
   const { tu } = await searchParams;
   const { actor, entity } = await onBehalfContext(entityId);

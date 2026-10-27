@@ -73,7 +73,7 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
     expect(aggregate.unmet[0]!.actual).toBeCloseTo(6.6667, 4);
   });
 
-  it("raises the Cờ chênh lệch when the phiếu totals differ by the đợt's ngưỡng or more (story 100, \"từ … trở lên\")", async () => {
+  it('raises the Cờ chênh lệch when the phiếu totals differ by the đợt\'s ngưỡng or more (story 100, "từ … trở lên")', async () => {
     // The fixtures' ngưỡng is 15, so 10 sits below it and 15 on it.
     const below = await ready([
       [0, 25, 35],
@@ -133,7 +133,10 @@ describe("L15 Tổng hợp điểm, Cờ chênh lệch and quyền xem đầy đ
       expect(view.aggregate.total).toBeCloseTo(78.3333, 4);
     }
     // S61 still opens the reader's own phiếu on request; nobody but a thành viên chấm gets one that way.
-    expect(await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId, ownSheet: true })).toMatchObject({ kind: "own_sheet", sheet: { state: "confirmed" } });
+    expect(await w.t.app.scoring.readDossierScores(m(0), { dossierId: d.dossierId, ownSheet: true })).toMatchObject({
+      kind: "own_sheet",
+      sheet: { state: "confirmed" },
+    });
     expect((await w.t.app.scoring.readDossierScores(w.A.chair, { dossierId: d.dossierId, ownSheet: true })).kind).toBe("full");
     // A thành viên who has not confirmed still sees only their phiếu, though the hồ sơ is Sẵn sàng chốt.
     const mine = await w.t.app.scoring.readDossierScores(m(3), { dossierId: d.dossierId });

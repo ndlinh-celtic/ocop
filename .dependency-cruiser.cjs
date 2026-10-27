@@ -14,11 +14,7 @@ module.exports = {
       severity: "error",
       from: { path: "^packages/core/src" },
       to: {
-        path: [
-          "^packages/infra",
-          "^apps/",
-          "node_modules/(next|react|drizzle-orm|pg|pg-boss|@aws-sdk|nodemailer)/",
-        ],
+        path: ["^packages/infra", "^apps/", "node_modules/(next|react|drizzle-orm|pg|pg-boss|@aws-sdk|nodemailer)/"],
       },
     },
     {

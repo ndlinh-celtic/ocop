@@ -168,7 +168,9 @@ export function withoutNode(rows: VersionRows, kind: DraftNodeKind, id: string):
       const sectionIds = new Set(sections.map((x) => x.id));
       const criterionGroups = s.criterionGroups.filter((g) => sectionIds.has(g.sectionId) && keep("criterionGroup")(g));
       const criterionGroupIds = new Set(criterionGroups.map((g) => g.id));
-      const criteria = s.criteria.filter((c) => sectionIds.has(c.sectionId) && (c.groupId === null || criterionGroupIds.has(c.groupId)) && keep("criterion")(c));
+      const criteria = s.criteria.filter(
+        (c) => sectionIds.has(c.sectionId) && (c.groupId === null || criterionGroupIds.has(c.groupId)) && keep("criterion")(c),
+      );
       const criterionIds = new Set(criteria.map((c) => c.id));
       const levels = s.levels.filter((l) => criterionIds.has(l.criterionId) && keep("scoreLevel")(l));
       return { set: s.set, exclusions: s.exclusions.filter(keep("exclusion")), parts, sections, criterionGroups, criteria, levels };

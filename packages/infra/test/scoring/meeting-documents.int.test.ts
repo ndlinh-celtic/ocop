@@ -176,7 +176,13 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
 
   describe("biên bản đã ký (story 115)", () => {
     it("keeps each biên bản đã ký số the Thư ký uploads, numbered 1, 2, …, with audit and event, before chốt is required", async () => {
-      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+        roundId: w.roundId,
+        title: "Phiên họp ký",
+        heldOn: "2026-10-25",
+        location: "Sở",
+        dossierIds: [],
+      });
       const first = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Biên bản đã ký.pdf");
       const second = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Biên bản đã ký lần 2.pdf");
 
@@ -185,7 +191,12 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
 
       const { minutes } = await w.t.app.scoring.getMeeting(w.A.chair, { meetingId });
       expect(minutes).toEqual([
-        expect.objectContaining({ number: 2, fileName: "Biên bản đã ký lần 2.pdf", status: "clean", uploadedBy: { userId: w.A.secretary.userId, fullName: w.A.secretary.fullName } }),
+        expect.objectContaining({
+          number: 2,
+          fileName: "Biên bản đã ký lần 2.pdf",
+          status: "clean",
+          uploadedBy: { userId: w.A.secretary.userId, fullName: w.A.secretary.fullName },
+        }),
         expect.objectContaining({ number: 1, fileName: "Biên bản đã ký.pdf" }),
       ]);
       const link = await w.t.app.scoring.downloadMeetingMinutes(w.A.chair, { meetingId, number: 1 });
@@ -197,9 +208,19 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     });
 
     it("takes only the Thư ký's own PDF upload of purpose meeting_minutes that is not blocked", async () => {
-      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký 2", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
-      await expect(w.t.app.files.requestUpload(w.A.chair, { purpose: "meeting_minutes", fileName: "a.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({ code: "forbidden" });
-      await expect(w.t.app.files.requestUpload(w.A.secretary, { purpose: "meeting_minutes", fileName: "a.docx", contentType: DOCX, size: 10 })).rejects.toMatchObject({ code: "file_type_not_allowed" });
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+        roundId: w.roundId,
+        title: "Phiên họp ký 2",
+        heldOn: "2026-10-25",
+        location: "Sở",
+        dossierIds: [],
+      });
+      await expect(
+        w.t.app.files.requestUpload(w.A.chair, { purpose: "meeting_minutes", fileName: "a.pdf", contentType: "application/pdf", size: 10 }),
+      ).rejects.toMatchObject({ code: "forbidden" });
+      await expect(
+        w.t.app.files.requestUpload(w.A.secretary, { purpose: "meeting_minutes", fileName: "a.docx", contentType: DOCX, size: 10 }),
+      ).rejects.toMatchObject({ code: "file_type_not_allowed" });
       const evidence = await w.f.uploadPdf(m(0), "grading_evidence", "Bằng chứng.pdf");
       await expect(w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: evidence })).rejects.toMatchObject({ code: "not_found" });
       const blocked = await w.f.uploadPdf(w.A.secretary, "meeting_minutes", "Có mã độc.pdf", { content: Buffer.from(EICAR) });
@@ -213,7 +234,13 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     });
 
     it("never changes a biên bản once attached: the DB refuses UPDATE and DELETE", async () => {
-      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp ký 3", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+      const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+        roundId: w.roundId,
+        title: "Phiên họp ký 3",
+        heldOn: "2026-10-25",
+        location: "Sở",
+        dossierIds: [],
+      });
       await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: await w.f.uploadPdf(w.A.secretary, "meeting_minutes") });
 
       await expect(w.db.app.query("UPDATE scoring.meeting_minutes SET number = 5 WHERE meeting_id = $1", [meetingId])).rejects.toThrow(/permission denied/);
@@ -241,11 +268,23 @@ describe("L15 dự thảo quyết định when a Sao tối thiểu caps the Hạ
     ] as const) {
       const view = await w.t.app.scoring.readDossierScores(actor, { dossierId: d.dossierId });
       if (view.kind !== "own_sheet") throw new Error(view.kind);
-      const lines = ([["1.1", a], ["2.1", 25], ["3.1", 35]] as const).map(([code, points]) => ({ criterionId: w.criterionId(code), levelId: w.level(`${code}:${points}`), comment: "", evidenceFileIds: [] }));
+      const lines = (
+        [
+          ["1.1", a],
+          ["2.1", 25],
+          ["3.1", 35],
+        ] as const
+      ).map(([code, points]) => ({ criterionId: w.criterionId(code), levelId: w.level(`${code}:${points}`), comment: "", evidenceFileIds: [] }));
       const { version } = await w.t.app.scoring.saveScoreSheet(actor, { dossierId: d.dossierId, expectedVersion: view.sheet!.version, lines });
       await w.t.app.scoring.confirmScoreSheet(actor, { dossierId: d.dossierId, expectedVersion: version });
     }
-    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
 
     const { bytes } = await w.t.app.scoring.generateMeetingDocument(w.A.secretary, { meetingId, kind: "decision" });
 
@@ -265,7 +304,13 @@ describe("L15 văn bản họp in a đợt dựa trên Tổ tư vấn (#62, stor
     const own = await w.t.app.scoring.readDossierScores(m0!, { dossierId: d.dossierId });
     if (own.kind !== "own_sheet") throw new Error(own.kind);
     await w.t.app.scoring.confirmScoreSheet(m0!, { dossierId: d.dossierId, expectedVersion: own.sheet!.version });
-    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
 
     const { bytes } = await w.t.app.scoring.generateMeetingDocument(w.A.secretary, { meetingId, kind: "minutes" });
 

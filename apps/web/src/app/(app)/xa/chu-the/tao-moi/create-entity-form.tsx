@@ -32,7 +32,14 @@ export function CreateEntityForm({ wardName }: { wardName: string }) {
         </label>
         <label className={label}>
           {household ? "Số định danh cá nhân của chủ hộ" : "Mã số thuế"}
-          <input name="identifier" defaultValue={v.identifier} inputMode="numeric" required className={input} placeholder={household ? "12 chữ số" : "10 hoặc 13 chữ số"} />
+          <input
+            name="identifier"
+            defaultValue={v.identifier}
+            inputMode="numeric"
+            required
+            className={input}
+            placeholder={household ? "12 chữ số" : "10 hoặc 13 chữ số"}
+          />
         </label>
         <div className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Xã/phường đăng ký</span>

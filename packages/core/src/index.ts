@@ -264,10 +264,34 @@ export {
   type CopySheetOutcome,
   type PreviewAdvisoryCopyInput,
 } from "./scoring/advisory-copy";
-export { scoresVisibility, type ConfirmedSheetsView, type DossierScores, type FullScoresView, type GraderProgress, type GraderScores, type GradingProgressRow, type OwnSheetView, type ScoresVisibility, type SheetCriterion, type VisibilityFacts } from "./scoring/read";
+export {
+  scoresVisibility,
+  type ConfirmedSheetsView,
+  type DossierScores,
+  type FullScoresView,
+  type GraderProgress,
+  type GraderScores,
+  type GradingProgressRow,
+  type OwnSheetView,
+  type ScoresVisibility,
+  type SheetCriterion,
+  type VisibilityFacts,
+} from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
 export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView } from "./scoring/read";
-export { MEETING_STATES, type AggregateResult, type AggregateResultRepo, type FinalizedSnapshot, type Meeting, type MeetingDossier, type MeetingMinutes, type MeetingRepo, type MeetingState, type SnapshotGrader, type UnlockRequest } from "./scoring/meeting-model";
+export {
+  MEETING_STATES,
+  type AggregateResult,
+  type AggregateResultRepo,
+  type FinalizedSnapshot,
+  type Meeting,
+  type MeetingDossier,
+  type MeetingMinutes,
+  type MeetingRepo,
+  type MeetingState,
+  type SnapshotGrader,
+  type UnlockRequest,
+} from "./scoring/meeting-model";
 export type { CreateMeetingInput, MeetingDossierView, MeetingMinutesView, MeetingSummary, MeetingView } from "./scoring/meetings";
 export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
 export { MEETING_DOCUMENT_KINDS, MEETING_DOCUMENT_LABEL, type MeetingDocumentKind } from "./scoring/meeting-documents";

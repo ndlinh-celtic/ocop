@@ -15,9 +15,7 @@ export function EmailLayout({ preview, children }: { preview: string; children: 
           <Text style={{ color: "#15803d", fontWeight: 700, fontSize: 18, margin: 0 }}>OCOP</Text>
           <Section>{children}</Section>
           <Hr />
-          <Text style={{ color: "#6b7280", fontSize: 12 }}>
-            Email gửi tự động từ hệ thống đánh giá, phân hạng sản phẩm OCOP. Không trả lời email này.
-          </Text>
+          <Text style={{ color: "#6b7280", fontSize: 12 }}>Email gửi tự động từ hệ thống đánh giá, phân hạng sản phẩm OCOP. Không trả lời email này.</Text>
         </Container>
       </Body>
     </Html>

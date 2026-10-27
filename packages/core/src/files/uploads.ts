@@ -79,7 +79,9 @@ export function requestUpload(deps: CoreDeps) {
     if (input.size > s.multipartThresholdBytes) {
       multipartUploadId = await deps.files.startMultipart(storageKey, input.contentType);
       const count = Math.ceil(input.size / s.partSizeBytes);
-      const parts = await Promise.all(Array.from({ length: count }, (_, i) => deps.files.presignPart(storageKey, multipartUploadId!, i + 1, s.uploadUrlTtlSec)));
+      const parts = await Promise.all(
+        Array.from({ length: count }, (_, i) => deps.files.presignPart(storageKey, multipartUploadId!, i + 1, s.uploadUrlTtlSec)),
+      );
       upload = { kind: "multipart", partSize: s.partSizeBytes, partUrls: parts.map((p) => p.url), expiresAt: parts[0]!.expiresAt };
     } else {
       const put = await deps.files.presignPut(storageKey, { contentType: input.contentType, contentLength: input.size, expiresInSec: s.uploadUrlTtlSec });
@@ -136,7 +138,9 @@ export function completeUpload(deps: CoreDeps) {
       // Quarantine until the scan consumer decides; nobody can download it meanwhile.
       const moved = await tx.files.updateIfStatus(file.id, "awaiting_upload", { status: "scanning", uploadedAt: now });
       if (!moved) throw new DomainError("already_uploaded", "Tệp đã được tải lên");
-      await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "file.uploaded", targetType: "file", targetId: file.id, metadata: { size: head.size } }));
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, { action: "file.uploaded", targetType: "file", targetId: file.id, metadata: { size: head.size } }),
+      );
       await emit(deps, tx, { type: "files.uploaded", payload: { fileId: file.id } });
     });
   };

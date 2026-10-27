@@ -56,7 +56,12 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
   }
   const requestFile = () => w.f.uploadPdf(admin, "unlock_request", "Công văn đề nghị mở khóa.pdf");
   const unlock = async (dossierId: string, over: Partial<{ requestFileId: string; requestedBy: string; reason: string }> = {}) =>
-    w.t.app.scoring.unlockFinalized(admin, { dossierId, requestFileId: over.requestFileId ?? (await requestFile()), requestedBy: over.requestedBy ?? "Chủ tịch Hội đồng A", reason: over.reason ?? "Sai sót khi chấm tiêu chí 3.1" });
+    w.t.app.scoring.unlockFinalized(admin, {
+      dossierId,
+      requestFileId: over.requestFileId ?? (await requestFile()),
+      requestedBy: over.requestedBy ?? "Chủ tịch Hội đồng A",
+      reason: over.reason ?? "Sai sót khi chấm tiêu chí 3.1",
+    });
 
   it("finds the hồ sơ by mã with its state only, brings it back to Sẵn sàng chốt and supersedes kết quả 1 without touching a phiếu (stories 127 to 129)", async () => {
     const d = await finalized();
@@ -92,7 +97,13 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
     expect(absent.state).toBe("absent");
     const { version } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
 
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version, userId: m(2).userId, newUserId: m(3).userId, reason: "Thành viên vắng dài ngày" });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: version,
+      userId: m(2).userId,
+      newUserId: m(3).userId,
+      reason: "Thành viên vắng dài ngày",
+    });
 
     expect((await own(m(3), d.dossierId)).sheet).toMatchObject({ state: "draft", attempt: 1 });
     const old = await w.db.admin.query("SELECT state, superseded_reason FROM scoring.score_sheet WHERE id = $1", [absent.id]);
@@ -112,7 +123,11 @@ describe("L15 Mở khóa sau chốt (#63)", () => {
 
     const absent = (await own(m(2), d.dossierId)).sheet!;
     expect(absent.state).toBe("absent");
-    const returned = await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: absent.id, reason: "Chấm bổ sung theo văn bản của Hội đồng" });
+    const returned = await w.t.app.scoring.returnScoreSheet(w.A.chair, {
+      dossierId: d.dossierId,
+      sheetId: absent.id,
+      reason: "Chấm bổ sung theo văn bản của Hội đồng",
+    });
     expect(returned.dossierState).toBe("member_confirmed");
     expect((await own(m(2), d.dossierId)).sheet).toMatchObject({ id: returned.scoreSheetId, state: "draft", attempt: 2 });
     await scoreAndConfirm(m(2), d.dossierId, [40, 25, 35]);

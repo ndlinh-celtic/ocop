@@ -57,7 +57,12 @@ describe("L01 Nhập hộ: Cán bộ xã works on a hồ sơ for a Chủ thể �
     let { version } = await t.app.dossiers.addEvidenceFile(officer, { dossierId, expectedVersion: 1, fileId });
     const { criteria } = await t.app.dossiers.selfAssessment(officer, { dossierId });
     ({ version } = await t.app.dossiers.linkEvidence(officer, { dossierId, expectedVersion: version, fileId, criterionIds: [criteria[0]!.criterionId] }));
-    ({ version } = await t.app.dossiers.explainCriterion(officer, { dossierId, expectedVersion: version, criterionId: criteria[0]!.criterionId, explanation: "Có phiếu" }));
+    ({ version } = await t.app.dossiers.explainCriterion(officer, {
+      dossierId,
+      expectedVersion: version,
+      criterionId: criteria[0]!.criterionId,
+      explanation: "Có phiếu",
+    }));
     version = await f.completeDraft(officer, dossierId);
 
     await t.app.dossiers.submit(officer, { dossierId, expectedVersion: version });
@@ -106,7 +111,12 @@ describe("L01 Nhập hộ while the xã asks for more (L04 CT-11)", () => {
     }));
     const [request] = await t.app.dossiers.supplementRequests(officer, { dossierId: s.dossierId });
 
-    ({ version } = await t.app.dossiers.respondSupplementItem(officer, { dossierId: s.dossierId, expectedVersion: version, itemId: request!.items[0]!.id, response: "Đã bổ sung" }));
+    ({ version } = await t.app.dossiers.respondSupplementItem(officer, {
+      dossierId: s.dossierId,
+      expectedVersion: version,
+      itemId: request!.items[0]!.id,
+      response: "Đã bổ sung",
+    }));
     const { submissionNumber } = await t.app.dossiers.submit(officer, { dossierId: s.dossierId, expectedVersion: version });
 
     expect(submissionNumber).toBe(2);
@@ -133,7 +143,9 @@ describe("L01 Nhập hộ only for a Chủ thể đăng ký ở xã mình (story
 
     await expect(t.app.dossiers.create(officer, { criteriaSetId: sets["Rau củ quả"] })).rejects.toMatchObject({ code: "not_found" });
     await expect(t.app.dossiers.get(officer, { dossierId: s.dossierId })).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.dossiers.updateProduct(officer, { dossierId: draftId, expectedVersion: 1, productName: "Khác" })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.dossiers.updateProduct(officer, { dossierId: draftId, expectedVersion: 1, productName: "Khác" })).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(await t.app.dossiers.list(officer)).toEqual([]);
     expect(await t.app.dossiers.get(s.a, { dossierId: draftId })).toMatchObject({ productName: "", version: 1 });
   });
@@ -157,7 +169,14 @@ describe("L01 Nhập hộ only for a Chủ thể đăng ký ở xã mình (story
     const entityId = entityIdOf(owner);
     const { dossierId } = await t.app.dossiers.create(onBehalfOf(officerX, entityId), { criteriaSetId: sets["Rau củ quả"] });
     const entity = await t.app.entities.getEntity(owner, { entityId });
-    await t.app.entities.updateEntity(owner, { entityId, name: entity.name, address: entity.address, representativeName: entity.representativeName, phone: entity.phone, wardId: wardY });
+    await t.app.entities.updateEntity(owner, {
+      entityId,
+      name: entity.name,
+      address: entity.address,
+      representativeName: entity.representativeName,
+      phone: entity.phone,
+      wardId: wardY,
+    });
 
     await expect(t.app.dossiers.get(onBehalfOf(officerX, entityId), { dossierId })).rejects.toMatchObject({ code: "not_found" });
   });

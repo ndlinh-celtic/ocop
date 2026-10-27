@@ -30,8 +30,8 @@ export function ReturnSheetButton({ dossierId, sheetId, fullName, absent }: { do
         <form action={action} onSubmit={() => dialog.current?.close()} className="flex flex-col gap-4">
           <p className="font-semibold">Trả phiếu cho {fullName}?</p>
           <p>
-            {absent ? "Phiếu Vắng" : "Phiếu đã xác nhận"} được giữ nguyên và đánh dấu bị thay thế. Thành viên nhận lần chấm mới, điền sẵn từ phiếu cũ, cùng thông
-            báo kèm lý do. Nếu số phiếu đã xác nhận còn lại dưới tối thiểu, hồ sơ về Thành viên xem xét.
+            {absent ? "Phiếu Vắng" : "Phiếu đã xác nhận"} được giữ nguyên và đánh dấu bị thay thế. Thành viên nhận lần chấm mới, điền sẵn từ phiếu cũ, cùng
+            thông báo kèm lý do. Nếu số phiếu đã xác nhận còn lại dưới tối thiểu, hồ sơ về Thành viên xem xét.
           </p>
           <label className="flex flex-col gap-1">
             <span className="font-medium">Lý do</span>

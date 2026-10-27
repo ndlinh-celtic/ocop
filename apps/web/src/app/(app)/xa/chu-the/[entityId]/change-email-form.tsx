@@ -15,8 +15,8 @@ export function ChangeEmailForm({ entityId }: { entityId: string }) {
         <input name="email" type="email" required className={input} />
       </label>
       <p className="text-xs text-text-3">
-        Chỉ đổi khi đã xác minh người yêu cầu là người đại diện. Các liên kết đã gửi tới email cũ hết hiệu lực và mọi phiên đăng nhập bị đăng xuất; thao tác được ghi
-        nhật ký.
+        Chỉ đổi khi đã xác minh người yêu cầu là người đại diện. Các liên kết đã gửi tới email cũ hết hiệu lực và mọi phiên đăng nhập bị đăng xuất; thao tác
+        được ghi nhật ký.
       </p>
       {state.error && (
         <p role="alert" className="text-sm text-danger">

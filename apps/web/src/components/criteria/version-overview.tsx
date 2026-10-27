@@ -30,7 +30,11 @@ export function VersionOverview({ version, setHref, edit }: { version: VersionDe
       <section className="rounded-lg border bg-surface p-4">
         <h2 className="mb-3 flex items-center gap-2 font-medium">
           Ngưỡng hạng
-          {edit?.({ node: "thresholds", label: "Ngưỡng hạng", values: { 2: version.thresholds[2], 3: version.thresholds[3], 4: version.thresholds[4], 5: version.thresholds[5] } })}
+          {edit?.({
+            node: "thresholds",
+            label: "Ngưỡng hạng",
+            values: { 2: version.thresholds[2], 3: version.thresholds[3], 4: version.thresholds[4], 5: version.thresholds[5] },
+          })}
         </h2>
         <ul className="flex flex-wrap gap-3 text-sm">
           {([2, 3, 4, 5] as const).map((stars) => (
@@ -45,7 +49,10 @@ export function VersionOverview({ version, setHref, edit }: { version: VersionDe
       </section>
       <section className="rounded-lg border bg-surface">
         <h2 className="border-b px-4 py-3 font-medium">
-          Cây phân loại <span className="font-normal text-text-3">({version.productGroups.length} nhóm sản phẩm, {setCount} bộ tiêu chí)</span>
+          Cây phân loại{" "}
+          <span className="font-normal text-text-3">
+            ({version.productGroups.length} nhóm sản phẩm, {setCount} bộ tiêu chí)
+          </span>
         </h2>
         <ol className="flex flex-col divide-y">
           {version.productGroups.map((g) => (

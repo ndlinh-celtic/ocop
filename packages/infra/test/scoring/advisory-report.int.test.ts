@@ -135,7 +135,14 @@ describe("L10 TM-02, TM-05, TM-06 Báo cáo Tổ tư vấn nháp (stories 44 to 
 
     const seen = await report(colleague, d.dossierId);
     expect(seen).toMatchObject({ draftVersion: 1, summary: "Hồ sơ đầy đủ", notes: "Lưu ý nhãn mác", missing: ["1.2"] });
-    expect(seen.estimate).toMatchObject({ parts: [{ code: "A", total: 40 }, { code: "B", total: 20 }], total: 60, star: 3 });
+    expect(seen.estimate).toMatchObject({
+      parts: [
+        { code: "A", total: 40 },
+        { code: "B", total: 20 },
+      ],
+      total: 60,
+      star: 3,
+    });
     expect(seen.criteria.find((c) => c.code === "1.1")!.line).toMatchObject({ points: 40, basis: "Căn cứ 1.1", evidenceAssessment: "sufficient" });
 
     await t.app.scoring.saveAdvisoryDraft(colleague, {
@@ -163,13 +170,22 @@ describe("L10 TM-02, TM-05, TM-06 Báo cáo Tổ tư vấn nháp (stories 44 to 
   it("leaves the hồ sơ version alone, so a colleague's save never refuses the Tổ trưởng's phát hành (story 50)", async () => {
     const d = await complete();
     const { draftVersion } = await report(colleague, d.dossierId);
-    await t.app.scoring.saveAdvisoryDraft(colleague, { dossierId: d.dossierId, draftVersion, lines: await lines(colleague, d.dossierId, { "1.1": { points: 40 }, "1.2": { points: 10 }, "2.1": { points: 20 } }), summary: "Sửa lại", notes: "", attachmentFileIds: [] });
+    await t.app.scoring.saveAdvisoryDraft(colleague, {
+      dossierId: d.dossierId,
+      draftVersion,
+      lines: await lines(colleague, d.dossierId, { "1.1": { points: 40 }, "1.2": { points: 10 }, "2.1": { points: 20 } }),
+      summary: "Sửa lại",
+      notes: "",
+      attachmentFileIds: [],
+    });
 
     expect((await report(leader, d.dossierId)).dossierVersion).toBe(d.version);
     await expect(issue(leader, d)).resolves.toMatchObject({ number: 1 });
     const [saved] = await t.app.audit.search(await f.admin(), { action: ["dossier.advisory_report.edit"], targetId: d.dossierId });
     expect(saved).toMatchObject({ actorUserId: colleague.userId, after: { draftVersion: draftVersion + 1 } });
-    const outbox = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.advisory_report_saved' AND payload->>'dossierId' = $1", [d.dossierId]);
+    const outbox = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.advisory_report_saved' AND payload->>'dossierId' = $1", [
+      d.dossierId,
+    ]);
     expect(outbox.rows).toEqual([]);
   });
 });
@@ -187,7 +203,8 @@ async function complete() {
   });
   return { ...d, version: (await report(leader, d.dossierId)).dossierVersion };
 }
-const issue = (actor: UserActor, d: { dossierId: string; version: number }) => t.app.scoring.issueAdvisoryReport(actor, { dossierId: d.dossierId, expectedVersion: d.version });
+const issue = (actor: UserActor, d: { dossierId: string; version: number }) =>
+  t.app.scoring.issueAdvisoryReport(actor, { dossierId: d.dossierId, expectedVersion: d.version });
 
 describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 63)", () => {
   it("issues the nháp as phiên bản 1, naming who and when, and moves the hồ sơ to Đã có báo cáo Tổ tư vấn", async () => {
@@ -198,7 +215,12 @@ describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 
 
     expect((await t.app.dossiers.get(leader, { dossierId: d.dossierId })).state).toBe("advisory_report_issued");
     const [v1] = await t.app.scoring.advisoryReportVersions(A.members[0]!, { dossierId: d.dossierId });
-    expect(v1).toMatchObject({ number: 1, issuedAt: new Date("2026-10-22T03:00:00Z"), issuedBy: { userId: leader.userId, fullName: leader.fullName }, reason: null });
+    expect(v1).toMatchObject({
+      number: 1,
+      issuedAt: new Date("2026-10-22T03:00:00Z"),
+      issuedBy: { userId: leader.userId, fullName: leader.fullName },
+      reason: null,
+    });
     expect(v1!.report).toMatchObject({ summary: "Nhận xét tổng hợp", notes: "Điểm cần lưu ý", estimate: { total: 70, star: 4 } });
     expect(v1!.report.lines.map((l) => [l.code, l.points, l.basis])).toEqual([
       ["1.1", 40, "Căn cứ 1.1"],
@@ -214,7 +236,10 @@ describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 
     await t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 0, lines: picked, summary: "", notes: "", attachmentFileIds: [] });
     const { dossierVersion } = await report(leader, d.dossierId);
 
-    await expect(issue(leader, { dossierId: d.dossierId, version: dossierVersion })).rejects.toMatchObject({ code: "advisory_report_incomplete", criteria: ["1.2", "2.1"] });
+    await expect(issue(leader, { dossierId: d.dossierId, version: dossierVersion })).rejects.toMatchObject({
+      code: "advisory_report_incomplete",
+      criteria: ["1.2", "2.1"],
+    });
     expect((await t.app.dossiers.get(leader, { dossierId: d.dossierId })).state).toBe("advisory_review");
     expect(await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).toEqual([]);
   });
@@ -238,10 +263,17 @@ describe("L11 TM-07 phát hành Báo cáo Tổ tư vấn (stories 56 to 59, 62, 
     await issue(leader, d);
 
     const [moved] = await t.app.audit.search(await f.admin(), { action: ["dossier.advisory_report.issue"], targetId: d.dossierId });
-    expect(moved).toMatchObject({ actorUserId: leader.userId, actorRole: "advisory_member", before: { state: "advisory_review" }, after: { state: "advisory_report_issued" } });
+    expect(moved).toMatchObject({
+      actorUserId: leader.userId,
+      actorRole: "advisory_member",
+      before: { state: "advisory_review" },
+      after: { state: "advisory_report_issued" },
+    });
     const [issued] = await t.app.audit.search(await f.admin(), { action: ["scoring.advisory_report.issued"], targetId: d.dossierId });
     expect(issued).toMatchObject({ after: { number: 1 }, metadata: { total: 70, star: 4 } });
-    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.advisory_report_issued' AND payload->>'dossierId' = $1", [d.dossierId]);
+    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.advisory_report_issued' AND payload->>'dossierId' = $1", [
+      d.dossierId,
+    ]);
     expect(outbox.rows).toEqual([{ payload: expect.objectContaining({ from: "advisory_review", to: "advisory_report_issued" }) }]);
 
     const timeline = await t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
@@ -283,7 +315,12 @@ async function issued() {
   return { ...d, version };
 }
 type Picks = Record<string, { points: number; basis?: string }>;
-async function reissue(actor: UserActor, d: { dossierId: string; version: number }, reason: string, picks: Picks = { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20 } }) {
+async function reissue(
+  actor: UserActor,
+  d: { dossierId: string; version: number },
+  reason: string,
+  picks: Picks = { "1.1": { points: 20 }, "1.2": { points: 10 }, "2.1": { points: 20 } },
+) {
   return t.app.scoring.reissueAdvisoryReport(actor, {
     dossierId: d.dossierId,
     expectedVersion: d.version,
@@ -310,7 +347,7 @@ describe("L11 TM-07 phát hành phiên bản N+1 (stories 60, 61)", () => {
     expect(versions[1]).toMatchObject({ issuedAt: new Date("2026-10-23T03:00:00Z"), issuedBy: { userId: leader.userId } });
     const ws = await report(colleague, d.dossierId);
     expect(ws).toMatchObject({ state: "advisory_report_issued", summary: "Nhận xét sau khi xem lại", estimate: { total: 50 } });
-    const [audited] = await t.app.audit.search(await f.admin(), { action: ["scoring.advisory_report.issued"], targetId: d.dossierId, });
+    const [audited] = await t.app.audit.search(await f.admin(), { action: ["scoring.advisory_report.issued"], targetId: d.dossierId });
     expect(audited).toMatchObject({ after: { number: 2 }, metadata: { reason: "Sửa điểm tiêu chí 1.1" } });
     const timeline = await t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
     expect(JSON.stringify(timeline)).not.toContain("Sửa điểm tiêu chí 1.1");
@@ -372,7 +409,9 @@ describe("L11 an issued phiên bản is fixed in the database (spec #49 Trigger 
     await expect(db.app.query(`DELETE FROM scoring.advisory_report_version ${where}`)).rejects.toThrow(/permission denied/);
     await expect(db.admin.query(`DELETE FROM scoring.advisory_report_version ${where}`)).rejects.toThrow(/immutable/);
     await expect(db.admin.query("TRUNCATE scoring.advisory_report_version CASCADE")).rejects.toThrow(/immutable/);
-    await expect(db.app.query("ALTER TABLE scoring.advisory_report_version DISABLE TRIGGER advisory_report_version_immutable")).rejects.toThrow(/must be owner/);
+    await expect(db.app.query("ALTER TABLE scoring.advisory_report_version DISABLE TRIGGER advisory_report_version_immutable")).rejects.toThrow(
+      /must be owner/,
+    );
     await expect(db.app.query("SET session_replication_role = replica")).rejects.toThrow(/permission denied/);
     expect(await t.app.scoring.advisoryReportVersions(leader, { dossierId: d.dossierId })).toHaveLength(1);
   });
@@ -393,7 +432,11 @@ async function underReviewWithEvidence() {
   ({ version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: (await t.app.dossiers.get(a, { dossierId })).version }));
   ({ version } = await t.app.dossiers.receive(ward, { dossierId, expectedVersion: version }));
   const { items } = await t.app.dossiers.checklist(ward, { dossierId });
-  ({ version } = await t.app.dossiers.assessChecklist(ward, { dossierId, expectedVersion: version, results: items.map((i) => ({ itemCode: i.code, result: "pass" as const })) }));
+  ({ version } = await t.app.dossiers.assessChecklist(ward, {
+    dossierId,
+    expectedVersion: version,
+    results: items.map((i) => ({ itemCode: i.code, result: "pass" as const })),
+  }));
   const reportId = await f.uploadPdf(ward, "signed_ward_report", "BC xã đã ký.pdf");
   ({ version } = await t.app.dossiers.attachSignedWardReport(ward, { dossierId, expectedVersion: version, fileId: reportId }));
   ({ version } = await t.app.dossiers.forwardToProvince(ward, { dossierId, expectedVersion: version }));
@@ -425,14 +468,31 @@ describe("L10 TM-01, TM-05 minh chứng and tệp đính kèm thực địa (sto
       notes: "",
       attachmentFileIds: [],
     });
-    expect((await report(colleague, d.dossierId)).criteria[0]!.line).toMatchObject({ evidenceFileIds: [d.evidenceId], evidenceAssessment: "needs_verification" });
+    expect((await report(colleague, d.dossierId)).criteria[0]!.line).toMatchObject({
+      evidenceFileIds: [d.evidenceId],
+      evidenceAssessment: "needs_verification",
+    });
 
     const elsewhere = await f.uploadPdf(d.a, "evidence", "Không nộp.pdf");
     await expect(
-      t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 1, lines: [{ ...line!, evidenceFileIds: [elsewhere] }], summary: "", notes: "", attachmentFileIds: [] }),
+      t.app.scoring.saveAdvisoryDraft(leader, {
+        dossierId: d.dossierId,
+        draftVersion: 1,
+        lines: [{ ...line!, evidenceFileIds: [elsewhere] }],
+        summary: "",
+        notes: "",
+        attachmentFileIds: [],
+      }),
     ).rejects.toMatchObject({ code: "evidence_not_in_submission" });
     await expect(
-      t.app.scoring.saveAdvisoryDraft(leader, { dossierId: d.dossierId, draftVersion: 1, lines: [{ ...line!, evidenceAssessment: "ok" as never }], summary: "", notes: "", attachmentFileIds: [] }),
+      t.app.scoring.saveAdvisoryDraft(leader, {
+        dossierId: d.dossierId,
+        draftVersion: 1,
+        lines: [{ ...line!, evidenceAssessment: "ok" as never }],
+        summary: "",
+        notes: "",
+        attachmentFileIds: [],
+      }),
     ).rejects.toMatchObject({ code: "invalid_input" });
 
     for (const reader of [leader, A.members[0]!]) {

@@ -27,7 +27,19 @@ import { Workbench } from "./workbench";
  * the Cán bộ xã's page for that Chủ thể (`onBehalf`, with `actor` already acting for it): what may be done
  * is whatever the core allows that actor.
  */
-export async function DossierEditor({ actor, dossierId, onBehalf, back, notice }: { actor: UserActor; dossierId: string; onBehalf?: string; back: ReactNode; notice?: ReactNode }) {
+export async function DossierEditor({
+  actor,
+  dossierId,
+  onBehalf,
+  back,
+  notice,
+}: {
+  actor: UserActor;
+  dossierId: string;
+  onBehalf?: string;
+  back: ReactNode;
+  notice?: ReactNode;
+}) {
   const [dossier, timeline, assessment, supplements] = await Promise.all([
     app().core.dossiers.get(actor, { dossierId }).catch(orNotFound),
     app().core.dossiers.timeline(actor, { dossierId }).catch(orNotFound),

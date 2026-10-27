@@ -7,7 +7,13 @@ import { can, DOSSIER_ACTIONS, DOSSIER_STATES, type DossierRef, type UserActor }
  * Báo cáo Tổ tư vấn and asking the Sở to trả về: never Giao chấm, Phân công, a Phiếu chấm, Trả phiếu nor chốt.
  * The use-case rows of the same rule are in infra test/scoring/advisory-report-permission-matrix.
  */
-const ADVISORY_ACTIONS = ["dossier.advisory_report.edit", "dossier.advisory_report.issue", "dossier.advisory_report.reissue", "dossier.advisory_copy", "dossier.advisory_return_request"];
+const ADVISORY_ACTIONS = [
+  "dossier.advisory_report.edit",
+  "dossier.advisory_report.issue",
+  "dossier.advisory_report.reissue",
+  "dossier.advisory_copy",
+  "dossier.advisory_return_request",
+];
 
 const advisor = {
   kind: "user",
@@ -23,7 +29,15 @@ const advisor = {
 describe("TM-12 the Tổ tư vấn proposes and never grades (story 64)", () => {
   it("takes, on a hồ sơ it is Phân công on, only the actions of the Báo cáo Tổ tư vấn, in any state", () => {
     const taken = DOSSIER_STATES.flatMap((state) => {
-      const ref: DossierRef = { state, entityId: "e1", wardId: "w1", firstForwardedAt: new Date(), firstProvinceReceivedAt: new Date(), councilId: "c1", readerAssignment: "advisory" };
+      const ref: DossierRef = {
+        state,
+        entityId: "e1",
+        wardId: "w1",
+        firstForwardedAt: new Date(),
+        firstProvinceReceivedAt: new Date(),
+        councilId: "c1",
+        readerAssignment: "advisory",
+      };
       return DOSSIER_ACTIONS.filter((action) => can(advisor, action, ref));
     });
     expect(taken.length).toBeGreaterThan(0);

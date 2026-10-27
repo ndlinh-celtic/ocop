@@ -56,8 +56,16 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
   const rejectable = can(actor, "dossier.reject", dossier) && dossier.receivedAt !== null;
   const transferable = can(actor, "dossier.ward_transfer", dossier);
   const [exclusions, wards, rounds] = await Promise.all([
-    rejectable ? app().core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id }).then((v) => v.set.exclusionConditions) : [],
-    transferable ? app().core.org.listWards().then((all) => all.filter((w) => w.id !== dossier.wardId)) : [],
+    rejectable
+      ? app()
+          .core.criteria.getCriteriaSet(actor, { setId: dossier.criteriaSet.id })
+          .then((v) => v.set.exclusionConditions)
+      : [],
+    transferable
+      ? app()
+          .core.org.listWards()
+          .then((all) => all.filter((w) => w.id !== dossier.wardId))
+      : [],
     // L06 XA-08 (story 69): the đợt that may take the hồ sơ.
     can(actor, "dossier.round_transfer", dossier) ? app().core.dossiers.roundTransferTargets(actor, { dossierId }) : [],
   ]);
@@ -128,7 +136,10 @@ export default async function WardDossierPage({ params }: { params: Promise<{ do
           <h2 className="font-semibold">Báo cáo đánh giá cấp xã và gửi tỉnh</h2>
           {wardReport.signed ? <SignedWardReport dossierId={dossier.id} signed={wardReport.signed} /> : <p className="text-text-3">Chưa có bản đã ký.</p>}
           {can(actor, "dossier.forward", dossier) && (
-            <Link href={`/xa/ho-so/${dossier.id}/gui-tinh`} className="inline-flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink">
+            <Link
+              href={`/xa/ho-so/${dossier.id}/gui-tinh`}
+              className="inline-flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink"
+            >
               <Send className="size-4" aria-hidden /> Lập báo cáo và gửi lên tỉnh
             </Link>
           )}

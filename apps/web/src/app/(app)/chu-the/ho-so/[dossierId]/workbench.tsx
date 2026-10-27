@@ -91,7 +91,9 @@ export function Workbench({ assessment, editable, onBehalf }: { assessment: Self
                   <span className="flex items-center gap-2">
                     <Paperclip className="size-4 text-text-3" aria-hidden />
                     {file.fileName}
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${FILE_STATUS[file.status]?.style ?? ""}`}>{FILE_STATUS[file.status]?.label ?? file.status}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${FILE_STATUS[file.status]?.style ?? ""}`}>
+                      {FILE_STATUS[file.status]?.label ?? file.status}
+                    </span>
                   </span>
                   {editable && (
                     <button
@@ -128,7 +130,13 @@ export function Workbench({ assessment, editable, onBehalf }: { assessment: Self
                       <div className="grid gap-1 sm:grid-cols-2">
                         {assessment.criteria.map((c) => (
                           <label key={c.criterionId} className="flex items-start gap-2">
-                            <input type="checkbox" name="criterionId" value={c.criterionId} defaultChecked={file.criterionIds.includes(c.criterionId)} className="mt-1" />
+                            <input
+                              type="checkbox"
+                              name="criterionId"
+                              value={c.criterionId}
+                              defaultChecked={file.criterionIds.includes(c.criterionId)}
+                              className="mt-1"
+                            />
                             <span>
                               {c.code} {c.name}
                             </span>
@@ -143,7 +151,9 @@ export function Workbench({ assessment, editable, onBehalf }: { assessment: Self
                     </form>
                   </details>
                 )}
-                {file.status !== "clean" && file.status !== "blocked" && <p className="text-xs text-text-3">Tệp gắn được vào tiêu chí sau khi quét virus sạch.</p>}
+                {file.status !== "clean" && file.status !== "blocked" && (
+                  <p className="text-xs text-text-3">Tệp gắn được vào tiêu chí sau khi quét virus sạch.</p>
+                )}
               </li>
             ))}
           </ul>
@@ -184,7 +194,11 @@ export function Workbench({ assessment, editable, onBehalf }: { assessment: Self
                         <select
                           value={c.levelId ?? ""}
                           disabled={disabled}
-                          onChange={(e) => void run((v) => selfScoreAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, levelId: e.target.value || null }))}
+                          onChange={(e) =>
+                            void run((v) =>
+                              selfScoreAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, levelId: e.target.value || null }),
+                            )
+                          }
                           className="rounded-lg border border-line-strong bg-surface px-3 py-2 disabled:opacity-70"
                         >
                           <option value="">Chưa chọn</option>
@@ -201,7 +215,9 @@ export function Workbench({ assessment, editable, onBehalf }: { assessment: Self
                         key={`${c.criterionId}:${c.explanation}`}
                         initial={c.explanation}
                         disabled={disabled}
-                        save={(explanation) => run((v) => explainCriterionAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, explanation }))}
+                        save={(explanation) =>
+                          run((v) => explainCriterionAction({ dossierId, onBehalf, expectedVersion: v, criterionId: c.criterionId, explanation }))
+                        }
                       />
                     </li>
                   );
@@ -247,7 +263,9 @@ function Estimate({ assessment }: { assessment: SelfAssessment }) {
           {estimate.star < 3 && <span className="text-text-3"> (dưới 3 sao là không đạt)</span>}
         </span>
       </div>
-      {unscored > 0 && <p className="text-sm text-text-3">Còn {unscored} tiêu chí chưa chọn mức điểm (được tính 0 điểm). Khi nộp, mọi tiêu chí phải có mức điểm.</p>}
+      {unscored > 0 && (
+        <p className="text-sm text-text-3">Còn {unscored} tiêu chí chưa chọn mức điểm (được tính 0 điểm). Khi nộp, mọi tiêu chí phải có mức điểm.</p>
+      )}
       {next && estimate.total < thresholds[next] && (
         <p className="text-sm text-text-2">
           Cần tối thiểu {thresholds[next]} điểm để đạt {next} sao.
@@ -326,7 +344,11 @@ function EvidenceUploader({
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-wrap items-center gap-2 text-sm">
       <input name="file" type="file" accept={accept} required className="max-w-60 text-sm" aria-label="Tệp minh chứng" />
-      <button type="submit" disabled={disabled || progress !== null} className="inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-1.5 font-semibold text-brand-ink disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={disabled || progress !== null}
+        className="inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-1.5 font-semibold text-brand-ink disabled:opacity-60"
+      >
         <Upload className="size-4" aria-hidden /> Tải lên
       </button>
       {progress !== null && <span className="text-text-3">{Math.round(progress * 100)}%</span>}

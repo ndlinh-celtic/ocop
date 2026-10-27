@@ -40,7 +40,10 @@ export type DomainEventBody =
       payload: { dossierId: string; entityId: string; kind: AssignmentKind; replacedUserId: string | null; newUserId: string };
     }
   | { type: "council.leader_changed"; payload: { councilId: string; fromUserId: string | null; toUserId: string } }
-  | { type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed"; payload: { meetingId: string; councilId: string; roundId: string } }
+  | {
+      type: "scoring.meeting_created" | "scoring.meeting_changed" | "scoring.meeting_closed";
+      payload: { meetingId: string; councilId: string; roundId: string };
+    }
   | { type: "scoring.meeting_minutes_attached"; payload: { meetingId: string; councilId: string; number: number; fileId: string } }
   | { type: "entity.registered" | "entity.created"; payload: { entityId: string; userId: string } }
   | { type: "entity.representative_email_changed"; payload: { entityId: string; userId: string } }
@@ -50,7 +53,10 @@ export type DomainEventBody =
   | { type: "system.setting_changed"; payload: { key: string } }
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
   // L15 HD-05 (story 103): who got a phiếu back and why, for their notice; the hồ sơ event names neither.
-  | { type: "scoring.score_sheet_returned"; payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string } }
+  | {
+      type: "scoring.score_sheet_returned";
+      payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string };
+    }
   | {
       type: DossierEventType;
       /**

@@ -79,10 +79,7 @@ export function grantRole(deps: CoreDeps) {
       const existing = await tx.roleAssignments.listForUser(user.id);
       const overlapping = existing.some(
         (a) =>
-          a.role === input.role &&
-          a.scopeId === input.scopeId &&
-          (a.validTo === null || a.validTo > validFrom) &&
-          (validTo === null || a.validFrom < validTo),
+          a.role === input.role && a.scopeId === input.scopeId && (a.validTo === null || a.validTo > validFrom) && (validTo === null || a.validFrom < validTo),
       );
       if (overlapping) throw new DomainError("already_assigned", "Người dùng đã có phân vai này");
 
@@ -152,4 +149,3 @@ export async function describeGrant(tx: Tx, assignmentId: string) {
   if (!user) return null;
   return { assignment: a, user, roleLabel: ROLE_LABEL[a.role], scopeLabel: await scopeLabel(tx, a) };
 }
-

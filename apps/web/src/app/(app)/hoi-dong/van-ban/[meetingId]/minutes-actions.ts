@@ -11,7 +11,9 @@ const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.strin
 const parts = z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional();
 
 /** L15 HD-09 (story 115) step one: a pre-signed upload of the biên bản đã ký số (PDF). */
-export async function requestMinutesUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestMinutesUploadAction(
+  input: z.infer<typeof uploadInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const actor = await requireActor();
   const parsed = uploadInput.safeParse(input);
   if (!parsed.success) return { error: "Chọn tệp PDF đã ký" };
@@ -23,7 +25,10 @@ export async function requestMinutesUploadAction(input: z.infer<typeof uploadInp
 }
 
 /** Step two: the upload is complete and the PDF becomes the next biên bản of the Phiên họp; the scan runs after. */
-export async function attachMinutesAction(meetingId: string, input: { fileId: string; parts?: { partNumber: number; etag: string }[] }): Promise<{ error?: string }> {
+export async function attachMinutesAction(
+  meetingId: string,
+  input: { fileId: string; parts?: { partNumber: number; etag: string }[] },
+): Promise<{ error?: string }> {
   const actor = await requireActor();
   const parsed = z.object({ fileId: z.string(), parts }).safeParse(input);
   if (!parsed.success) return { error: "Nội dung không hợp lệ" };

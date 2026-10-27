@@ -99,7 +99,15 @@ export interface SupersededSheet {
   returnedAt: Date;
   /** Tổng điểm of its dòng; a Tiêu chí without Mức điểm counts 0. */
   total: number;
-  lines: { criterionId: string; code: string; levelId: string | null; points: number | null; comment: string; adjustReason: string | null; source: "member" | "advisory" }[];
+  lines: {
+    criterionId: string;
+    code: string;
+    levelId: string | null;
+    points: number | null;
+    comment: string;
+    adjustReason: string | null;
+    source: "member" | "advisory";
+  }[];
 }
 
 /**

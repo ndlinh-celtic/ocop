@@ -37,7 +37,17 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
     ? ws.criteria.map((c) => {
         const l = latest.report.lines.find((x) => x.criterionId === c.criterionId);
         return l
-          ? { ...c, line: { criterionId: c.criterionId, levelId: l.levelId, points: l.points, basis: l.basis, evidenceFileIds: l.evidence.map((e) => e.fileId), evidenceAssessment: l.evidenceAssessment } }
+          ? {
+              ...c,
+              line: {
+                criterionId: c.criterionId,
+                levelId: l.levelId,
+                points: l.points,
+                basis: l.basis,
+                evidenceFileIds: l.evidence.map((e) => e.fileId),
+                evidenceAssessment: l.evidenceAssessment,
+              },
+            }
           : c;
       })
     : ws.criteria;
@@ -62,7 +72,9 @@ export default async function AdvisoryReportPage({ params }: { params: Promise<{
           {ws.missing.length === 0 ? (
             <p className="text-brand">Mọi tiêu chí đã có Điểm đề xuất và căn cứ.</p>
           ) : (
-            <p className="text-amber">Còn {ws.missing.length} tiêu chí chưa có Điểm đề xuất hoặc căn cứ: {ws.missing.join(", ")}.</p>
+            <p className="text-amber">
+              Còn {ws.missing.length} tiêu chí chưa có Điểm đề xuất hoặc căn cứ: {ws.missing.join(", ")}.
+            </p>
           )}
           <p>
             Ước lượng: {ws.estimate.parts.map((p) => `Phần ${p.code}: ${p.total}`).join(" · ")} · Tổng {ws.estimate.total} · {ws.estimate.star} sao

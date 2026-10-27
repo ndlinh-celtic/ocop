@@ -125,7 +125,13 @@ export const NAV_NO_ROLE: NavItem[] = [HOME, ...COMMON];
 
 export const navFor = (role: Role | null) => (role ? NAV[role] : NAV_NO_ROLE);
 
-export const ALL_NAV_ITEMS = [...new Map(Object.values(NAV).flat().map((i) => [i.href, i])).values()];
+export const ALL_NAV_ITEMS = [
+  ...new Map(
+    Object.values(NAV)
+      .flat()
+      .map((i) => [i.href, i]),
+  ).values(),
+];
 
 /** The menu item a path belongs to: the longest matching prefix. */
 export function matchNav(items: NavItem[], pathname: string): NavItem | undefined {

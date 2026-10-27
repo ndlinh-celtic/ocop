@@ -50,7 +50,9 @@ const TABLE: Record<Who, Record<State, Outcome[]>> = {
 };
 
 const MATRIX: [Who, Action, State, Outcome][] = (Object.entries(TABLE) as [Who, Record<State, Outcome[]>][]).flatMap(([who, byState]) =>
-  (Object.entries(byState) as [State, Outcome[]][]).flatMap(([state, outcomes]) => ACTIONS.map((action, i): [Who, Action, State, Outcome] => [who, action, state, outcomes[i]!])),
+  (Object.entries(byState) as [State, Outcome[]][]).flatMap(([state, outcomes]) =>
+    ACTIONS.map((action, i): [Who, Action, State, Outcome] => [who, action, state, outcomes[i]!]),
+  ),
 );
 
 let db: TestDatabase;
@@ -101,7 +103,10 @@ interface Subject {
 
 async function dossierIn(state: State): Promise<Subject> {
   const leader = actors["Tổ trưởng A, có Phân công"];
-  const d = await f.gradingStarted(ward, actors["Cán bộ Sở"], setId, A.secretary, { members: A.members, advisors: [leader, actors["Tổ tư vấn A, có Phân công"]] });
+  const d = await f.gradingStarted(ward, actors["Cán bộ Sở"], setId, A.secretary, {
+    members: A.members,
+    advisors: [leader, actors["Tổ tư vấn A, có Phân công"]],
+  });
   const ws = await t.app.scoring.advisoryReport(leader, { dossierId: d.dossierId });
   await t.app.scoring.saveAdvisoryDraft(leader, {
     dossierId: d.dossierId,
@@ -112,7 +117,8 @@ async function dossierIn(state: State): Promise<Subject> {
     attachmentFileIds: [],
   });
   let version = ws.dossierVersion;
-  if (state === "Đã có báo cáo Tổ tư vấn") ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version }));
+  if (state === "Đã có báo cáo Tổ tư vấn")
+    ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version }));
   return { a: d.a, dossierId: d.dossierId, version };
 }
 

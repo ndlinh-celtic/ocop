@@ -12,7 +12,15 @@ const FIELD = "w-full max-w-xl rounded-lg border border-line-strong bg-surface p
  * L06 XA-08 (stories 69, 70): chuyển đợt to a đợt of the same Phiên bản tiêu chí, not ended and within its
  * Hạn gửi tỉnh, with a reason. The hồ sơ keeps its state, Tiếp nhận and Cán bộ phụ trách.
  */
-export function TransferRoundForm({ dossierId, version, rounds }: { dossierId: string; version: number; rounds: readonly { id: string; name: string; forwardingDeadline: Date }[] }) {
+export function TransferRoundForm({
+  dossierId,
+  version,
+  rounds,
+}: {
+  dossierId: string;
+  version: number;
+  rounds: readonly { id: string; name: string; forwardingDeadline: Date }[];
+}) {
   const [state, action, pending] = useActionState<WardDossierFormState, FormData>(transferRoundAction.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">

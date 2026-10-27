@@ -16,7 +16,11 @@ export function fileRepo(db: Db): FileRepo {
       await db.update(file).set(patch).where(eq(file.id, id));
     },
     async updateIfStatus(id, expected, patch) {
-      const rows = await db.update(file).set(patch).where(and(eq(file.id, id), eq(file.status, expected))).returning({ id: file.id });
+      const rows = await db
+        .update(file)
+        .set(patch)
+        .where(and(eq(file.id, id), eq(file.status, expected)))
+        .returning({ id: file.id });
       return rows.length === 1;
     },
     async listByOwner(userId, limit) {

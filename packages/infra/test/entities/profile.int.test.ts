@@ -82,7 +82,10 @@ describe("L01 CT-02 Chủ thể edits its organisation details (stories 9, 10)",
       before: { name: "Chủ thể 1", address: "Ấp 1" },
       after: { name: "Công ty TNHH Mắm Bà Sáu", address: "Số 5, đường 30/4" },
     });
-    const events = await db.admin.query("SELECT type FROM platform.outbox WHERE payload->>'entityId' = $1 AND type IN ('entity.updated', 'entity.ward_changed')", [idOf(a)]);
+    const events = await db.admin.query(
+      "SELECT type FROM platform.outbox WHERE payload->>'entityId' = $1 AND type IN ('entity.updated', 'entity.ward_changed')",
+      [idOf(a)],
+    );
     expect(events.rows).toEqual([{ type: "entity.updated" }]);
   });
 

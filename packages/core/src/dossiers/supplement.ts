@@ -115,7 +115,8 @@ function parseItems(items: unknown): Pick<SupplementItem, "content" | "criterion
     const legalDocumentTypeCode = raw.legalDocumentTypeCode || null;
     if (criterionId && legalDocumentTypeCode) throw new DomainError("one_target", "Mỗi nội dung gắn với một tiêu chí hoặc một loại giấy tờ, không cả hai");
     if (criterionId !== null && !isUuid(criterionId)) throw new DomainError("criterion_not_in_set", "Tiêu chí không thuộc Bộ tiêu chí của hồ sơ");
-    if (legalDocumentTypeCode !== null && typeof legalDocumentTypeCode !== "string") throw new DomainError("invalid_document_type", "Loại giấy tờ không hợp lệ");
+    if (legalDocumentTypeCode !== null && typeof legalDocumentTypeCode !== "string")
+      throw new DomainError("invalid_document_type", "Loại giấy tờ không hợp lệ");
     return { content, criterionId, legalDocumentTypeCode };
   });
 }
@@ -154,7 +155,12 @@ export function closeUnsupplemented(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       // The Lý do loại sơ bộ "Không bổ sung" (story 63), in the shape rejectionOf() reads.
-      const ground: RejectionGround = { kind: "preliminary_reason", reasonCode: "no_supplement", text: PRELIMINARY_REJECTION_REASON_LABEL.no_supplement, explanation: "" };
+      const ground: RejectionGround = {
+        kind: "preliminary_reason",
+        reasonCode: "no_supplement",
+        text: PRELIMINARY_REJECTION_REASON_LABEL.no_supplement,
+        explanation: "",
+      };
       const after = await transition(deps, tx, actor, before, {
         action: "dossier.supplement.close",
         expectedVersion: input.expectedVersion,

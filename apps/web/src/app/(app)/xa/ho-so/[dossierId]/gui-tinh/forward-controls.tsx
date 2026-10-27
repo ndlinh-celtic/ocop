@@ -40,7 +40,11 @@ export function SignedReportUploader({ dossierId, version, replacing }: { dossie
         <span className="font-medium">{replacing ? "Tải lên bản đã ký khác" : "Tải lên bản đã ký"} (PDF, sau khi ký số ngoài hệ thống)</span>
         <input name="file" type="file" accept="application/pdf,.pdf" required className="text-sm" />
       </label>
-      <button type="submit" disabled={progress !== null} className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={progress !== null}
+        className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold disabled:opacity-60"
+      >
         <Upload className="size-4" aria-hidden /> {progress !== null ? `Đang tải ${Math.round(progress * 100)}%` : "Tải lên"}
       </button>
       {error && (
@@ -91,8 +95,8 @@ export function ForwardButton({
         <form action={action} className="flex flex-col gap-3" onSubmit={() => dialog.current?.close()}>
           <h2 className="text-base font-semibold">Gửi hồ sơ lên tỉnh?</h2>
           <p>
-            Hồ sơ <b>{productName || "chưa đặt tên sản phẩm"}</b> của đợt <b>{roundName}</b> sẽ chuyển sang Đã chuyển tỉnh, kèm Phiên bản nộp mới nhất, Checklist sơ bộ
-            và Báo cáo đánh giá cấp xã đã ký. Sau khi gửi, xã không sửa được Checklist sơ bộ nữa.
+            Hồ sơ <b>{productName || "chưa đặt tên sản phẩm"}</b> của đợt <b>{roundName}</b> sẽ chuyển sang Đã chuyển tỉnh, kèm Phiên bản nộp mới nhất,
+            Checklist sơ bộ và Báo cáo đánh giá cấp xã đã ký. Sau khi gửi, xã không sửa được Checklist sơ bộ nữa.
           </p>
           <p className="text-text-3">Hệ thống sẽ thông báo tới Sở Nông nghiệp và Môi trường và Chủ thể.</p>
           <div className="flex justify-end gap-2">

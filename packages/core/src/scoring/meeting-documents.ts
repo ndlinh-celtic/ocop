@@ -181,13 +181,23 @@ export function attachMeetingMinutes(deps: CoreDeps) {
       const file = await ownUpload(tx, actor, input.fileId, "meeting_minutes", minutesNotFound);
       const number = ((await tx.meetings.minutes(meeting.id))[0]?.number ?? 0) + 1;
       const now = deps.clock.now();
-      if (!(await tx.meetings.insertMinutes({ id: deps.ids.next(), meetingId: meeting.id, number, fileId: file.id, uploadedBy: actor.userId, uploadedAt: now }))) {
+      if (
+        !(await tx.meetings.insertMinutes({ id: deps.ids.next(), meetingId: meeting.id, number, fileId: file.id, uploadedBy: actor.userId, uploadedAt: now }))
+      ) {
         throw new DomainError("already_attached", "Tệp này đã là một biên bản của Phiên họp");
       }
       await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), now, { action: "scoring.meeting.minutes_attached", targetType: "meeting", targetId: meeting.id, metadata: { number, fileId: file.id } }),
+        auditEntry(actor, deps.ids.next(), now, {
+          action: "scoring.meeting.minutes_attached",
+          targetType: "meeting",
+          targetId: meeting.id,
+          metadata: { number, fileId: file.id },
+        }),
       );
-      await emit(deps, tx, { type: "scoring.meeting_minutes_attached", payload: { meetingId: meeting.id, councilId: meeting.councilId, number, fileId: file.id } });
+      await emit(deps, tx, {
+        type: "scoring.meeting_minutes_attached",
+        payload: { meetingId: meeting.id, councilId: meeting.councilId, number, fileId: file.id },
+      });
       return { number };
     });
   };

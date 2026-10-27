@@ -25,7 +25,10 @@ describe("Phiếu chấm triggers (#54, story 91, 135)", () => {
       w.level(`${code}:${points}`),
     ]);
   const confirm = (sheetId: string) =>
-    w.db.app.query(`UPDATE scoring.score_sheet SET state = 'confirmed', confirmed_at = now(), reauth_method = 'password', version = version + 1 WHERE id = $1`, [sheetId]);
+    w.db.app.query(
+      `UPDATE scoring.score_sheet SET state = 'confirmed', confirmed_at = now(), reauth_method = 'password', version = version + 1 WHERE id = $1`,
+      [sheetId],
+    );
 
   it("lets the application write a draft phiếu and its dòng", async () => {
     const sheetId = await draftSheet();
@@ -49,7 +52,9 @@ describe("Phiếu chấm triggers (#54, story 91, 135)", () => {
       await expect(w.db.app.query(sql, [sheetId])).rejects.toThrow(/immutable/);
       await expect(w.db.admin.query(sql, [sheetId])).rejects.toThrow(/immutable/);
     }
-    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_reason = 'Trả phiếu' WHERE id = $1`, [sheetId])).resolves.toBeDefined();
+    await expect(
+      w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_reason = 'Trả phiếu' WHERE id = $1`, [sheetId]),
+    ).resolves.toBeDefined();
     // Superseded is final.
     await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET superseded_reason = 'khác' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
   });
@@ -59,8 +64,12 @@ describe("Phiếu chấm triggers (#54, story 91, 135)", () => {
     await w.db.app.query(`UPDATE scoring.score_sheet SET state = 'absent' WHERE id = $1`, [sheetId]);
 
     await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET state = 'draft' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
-    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', version = version + 1 WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
-    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_reason = 'Trả phiếu' WHERE id = $1`, [sheetId])).resolves.toBeDefined();
+    await expect(w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', version = version + 1 WHERE id = $1`, [sheetId])).rejects.toThrow(
+      /immutable/,
+    );
+    await expect(
+      w.db.app.query(`UPDATE scoring.score_sheet SET state = 'superseded', superseded_reason = 'Trả phiếu' WHERE id = $1`, [sheetId]),
+    ).resolves.toBeDefined();
     await expect(w.db.admin.query(`UPDATE scoring.score_sheet SET state = 'draft' WHERE id = $1`, [sheetId])).rejects.toThrow(/immutable/);
   });
 
@@ -83,9 +92,9 @@ describe("Phiếu chấm triggers (#54, story 91, 135)", () => {
     await confirm(sheetId);
 
     await expect(insertLine(sheetId, "2.1", 25)).rejects.toThrow(/immutable/);
-    await expect(w.db.app.query(`UPDATE scoring.score_sheet_line SET score_level_id = $2 WHERE score_sheet_id = $1`, [sheetId, w.level("1.1:40")])).rejects.toThrow(
-      /immutable/,
-    );
+    await expect(
+      w.db.app.query(`UPDATE scoring.score_sheet_line SET score_level_id = $2 WHERE score_sheet_id = $1`, [sheetId, w.level("1.1:40")]),
+    ).rejects.toThrow(/immutable/);
     await expect(w.db.admin.query(`DELETE FROM scoring.score_sheet_line WHERE score_sheet_id = $1`, [sheetId])).rejects.toThrow(/immutable/);
     await expect(w.db.app.query(`DELETE FROM scoring.score_sheet_line WHERE score_sheet_id = $1`, [sheetId])).rejects.toThrow(/permission denied/);
   });

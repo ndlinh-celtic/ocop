@@ -47,7 +47,10 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-xl bg-gradient-to-br from-[var(--hero-a)] via-[var(--hero-b)] to-[var(--hero-c)] p-6 text-white">
-        <p className="text-sm opacity-90">{ROLE_LABEL[actor.activeRole]}{current ? ` · ${current.scopeLabel}` : ""}</p>
+        <p className="text-sm opacity-90">
+          {ROLE_LABEL[actor.activeRole]}
+          {current ? ` · ${current.scopeLabel}` : ""}
+        </p>
         <h1 className="text-2xl font-semibold">Xin chào {actor.fullName}</h1>
       </section>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

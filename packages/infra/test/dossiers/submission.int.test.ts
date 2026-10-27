@@ -144,7 +144,14 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
       criteriaVersion: { id: expect.any(String), legalBasis: "26/2026/QĐ-TTg" },
       entity: expect.objectContaining({ id: entityIdOf(a), kind: "enterprise", name: expect.stringMatching(/^Chủ thể /), wardId }),
       legalDocuments: [
-        expect.objectContaining({ id: gpkd!.id, typeCode: "business_registration", issuedOn: "2025-01-01", validUntil: null, fileId: gpkd!.fileId, fileName: "GPKD.pdf" }),
+        expect.objectContaining({
+          id: gpkd!.id,
+          typeCode: "business_registration",
+          issuedOn: "2025-01-01",
+          validUntil: null,
+          fileId: gpkd!.fileId,
+          fileName: "GPKD.pdf",
+        }),
       ],
       evidence: [{ fileId: evidenceId, fileName: "Kiểm nghiệm.pdf" }],
       criteria: [
@@ -166,7 +173,7 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
 
   it("keeps the Chủ thể of Phiên bản nộp and the xã of the hồ sơ when the Chủ thể later renames or moves (stories 10, 31)", async () => {
     const { a, dossierId } = await f.submitted(sets["Rau củ quả"]);
-    const before = await t.app.entities.getEntity(a,{ entityId: entityIdOf(a) });
+    const before = await t.app.entities.getEntity(a, { entityId: entityIdOf(a) });
     const otherWard = (await t.app.org.listWards()).find((w) => w.name === "Xã Bình Lợi")!.id;
 
     await t.app.entities.updateEntity(a, {
@@ -217,7 +224,12 @@ describe("L03 CT-09 nộp hồ sơ (stories 28 to 32)", () => {
       ["dossier.create", null, "draft"],
       ["dossier.submit", "draft", "submitted_to_ward"],
     ]);
-    expect(timeline[1]).toMatchObject({ actorUserId: a.userId, actorRole: "entity_owner", occurredAt: START, metadata: { submissionNumber: 1, roundId, wardId } });
+    expect(timeline[1]).toMatchObject({
+      actorUserId: a.userId,
+      actorRole: "entity_owner",
+      occurredAt: START,
+      metadata: { submissionNumber: 1, roundId, wardId },
+    });
     const [audit] = await t.app.audit.search(await f.admin(), { action: ["dossier.submit"], targetId: dossierId });
     expect(audit).toMatchObject({ actorUserId: a.userId, after: { state: "submitted_to_ward", version } });
     const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.submitted' AND payload->>'dossierId' = $1", [dossierId]);
@@ -267,9 +279,13 @@ describe("L03 CT-10 rút hồ sơ (story 33)", () => {
     const { a, dossierId, version } = await f.submitted(sets["Rau củ quả"]);
     await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: version, reason: "   " })).rejects.toMatchObject({ code: "reason_required" });
     await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: version - 1, reason: "x" })).rejects.toMatchObject({ code: "version_conflict" });
-    await expect(t.app.dossiers.withdraw(await f.verifiedOwner(), { dossierId, expectedVersion: version, reason: "x" })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.dossiers.withdraw(await f.verifiedOwner(), { dossierId, expectedVersion: version, reason: "x" })).rejects.toMatchObject({
+      code: "not_found",
+    });
     const draft = await blankDraft(a);
-    await expect(t.app.dossiers.withdraw(a, { dossierId: draft.dossierId, expectedVersion: draft.version, reason: "x" })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(t.app.dossiers.withdraw(a, { dossierId: draft.dossierId, expectedVersion: draft.version, reason: "x" })).rejects.toMatchObject({
+      code: "invalid_state",
+    });
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward", version });
   });
 
@@ -278,7 +294,9 @@ describe("L03 CT-10 rút hồ sơ (story 33)", () => {
     const officer = await f.staff("ward_officer", wardId);
     const received = await t.app.dossiers.receive(officer, { dossierId, expectedVersion: version });
 
-    await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: received.version, reason: "Muộn" })).rejects.toMatchObject({ code: "already_received" });
+    await expect(t.app.dossiers.withdraw(a, { dossierId, expectedVersion: received.version, reason: "Muộn" })).rejects.toMatchObject({
+      code: "already_received",
+    });
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward" });
   });
 });

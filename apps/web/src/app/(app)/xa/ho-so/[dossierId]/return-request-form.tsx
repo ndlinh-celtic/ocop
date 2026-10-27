@@ -12,7 +12,17 @@ const XA_INTRO = "Khi phát hiện sai sót trong hồ sơ đã gửi tỉnh, g�
  * L04 (story 59): a hồ sơ Đã chuyển tỉnh stays with the Sở; the xã may only ask it to trả về, with a lý do.
  * L10 TM-03 (#57 story 51) uses the same form for the Tổ tư vấn, with its own `submit` and `intro`.
  */
-export function ReturnRequestForm({ dossierId, version, submit = requestReturnAction, intro = XA_INTRO }: { dossierId: string; version: number; submit?: Submit; intro?: string }) {
+export function ReturnRequestForm({
+  dossierId,
+  version,
+  submit = requestReturnAction,
+  intro = XA_INTRO,
+}: {
+  dossierId: string;
+  version: number;
+  submit?: Submit;
+  intro?: string;
+}) {
   const [state, action, pending] = useActionState<ReturnRequestFormState, FormData>(submit.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">

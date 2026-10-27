@@ -188,40 +188,40 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
     });
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.deadline_extended"], targetId: roundId });
     expect(entry).toMatchObject({ after: { forwardingDeadline: "2027-02-10T16:59:59.000Z" } });
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "evaluation", newDate: "2027-02-27", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "deadline_not_later" });
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "evaluation", newDate: "2027-03-01", reason: " " }),
-    ).rejects.toMatchObject({ code: "reason_required" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "evaluation", newDate: "2027-02-27", reason: "Thử" })).rejects.toMatchObject({
+      code: "deadline_not_later",
+    });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "evaluation", newDate: "2027-03-01", reason: " " })).rejects.toMatchObject({
+      code: "reason_required",
+    });
   });
 
   it("requires a reason", async () => {
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2026-12-25", reason: "   " }),
-    ).rejects.toMatchObject({ code: "reason_required" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2026-12-25", reason: "   " })).rejects.toMatchObject({
+      code: "reason_required",
+    });
   });
 
   it("refuses an unknown deadline and a bad date", async () => {
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "decision" as never, newDate: "2027-03-10", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "invalid_deadline" });
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2026-02-30", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "invalid_date" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "decision" as never, newDate: "2027-03-10", reason: "Thử" })).rejects.toMatchObject({
+      code: "invalid_deadline",
+    });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "forwarding", newDate: "2026-02-30", reason: "Thử" })).rejects.toMatchObject({
+      code: "invalid_date",
+    });
   });
 
   it("lets only Cán bộ Sở extend; Quản trị is refused", async () => {
-    await expect(
-      t.app.rounds.extendDeadline(await admin(), { roundId, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.rounds.extendDeadline(await admin(), { roundId, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" })).rejects.toMatchObject({
+      code: "forbidden",
+    });
   });
 
   it("refuses a Nháp round (edit it directly) and an unknown round", async () => {
     const { roundId: draft } = await t.app.rounds.createRound(officer, roundInput({ name: "Đợt nháp" }));
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId: draft, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "round_is_draft" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId: draft, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" })).rejects.toMatchObject({
+      code: "round_is_draft",
+    });
     await expect(
       t.app.rounds.extendDeadline(officer, { roundId: "00000000-0000-7000-8000-000000000000", deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
     ).rejects.toMatchObject({ code: "not_found" });
@@ -235,9 +235,9 @@ describe("L07 gia hạn Hạn gửi tỉnh của đợt Đang nhận nộp", () 
       "UPDATE round.round SET status = 'ended', opened_at = now(), opened_by = $2, submission_closed_at = now(), ended_at = now(), ended_by = $2 WHERE id = $1",
       [ended, officer.userId],
     );
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId: ended, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" }),
-    ).rejects.toMatchObject({ code: "round_ended" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId: ended, deadline: "forwarding", newDate: "2026-12-25", reason: "Thử" })).rejects.toMatchObject({
+      code: "round_ended",
+    });
   });
 });
 
@@ -269,9 +269,9 @@ describe("L07 gia hạn đợt Đã đóng nộp: chỉ Hạn gửi tỉnh và H
 
   it("refuses to extend Hạn nộp xã once submission has closed, and keeps no history of the refusal", async () => {
     const before = await t.app.rounds.listDeadlineExtensions(officer, { roundId });
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-20", reason: "Mưa bão" }),
-    ).rejects.toMatchObject({ code: "submission_closed" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId, deadline: "submission", newDate: "2026-12-20", reason: "Mưa bão" })).rejects.toMatchObject({
+      code: "submission_closed",
+    });
     expect(await t.app.rounds.listDeadlineExtensions(officer, { roundId })).toEqual(before);
     expect(await round(roundId)).toMatchObject({ status: "submission_closed", submissionDeadline: new Date("2026-12-10T16:59:59Z") });
   });
@@ -283,9 +283,9 @@ describe("L07 gia hạn đợt Đã đóng nộp: chỉ Hạn gửi tỉnh và H
     );
     await t.app.rounds.openRound(officer, { roundId: late });
     t.clock.set(new Date("2026-12-20T17:00:10Z")); // just past Hạn nộp xã; the job has not run yet
-    await expect(
-      t.app.rounds.extendDeadline(officer, { roundId: late, deadline: "submission", newDate: "2026-12-25", reason: "Muộn" }),
-    ).rejects.toMatchObject({ code: "submission_closed" });
+    await expect(t.app.rounds.extendDeadline(officer, { roundId: late, deadline: "submission", newDate: "2026-12-25", reason: "Muộn" })).rejects.toMatchObject({
+      code: "submission_closed",
+    });
     expect((await round(late)).submissionDeadline).toEqual(new Date("2026-12-20T16:59:59Z"));
   });
 });

@@ -21,7 +21,13 @@ const iconButton = "rounded-md border border-line-strong p-2 disabled:opacity-40
  * L06 XA-04 (story 60): the Checklist sơ bộ of a Nháp round, as an ordered list of items to reword,
  * add, remove or reorder. Existing items keep their code so a rename stays the same item.
  */
-export function ChecklistEditor({ items, action: submit }: { items: ChecklistItem[]; action: (prev: RoundFormState, form: FormData) => Promise<RoundFormState> }) {
+export function ChecklistEditor({
+  items,
+  action: submit,
+}: {
+  items: ChecklistItem[];
+  action: (prev: RoundFormState, form: FormData) => Promise<RoundFormState>;
+}) {
   const [rows, setRows] = useState<Row[]>(() => items.map((i) => ({ key: i.code, code: i.code, label: i.label })));
   const [state, action, pending] = useActionState<RoundFormState, FormData>(submit, {});
 

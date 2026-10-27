@@ -91,7 +91,16 @@ describe("L19 Hạng sao: Sao tối thiểu", () => {
     // Drop 25 points only from Tiêu chí without Sao tối thiểu: total 75.
     const result = rank({
       ...topScores(set1),
-      "1.1": 1, "1.4": 1, "3.1": 1, "3.3": 1, "4.2": 0, "4.3": 0, "6.3": 0, "6.4": 0, "11": 1, "12": 1,
+      "1.1": 1,
+      "1.4": 1,
+      "3.1": 1,
+      "3.3": 1,
+      "4.2": 0,
+      "4.3": 0,
+      "6.3": 0,
+      "6.4": 0,
+      "11": 1,
+      "12": 1,
     });
     expect(result.total).toBe(75);
     expect(result.byThreshold).toBe(4);

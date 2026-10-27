@@ -13,7 +13,9 @@ export const REQUIREMENT_STATE: Record<RequirementState, { label: string; style:
 };
 
 export function StateTag({ state }: { state: RequirementState }) {
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${REQUIREMENT_STATE[state].style}`}>{REQUIREMENT_STATE[state].label}</span>;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${REQUIREMENT_STATE[state].style}`}>{REQUIREMENT_STATE[state].label}</span>
+  );
 }
 
 const docState = (d: LegalDocumentView): RequirementState =>

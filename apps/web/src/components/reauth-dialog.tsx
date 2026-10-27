@@ -51,7 +51,11 @@ function ReauthDialog({ method, onCancel, onSuccess }: { method: "totp" | "passw
           autoFocus
           className="mb-3 w-full rounded-md border border-line-strong bg-surface px-3 py-2"
         />
-        {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
+        {error && (
+          <p role="alert" className="mb-3 text-sm text-danger">
+            {error}
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onCancel} className="rounded-md border px-4 py-2">
             Hủy

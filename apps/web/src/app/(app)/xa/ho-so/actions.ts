@@ -16,7 +16,12 @@ export interface WardDossierFormState {
 const handlerInput = z.object({ handlerUserId: z.string().trim().min(1) });
 
 /** L05 XA-02 (story 40): Tiếp nhận, naming the Cán bộ phụ trách (the officer themself by default). */
-export async function receiveDossierAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function receiveDossierAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   const parsed = handlerInput.safeParse({ handlerUserId: form.get("handlerUserId") ?? "" });
   try {
@@ -30,7 +35,12 @@ export async function receiveDossierAction(dossierId: string, expectedVersion: n
 }
 
 /** L05 XA-03 (story 41): another Cán bộ phụ trách for a received hồ sơ. */
-export async function changeHandlerAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function changeHandlerAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   const parsed = handlerInput.safeParse({ handlerUserId: form.get("handlerUserId") ?? "" });
   if (!parsed.success) return { error: "Chọn Cán bộ phụ trách" };
@@ -59,7 +69,12 @@ const supplementInput = z.object({
 });
 
 /** L04 XA-05 (story 50): yêu cầu bổ sung with its nội dung (sent as JSON by the form) and hạn bổ sung. */
-export async function requestSupplementAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function requestSupplementAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   let items: unknown;
   try {

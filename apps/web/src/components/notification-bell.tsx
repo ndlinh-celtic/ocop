@@ -34,7 +34,10 @@ export function NotificationBell({ initial }: { initial: number }) {
     >
       <Bell className="size-4" aria-hidden />
       {unread > 0 && (
-        <span data-testid="unread-count" className="absolute -right-2 -top-2 min-w-5 rounded-full bg-danger px-1.5 text-center text-xs font-semibold text-white">
+        <span
+          data-testid="unread-count"
+          className="absolute -right-2 -top-2 min-w-5 rounded-full bg-danger px-1.5 text-center text-xs font-semibold text-white"
+        >
           {unread}
         </span>
       )}

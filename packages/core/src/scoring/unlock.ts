@@ -113,7 +113,13 @@ export function unlockFinalized(deps: CoreDeps) {
       const before = await tx.dossiers.stateRow({ id: input.dossierId }, true);
       if (!before) throw dossierNotFound();
       const proof = await requireRecentAuth(deps, tx, actor);
-      const file = await ownUpload(tx, actor, input.requestFileId, "unlock_request", () => new DomainError("file_required", "Tải lên văn bản yêu cầu Mở khóa của Hội đồng (PDF)"));
+      const file = await ownUpload(
+        tx,
+        actor,
+        input.requestFileId,
+        "unlock_request",
+        () => new DomainError("file_required", "Tải lên văn bản yêu cầu Mở khóa của Hội đồng (PDF)"),
+      );
 
       const result = before.state === "score_finalized" ? await tx.aggregateResults.current(before.id) : null;
       const now = deps.clock.now();
@@ -123,7 +129,14 @@ export function unlockFinalized(deps: CoreDeps) {
         action: "dossier.unlock",
         expectedVersion: before.version,
         reason,
-        metadata: { unlockId, resultId: result?.id ?? null, n: result?.n ?? null, requestFileId: file.id, requestedBy, reauth: { at: proof.at.toISOString(), method: proof.method } },
+        metadata: {
+          unlockId,
+          resultId: result?.id ?? null,
+          n: result?.n ?? null,
+          requestFileId: file.id,
+          requestedBy,
+          reauth: { at: proof.at.toISOString(), method: proof.method },
+        },
       });
       if (!result) throw new DomainError("result_not_found", "Hồ sơ không có kết quả chốt hiện hành");
       await tx.aggregateResults.insertUnlock({

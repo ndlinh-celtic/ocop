@@ -71,7 +71,12 @@ export interface MoveNodeInput {
 }
 
 /** The stored row of a new node, without its position; the parent is checked to be in the version. */
-async function newRow(tx: Tx, version: CriteriaVersion, nodeId: string, a: ParsedAddition): Promise<{ kind: DraftNodeKind; row: DraftNodeRows[DraftNodeKind] }> {
+async function newRow(
+  tx: Tx,
+  version: CriteriaVersion,
+  nodeId: string,
+  a: ParsedAddition,
+): Promise<{ kind: DraftNodeKind; row: DraftNodeRows[DraftNodeKind] }> {
   const position = 0;
   switch (a.node) {
     case "productGroup":
@@ -125,7 +130,17 @@ export function addNode(deps: CoreDeps) {
       // A new Tiêu chí always offers "Không đáp ứng, 0 điểm" (GLOSSARY.md, Mức điểm).
       const zeroLevel =
         kind === "criterion"
-          ? { id: deps.ids.next(), setId: (row as DraftNodeRows["criterion"]).setId, criterionId: nodeId, description: SYSTEM_ZERO_LEVEL, points: 0, minimumStar: null, branch: null, systemAdded: true, position: 0 }
+          ? {
+              id: deps.ids.next(),
+              setId: (row as DraftNodeRows["criterion"]).setId,
+              criterionId: nodeId,
+              description: SYSTEM_ZERO_LEVEL,
+              points: 0,
+              minimumStar: null,
+              branch: null,
+              systemAdded: true,
+              position: 0,
+            }
           : null;
       if (zeroLevel) await tx.criteriaVersions.insertNode("scoreLevel", version.id, zeroLevel);
       const added = withNode(rows, kind, row);
