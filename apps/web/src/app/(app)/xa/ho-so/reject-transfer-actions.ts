@@ -15,7 +15,12 @@ const GROUND = /^(dk|ly-do):(.+)$/;
 const rejectInput = z.object({ ground: z.string().regex(GROUND), explanation: z.string().max(2000) });
 
 /** L05 XA-06 (story 63): loại the hồ sơ to Không đạt sơ bộ. */
-export async function rejectDossierAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function rejectDossierAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   const parsed = rejectInput.safeParse({ ground: form.get("ground") ?? "", explanation: form.get("explanation") ?? "" });
   if (!parsed.success) return { error: "Chọn một Điều kiện loại hoặc một Lý do loại sơ bộ" };
@@ -38,7 +43,12 @@ export async function rejectDossierAction(dossierId: string, expectedVersion: nu
 const transferInput = z.object({ wardId: z.string().trim().min(1), reason: z.string().trim().min(1).max(2000) });
 
 /** Chuyển xã (story 47): once moved, this xã no longer sees the hồ sơ, so the officer goes back to the list. */
-export async function transferWardAction(dossierId: string, expectedVersion: number, _prev: WardDossierFormState, form: FormData): Promise<WardDossierFormState> {
+export async function transferWardAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: WardDossierFormState,
+  form: FormData,
+): Promise<WardDossierFormState> {
   const actor = await requireActor();
   const parsed = transferInput.safeParse({ wardId: form.get("wardId") ?? "", reason: form.get("reason") ?? "" });
   if (!parsed.success) return { error: "Chọn xã/phường nhận và nhập lý do chuyển" };

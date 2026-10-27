@@ -133,7 +133,12 @@ describe("L01 Cán bộ xã checks the identity of a Chủ thể of their xã (s
 
   it("downloads the giấy tờ pháp lý of a Chủ thể of their xã, audited; another xã gets not found", async () => {
     const content = Buffer.concat([Buffer.from("%PDF-1.7\n"), randomBytes(200)]);
-    const { fileId, upload } = await t.app.files.requestUpload(ownerA, { purpose: "legal_document", fileName: "GPKD.pdf", contentType: "application/pdf", size: content.length });
+    const { fileId, upload } = await t.app.files.requestUpload(ownerA, {
+      purpose: "legal_document",
+      fileName: "GPKD.pdf",
+      contentType: "application/pdf",
+      size: content.length,
+    });
     if (upload.kind !== "single") throw new Error("expected a single PUT");
     await fetch(upload.url, { method: "PUT", headers: upload.headers, body: content });
     await t.app.files.completeUpload(ownerA, { fileId });
@@ -180,7 +185,13 @@ describe("Permission matrix: Cán bộ xã on Chủ thể (#14)", () => {
     const entity = await t.app.entities.getEntity(officerA, { entityId: ownWard() });
     await expect(t.app.entities.updateEntity(officerA, { entityId: entity.id, ...entity, wardId: wardA })).rejects.toMatchObject({ code: "forbidden" });
     await expect(
-      t.app.entities.addLegalDocument(officerA, { entityId: entity.id, typeCode: "business_registration", fileId: entity.id, issuedOn: "2025-01-01", validUntil: null }),
+      t.app.entities.addLegalDocument(officerA, {
+        entityId: entity.id,
+        typeCode: "business_registration",
+        fileId: entity.id,
+        issuedOn: "2025-01-01",
+        validUntil: null,
+      }),
     ).rejects.toMatchObject({ code: "forbidden" });
   });
 
@@ -225,14 +236,23 @@ describe("L01 Cán bộ xã creates a Chủ thể for a hộ sản xuất of the
   });
 
   it("refuses an identifier or email already in use", async () => {
-    await expect(t.app.entities.createEntity(officerA, { ...household, kind: "enterprise", identifier: "0322222222", email: "moi@example.vn" })).rejects.toMatchObject({
+    await expect(
+      t.app.entities.createEntity(officerA, { ...household, kind: "enterprise", identifier: "0322222222", email: "moi@example.vn" }),
+    ).rejects.toMatchObject({
       code: "identifier_taken",
     });
-    await expect(t.app.entities.createEntity(officerA, { ...household, identifier: "079200007777", email: "B@example.vn" })).rejects.toMatchObject({ code: "email_taken" });
+    await expect(t.app.entities.createEntity(officerA, { ...household, identifier: "079200007777", email: "B@example.vn" })).rejects.toMatchObject({
+      code: "email_taken",
+    });
   });
 
   it("a Chủ thể created by the officer is registered in the officer's xã; no ward can be chosen", async () => {
-    const { entityId } = await t.app.entities.createEntity(officerB, { ...household, identifier: "079200006666", email: "ho.f@example.vn", wardId: wardA } as never);
+    const { entityId } = await t.app.entities.createEntity(officerB, {
+      ...household,
+      identifier: "079200006666",
+      email: "ho.f@example.vn",
+      wardId: wardA,
+    } as never);
     expect(await t.app.entities.getEntity(officerB, { entityId })).toMatchObject({ ward: { id: wardB } });
   });
 
@@ -287,20 +307,35 @@ describe("L01 Cán bộ xã changes the email of a Người dùng đại diện 
       after: { email: "k.moi@example.vn" },
       metadata: { userId: chuThe.userId },
     });
-    const events = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'entity.representative_email_changed' AND payload->>'entityId' = $1", [idOf(chuThe)]);
+    const events = await db.admin.query(
+      "SELECT payload FROM platform.outbox WHERE type = 'entity.representative_email_changed' AND payload->>'entityId' = $1",
+      [idOf(chuThe)],
+    );
     expect(events.rows).toEqual([{ payload: { entityId: idOf(chuThe), userId: chuThe.userId } }]);
   });
 
   it("refuses an invalid email, the same email, or one used by another account", async () => {
-    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "khong-hop-le" })).rejects.toMatchObject({ code: "email_invalid" });
-    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "A@example.vn" })).rejects.toMatchObject({ code: "email_unchanged" });
-    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "b@example.vn" })).rejects.toMatchObject({ code: "email_taken" });
+    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "khong-hop-le" })).rejects.toMatchObject({
+      code: "email_invalid",
+    });
+    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "A@example.vn" })).rejects.toMatchObject({
+      code: "email_unchanged",
+    });
+    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: idOf(ownerA), email: "b@example.vn" })).rejects.toMatchObject({
+      code: "email_taken",
+    });
   });
 
   it("a Chủ thể of another xã is not found, and only a Cán bộ xã may do it", async () => {
-    await expect(t.app.entities.changeRepresentativeEmail(officerB, { entityId: idOf(ownerA), email: "z@example.vn" })).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: "not-an-id", email: "z@example.vn" })).rejects.toMatchObject({ code: "not_found" });
-    await expect(t.app.entities.changeRepresentativeEmail(ownerA, { entityId: idOf(ownerA), email: "z@example.vn" })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.entities.changeRepresentativeEmail(officerB, { entityId: idOf(ownerA), email: "z@example.vn" })).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(t.app.entities.changeRepresentativeEmail(officerA, { entityId: "not-an-id", email: "z@example.vn" })).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(t.app.entities.changeRepresentativeEmail(ownerA, { entityId: idOf(ownerA), email: "z@example.vn" })).rejects.toMatchObject({
+      code: "forbidden",
+    });
     expect(await t.app.entities.getEntity(officerA, { entityId: idOf(ownerA) })).toMatchObject({ representativeEmail: "a@example.vn" });
   });
 });

@@ -59,5 +59,4 @@ export interface Session {
   revokedAt: Date | null;
 }
 
-export const isAssignmentActive = (a: RoleAssignment, at: Date) =>
-  a.validFrom <= at && (a.validTo === null || at < a.validTo);
+export const isAssignmentActive = (a: RoleAssignment, at: Date) => a.validFrom <= at && (a.validTo === null || at < a.validTo);

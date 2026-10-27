@@ -189,8 +189,6 @@ export function signOut(deps: CoreDeps) {
     deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       await tx.sessions.revoke(actor.sessionId, now);
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), now, { action: "auth.sign_out", targetType: "session", targetId: actor.sessionId }),
-      );
+      await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.sign_out", targetType: "session", targetId: actor.sessionId }));
     });
 }

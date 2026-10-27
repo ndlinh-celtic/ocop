@@ -59,7 +59,9 @@ export default async function ForwardPage({ params }: { params: Promise<{ dossie
         </Link>
         <h1 className="mt-1 flex flex-wrap items-center gap-3 text-xl font-semibold">
           Báo cáo đánh giá cấp xã và gửi lên tỉnh <DossierStateTag state={dossier.state} />
-          {canForward && status.pastForwardingDeadline && <span className="rounded-full bg-amber-soft px-2 py-0.5 text-xs font-medium text-amber">Chờ đợt sau</span>}
+          {canForward && status.pastForwardingDeadline && (
+            <span className="rounded-full bg-amber-soft px-2 py-0.5 text-xs font-medium text-amber">Chờ đợt sau</span>
+          )}
         </h1>
         <p className="text-sm text-text-2">
           {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} · {dossier.entity.name}
@@ -134,20 +136,27 @@ export default async function ForwardPage({ params }: { params: Promise<{ dossie
 
           <section className="flex flex-col gap-3 rounded-lg border bg-surface p-4 text-sm shadow-card">
             {canForward && (
-              <a href={`/xa/ho-so/${dossier.id}/gui-tinh/bao-cao.docx`} className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold">
+              <a
+                href={`/xa/ho-so/${dossier.id}/gui-tinh/bao-cao.docx`}
+                className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold"
+              >
                 <FileDown className="size-4" aria-hidden /> Tải bản nháp (Word)
               </a>
             )}
             {status.signed ? (
               <>
                 <SignedWardReport dossierId={dossier.id} signed={status.signed} />
-                {!status.signed.current && <p className="text-amber">Bản đã ký thuộc Phiên bản nộp cũ; hãy lập và ký lại theo Phiên bản nộp {latest.number}.</p>}
+                {!status.signed.current && (
+                  <p className="text-amber">Bản đã ký thuộc Phiên bản nộp cũ; hãy lập và ký lại theo Phiên bản nộp {latest.number}.</p>
+                )}
                 <RefreshWhileScanning active={status.signed.status === "scanning"} />
               </>
             ) : (
               <p className="text-text-3">Chưa có bản đã ký.</p>
             )}
-            {can(actor, "dossier.ward_report.attach", dossier) && <SignedReportUploader dossierId={dossier.id} version={dossier.version} replacing={status.signed !== null} />}
+            {can(actor, "dossier.ward_report.attach", dossier) && (
+              <SignedReportUploader dossierId={dossier.id} version={dossier.version} replacing={status.signed !== null} />
+            )}
           </section>
 
           <section className="rounded-lg border bg-surface p-4 text-sm shadow-card">

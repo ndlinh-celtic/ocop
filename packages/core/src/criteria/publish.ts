@@ -10,7 +10,6 @@ import { versionNotFound } from "./helpers";
 import { findVersionIssues, type ValidationIssue } from "./validation";
 import { assertDraft } from "./version";
 
-
 /** Publishing was refused because the check still finds problems; `issues` lists all of them. */
 export class CriteriaValidationError extends DomainError {
   static override readonly brand = "CriteriaValidationError";

@@ -60,12 +60,16 @@ export function reauthenticate(deps: CoreDeps) {
       }
 
       if (!ok) {
-        await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.reauth.failed", targetType: "session", targetId: actor.sessionId, metadata: { method } }));
+        await tx.audit.append(
+          auditEntry(actor, deps.ids.next(), now, { action: "auth.reauth.failed", targetType: "session", targetId: actor.sessionId, metadata: { method } }),
+        );
         return (await registerFailure(deps, tx, user, actor, now)) ? { ok: false, reason: "locked" } : { ok: false, reason: "invalid" };
       }
       await clearFailures(tx, user);
       await tx.sessions.update(actor.sessionId, { authenticatedAt: now, authMethod: method });
-      await tx.audit.append(auditEntry(actor, deps.ids.next(), now, { action: "auth.reauthenticated", targetType: "session", targetId: actor.sessionId, metadata: { method } }));
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, { action: "auth.reauthenticated", targetType: "session", targetId: actor.sessionId, metadata: { method } }),
+      );
       return { ok: true };
     });
   };

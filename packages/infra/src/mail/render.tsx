@@ -14,8 +14,7 @@ export interface RenderedEmail {
   text: string;
 }
 
-const vnTime = (d: Date) =>
-  new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }).format(d);
+const vnTime = (d: Date) => new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }).format(d);
 
 export async function renderEmail(message: EmailMessage): Promise<RenderedEmail> {
   switch (message.template) {

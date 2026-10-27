@@ -80,7 +80,8 @@ export function saveScoreSheet(deps: CoreDeps) {
     for (const l of lines) {
       if (typeof l.comment !== "string" || l.comment.length > MAX_COMMENT) throw new DomainError("field_too_long", "Nhận xét quá dài");
       if (!Array.isArray(l.evidenceFileIds)) throw new DomainError("file_not_found", "Không tìm thấy tệp");
-      if (l.adjustReason != null && (typeof l.adjustReason !== "string" || l.adjustReason.length > MAX_COMMENT)) throw new DomainError("field_too_long", "Lý do điều chỉnh quá dài");
+      if (l.adjustReason != null && (typeof l.adjustReason !== "string" || l.adjustReason.length > MAX_COMMENT))
+        throw new DomainError("field_too_long", "Lý do điều chỉnh quá dài");
     }
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);

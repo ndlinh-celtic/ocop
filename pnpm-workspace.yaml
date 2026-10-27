@@ -4,6 +4,6 @@ packages:
   - e2e
 
 onlyBuiltDependencies:
-  - '@node-rs/argon2'
+  - "@node-rs/argon2"
   - esbuild
   - sharp

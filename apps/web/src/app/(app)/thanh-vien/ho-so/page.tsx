@@ -21,7 +21,12 @@ export default async function MemberDossiersPage() {
         <h1 className="text-xl font-semibold">Hồ sơ được phân công</h1>
         <p className="text-sm text-text-2">Hồ sơ Thư ký hội đồng đã Giao chấm cho anh/chị. Mỗi hồ sơ có một Phiếu chấm của anh/chị.</p>
       </div>
-      <AssignedDossierList dossiers={dossiers} href={(id) => `/thanh-vien/ho-so/${id}`} sheetState={sheetState} empty="Hồ sơ sẽ hiện ở đây khi Thư ký hội đồng Giao chấm hồ sơ có Phân công của anh/chị." />
+      <AssignedDossierList
+        dossiers={dossiers}
+        href={(id) => `/thanh-vien/ho-so/${id}`}
+        sheetState={sheetState}
+        empty="Hồ sơ sẽ hiện ở đây khi Thư ký hội đồng Giao chấm hồ sơ có Phân công của anh/chị."
+      />
     </div>
   );
 }

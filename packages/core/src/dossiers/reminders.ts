@@ -39,13 +39,27 @@ async function candidates(tx: Tx, now: Date): Promise<Candidate[]> {
   const open = await tx.rounds.findOpen();
   if (open && now <= open.submissionDeadline) {
     for (const entityId of await tx.reminders.entitiesWithDraft(open.criteriaVersionId)) {
-      out.push({ kind: "submission", subjectId: entityId, contextId: open.id, deadline: open.submissionDeadline, payload: { kind: "submission", roundId: open.id, entityId } });
+      out.push({
+        kind: "submission",
+        subjectId: entityId,
+        contextId: open.id,
+        deadline: open.submissionDeadline,
+        payload: { kind: "submission", roundId: open.id, entityId },
+      });
     }
   }
   for (const s of await tx.reminders.openSupplements(now)) {
-    out.push({ kind: "supplement", subjectId: s.entityId, contextId: s.dossierId, deadline: s.deadline, payload: { kind: "supplement", dossierId: s.dossierId, entityId: s.entityId } });
+    out.push({
+      kind: "supplement",
+      subjectId: s.entityId,
+      contextId: s.dossierId,
+      deadline: s.deadline,
+      payload: { kind: "supplement", dossierId: s.dossierId, entityId: s.entityId },
+    });
   }
-  const running = (await tx.rounds.list()).filter((r) => (r.status === "open_for_submission" || r.status === "submission_closed") && now <= r.forwardingDeadline);
+  const running = (await tx.rounds.list()).filter(
+    (r) => (r.status === "open_for_submission" || r.status === "submission_closed") && now <= r.forwardingDeadline,
+  );
   for (const round of running) {
     for (const w of await tx.reminders.unforwardedByWard(round.id)) {
       out.push({
@@ -177,7 +191,12 @@ export async function emailReminder(c: ConsumerContext): Promise<void> {
     await sendEmailOnce(c, {
       to: user.email,
       template: "dossier_notice",
-      data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },
+      data: {
+        fullName: user.fullName,
+        subject: notice.emailSubject,
+        line: notice.emailLine,
+        link: new URL(notice.link, c.deps.settings.appBaseUrl).toString(),
+      },
     });
   }
 }

@@ -189,7 +189,9 @@ describe("L09 the DataScope `assigned`: a Phân công in force shows the hồ s�
 
     for (const actor of [A.members[0]!, A.advisors[0]!]) {
       expect(await listed(actor)).toContain(d.dossierId);
-      await expect(t.app.dossiers.get(actor, { dossierId: d.dossierId })).resolves.toMatchObject({ readerAssignment: actor === A.advisors[0] ? "advisory" : "member" });
+      await expect(t.app.dossiers.get(actor, { dossierId: d.dossierId })).resolves.toMatchObject({
+        readerAssignment: actor === A.advisors[0] ? "advisory" : "member",
+      });
     }
     for (const actor of [A.members[1]!, A.advisors[1]!, B.members[0]!]) {
       expect(await listed(actor)).not.toContain(d.dossierId);

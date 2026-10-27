@@ -23,7 +23,12 @@ export function ThemeToggle() {
     setDark(!dark);
   };
   return (
-    <button type="button" onClick={flip} aria-label={dark ? "Chuyển giao diện sáng" : "Chuyển giao diện tối"} className="rounded-md border border-line p-1.5 text-text-2">
+    <button
+      type="button"
+      onClick={flip}
+      aria-label={dark ? "Chuyển giao diện sáng" : "Chuyển giao diện tối"}
+      className="rounded-md border border-line p-1.5 text-text-2"
+    >
       {dark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
     </button>
   );

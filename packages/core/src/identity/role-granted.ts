@@ -10,7 +10,12 @@ export async function emailRoleGranted(c: ConsumerContext): Promise<void> {
   await sendEmail(c, {
     to: grant.user.email,
     template: "role_granted",
-    data: { fullName: grant.user.fullName, roleLabel: grant.roleLabel, scopeLabel: grant.scopeLabel, link: new URL("/", c.deps.settings.appBaseUrl).toString() },
+    data: {
+      fullName: grant.user.fullName,
+      roleLabel: grant.roleLabel,
+      scopeLabel: grant.scopeLabel,
+      link: new URL("/", c.deps.settings.appBaseUrl).toString(),
+    },
   });
 }
 

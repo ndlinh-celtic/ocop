@@ -39,7 +39,8 @@ export default async function GradingProgressPage() {
         <>
           <section className="rounded-lg border bg-surface p-4 shadow-card" aria-label="Tổng hợp tiến độ">
             <p className="text-sm">
-              <b>{confirmed}</b> / {graders} phiếu đã xác nhận · <b>{rows.filter((r) => r.state === "member_confirmed").length}</b> / {rows.length} hồ sơ Sẵn sàng chốt
+              <b>{confirmed}</b> / {graders} phiếu đã xác nhận · <b>{rows.filter((r) => r.state === "member_confirmed").length}</b> / {rows.length} hồ sơ Sẵn
+              sàng chốt
             </p>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
               <div className="h-full bg-brand" style={{ width: `${graders === 0 ? 0 : Math.round((confirmed / graders) * 100)}%` }} />

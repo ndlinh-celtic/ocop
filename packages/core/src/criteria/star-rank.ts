@@ -74,7 +74,12 @@ export function averageScores(sheets: readonly CriterionScores[]): Record<string
 
 export function rankStars({ set, thresholds, scores }: StarRankInput): StarRank {
   const parts = set.parts.map((part) => ({ code: part.code, criteria: criteriaOf(part) }));
-  return rankBy(parts, thresholds, (c) => scores[c.code] ?? 0, () => ({}));
+  return rankBy(
+    parts,
+    thresholds,
+    (c) => scores[c.code] ?? 0,
+    () => ({}),
+  );
 }
 
 export interface StoredStarRankInput {
@@ -96,7 +101,12 @@ export interface StoredStarRank extends StarRank {
 /** rankStars for a stored Bộ tiêu chí, with scores keyed by Tiêu chí id (a draft can hold duplicate codes). */
 export function rankStoredSet({ set, thresholds, scores }: StoredStarRankInput): StoredStarRank {
   const parts = set.parts.map((part) => ({ code: part.code, criteria: criteriaOf(part) }));
-  return rankBy(parts, thresholds, (c) => scores.get(c.id) ?? 0, (c) => ({ criterionId: c.id }));
+  return rankBy(
+    parts,
+    thresholds,
+    (c) => scores.get(c.id) ?? 0,
+    (c) => ({ criterionId: c.id }),
+  );
 }
 
 function rankBy<C extends Criterion, K extends object>(

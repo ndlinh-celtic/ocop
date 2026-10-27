@@ -12,7 +12,9 @@ const PAGE = "/quan-tri/mo-khoa-sau-chot";
 const fileInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });
 
 /** The văn bản yêu cầu of the Hội đồng (PDF): a pre-signed upload, quarantined until scanned. */
-export async function requestUnlockFileUploadAction(input: z.infer<typeof fileInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestUnlockFileUploadAction(
+  input: z.infer<typeof fileInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const actor = await requireActor();
   try {
     return await app().core.files.requestUpload(actor, { ...fileInput.parse(input), purpose: "unlock_request" });

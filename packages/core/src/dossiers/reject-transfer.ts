@@ -5,7 +5,13 @@ import { DomainError } from "../shared/errors";
 import { isUuid } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { lockDossier } from "./edit";
-import { PRELIMINARY_REJECTION_REASON_LABEL, PRELIMINARY_REJECTION_REASONS, type Dossier, type PreliminaryRejectionReason, type RejectionGround } from "./model";
+import {
+  PRELIMINARY_REJECTION_REASON_LABEL,
+  PRELIMINARY_REJECTION_REASONS,
+  type Dossier,
+  type PreliminaryRejectionReason,
+  type RejectionGround,
+} from "./model";
 import { transition } from "./transition";
 
 /*
@@ -46,7 +52,8 @@ async function groundOf(tx: Tx, dossier: Dossier, input: RejectInput): Promise<R
     }
     return { kind: "exclusion_condition", exclusionConditionId: found.row.id, text: found.row.description, explanation };
   }
-  if (!(PRELIMINARY_REJECTION_REASONS as readonly unknown[]).includes(reason)) throw new DomainError("invalid_rejection_reason", "Lý do loại sơ bộ không hợp lệ");
+  if (!(PRELIMINARY_REJECTION_REASONS as readonly unknown[]).includes(reason))
+    throw new DomainError("invalid_rejection_reason", "Lý do loại sơ bộ không hợp lệ");
   if (explanation === "") throw new DomainError("explanation_required", "Nhập diễn giải cho lý do loại");
   const reasonCode = reason as PreliminaryRejectionReason;
   return { kind: "preliminary_reason", reasonCode, text: PRELIMINARY_REJECTION_REASON_LABEL[reasonCode], explanation };

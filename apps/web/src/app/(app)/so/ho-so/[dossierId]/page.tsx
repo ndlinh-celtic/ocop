@@ -59,7 +59,8 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
           {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
         </h1>
         <p className="text-sm text-text-2">
-          Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
+          Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí{" "}
+          {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
           {dossier.criteriaSet.name}, căn cứ {dossier.criteriaVersion.legalBasis}
         </p>
       </div>
@@ -80,7 +81,11 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
             <SubmissionDocuments dossierId={dossier.id} submissionNumber={latest.number} />
           </>
         )}
-        {wardReport.signed ? <SignedWardReport dossierId={dossier.id} signed={wardReport.signed} /> : <p className="text-text-3">Chưa có Báo cáo đánh giá cấp xã đã ký.</p>}
+        {wardReport.signed ? (
+          <SignedWardReport dossierId={dossier.id} signed={wardReport.signed} />
+        ) : (
+          <p className="text-text-3">Chưa có Báo cáo đánh giá cấp xã đã ký.</p>
+        )}
         <div>
           <p className="font-medium">Checklist sơ bộ</p>
           {checklist.items.length === 0 ? (

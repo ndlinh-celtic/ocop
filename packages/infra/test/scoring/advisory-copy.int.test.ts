@@ -19,9 +19,17 @@ const issued = (members = [m(0), m(1), m(2)], points?: Record<string, number>) =
 
 type Pick = { dossierId: string; version: number; advisoryVersionId?: string };
 const copy = (actor: UserActor, picks: Pick[], criteria: "all" | string[] = "all", recipients: "all" | string[] = "all") =>
-  w.t.app.scoring.copyAdvisory(actor, { dossiers: picks.map((p) => ({ dossierId: p.dossierId, expectedVersion: p.version, advisoryVersionId: p.advisoryVersionId })), criteria, recipients });
+  w.t.app.scoring.copyAdvisory(actor, {
+    dossiers: picks.map((p) => ({ dossierId: p.dossierId, expectedVersion: p.version, advisoryVersionId: p.advisoryVersionId })),
+    criteria,
+    recipients,
+  });
 const preview = (actor: UserActor, picks: Pick[], criteria: "all" | string[] = "all", recipients: "all" | string[] = "all") =>
-  w.t.app.scoring.previewAdvisoryCopy(actor, { dossiers: picks.map((p) => ({ dossierId: p.dossierId, advisoryVersionId: p.advisoryVersionId })), criteria, recipients });
+  w.t.app.scoring.previewAdvisoryCopy(actor, {
+    dossiers: picks.map((p) => ({ dossierId: p.dossierId, advisoryVersionId: p.advisoryVersionId })),
+    criteria,
+    recipients,
+  });
 const sheetOf = async (member: UserActor, dossierId: string) => {
   const view = await w.t.app.scoring.readDossierScores(member, { dossierId, ownSheet: true });
   if (view.kind !== "own_sheet") throw new Error(`no own sheet: ${view.kind}`);
@@ -33,16 +41,34 @@ describe("L12 TM-08 the first sao chép (stories 65, 71, 74, 81)", () => {
   it("fills every thành viên chấm's Phiếu chấm from phiên bản 1 and moves the hồ sơ to Thành viên xem xét", async () => {
     const d = await issued();
     await expect(
-      w.t.app.scoring.saveScoreSheet(m(0), { dossierId: d.dossierId, expectedVersion: 1, lines: [{ criterionId: w.criterionId("2.1"), levelId: w.level("2.1:25"), comment: "", evidenceFileIds: [] }] }),
+      w.t.app.scoring.saveScoreSheet(m(0), {
+        dossierId: d.dossierId,
+        expectedVersion: 1,
+        lines: [{ criterionId: w.criterionId("2.1"), levelId: w.level("2.1:25"), comment: "", evidenceFileIds: [] }],
+      }),
     ).rejects.toMatchObject({ code: "invalid_state" });
 
     const result = await copy(leader(), [d]);
 
     expect(result.dossiers).toEqual([
-      expect.objectContaining({ dossierId: d.dossierId, version: d.version + 1, state: "member_review", advisoryVersion: { id: expect.any(String), number: 1 }, written: 9, skipped: [] }),
+      expect.objectContaining({
+        dossierId: d.dossierId,
+        version: d.version + 1,
+        state: "member_review",
+        advisoryVersion: { id: expect.any(String), number: 1 },
+        written: 9,
+        skipped: [],
+      }),
     ]);
     const lines = byCode(await sheetOf(m(1), d.dossierId));
-    expect(lines["1.1"]).toMatchObject({ levelId: w.level("1.1:40"), points: 40, comment: "Căn cứ 1.1", source: "advisory", edited: false, advisory: { number: 1, levelId: w.level("1.1:40"), points: 40 } });
+    expect(lines["1.1"]).toMatchObject({
+      levelId: w.level("1.1:40"),
+      points: 40,
+      comment: "Căn cứ 1.1",
+      source: "advisory",
+      edited: false,
+      advisory: { number: 1, levelId: w.level("1.1:40"), points: 40 },
+    });
     expect(lines["3.1"]).toMatchObject({ levelId: w.level("3.1:35"), source: "advisory", advisory: { number: 1 } });
     expect((await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).state).toBe("member_review");
   });
@@ -58,14 +84,28 @@ async function reissue(d: { dossierId: string }, points: Record<string, number>,
     evidenceFileIds: [],
     evidenceAssessment: c.line.evidenceAssessment,
   }));
-  const r = await w.t.app.scoring.reissueAdvisoryReport(leader(), { dossierId: d.dossierId, expectedVersion: ws.dossierVersion, reason, lines, summary: ws.summary, notes: ws.notes, attachmentFileIds: [] });
+  const r = await w.t.app.scoring.reissueAdvisoryReport(leader(), {
+    dossierId: d.dossierId,
+    expectedVersion: ws.dossierVersion,
+    reason,
+    lines,
+    summary: ws.summary,
+    notes: ws.notes,
+    attachmentFileIds: [],
+  });
   return { dossierId: d.dossierId, version: r.version };
 }
 const save = (member: UserActor, dossierId: string, expectedVersion: number, lines: { code: string; points: number; adjustReason?: string }[]) =>
   w.t.app.scoring.saveScoreSheet(member, {
     dossierId,
     expectedVersion,
-    lines: lines.map((l) => ({ criterionId: w.criterionId(l.code), levelId: w.level(`${l.code}:${l.points}`), comment: "", evidenceFileIds: [], adjustReason: l.adjustReason })),
+    lines: lines.map((l) => ({
+      criterionId: w.criterionId(l.code),
+      levelId: w.level(`${l.code}:${l.points}`),
+      comment: "",
+      evidenceFileIds: [],
+      adjustReason: l.adjustReason,
+    })),
   });
 const dossierVersion = async (dossierId: string) => (await w.t.app.dossiers.get(w.A.secretary, { dossierId })).version;
 
@@ -121,7 +161,8 @@ describe("L12 TM-08 phạm vi, người nhận, nhiều hồ sơ (stories 66 to 
     expect(byCode(await sheetOf(m(2), d2.dossierId))["1.1"]).toMatchObject({ levelId: w.level("1.1:20"), advisory: { number: 2 } });
 
     // Phiên bản 1 named explicitly writes its Mức điểm back over the dòng nobody edited.
-    const [again] = (await copy(leader(), [{ dossierId: d2.dossierId, version: await dossierVersion(d2.dossierId), advisoryVersionId: versions[0]!.id }])).dossiers;
+    const [again] = (await copy(leader(), [{ dossierId: d2.dossierId, version: await dossierVersion(d2.dossierId), advisoryVersionId: versions[0]!.id }]))
+      .dossiers;
     expect(again).toMatchObject({ advisoryVersion: { number: 1 }, state: "member_review" });
     expect(byCode(await sheetOf(m(3), d2.dossierId))["1.1"]).toMatchObject({ levelId: w.level("1.1:40"), advisory: { number: 1 } });
   });
@@ -145,7 +186,9 @@ describe("L12 TM-08 phạm vi, người nhận, nhiều hồ sơ (stories 66 to 
     await expect(copy(leader(), [d], "all", [])).rejects.toMatchObject({ code: "recipients_required" });
     await expect(copy(leader(), [d], ["9.9"])).rejects.toMatchObject({ code: "criterion_not_in_set", dossierId: d.dossierId });
     await expect(copy(leader(), [d], "all", [m(3).userId])).rejects.toMatchObject({ code: "recipient_not_assigned" });
-    await expect(copy(leader(), [{ ...d, advisoryVersionId: "01900000-0000-7000-8000-000000000000" }])).rejects.toMatchObject({ code: "advisory_version_not_found" });
+    await expect(copy(leader(), [{ ...d, advisoryVersionId: "01900000-0000-7000-8000-000000000000" }])).rejects.toMatchObject({
+      code: "advisory_version_not_found",
+    });
   });
 });
 
@@ -180,7 +223,12 @@ describe("L12 sao chép lại, Tiêu chí by Tiêu chí (stories 72, 73)", () =>
     expect(result).toEqual(planned.dossiers[0]);
 
     const edited = byCode(await sheetOf(m(0), d.dossierId));
-    expect(edited["1.1"]).toMatchObject({ levelId: w.level("1.1:20"), edited: true, adjustReason: "Thiếu hồ sơ tập huấn", advisory: { number: 1, points: 40 } });
+    expect(edited["1.1"]).toMatchObject({
+      levelId: w.level("1.1:20"),
+      edited: true,
+      adjustReason: "Thiếu hồ sơ tập huấn",
+      advisory: { number: 1, points: 40 },
+    });
     expect(edited["2.1"]).toMatchObject({ levelId: w.level("2.1:0"), edited: false, comment: "Căn cứ mới 2.1", advisory: { number: 2, points: 0 } });
     const confirmed = byCode(await sheetOf(m(1), d.dossierId));
     expect([confirmed["1.1"]!.points, confirmed["2.1"]!.points]).toEqual([40, 25]);
@@ -222,12 +270,20 @@ describe("L09 a thành viên chấm added after the first sao chép waits for th
   it("refuses lưu and xác nhận on the Phiếu chấm trống until a sao chép writes into it, and says it is waiting", async () => {
     const d = await issued([m(0), m(1)]);
     await copy(leader(), [d]);
-    await w.t.app.councils.addAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await dossierVersion(d.dossierId), userId: m(3).userId, kind: "member", reason: "Bổ sung thành viên" });
+    await w.t.app.councils.addAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: await dossierVersion(d.dossierId),
+      userId: m(3).userId,
+      kind: "member",
+      reason: "Bổ sung thành viên",
+    });
 
     const waiting = await sheetOf(m(3), d.dossierId);
     expect(waiting.sheet).toMatchObject({ state: "draft", awaitingCopy: true });
     await expect(save(m(3), d.dossierId, waiting.sheet!.version, [{ code: "1.1", points: 40 }])).rejects.toMatchObject({ code: "score_sheet_awaiting_copy" });
-    await expect(w.t.app.scoring.confirmScoreSheet(m(3), { dossierId: d.dossierId, expectedVersion: waiting.sheet!.version })).rejects.toMatchObject({ code: "score_sheet_awaiting_copy" });
+    await expect(w.t.app.scoring.confirmScoreSheet(m(3), { dossierId: d.dossierId, expectedVersion: waiting.sheet!.version })).rejects.toMatchObject({
+      code: "score_sheet_awaiting_copy",
+    });
     // The others are not held up.
     expect((await sheetOf(m(0), d.dossierId)).sheet).toMatchObject({ awaitingCopy: false });
 
@@ -253,8 +309,12 @@ describe("L12 audit, outbox and thông báo (stories 75, 76)", () => {
       after: { state: "member_review" },
       metadata: { advisoryVersionNumber: 1, criteria: ["1.1"], recipients: [{ userId: m(0).userId, sheet: "new", written: ["1.1"], edited: [] }], written: 1 },
     });
-    const outbox = await w.db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.advisory_copied' AND payload->>'dossierId' = $1", [d.dossierId]);
-    expect(outbox.rows).toEqual([{ payload: expect.objectContaining({ from: "advisory_report_issued", to: "member_review", recipientUserIds: [m(0).userId] }) }]);
+    const outbox = await w.db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.advisory_copied' AND payload->>'dossierId' = $1", [
+      d.dossierId,
+    ]);
+    expect(outbox.rows).toEqual([
+      { payload: expect.objectContaining({ from: "advisory_report_issued", to: "member_review", recipientUserIds: [m(0).userId] }) },
+    ]);
     const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
     expect(timeline.map((e) => e.action)).not.toContain("dossier.advisory_copy");
 
@@ -286,7 +346,11 @@ describe("L12 đợt chấm trực tiếp has no sao chép (story 77)", () => {
     const advisor = A.advisors[0]!;
     const s = await f.provinceReceived(direct.ward, direct.province, direct.setId);
     const [drafted] = (
-      await t.app.councils.editAssignments(A.secretary, { dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }], members: [A.members[0]!.userId, A.members[1]!.userId], advisors: [advisor.userId] })
+      await t.app.councils.editAssignments(A.secretary, {
+        dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
+        members: [A.members[0]!.userId, A.members[1]!.userId],
+        advisors: [advisor.userId],
+      })
     ).dossiers;
     // No use case puts a Tổ tư vấn in force in chấm trực tiếp today (Giao chấm refuses it); the rule must hold if one ever does.
     await direct.db.admin.query("UPDATE council.assignment SET effective_at = now() WHERE dossier_id = $1 AND kind = 'advisory'", [s.dossierId]);

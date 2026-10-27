@@ -52,7 +52,9 @@ export interface ScoringWorld {
  * One database for a describe: Hội đồng A (4 thành viên, `advisors` Tổ tư vấn, default 1) and B (2, 1); a đợt Đang nhận nộp on a
  * three-Tiêu chí Bộ tiêu chí, gán to A, with `gradingMode` (chấm trực tiếp), `minGraders` (2) and `fiveStarMinimum` (no).
  */
-export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean; advisors?: number; fiveStarMinimum?: boolean } = {}): ScoringWorld {
+export function scoringWorld(
+  opts: { gradingMode?: GradingMode; minGraders?: number; totpRequired?: boolean; advisors?: number; fiveStarMinimum?: boolean } = {},
+): ScoringWorld {
   const w = {} as ScoringWorld;
   beforeAll(async () => {
     w.db = await createTestDatabase();
@@ -63,7 +65,15 @@ export function scoringWorld(opts: { gradingMode?: GradingMode; minGraders?: num
     w.f = fixtures(w.t, () => wardId);
     w.t.clock.set(START);
     const admin = await w.f.admin();
-    const set = (bo: number, ten_bo: string) => ({ bo, ten_bo, san_pham: "Thực phẩm", nhom: "Thực phẩm tươi sống", ghi_chu_dau_phieu: "", tong_diem: 100, tieu_chi: criteriaOf(opts.fiveStarMinimum ?? false) });
+    const set = (bo: number, ten_bo: string) => ({
+      bo,
+      ten_bo,
+      san_pham: "Thực phẩm",
+      nhom: "Thực phẩm tươi sống",
+      ghi_chu_dau_phieu: "",
+      tong_diem: 100,
+      tieu_chi: criteriaOf(opts.fiveStarMinimum ?? false),
+    });
     const content = JSON.stringify({ van_ban: "26/2026/QĐ-TTg", ngay_ban_hanh: "2026-01-02", hieu_luc: "2026-02-01", bo_tieu_chi: [set(1, "Rau củ quả")] });
     const { versionId } = await w.t.app.criteria.importVersion(admin, { fileName: "tieu-chi.json", content });
     await w.t.app.criteria.publishVersion(admin, { versionId });

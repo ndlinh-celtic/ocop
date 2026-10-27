@@ -41,7 +41,10 @@ async function activeHolders(tx: Tx, role: Role, scopeType: ScopeType, scopeId: 
 
 /** The active Chủ tịch and Thư ký of a Hội đồng, once each. */
 async function councilLeaders(tx: Tx, councilId: string, now: Date): Promise<User[]> {
-  const users = [...(await activeHolders(tx, "council_chair", "council", councilId, now)), ...(await activeHolders(tx, "council_secretary", "council", councilId, now))];
+  const users = [
+    ...(await activeHolders(tx, "council_chair", "council", councilId, now)),
+    ...(await activeHolders(tx, "council_secretary", "council", councilId, now)),
+  ];
   return [...new Map(users.map((u) => [u.id, u])).values()];
 }
 
@@ -494,7 +497,12 @@ export async function emailDossierEvent(c: ConsumerContext): Promise<void> {
       await sendEmailOnce(c, {
         to: user.email,
         template: "dossier_notice",
-        data: { fullName: user.fullName, subject: notice.emailSubject, line: notice.emailLine, link: new URL(notice.link, c.deps.settings.appBaseUrl).toString() },
+        data: {
+          fullName: user.fullName,
+          subject: notice.emailSubject,
+          line: notice.emailLine,
+          link: new URL(notice.link, c.deps.settings.appBaseUrl).toString(),
+        },
       });
     }
   }

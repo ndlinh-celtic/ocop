@@ -24,7 +24,17 @@ function Suggestion({ checklist }: { checklist: DossierChecklist }) {
  * L06 XA-04 (stories 61, 62): each item of the đợt's Checklist sơ bộ as Đạt, Không đạt or Cần xác minh,
  * with nhận xét (required for Cần xác minh), and the system's suggestion. Read-only when `editable` is false.
  */
-export function ChecklistForm({ dossierId, version, checklist, editable }: { dossierId: string; version: number; checklist: DossierChecklist; editable: boolean }) {
+export function ChecklistForm({
+  dossierId,
+  version,
+  checklist,
+  editable,
+}: {
+  dossierId: string;
+  version: number;
+  checklist: DossierChecklist;
+  editable: boolean;
+}) {
   const [state, action, pending] = useActionState<ChecklistFormState, FormData>(assessChecklistAction.bind(null, dossierId, version), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
@@ -64,7 +74,11 @@ export function ChecklistForm({ dossierId, version, checklist, editable }: { dos
         <Suggestion checklist={checklist} />
         {editable && (
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={pending} className="flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={pending}
+              className="flex w-fit items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-ink disabled:opacity-60"
+            >
               <ClipboardCheck className="size-4" aria-hidden /> {pending ? "Đang lưu…" : "Lưu Checklist sơ bộ"}
             </button>
             {state.error && (

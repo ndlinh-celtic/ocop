@@ -95,17 +95,29 @@ export function CouncilForm({ council }: { council?: CouncilFormValues }) {
           Tệp quyết định
           <input name="file" type="file" accept={accept} required={!council} className="text-sm" />
           <span className="text-xs font-normal text-text-3">
-            {council?.decisionFileName ? `Đang lưu: ${council.decisionFileName}. Chọn tệp khác để thay.` : "PDF hoặc ảnh chụp; tệp được quét mã độc trước khi dùng"}
+            {council?.decisionFileName
+              ? `Đang lưu: ${council.decisionFileName}. Chọn tệp khác để thay.`
+              : "PDF hoặc ảnh chụp; tệp được quét mã độc trước khi dùng"}
           </span>
         </label>
       </div>
       {progress !== null && (
-        <div role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} className="h-2 overflow-hidden rounded-full bg-surface-3">
+        <div
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="h-2 overflow-hidden rounded-full bg-surface-3"
+        >
           <div className="h-full bg-brand transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       )}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={progress !== null} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={progress !== null}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60"
+        >
           <Upload className="size-4" aria-hidden />
           {council ? "Lưu thay đổi" : "Ghi nhận hội đồng"}
         </button>

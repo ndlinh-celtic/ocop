@@ -6,7 +6,14 @@ import { requireActor } from "./session";
 
 export type { ReauthNeeded } from "./with-reauth";
 
-const input = z.object({ code: z.string().trim().regex(/^\d{6}$/).optional(), password: z.string().min(1).optional() });
+const input = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/)
+    .optional(),
+  password: z.string().min(1).optional(),
+});
 
 export async function reauthAction(raw: { code?: string; password?: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = input.safeParse(raw);

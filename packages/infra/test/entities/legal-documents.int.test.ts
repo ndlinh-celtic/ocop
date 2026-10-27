@@ -114,7 +114,14 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
     expect(standing.verified).toBe(true);
     expect(stateOf(standing, "business_registration")).toMatchObject({ required: true, state: "valid" });
     expect(standing.documents).toEqual([
-      expect.objectContaining({ id: documentId, typeCode: "business_registration", documentNumber: "0311111111", issuedOn: "2024-03-01", validUntil: null, file: { fileName: "Giấy phép.pdf", status: "clean" } }),
+      expect.objectContaining({
+        id: documentId,
+        typeCode: "business_registration",
+        documentNumber: "0311111111",
+        issuedOn: "2024-03-01",
+        validUntil: null,
+        file: { fileName: "Giấy phép.pdf", status: "clean" },
+      }),
     ]);
   });
 
@@ -136,7 +143,13 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
   it("a blocked file does not count, and cannot be attached once the scan has blocked it", async () => {
     const a = await owner();
     const pending = await uploadPdf(a, Buffer.from(EICAR), false);
-    await t.app.entities.addLegalDocument(a, { entityId: idOf(a), typeCode: "business_registration", fileId: pending, issuedOn: "2025-01-01", validUntil: null });
+    await t.app.entities.addLegalDocument(a, {
+      entityId: idOf(a),
+      typeCode: "business_registration",
+      fileId: pending,
+      issuedOn: "2025-01-01",
+      validUntil: null,
+    });
     await t.drainJobs();
     const standing = await t.app.entities.getLegalStanding(a, { entityId: idOf(a) });
     expect(standing.verified).toBe(false);
@@ -156,7 +169,9 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
     expect((await t.app.entities.getLegalStanding(a, { entityId: idOf(a) })).verified).toBe(true);
 
     await db.admin.query("UPDATE entity.legal_document_type SET required_for = ARRAY['enterprise'] WHERE code = 'food_safety'");
-    await db.admin.query("INSERT INTO entity.legal_document_type (code, name, required_for, sort_order) VALUES ('trade_mark', 'Giấy chứng nhận nhãn hiệu', '{}', 9)");
+    await db.admin.query(
+      "INSERT INTO entity.legal_document_type (code, name, required_for, sort_order) VALUES ('trade_mark', 'Giấy chứng nhận nhãn hiệu', '{}', 9)",
+    );
     try {
       const a2 = await t.app.entities.getLegalStanding(a, { entityId: idOf(a) });
       expect(a2.verified).toBe(false);
@@ -191,7 +206,14 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
   it("refuses bad dates, a Loại not configured, and a file that is not the Chủ thể's own upload", async () => {
     const a = await owner();
     const b = await owner();
-    const input = (fileId: string, over: Record<string, unknown> = {}) => ({ entityId: idOf(a), typeCode: "business_registration", fileId, issuedOn: "2025-01-01", validUntil: null, ...over });
+    const input = (fileId: string, over: Record<string, unknown> = {}) => ({
+      entityId: idOf(a),
+      typeCode: "business_registration",
+      fileId,
+      issuedOn: "2025-01-01",
+      validUntil: null,
+      ...over,
+    });
     const fileId = await uploadPdf(a);
     await expect(t.app.entities.addLegalDocument(a, input(fileId, { issuedOn: "2026-10-20" }))).rejects.toMatchObject({ code: "issued_in_future" });
     await expect(t.app.entities.addLegalDocument(a, input(fileId, { validUntil: "2024-12-31" }))).rejects.toMatchObject({ code: "valid_until_before_issue" });
@@ -213,7 +235,9 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
       t.app.entities.addLegalDocument(b, { entityId: idOf(a), typeCode: "business_registration", fileId, issuedOn: "2025-01-01", validUntil: null }),
     ).rejects.toMatchObject({ code: "not_found" });
     await expect(t.app.entities.getLegalStanding(admin, { entityId: idOf(a) })).rejects.toMatchObject({ code: "forbidden" });
-    await expect(t.app.files.requestUpload(admin, { purpose: "legal_document", fileName: "a.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({
+    await expect(
+      t.app.files.requestUpload(admin, { purpose: "legal_document", fileName: "a.pdf", contentType: "application/pdf", size: 10 }),
+    ).rejects.toMatchObject({
       code: "forbidden",
     });
     await expect(t.app.files.requestUpload(a, { fileName: "a.pdf", contentType: "application/pdf", size: 10 })).rejects.toMatchObject({ code: "forbidden" });
@@ -232,8 +256,15 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
         ["entity.legal_document.replaced", second],
       ]),
     );
-    expect(audits.find((r) => r.action === "entity.legal_document.replaced")).toMatchObject({ actorUserId: a.userId, actorRole: "entity_owner", metadata: { replacesId: first } });
-    const events = await db.admin.query("SELECT type, payload FROM platform.outbox WHERE payload->>'entityId' = $1 AND type LIKE 'entity.legal_document.%' ORDER BY type", [idOf(a)]);
+    expect(audits.find((r) => r.action === "entity.legal_document.replaced")).toMatchObject({
+      actorUserId: a.userId,
+      actorRole: "entity_owner",
+      metadata: { replacesId: first },
+    });
+    const events = await db.admin.query(
+      "SELECT type, payload FROM platform.outbox WHERE payload->>'entityId' = $1 AND type LIKE 'entity.legal_document.%' ORDER BY type",
+      [idOf(a)],
+    );
     expect(events.rows).toEqual([
       { type: "entity.legal_document.added", payload: { entityId: idOf(a), documentId: first, replacesId: null } },
       { type: "entity.legal_document.replaced", payload: { entityId: idOf(a), documentId: second, replacesId: first } },
@@ -246,7 +277,9 @@ describe("L01 CT-02 hồ sơ pháp lý and Đã xác thực (stories 5 to 8)", (
     const { documentId: second } = await addDocument(a, "business_registration", { replacesId: first });
     await expect(db.app.query("UPDATE entity.legal_document SET valid_until = '2099-01-01' WHERE id = $1", [second])).rejects.toThrow(/immutable/);
     await expect(db.app.query("DELETE FROM entity.legal_document WHERE id = $1", [first])).rejects.toThrow(/permission denied|cannot be deleted/);
-    await expect(db.app.query("UPDATE entity.legal_document SET replaced_by = $2, replaced_at = now() WHERE id = $1", [first, first])).rejects.toThrow(/immutable/);
+    await expect(db.app.query("UPDATE entity.legal_document SET replaced_by = $2, replaced_at = now() WHERE id = $1", [first, first])).rejects.toThrow(
+      /immutable/,
+    );
     await expect(db.app.query("UPDATE entity.legal_document SET replaced_by = NULL, replaced_at = NULL WHERE id = $1", [first])).rejects.toThrow(/immutable/);
   });
 });

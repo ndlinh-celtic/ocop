@@ -36,15 +36,36 @@ export function Uploader({ accept }: { accept: string }) {
         <Upload className="size-6 text-brand" aria-hidden />
         <span className="font-medium">Chọn tệp để tải lên</span>
         <span className="text-xs text-text-3">PDF, ảnh, Word, Excel, video MP4</span>
-        <input type="file" accept={accept} className="sr-only" onChange={(e) => void onFile(e.target.files?.[0])} disabled={progress !== null} data-testid="file-input" />
+        <input
+          type="file"
+          accept={accept}
+          className="sr-only"
+          onChange={(e) => void onFile(e.target.files?.[0])}
+          disabled={progress !== null}
+          data-testid="file-input"
+        />
       </label>
       {progress !== null && (
-        <div role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} className="h-2 overflow-hidden rounded-full bg-surface-3">
+        <div
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="h-2 overflow-hidden rounded-full bg-surface-3"
+        >
           <div className="h-full bg-brand transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       )}
-      {message.error && <p role="alert" className="text-sm text-danger">{message.error}</p>}
-      {message.ok && <p role="status" className="text-sm text-brand">{message.ok}</p>}
+      {message.error && (
+        <p role="alert" className="text-sm text-danger">
+          {message.error}
+        </p>
+      )}
+      {message.ok && (
+        <p role="status" className="text-sm text-brand">
+          {message.ok}
+        </p>
+      )}
     </div>
   );
 }

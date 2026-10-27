@@ -87,7 +87,12 @@ describe("Permission matrix: Phiên họp and chốt điểm (#60)", () => {
   const confirmAll = async (actor: UserActor, dossierId: string) => {
     const view = await w.t.app.scoring.readDossierScores(actor, { dossierId });
     if (view.kind !== "own_sheet") throw new Error(view.kind);
-    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), comment: "", evidenceFileIds: [] }));
+    const lines = ["1.1:40", "2.1:25", "3.1:35"].map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      comment: "",
+      evidenceFileIds: [],
+    }));
     const { version } = await w.t.app.scoring.saveScoreSheet(actor, { dossierId, expectedVersion: view.sheet!.version, lines });
     await w.t.app.scoring.confirmScoreSheet(actor, { dossierId, expectedVersion: version });
   };

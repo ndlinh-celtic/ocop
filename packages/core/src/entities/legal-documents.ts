@@ -153,7 +153,14 @@ export function addLegalDocument(deps: CoreDeps) {
           action,
           targetType: "entity",
           targetId: entity.id,
-          after: { documentId: doc.id, typeCode: doc.typeCode, documentNumber: doc.documentNumber, issuedOn: doc.issuedOn, validUntil: doc.validUntil, fileId: doc.fileId },
+          after: {
+            documentId: doc.id,
+            typeCode: doc.typeCode,
+            documentNumber: doc.documentNumber,
+            issuedOn: doc.issuedOn,
+            validUntil: doc.validUntil,
+            fileId: doc.fileId,
+          },
           metadata: replaced ? { replacesId: replaced.id } : {},
         }),
       );

@@ -217,6 +217,8 @@ describe("Mã hồ sơ (story 19, SO-03)", () => {
       await expect(db.admin.query(`UPDATE dossier.dossier SET ${set}, version = version + 1 WHERE id = $1`, [up.dossierId])).rejects.toThrow(/fixed/);
     }
     // The Tiếp nhận of the lượt itself may still go back to null on a trả về.
-    await expect(db.app.query("UPDATE dossier.dossier SET province_received_at = NULL, province_received_by = NULL, version = version + 1 WHERE id = $1", [up.dossierId])).resolves.toBeDefined();
+    await expect(
+      db.app.query("UPDATE dossier.dossier SET province_received_at = NULL, province_received_by = NULL, version = version + 1 WHERE id = $1", [up.dossierId]),
+    ).resolves.toBeDefined();
   });
 });

@@ -18,7 +18,11 @@ export function CouncilPicker({
   if (councils.length === 0) {
     return (
       <p className="text-sm text-text-2">
-        Chưa có hội đồng nào. <Link href="/so/hoi-dong" className="text-brand underline">Ghi nhận hội đồng</Link> trước.
+        Chưa có hội đồng nào.{" "}
+        <Link href="/so/hoi-dong" className="text-brand underline">
+          Ghi nhận hội đồng
+        </Link>{" "}
+        trước.
       </p>
     );
   }

@@ -39,7 +39,13 @@ export function updateEntity(deps: CoreDeps) {
       await tx.entities.update(after);
 
       await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), now, { action: "entity.updated", targetType: "entity", targetId: after.id, before: detailsOf(before), after: detailsOf(after) }),
+        auditEntry(actor, deps.ids.next(), now, {
+          action: "entity.updated",
+          targetType: "entity",
+          targetId: after.id,
+          before: detailsOf(before),
+          after: detailsOf(after),
+        }),
       );
       await emit(deps, tx, { type: "entity.updated", payload: { entityId: after.id } });
       if (after.wardId !== before.wardId) {

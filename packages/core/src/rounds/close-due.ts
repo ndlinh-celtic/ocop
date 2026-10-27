@@ -11,8 +11,7 @@ import type { Round } from "./model";
  * longer matches, so a second run changes nothing and emits nothing. A system use case: no `authorize`.
  */
 export function closeDueSubmissions(deps: CoreDeps) {
-  return (actor: SystemActor): Promise<{ closed: string[] }> =>
-    deps.uow.run(async (tx) => ({ closed: await closeDueInTx(deps, tx, actor, deps.clock.now()) }));
+  return (actor: SystemActor): Promise<{ closed: string[] }> => deps.uow.run(async (tx) => ({ closed: await closeDueInTx(deps, tx, actor, deps.clock.now()) }));
 }
 
 /** The job's Name, recorded as the actor of a close, whether the job or openRound ran it. */

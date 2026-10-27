@@ -12,7 +12,19 @@ const WORD = "CHỐT";
  * S43 hộp thoại chốt (L15 HD-08, story 116): a danger dialog that says the points lock, shows the Hạng sao gợi ý,
  * asks to type CHỐT, then Xác thực lại when due. Disabled, with the reason, while the hồ sơ is in no open Phiên họp.
  */
-export function FinalizeButton({ dossierId, version, star, total, blockedReason }: { dossierId: string; version: number; star: number; total: string; blockedReason: string | null }) {
+export function FinalizeButton({
+  dossierId,
+  version,
+  star,
+  total,
+  blockedReason,
+}: {
+  dossierId: string;
+  version: number;
+  star: number;
+  total: string;
+  blockedReason: string | null;
+}) {
   const { run, dialog } = useReauth();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -63,7 +75,13 @@ export function FinalizeButton({ dossierId, version, star, total, blockedReason 
             </p>
             <label className="mb-4 flex flex-col gap-1 text-sm">
               Gõ <b>{WORD}</b> để xác nhận
-              <input value={typed} onChange={(e) => setTyped(e.target.value)} className="rounded-md border border-line-strong px-3 py-2" autoComplete="off" data-testid="finalize-word" />
+              <input
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                className="rounded-md border border-line-strong px-3 py-2"
+                autoComplete="off"
+                data-testid="finalize-word"
+              />
             </label>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setConfirming(false)} className="rounded-md border border-line-strong px-4 py-2">

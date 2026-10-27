@@ -40,7 +40,11 @@ export function MinutesUploader({ meetingId, count }: { meetingId: string; count
         <span className="font-medium">{count > 0 ? "Tải lên bản đã ký mới" : "Tải lên bản đã ký"} (PDF, ký số ngoài hệ thống)</span>
         <input name="file" type="file" accept="application/pdf,.pdf" required className="text-sm" />
       </label>
-      <button type="submit" disabled={progress !== null} className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={progress !== null}
+        className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 font-semibold disabled:opacity-60"
+      >
         <Upload className="size-4" aria-hidden /> {progress !== null ? `Đang tải ${Math.round(progress * 100)}%` : "Tải lên"}
       </button>
       {error && (

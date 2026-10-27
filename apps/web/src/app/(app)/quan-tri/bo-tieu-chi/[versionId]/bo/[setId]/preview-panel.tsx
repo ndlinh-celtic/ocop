@@ -71,7 +71,9 @@ export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPa
       <summary className="cursor-pointer px-4 py-3 font-medium">Chấm thử bản nháp</summary>
       <div className="flex flex-col gap-4 border-t px-4 py-4 lg:flex-row lg:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <p className="text-sm text-text-2">Chọn một mức cho từng tiêu chí để xem tổng điểm và Hạng sao. Tiêu chí chưa chọn tính 0 điểm. Không có gì được lưu.</p>
+          <p className="text-sm text-text-2">
+            Chọn một mức cho từng tiêu chí để xem tổng điểm và Hạng sao. Tiêu chí chưa chọn tính 0 điểm. Không có gì được lưu.
+          </p>
           {parts.map((part) => (
             <fieldset key={part.code} className="flex flex-col gap-2">
               <legend className="mb-1 text-sm font-semibold">
@@ -86,11 +88,7 @@ export function PreviewPanel({ setId, parts }: { setId: string; parts: PreviewPa
                   >
                     <span className="min-w-0">
                       {c.code} {c.name}
-                      {blocks && (
-                        <span className="ml-2 text-xs text-warning">
-                          chặn {blocks.map((b) => `${b.star} sao (cần ${b.required})`).join(", ")}
-                        </span>
-                      )}
+                      {blocks && <span className="ml-2 text-xs text-warning">chặn {blocks.map((b) => `${b.star} sao (cần ${b.required})`).join(", ")}</span>}
                     </span>
                     <select
                       value={chosen[c.id] ?? ""}

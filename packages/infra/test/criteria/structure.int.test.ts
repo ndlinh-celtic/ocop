@@ -187,7 +187,9 @@ describe("L19 AD-03 thêm nút vào bản nháp", () => {
     await expect(add({ node: "part", parent: { node: "set", id: other.ids.set }, values: { code: "B", name: "PHẦN B", points: 1 } })).rejects.toMatchObject({
       code: "not_found",
     });
-    await expect(add({ node: "section", parent: { node: "set" as "part", id: one.ids.set }, values: { code: "2", name: "MỤC 2", points: 1 } })).rejects.toMatchObject({
+    await expect(
+      add({ node: "section", parent: { node: "set" as "part", id: one.ids.set }, values: { code: "2", name: "MỤC 2", points: 1 } }),
+    ).rejects.toMatchObject({
       code: "invalid_value",
     });
     await expect(add({ node: "part", parent: { node: "set", id: one.ids.set }, values: { code: "B", name: " ", points: 1 } })).rejects.toMatchObject({
@@ -225,7 +227,9 @@ describe("L19 AD-03 xóa nút", () => {
   it("refuses a node of another version as not found", async () => {
     const one = await draft();
     const other = await draft();
-    await expect(t.app.criteria.removeNode(one.a, { versionId: one.versionId, node: "criterion", id: other.ids.criterion })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.criteria.removeNode(one.a, { versionId: one.versionId, node: "criterion", id: other.ids.criterion })).rejects.toMatchObject({
+      code: "not_found",
+    });
     expect(await count("criterion", other.versionId)).toBe(1);
   });
 });
@@ -234,7 +238,10 @@ describe("L19 AD-03 sắp xếp lại nút", () => {
   it("moves a node up and down among its siblings; Nhóm tiêu chí and Tiêu chí in a Mục share one order", async () => {
     const { a, versionId, ids } = await draft();
     const add = (code: string) =>
-      t.app.criteria.addNode(a, { versionId, addition: { node: "criterion", parent: { node: "section", id: ids.section }, values: { code, name: `Tiêu chí ${code}`, maxPoints: 0 } } });
+      t.app.criteria.addNode(a, {
+        versionId,
+        addition: { node: "criterion", parent: { node: "section", id: ids.section }, values: { code, name: `Tiêu chí ${code}`, maxPoints: 0 } },
+      });
     const { nodeId: c2 } = await add("1.2");
     await add("1.3");
     const codes = async () => (await sectionItems(a, ids.set)).map((i) => i.code);
@@ -278,8 +285,16 @@ describe("L19 AD-03/AD-04 kiểm tra sau mỗi thao tác", () => {
     const { a, versionId, ids } = await draft();
     const fresh = async () => (await t.app.criteria.validateVersion(a, { versionId })).issues;
     const steps = [
-      () => t.app.criteria.addNode(a, { versionId, addition: { node: "part", parent: { node: "set", id: ids.set }, values: { code: "B", name: "PHẦN B", points: 5 } } }),
-      () => t.app.criteria.addNode(a, { versionId, addition: { node: "scoreLevel", parent: { node: "criterion", id: ids.criterion }, values: { description: "Thêm", points: 120 } } }),
+      () =>
+        t.app.criteria.addNode(a, {
+          versionId,
+          addition: { node: "part", parent: { node: "set", id: ids.set }, values: { code: "B", name: "PHẦN B", points: 5 } },
+        }),
+      () =>
+        t.app.criteria.addNode(a, {
+          versionId,
+          addition: { node: "scoreLevel", parent: { node: "criterion", id: ids.criterion }, values: { description: "Thêm", points: 120 } },
+        }),
       () => t.app.criteria.addNode(a, { versionId, addition: { node: "productGroup", values: { name: "Nhóm thử" } } }),
       () => t.app.criteria.moveNode(a, { versionId, node: "part", id: ids.part, direction: "down" }),
       () => t.app.criteria.removeNode(a, { versionId, node: "section", id: ids.section }),
@@ -327,7 +342,9 @@ describe("L19 AD-03 từ chối thao tác cấu trúc", () => {
     const { versionId, ids } = await draft();
     const so = await officer("so-cau-truc@tinh.gov.vn");
     for (const actor of [so, anonymous()]) {
-      await expect(t.app.criteria.addNode(actor, { versionId, addition: { node: "productGroup", values: { name: "Khác" } } })).rejects.toMatchObject({ code: "forbidden" });
+      await expect(t.app.criteria.addNode(actor, { versionId, addition: { node: "productGroup", values: { name: "Khác" } } })).rejects.toMatchObject({
+        code: "forbidden",
+      });
       await expect(t.app.criteria.removeNode(actor, { versionId, node: "criterion", id: ids.criterion })).rejects.toMatchObject({ code: "forbidden" });
       await expect(t.app.criteria.moveNode(actor, { versionId, node: "part", id: ids.part, direction: "down" })).rejects.toMatchObject({ code: "forbidden" });
     }

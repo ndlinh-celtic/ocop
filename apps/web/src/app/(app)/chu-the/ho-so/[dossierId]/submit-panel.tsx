@@ -28,10 +28,7 @@ export function SubmitPanel({
 }) {
   const verb = resubmission ? "Nộp lại hồ sơ" : "Nộp hồ sơ";
   const version = useDossierVersion();
-  const [state, action, pending] = useActionState<DossierFormState, FormData>(
-    (prev) => submitDossierAction(dossierId, version.current, onBehalf, prev),
-    {},
-  );
+  const [state, action, pending] = useActionState<DossierFormState, FormData>((prev) => submitDossierAction(dossierId, version.current, onBehalf, prev), {});
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
       <h2 className="mb-2 font-semibold">{verb}</h2>
@@ -88,7 +85,9 @@ export function WithdrawForm({ dossierId, version }: { dossierId: string; versio
   return (
     <section className="rounded-lg border bg-surface p-4 shadow-card">
       <h2 className="mb-2 font-semibold">Rút hồ sơ</h2>
-      <p className="mb-3 text-sm text-text-2">Rút được khi UBND xã/phường chưa tiếp nhận. Hồ sơ đã rút không nộp lại được; hãy sao chép sang hồ sơ mới nếu cần.</p>
+      <p className="mb-3 text-sm text-text-2">
+        Rút được khi UBND xã/phường chưa tiếp nhận. Hồ sơ đã rút không nộp lại được; hãy sao chép sang hồ sơ mới nếu cần.
+      </p>
       <form action={action} className="flex flex-col gap-2">
         <label className="flex flex-col gap-1 text-sm">
           Lý do rút

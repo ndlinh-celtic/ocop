@@ -29,7 +29,19 @@ type Who =
   | "Cán bộ xã Y Nhập hộ A"
   | "Chủ thể B Nhập hộ A";
 type State = "Nháp" | "Đã nộp xã" | "Đã nộp xã, đã Tiếp nhận" | "Đã chuyển từ xã X sang xã Y";
-type Action = "đọc hồ sơ" | "thấy trong danh sách" | "dòng thời gian" | "sửa thông tin" | "rút" | "Tiếp nhận" | "đổi Cán bộ phụ trách" | "đọc Chủ thể A" | "đọc hồ sơ pháp lý của A" | "loại" | "Chuyển xã" | "đánh giá Checklist sơ bộ";
+type Action =
+  | "đọc hồ sơ"
+  | "thấy trong danh sách"
+  | "dòng thời gian"
+  | "sửa thông tin"
+  | "rút"
+  | "Tiếp nhận"
+  | "đổi Cán bộ phụ trách"
+  | "đọc Chủ thể A"
+  | "đọc hồ sơ pháp lý của A"
+  | "loại"
+  | "Chuyển xã"
+  | "đánh giá Checklist sơ bộ";
 type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "already_received" | "not_received";
 
 const actors = {} as Record<Who, UserActor>;

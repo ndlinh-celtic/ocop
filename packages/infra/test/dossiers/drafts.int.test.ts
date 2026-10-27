@@ -60,7 +60,14 @@ describe("L02 CT-03 tạo hồ sơ Nháp theo Bộ tiêu chí (stories 15 to 19)
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Thịt tươi"] });
 
     expect(await t.app.dossiers.timeline(a, { dossierId })).toEqual([
-      expect.objectContaining({ action: "dossier.create", fromState: null, toState: "draft", actorUserId: a.userId, actorRole: "entity_owner", occurredAt: START }),
+      expect.objectContaining({
+        action: "dossier.create",
+        fromState: null,
+        toState: "draft",
+        actorUserId: a.userId,
+        actorRole: "entity_owner",
+        occurredAt: START,
+      }),
     ]);
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["dossier.create"], targetId: dossierId });
     expect(entry).toMatchObject({ actorUserId: a.userId, actorRole: "entity_owner", targetType: "dossier", metadata: { criteriaSetId: sets["Thịt tươi"] } });
@@ -80,7 +87,12 @@ describe("L02 CT-03 tạo hồ sơ Nháp theo Bộ tiêu chí (stories 15 to 19)
     // Autosaves are audited, but are not rows of the timeline.
     expect(await t.app.dossiers.timeline(a, { dossierId })).toHaveLength(1);
     const saves = await t.app.audit.search(await f.admin(), { action: ["dossier.edit"], targetId: dossierId });
-    expect(saves.map((e) => e.after)).toEqual(expect.arrayContaining([{ state: "draft", version: 2 }, { state: "draft", version: 3 }]));
+    expect(saves.map((e) => e.after)).toEqual(
+      expect.arrayContaining([
+        { state: "draft", version: 2 },
+        { state: "draft", version: 3 },
+      ]),
+    );
     expect(saves).toHaveLength(2);
   });
 
@@ -184,7 +196,9 @@ describe("L02 Phạm vi and state of a hồ sơ (stories 32, 76, 80, 81, 83)", (
     await f.openRound(versionId);
     const { version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion: await f.completeDraft(a, dossierId) });
 
-    await expect(t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: version, productName: "Sửa sau khi nộp" })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: version, productName: "Sửa sau khi nộp" })).rejects.toMatchObject({
+      code: "invalid_state",
+    });
     await expect(t.app.dossiers.delete(a, { dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "invalid_state" });
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "submitted_to_ward", productName: PRODUCT.productName, version });
   });

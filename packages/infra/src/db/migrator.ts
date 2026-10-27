@@ -18,9 +18,7 @@ export async function migrate(pool: Pool, dir: string): Promise<string[]> {
     // One migrator at a time, even if two `migrate` containers start together.
     await client.query("SELECT pg_advisory_lock(hashtext('ocop.schema_migration'))");
     const applied = new Map<string, string>(
-      (await client.query<{ name: string; checksum: string }>("SELECT name, checksum FROM public.schema_migration")).rows.map(
-        (r) => [r.name, r.checksum],
-      ),
+      (await client.query<{ name: string; checksum: string }>("SELECT name, checksum FROM public.schema_migration")).rows.map((r) => [r.name, r.checksum]),
     );
     const files = (await readdir(dir)).filter((f) => f.endsWith(".sql")).sort();
     const ran: string[] = [];

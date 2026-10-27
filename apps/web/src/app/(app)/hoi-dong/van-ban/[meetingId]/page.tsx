@@ -104,16 +104,27 @@ export default async function MeetingPage({ params }: { params: Promise<{ meetin
           <h2 id="van-ban-hop" className="font-semibold">
             Văn bản họp
           </h2>
-          <span className={`rounded-full px-2 py-0.5 text-xs ${waiting > 0 || meeting.dossiers.length === 0 ? "bg-surface-2 text-text-2" : "bg-brand/10 text-brand"}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs ${waiting > 0 || meeting.dossiers.length === 0 ? "bg-surface-2 text-text-2" : "bg-brand/10 text-brand"}`}
+          >
             {waiting > 0 || meeting.dossiers.length === 0 ? "Nháp" : "Số liệu đã chốt"}
           </span>
         </div>
-        {waiting > 0 && <p className="text-sm text-amber">Chưa chốt toàn bộ hồ sơ của Phiên họp: còn {waiting} hồ sơ, số liệu của chúng là tạm tính. Sinh lại sau khi chốt để có số liệu cuối.</p>}
-        <p className="text-xs text-text-3">Mẫu tạm theo cấu trúc QĐ 26/2026/QĐ-TTg, cần đối chiếu với mẫu chính thức. Dự thảo quyết định chỉ gồm hồ sơ từ 3 sao.</p>
+        {waiting > 0 && (
+          <p className="text-sm text-amber">
+            Chưa chốt toàn bộ hồ sơ của Phiên họp: còn {waiting} hồ sơ, số liệu của chúng là tạm tính. Sinh lại sau khi chốt để có số liệu cuối.
+          </p>
+        )}
+        <p className="text-xs text-text-3">
+          Mẫu tạm theo cấu trúc QĐ 26/2026/QĐ-TTg, cần đối chiếu với mẫu chính thức. Dự thảo quyết định chỉ gồm hồ sơ từ 3 sao.
+        </p>
         <ul className="flex flex-wrap gap-2">
           {MEETING_DOCUMENT_KINDS.map((kind) => (
             <li key={kind}>
-              <a href={`/hoi-dong/van-ban/${meeting.id}/van-ban/${kind}`} className="inline-flex items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold">
+              <a
+                href={`/hoi-dong/van-ban/${meeting.id}/van-ban/${kind}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-line-strong px-3 py-1.5 text-sm font-semibold"
+              >
                 <FileText className="size-4" aria-hidden /> {MEETING_DOCUMENT_LABEL[kind]} (Word)
               </a>
             </li>

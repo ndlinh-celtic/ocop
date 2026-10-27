@@ -53,7 +53,9 @@ const TABLE: Record<Who, Record<Action, Outcome[]>> = {
 };
 
 const MATRIX: [Who, Action, State, Outcome][] = (Object.entries(TABLE) as [Who, Record<Action, Outcome[]>][]).flatMap(([who, byAction]) =>
-  (Object.entries(byAction) as [Action, Outcome[]][]).flatMap(([action, outcomes]) => STATES.map((state, i): [Who, Action, State, Outcome] => [who, action, state, outcomes[i]!])),
+  (Object.entries(byAction) as [Action, Outcome[]][]).flatMap(([action, outcomes]) =>
+    STATES.map((state, i): [Who, Action, State, Outcome] => [who, action, state, outcomes[i]!]),
+  ),
 );
 
 let db: TestDatabase;
@@ -107,7 +109,10 @@ interface Subject {
  */
 async function dossierIn(state: State): Promise<Subject> {
   const leader = actors["Tổ trưởng A, có Phân công"];
-  const d = await f.gradingStarted(actors["Cán bộ xã"], actors["Cán bộ Sở"], setId, A.secretary, { members: A.members, advisors: [leader, actors["Tổ tư vấn A, có Phân công"]] });
+  const d = await f.gradingStarted(actors["Cán bộ xã"], actors["Cán bộ Sở"], setId, A.secretary, {
+    members: A.members,
+    advisors: [leader, actors["Tổ tư vấn A, có Phân công"]],
+  });
   let { version } = await t.app.dossiers.requestAdvisoryReturn(leader, { dossierId: d.dossierId, expectedVersion: d.version, reason: "Thiếu hồ sơ" });
   if (state === "Tổ tư vấn thẩm định") return { a: d.a, dossierId: d.dossierId, version };
   const ws = await t.app.scoring.advisoryReport(leader, { dossierId: d.dossierId });
@@ -121,7 +126,9 @@ async function dossierIn(state: State): Promise<Subject> {
   });
   ({ version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: d.dossierId, expectedVersion: version }));
   if (state === "Đã có báo cáo Tổ tư vấn") return { a: d.a, dossierId: d.dossierId, version };
-  const [copied] = (await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" })).dossiers;
+  const [copied] = (
+    await t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId: d.dossierId, expectedVersion: version }], criteria: "all", recipients: "all" })
+  ).dossiers;
   ({ version } = copied!);
   if (state === "Thành viên xem xét") return { a: d.a, dossierId: d.dossierId, version };
   const member = actors["Thành viên A, có Phân công"];

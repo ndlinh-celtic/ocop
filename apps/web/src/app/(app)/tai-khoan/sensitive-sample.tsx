@@ -19,7 +19,11 @@ export function SensitiveSample() {
       >
         Thử thao tác nhạy cảm
       </button>
-      {done && <p role="status" className="text-sm text-brand">{done}</p>}
+      {done && (
+        <p role="status" className="text-sm text-brand">
+          {done}
+        </p>
+      )}
       {dialog}
     </div>
   );

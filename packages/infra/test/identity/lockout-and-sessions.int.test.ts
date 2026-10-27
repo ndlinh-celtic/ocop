@@ -86,8 +86,13 @@ describe("L20 temporary lockout", () => {
     const r = await strict.app.identity.signIn(anonymous(), { email: "totp@tinh.gov.vn", password: PASSWORD });
     if (!r.ok) throw new Error();
     for (let i = 0; i < 4; i++) await strict.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: "000000" });
-    await expect(strict.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: "000000" })).resolves.toEqual({ ok: false, reason: "locked" });
-    await expect(strict.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) })).resolves.toMatchObject({
+    await expect(strict.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: "000000" })).resolves.toEqual({
+      ok: false,
+      reason: "locked",
+    });
+    await expect(
+      strict.app.identity.verifySignInTotp(anonymous(), { sessionToken: r.sessionToken, code: await totpCode(secret, t.clock.now()) }),
+    ).resolves.toMatchObject({
       ok: false,
     });
   });
@@ -169,9 +174,9 @@ describe("L20 forgotten and changed passwords", () => {
   it("changing the password needs the current one and signs out the other sessions only", async () => {
     const other = await t.signInWithToken("cham@tinh.gov.vn", PASSWORD);
     const current = await t.signInWithToken("cham@tinh.gov.vn", PASSWORD);
-    await expect(
-      t.app.identity.changePassword(current.actor, { currentPassword: "khong-dung-dau", newPassword: "mat-khau-moi-789" }),
-    ).rejects.toMatchObject({ code: "wrong_password" });
+    await expect(t.app.identity.changePassword(current.actor, { currentPassword: "khong-dung-dau", newPassword: "mat-khau-moi-789" })).rejects.toMatchObject({
+      code: "wrong_password",
+    });
     await t.app.identity.changePassword(current.actor, { currentPassword: PASSWORD, newPassword: "mat-khau-moi-789" });
     await expect(t.app.identity.authenticate(anonymous(), { sessionToken: other.token })).resolves.toBeNull();
     await expect(t.app.identity.authenticate(anonymous(), { sessionToken: current.token })).resolves.not.toBeNull();

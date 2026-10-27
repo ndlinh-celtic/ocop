@@ -45,7 +45,11 @@ export function CopyWizard({ rows }: { rows: AdvisoryCopyBoardRow[] }) {
   };
 
   const request = (): CopyRequest => ({
-    dossiers: chosen.map((r) => ({ dossierId: r.dossierId, expectedVersion: r.dossierVersion, advisoryVersionId: versionOf[r.dossierId] ?? r.versions.at(-1)!.id })),
+    dossiers: chosen.map((r) => ({
+      dossierId: r.dossierId,
+      expectedVersion: r.dossierVersion,
+      advisoryVersionId: versionOf[r.dossierId] ?? r.versions.at(-1)!.id,
+    })),
     criteria: allCriteria ? "all" : [...codes],
     recipients: allRecipients ? "all" : [...people],
   });
@@ -79,7 +83,11 @@ export function CopyWizard({ rows }: { rows: AdvisoryCopyBoardRow[] }) {
     <section className="flex flex-col gap-4" aria-label="Sao chép sang phiếu chấm">
       <ol className="flex flex-wrap gap-2 text-sm">
         {STEPS.map((label, i) => (
-          <li key={label} className={`rounded-full px-3 py-1 ${i === step ? "bg-brand text-brand-ink" : "bg-surface-2 text-text-2"}`} aria-current={i === step ? "step" : undefined}>
+          <li
+            key={label}
+            className={`rounded-full px-3 py-1 ${i === step ? "bg-brand text-brand-ink" : "bg-surface-2 text-text-2"}`}
+            aria-current={i === step ? "step" : undefined}
+          >
             {i + 1}. {label}
           </li>
         ))}
@@ -98,17 +106,30 @@ export function CopyWizard({ rows }: { rows: AdvisoryCopyBoardRow[] }) {
                 <th className="p-2" scope="col">
                   <span className="sr-only">Chọn</span>
                 </th>
-                <th className="p-2" scope="col">Hồ sơ</th>
-                <th className="p-2" scope="col">Trạng thái</th>
-                <th className="p-2" scope="col">Phiên bản</th>
-                <th className="p-2" scope="col">Sao chép</th>
+                <th className="p-2" scope="col">
+                  Hồ sơ
+                </th>
+                <th className="p-2" scope="col">
+                  Trạng thái
+                </th>
+                <th className="p-2" scope="col">
+                  Phiên bản
+                </th>
+                <th className="p-2" scope="col">
+                  Sao chép
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.dossierId} className="border-t">
                   <td className="p-2">
-                    <input type="checkbox" aria-label={`Chọn hồ sơ ${r.code}`} checked={picked.has(r.dossierId)} onChange={() => setPicked(toggle(picked, r.dossierId))} />
+                    <input
+                      type="checkbox"
+                      aria-label={`Chọn hồ sơ ${r.code}`}
+                      checked={picked.has(r.dossierId)}
+                      onChange={() => setPicked(toggle(picked, r.dossierId))}
+                    />
                   </td>
                   <td className="p-2">
                     <span className="font-mono">{r.code}</span> {r.productName}
@@ -185,7 +206,12 @@ export function CopyWizard({ rows }: { rows: AdvisoryCopyBoardRow[] }) {
       {step === 2 && plan && <CopyPreview plans={plan} />}
 
       <div className="flex justify-between gap-2">
-        <button type="button" disabled={step === 0 || pending} onClick={() => setStep(step - 1)} className="rounded-md border border-line-strong px-4 py-2 disabled:opacity-60">
+        <button
+          type="button"
+          disabled={step === 0 || pending}
+          onClick={() => setStep(step - 1)}
+          className="rounded-md border border-line-strong px-4 py-2 disabled:opacity-60"
+        >
           Quay lại
         </button>
         {step < 2 ? (
@@ -205,7 +231,12 @@ export function CopyWizard({ rows }: { rows: AdvisoryCopyBoardRow[] }) {
             {step === 0 ? "Tiếp tục" : pending ? "Đang tính…" : "Xem trước"}
           </button>
         ) : (
-          <button type="button" disabled={pending} onClick={() => void call(copyAdvisoryAction, setDone)} className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => void call(copyAdvisoryAction, setDone)}
+            className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60"
+          >
             {pending ? "Đang sao chép…" : "Xác nhận sao chép"}
           </button>
         )}
@@ -220,7 +251,8 @@ function CopyPreview({ plans }: { plans: AdvisoryCopyPlan[] }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm" data-testid="copy-summary">
-        {count(["new"])} phiếu mới, {count(["update"])} phiếu cập nhật, {count(["confirmed", "absent", "none"])} phiếu bỏ qua; {plans.reduce((n, p) => n + p.written, 0)} Tiêu chí sẽ được điền.
+        {count(["new"])} phiếu mới, {count(["update"])} phiếu cập nhật, {count(["confirmed", "absent", "none"])} phiếu bỏ qua;{" "}
+        {plans.reduce((n, p) => n + p.written, 0)} Tiêu chí sẽ được điền.
       </p>
       {plans.map((p) => (
         <article key={p.dossierId} className="rounded-lg border bg-surface p-4 shadow-card">
@@ -250,7 +282,8 @@ function CopyResult({ plans, onAgain }: { plans: AdvisoryCopyPlan[]; onAgain: ()
   return (
     <section className="flex flex-col gap-3" aria-label="Kết quả sao chép">
       <p role="status" className="rounded-lg border border-brand bg-brand-soft px-4 py-2 text-sm text-brand">
-        Đã sao chép {plans.reduce((n, p) => n + p.written, 0)} Tiêu chí vào Phiếu chấm của {plans.length} hồ sơ. Thành viên có Tiêu chí được điền đã nhận thông báo.
+        Đã sao chép {plans.reduce((n, p) => n + p.written, 0)} Tiêu chí vào Phiếu chấm của {plans.length} hồ sơ. Thành viên có Tiêu chí được điền đã nhận thông
+        báo.
       </p>
       {skipped.length > 0 && (
         <div className="rounded-lg border bg-surface p-4 shadow-card">
@@ -258,7 +291,8 @@ function CopyResult({ plans, onAgain }: { plans: AdvisoryCopyPlan[]; onAgain: ()
           <ul className="text-sm">
             {skipped.map((s) => (
               <li key={`${s.code}-${s.userId}-${s.criterion ?? "sheet"}`}>
-                <span className="font-mono">{s.code}</span> · {s.fullName}: {s.criterion ? `Tiêu chí ${s.criterion} đã chỉnh` : OUTCOME[s.reason as CopySheetOutcome]}
+                <span className="font-mono">{s.code}</span> · {s.fullName}:{" "}
+                {s.criterion ? `Tiêu chí ${s.criterion} đã chỉnh` : OUTCOME[s.reason as CopySheetOutcome]}
               </li>
             ))}
           </ul>

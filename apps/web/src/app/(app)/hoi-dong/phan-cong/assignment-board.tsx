@@ -147,9 +147,7 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
       </section>
 
       <aside className="flex flex-col gap-4 rounded-lg border bg-surface p-4 shadow-card">
-        <h2 className="font-semibold">
-          Phân công cho {selected.size} hồ sơ đã chọn
-        </h2>
+        <h2 className="font-semibold">Phân công cho {selected.size} hồ sơ đã chọn</h2>
         <Picker
           title="Thành viên chấm"
           name="member"
@@ -193,7 +191,8 @@ export function AssignmentBoard({ rows, candidates }: { rows: BoardRow[]; candid
         <div className="flex flex-col gap-2 border-t pt-4">
           <h2 className="font-semibold">Giao chấm</h2>
           <p className="text-xs text-text-2">
-            Giao chấm theo Phân công đã lưu của {selected.size} hồ sơ đã chọn, theo Chế độ chấm của đợt. Người được Phân công nhận thông báo và bắt đầu thấy hồ sơ.
+            Giao chấm theo Phân công đã lưu của {selected.size} hồ sơ đã chọn, theo Chế độ chấm của đợt. Người được Phân công nhận thông báo và bắt đầu thấy hồ
+            sơ.
           </p>
           <button
             type="button"

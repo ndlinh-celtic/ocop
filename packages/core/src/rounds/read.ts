@@ -43,7 +43,12 @@ async function withVersions(tx: Tx, rounds: Round[]): Promise<RoundView[]> {
 export function listRounds(deps: CoreDeps) {
   return async (actor: Actor): Promise<RoundView[]> => {
     authorize(actor, "round.read");
-    return deps.uow.run(async (tx) => withVersions(tx, (await tx.rounds.list()).filter((r) => roundVisibleTo(actor, r))));
+    return deps.uow.run(async (tx) =>
+      withVersions(
+        tx,
+        (await tx.rounds.list()).filter((r) => roundVisibleTo(actor, r)),
+      ),
+    );
   };
 }
 

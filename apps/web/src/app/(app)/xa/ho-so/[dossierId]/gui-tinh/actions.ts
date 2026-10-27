@@ -12,7 +12,9 @@ const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.strin
 const parts = z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional();
 
 /** L06 XA-07 (story 65) step one: a pre-signed upload of the signed Báo cáo đánh giá cấp xã (PDF). */
-export async function requestSignedReportUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestSignedReportUploadAction(
+  input: z.infer<typeof uploadInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const actor = await requireActor();
   const parsed = uploadInput.safeParse(input);
   if (!parsed.success) return { error: "Chọn tệp PDF đã ký" };

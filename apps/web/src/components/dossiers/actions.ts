@@ -9,7 +9,11 @@ import { requireActor } from "@/server/session";
  * #37: a short-lived link to the Phiếu đăng ký or Báo cáo tự đánh giá of one Phiên bản nộp, shared by the
  * Chủ thể's pages and the Cán bộ xã's; the use case decides from the Phạm vi whether the hồ sơ is visible.
  */
-export async function downloadSubmissionDocumentAction(dossierId: string, submissionNumber: number, document: string): Promise<{ url?: string; error?: string }> {
+export async function downloadSubmissionDocumentAction(
+  dossierId: string,
+  submissionNumber: number,
+  document: string,
+): Promise<{ url?: string; error?: string }> {
   const actor = await requireActor();
   if (!SUBMISSION_DOCUMENTS.includes(document as SubmissionDocument)) return { error: "Không tìm thấy văn bản" };
   try {

@@ -25,9 +25,7 @@ export function ExtensionHistory({ extensions }: { extensions: DeadlineExtension
               {extensions.map((e) => (
                 <tr key={e.id} className="border-t align-top">
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDateTime(e.extendedAt)}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">
-                    {EXTENDABLE_DEADLINE_LABEL[e.deadline]}
-                  </td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{EXTENDABLE_DEADLINE_LABEL[e.deadline]}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDate(e.previousDeadline)}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{formatVnDate(e.newDeadline)}</td>
                   <td className="py-2 pr-4 whitespace-pre-line">{e.reason}</td>

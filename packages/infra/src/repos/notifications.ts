@@ -33,7 +33,10 @@ export function notificationRepo(db: Db): NotificationRepo {
       return true;
     },
     async markAllRead(userId, at) {
-      await db.update(notification).set({ readAt: at }).where(and(eq(notification.userId, userId), isNull(notification.readAt)));
+      await db
+        .update(notification)
+        .set({ readAt: at })
+        .where(and(eq(notification.userId, userId), isNull(notification.readAt)));
     },
   };
 }

@@ -52,7 +52,12 @@ export function PublishButton({ versionId, disabled }: { versionId: string; disa
               <button type="button" onClick={() => setConfirming(false)} className="rounded-md border border-line-strong px-4 py-2">
                 Hủy
               </button>
-              <button type="button" disabled={pending} onClick={publish} className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={publish}
+                className="rounded-md bg-brand px-4 py-2 font-medium text-brand-ink disabled:opacity-60"
+              >
                 {pending ? "Đang phát hành…" : "Phát hành"}
               </button>
             </div>

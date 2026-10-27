@@ -51,7 +51,14 @@ import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, ge
 import { explainCriterion, linkEvidence, removeEvidenceFile, selfAssessment, selfScore } from "./dossiers/self-assessment";
 import { changeRepresentativeEmail, createEntity } from "./entities/ward-support";
 import { createCouncil, setCouncilLeader, updateCouncil } from "./councils/manage";
-import { advisoryReport, advisoryReportVersions, downloadAdvisoryFile, issueAdvisoryReport, reissueAdvisoryReport, saveAdvisoryDraft } from "./scoring/advisory-report";
+import {
+  advisoryReport,
+  advisoryReportVersions,
+  downloadAdvisoryFile,
+  issueAdvisoryReport,
+  reissueAdvisoryReport,
+  saveAdvisoryDraft,
+} from "./scoring/advisory-report";
 import { downloadCouncilDecision, getCouncil, listCouncils } from "./councils/read";
 import { assignmentCandidates, editAssignments, listAssignments } from "./councils/assignments";
 import { startGrading } from "./councils/grading";

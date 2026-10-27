@@ -114,7 +114,12 @@ async function assertAdvisoryMode(tx: Tx, dossier: Dossier) {
 }
 
 /** The plan for one hồ sơ already loaded within scope, and the dòng it would write. */
-async function planOf(tx: Tx, dossier: Dossier, scope: AdvisoryCopyScope, advisoryVersionId: string | undefined): Promise<{ plan: AdvisoryCopyPlan; writes: SheetWrite[] }> {
+async function planOf(
+  tx: Tx,
+  dossier: Dossier,
+  scope: AdvisoryCopyScope,
+  advisoryVersionId: string | undefined,
+): Promise<{ plan: AdvisoryCopyPlan; writes: SheetWrite[] }> {
   const versions = await tx.advisoryReports.versions(dossier.id);
   if (versions.length === 0) throw new DomainError("no_issued_version", "Hồ sơ chưa có Báo cáo Tổ tư vấn đã phát hành");
   const version: AdvisoryReportVersion | undefined = advisoryVersionId === undefined ? versions.at(-1) : versions.find((v) => v.id === advisoryVersionId);
@@ -269,7 +274,8 @@ export function copyAdvisory(deps: CoreDeps) {
           for (const w of writes) {
             for (const line of w.lines) await tx.scoreSheets.saveLine({ ...line, updatedAt: now });
             // A thành viên's form open meanwhile gets a version conflict rather than writing over the sao chép.
-            if (!(await tx.scoreSheets.update({ ...w.sheet, awaitingCopy: false, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version))) throw versionConflict();
+            if (!(await tx.scoreSheets.update({ ...w.sheet, awaitingCopy: false, version: w.sheet.version + 1, updatedAt: now }, w.sheet.version)))
+              throw versionConflict();
           }
           return { ...plan, version: after.version, state: after.state };
         });
@@ -321,7 +327,11 @@ export function advisoryCopyBoard(deps: CoreDeps) {
         }
         const members = [];
         for (const a of (await tx.assignments.current(dossier.id)).filter(isMemberInForce)) {
-          members.push({ userId: a.userId, fullName: (await tx.users.findById(a.userId))?.fullName ?? "", sheet: sheets.find((s) => s.assignmentId === a.id)?.state ?? null });
+          members.push({
+            userId: a.userId,
+            fullName: (await tx.users.findById(a.userId))?.fullName ?? "",
+            sheet: sheets.find((s) => s.assignmentId === a.id)?.state ?? null,
+          });
         }
         out.push({
           dossierId: dossier.id,

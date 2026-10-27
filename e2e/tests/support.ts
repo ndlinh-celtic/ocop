@@ -95,10 +95,14 @@ export function pdf(name: string) {
  * browser cannot do: moving a deadline into the past instead of waiting days, and reading the audit and outbox.
  */
 export function sql(query: string): string[][] {
-  const out = execFileSync("docker", ["compose", "exec", "-T", "postgres", "psql", "-U", "postgres", "-d", "ocop", "-v", "ON_ERROR_STOP=1", "-AtF", "\t", "-c", query], {
-    cwd: path.resolve(import.meta.dirname, "../.."),
-    encoding: "utf8",
-  });
+  const out = execFileSync(
+    "docker",
+    ["compose", "exec", "-T", "postgres", "psql", "-U", "postgres", "-d", "ocop", "-v", "ON_ERROR_STOP=1", "-AtF", "\t", "-c", query],
+    {
+      cwd: path.resolve(import.meta.dirname, "../.."),
+      encoding: "utf8",
+    },
+  );
   return out
     .split("\n")
     .filter((line) => line !== "")

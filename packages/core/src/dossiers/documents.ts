@@ -30,7 +30,6 @@ const DOCUMENT_TITLE: Record<SubmissionDocument, string> = {
 
 const fileNameOf = (document: SubmissionDocument, submissionNumber: number) => `${DOCUMENT_TITLE[document]} - Phiên bản nộp ${submissionNumber}.docx`;
 
-
 export interface SubmissionContext {
   number: number;
   submittedAt: Date;

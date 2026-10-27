@@ -91,7 +91,15 @@ function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Out
   it.each(rows.filter((r) => states.includes(r[2])))("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const run = attempt(who, action, d);
-    if (outcome === "allowed" || outcome === "confirmed_sheets" || outcome === "own_sheet" || outcome === "full" || outcome === "aggregate_only" || outcome === "none") await expect(run).resolves.toBe(outcome);
+    if (
+      outcome === "allowed" ||
+      outcome === "confirmed_sheets" ||
+      outcome === "own_sheet" ||
+      outcome === "full" ||
+      outcome === "aggregate_only" ||
+      outcome === "none"
+    )
+      await expect(run).resolves.toBe(outcome);
     else await expect(run).rejects.toMatchObject({ code: outcome });
   });
 }

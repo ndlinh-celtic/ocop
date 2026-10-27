@@ -44,12 +44,23 @@ describe("L07 kết thúc đợt with hồ sơ chưa xong (spec #30)", () => {
 
     t.clock.set(new Date("2026-12-01T02:00:00Z"));
     await t.app.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
-    await expect(t.app.rounds.endRound(sở, { roundId })).rejects.toMatchObject({ code: "round_has_unfinished_dossiers", message: expect.stringContaining("Còn 2 hồ sơ") });
+    await expect(t.app.rounds.endRound(sở, { roundId })).rejects.toMatchObject({
+      code: "round_has_unfinished_dossiers",
+      message: expect.stringContaining("Còn 2 hồ sơ"),
+    });
 
     await t.app.dossiers.reject(xã, { dossierId: pending.dossierId, expectedVersion: pending.version, reasonCode: "other", explanation: "Không đủ điều kiện" });
-    await expect(t.app.rounds.endRound(sở, { roundId })).rejects.toMatchObject({ code: "round_has_unfinished_dossiers", message: expect.stringContaining("Còn 1 hồ sơ") });
+    await expect(t.app.rounds.endRound(sở, { roundId })).rejects.toMatchObject({
+      code: "round_has_unfinished_dossiers",
+      message: expect.stringContaining("Còn 1 hồ sơ"),
+    });
 
-    const { version } = await t.app.dossiers.returnFromProvince(sở, { dossierId: up.dossierId, expectedVersion: up.version, deadline: "2026-12-05", items: [{ content: "Bổ sung" }] });
+    const { version } = await t.app.dossiers.returnFromProvince(sở, {
+      dossierId: up.dossierId,
+      expectedVersion: up.version,
+      deadline: "2026-12-05",
+      items: [{ content: "Bổ sung" }],
+    });
     await expect(t.app.rounds.endRound(sở, { roundId })).rejects.toMatchObject({ code: "round_has_unfinished_dossiers" });
     t.clock.set(new Date("2026-12-06T02:00:00Z"));
     await t.app.dossiers.closeUnsupplemented(xã, { dossierId: up.dossierId, expectedVersion: version });

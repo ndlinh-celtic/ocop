@@ -23,9 +23,7 @@ describe("L20 AD-01 Quản trị creates staff Người dùng", () => {
   let firstToken: string;
 
   it("only a Quản trị can create an account", async () => {
-    await expect(
-      t.app.identity.createStaffUser(anonymous(), OFFICER),
-    ).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.identity.createStaffUser(anonymous(), OFFICER)).rejects.toMatchObject({ code: "forbidden" });
   });
 
   it("a new account is pending until activated and the officer gets an activation email", async () => {
@@ -111,9 +109,7 @@ describe("L20 AD-01 Quản trị creates staff Người dùng", () => {
   it("audits creation, link issue and activation without storing the link", async () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const entries = await t.app.audit.search(admin, { targetId: officerId });
-    expect(entries.map((e) => e.action)).toEqual(
-      expect.arrayContaining(["identity.user.created", "identity.activation.issued", "identity.user.activated"]),
-    );
+    expect(entries.map((e) => e.action)).toEqual(expect.arrayContaining(["identity.user.created", "identity.activation.issued", "identity.user.activated"]));
     expect(JSON.stringify(entries)).not.toContain(firstToken);
   });
 

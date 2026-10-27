@@ -12,7 +12,10 @@ const compose = (args: string[], env: Record<string, string> = {}) =>
 async function waitForHealth() {
   const deadline = Date.now() + 180_000;
   while (Date.now() < deadline) {
-    const ok = await fetch(`${BASE}/api/health`).then((r) => r.ok, () => false);
+    const ok = await fetch(`${BASE}/api/health`).then(
+      (r) => r.ok,
+      () => false,
+    );
     if (ok) return;
     await new Promise((r) => setTimeout(r, 2000));
   }
@@ -24,11 +27,29 @@ export default async function globalSetup() {
   mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   try {
     // `-e NAME` without a value forwards the variable from this process into the container.
-    compose(["run", "--rm", "-T", "-e", "OCOP_ADMIN_EMAIL", "-e", "OCOP_ADMIN_NAME", "-e", "OCOP_ADMIN_PASSWORD", "worker", "pnpm", "--filter", "@ocop/infra", "admin:create"], {
-      OCOP_ADMIN_EMAIL: ADMIN.email,
-      OCOP_ADMIN_NAME: ADMIN.fullName,
-      OCOP_ADMIN_PASSWORD: ADMIN.password,
-    });
+    compose(
+      [
+        "run",
+        "--rm",
+        "-T",
+        "-e",
+        "OCOP_ADMIN_EMAIL",
+        "-e",
+        "OCOP_ADMIN_NAME",
+        "-e",
+        "OCOP_ADMIN_PASSWORD",
+        "worker",
+        "pnpm",
+        "--filter",
+        "@ocop/infra",
+        "admin:create",
+      ],
+      {
+        OCOP_ADMIN_EMAIL: ADMIN.email,
+        OCOP_ADMIN_NAME: ADMIN.fullName,
+        OCOP_ADMIN_PASSWORD: ADMIN.password,
+      },
+    );
   } catch (err) {
     const out = `${(err as { stdout?: string }).stdout ?? ""}${(err as { stderr?: string }).stderr ?? ""}`;
     if (!out.includes("đã có Quản trị") || !existsSync(STATE_FILE)) {

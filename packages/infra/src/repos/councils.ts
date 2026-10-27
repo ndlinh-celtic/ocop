@@ -87,8 +87,13 @@ export function scoreSheetRepo(db: Db): ScoreSheetRepo {
     },
     async saveLine({ fileIds, ...line }) {
       const { scoreSheetId: _s, criterionId: _c, ...fields } = line;
-      await db.insert(scoreSheetLine).values(line).onConflictDoUpdate({ target: [scoreSheetLine.scoreSheetId, scoreSheetLine.criterionId], set: fields });
-      await db.delete(scoreSheetLineFile).where(and(eq(scoreSheetLineFile.scoreSheetId, line.scoreSheetId), eq(scoreSheetLineFile.criterionId, line.criterionId)));
+      await db
+        .insert(scoreSheetLine)
+        .values(line)
+        .onConflictDoUpdate({ target: [scoreSheetLine.scoreSheetId, scoreSheetLine.criterionId], set: fields });
+      await db
+        .delete(scoreSheetLineFile)
+        .where(and(eq(scoreSheetLineFile.scoreSheetId, line.scoreSheetId), eq(scoreSheetLineFile.criterionId, line.criterionId)));
       if (fileIds.length > 0) {
         await db.insert(scoreSheetLineFile).values(fileIds.map((fileId) => ({ scoreSheetId: line.scoreSheetId, criterionId: line.criterionId, fileId })));
       }
@@ -102,7 +107,11 @@ export function scoreSheetRepo(db: Db): ScoreSheetRepo {
       return rows.length === 1;
     },
     async all(dossierId) {
-      return db.select().from(scoreSheet).where(eq(scoreSheet.dossierId, dossierId)).orderBy(asc(scoreSheet.createdAt), asc(scoreSheet.attempt), asc(scoreSheet.id));
+      return db
+        .select()
+        .from(scoreSheet)
+        .where(eq(scoreSheet.dossierId, dossierId))
+        .orderBy(asc(scoreSheet.createdAt), asc(scoreSheet.attempt), asc(scoreSheet.id));
     },
     async current(dossierId) {
       return db

@@ -78,7 +78,13 @@ export function UnlockForm({ dossierId, code }: { dossierId: string; code: strin
         <textarea name="reason" required maxLength={2000} rows={3} className={input} />
       </label>
       {progress !== null && (
-        <div role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} className="h-2 overflow-hidden rounded-full bg-surface-3">
+        <div
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="h-2 overflow-hidden rounded-full bg-surface-3"
+        >
           <div className="h-full bg-brand transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       )}
@@ -88,7 +94,12 @@ export function UnlockForm({ dossierId, code }: { dossierId: string; code: strin
         </p>
       )}
       <div>
-        <button type="submit" disabled={progress !== null || pending} className="inline-flex items-center gap-2 rounded-md bg-danger px-4 py-2 font-medium text-white disabled:opacity-60" data-testid="unlock">
+        <button
+          type="submit"
+          disabled={progress !== null || pending}
+          className="inline-flex items-center gap-2 rounded-md bg-danger px-4 py-2 font-medium text-white disabled:opacity-60"
+          data-testid="unlock"
+        >
           <LockOpen className="size-4" aria-hidden /> Mở khóa sau chốt
         </button>
       </div>
@@ -99,8 +110,8 @@ export function UnlockForm({ dossierId, code }: { dossierId: string; code: strin
               Mở khóa hồ sơ {code}?
             </h2>
             <p className="mb-3 text-sm text-text-2">
-              Hồ sơ về Sẵn sàng chốt; kết quả chốt hiện hành được giữ và đánh dấu bị thay thế. Không phiếu nào bị sửa: Chủ tịch hoặc Thư ký Trả phiếu
-              cho người cần chấm lại rồi chốt lại trong Phiên họp mới.
+              Hồ sơ về Sẵn sàng chốt; kết quả chốt hiện hành được giữ và đánh dấu bị thay thế. Không phiếu nào bị sửa: Chủ tịch hoặc Thư ký Trả phiếu cho người
+              cần chấm lại rồi chốt lại trong Phiên họp mới.
             </p>
             <label className={label}>
               Gõ mã hồ sơ để xác nhận
@@ -110,7 +121,12 @@ export function UnlockForm({ dossierId, code }: { dossierId: string; code: strin
               <button type="button" onClick={() => (setFields(null), setTyped(""))} className="rounded-md border border-line-strong px-4 py-2">
                 Hủy
               </button>
-              <button type="button" disabled={pending || typed.trim().toUpperCase() !== code} onClick={unlock} className="rounded-md bg-danger px-4 py-2 font-medium text-white disabled:opacity-60">
+              <button
+                type="button"
+                disabled={pending || typed.trim().toUpperCase() !== code}
+                onClick={unlock}
+                className="rounded-md bg-danger px-4 py-2 font-medium text-white disabled:opacity-60"
+              >
                 {pending ? "Đang mở khóa…" : "Mở khóa"}
               </button>
             </div>

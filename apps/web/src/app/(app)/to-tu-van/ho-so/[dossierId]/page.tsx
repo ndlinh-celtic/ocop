@@ -54,7 +54,8 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
           {dossier.productName || "Hồ sơ chưa đặt tên sản phẩm"} <DossierStateTag state={dossier.state} />
         </h1>
         <p className="text-sm text-text-2">
-          Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
+          Mã hồ sơ <b className="font-mono">{dossier.code}</b> · {dossier.entity.name} · Bộ tiêu chí{" "}
+          {dossier.criteriaSet.code && `${dossier.criteriaSet.code} · `}
           {dossier.criteriaSet.name}
         </p>
         <p className="mt-2 flex flex-wrap gap-3 text-sm">
@@ -67,7 +68,8 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
       {scores.kind === "aggregate_only" && (
         <section role="status" className="rounded-lg border border-line-strong bg-surface-2 px-4 py-3 text-sm" data-testid="advisory-final-result">
           <p className="font-medium">
-            Hội đồng đã chốt điểm: {scores.aggregate.star} sao, {formatPoints(scores.aggregate.total)} điểm ({scores.aggregate.parts.map((p) => `Phần ${p.code} ${formatPoints(p.total)}`).join(", ")}).
+            Hội đồng đã chốt điểm: {scores.aggregate.star} sao, {formatPoints(scores.aggregate.total)} điểm (
+            {scores.aggregate.parts.map((p) => `Phần ${p.code} ${formatPoints(p.total)}`).join(", ")}).
           </p>
           <p className="text-text-2">Chốt lúc {formatVnDateTime(scores.result.finalizedAt)}.</p>
         </section>
@@ -109,7 +111,11 @@ export default async function AdvisoryReviewPage({ params }: { params: Promise<{
 
           <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
             <h2 className="font-semibold">Báo cáo đánh giá cấp xã và Checklist sơ bộ</h2>
-            {wardReport.signed ? <SignedWardReport dossierId={dossierId} signed={wardReport.signed} /> : <p className="text-text-3">Chưa có Báo cáo đánh giá cấp xã đã ký.</p>}
+            {wardReport.signed ? (
+              <SignedWardReport dossierId={dossierId} signed={wardReport.signed} />
+            ) : (
+              <p className="text-text-3">Chưa có Báo cáo đánh giá cấp xã đã ký.</p>
+            )}
             <ul className="flex flex-col gap-1">
               {checklist.items.map((item) => (
                 <li key={item.code} className="flex flex-wrap gap-2">

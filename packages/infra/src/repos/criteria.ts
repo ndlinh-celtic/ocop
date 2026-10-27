@@ -75,16 +75,52 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
         rankThreshold,
         ([2, 3, 4, 5] as const).map((stars) => ({ versionId, stars, minScore: rows.thresholds[stars] })),
       );
-      await insertAll(db, productGroup, rows.productGroups.map((r) => ({ ...r, versionId })));
-      await insertAll(db, productSubgroup, rows.subgroups.map((r) => ({ ...r, versionId })));
+      await insertAll(
+        db,
+        productGroup,
+        rows.productGroups.map((r) => ({ ...r, versionId })),
+      );
+      await insertAll(
+        db,
+        productSubgroup,
+        rows.subgroups.map((r) => ({ ...r, versionId })),
+      );
       const withVersion = <T>(pick: (s: SetRows) => T[]) => rows.sets.flatMap((s) => pick(s).map((r) => ({ ...r, versionId })));
-      await insertAll(db, criteriaSet, withVersion((s) => [s.set]));
-      await insertAll(db, exclusionCondition, withVersion((s) => s.exclusions));
-      await insertAll(db, criteriaPart, withVersion((s) => s.parts));
-      await insertAll(db, criteriaSection, withVersion((s) => s.sections));
-      await insertAll(db, criterionGroup, withVersion((s) => s.criterionGroups));
-      await insertAll(db, criterion, withVersion((s) => s.criteria));
-      await insertAll(db, scoreLevel, withVersion((s) => s.levels));
+      await insertAll(
+        db,
+        criteriaSet,
+        withVersion((s) => [s.set]),
+      );
+      await insertAll(
+        db,
+        exclusionCondition,
+        withVersion((s) => s.exclusions),
+      );
+      await insertAll(
+        db,
+        criteriaPart,
+        withVersion((s) => s.parts),
+      );
+      await insertAll(
+        db,
+        criteriaSection,
+        withVersion((s) => s.sections),
+      );
+      await insertAll(
+        db,
+        criterionGroup,
+        withVersion((s) => s.criterionGroups),
+      );
+      await insertAll(
+        db,
+        criterion,
+        withVersion((s) => s.criteria),
+      );
+      await insertAll(
+        db,
+        scoreLevel,
+        withVersion((s) => s.levels),
+      );
     },
 
     async findById(id) {
@@ -94,7 +130,10 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
 
     async findByIds(ids) {
       if (ids.length === 0) return [];
-      const rows = await db.select().from(criteriaVersion).where(inArray(criteriaVersion.id, [...ids]));
+      const rows = await db
+        .select()
+        .from(criteriaVersion)
+        .where(inArray(criteriaVersion.id, [...ids]));
       return rows.map(toVersion);
     },
 
@@ -107,7 +146,10 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
         .groupBy(criteriaSet.versionId)
         .as("set_counts");
       const query = db.select({ v: criteriaVersion, n: setCounts.n }).from(criteriaVersion).leftJoin(setCounts, eq(setCounts.versionId, criteriaVersion.id));
-      const rows = await (filter.status ? query.where(eq(criteriaVersion.status, filter.status)) : query).orderBy(desc(criteriaVersion.createdAt), desc(criteriaVersion.id));
+      const rows = await (filter.status ? query.where(eq(criteriaVersion.status, filter.status)) : query).orderBy(
+        desc(criteriaVersion.createdAt),
+        desc(criteriaVersion.id),
+      );
       return rows.map((r) => ({ ...toVersion(r.v), setCount: Number(r.n ?? 0) }));
     },
 
@@ -117,7 +159,12 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
         ? await db
             .select({ setId: criterion.setId, n: count() })
             .from(criterion)
-            .where(inArray(criterion.setId, t.sets.map((s) => s.id)))
+            .where(
+              inArray(
+                criterion.setId,
+                t.sets.map((s) => s.id),
+              ),
+            )
             .groupBy(criterion.setId)
         : [];
       const countOf = new Map(counts.map((c) => [c.setId, Number(c.n)]));
@@ -131,7 +178,11 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
 
     async loadRows(versionId) {
       const t = await taxonomyRows(versionId);
-      const exclusions = await db.select().from(exclusionCondition).where(eq(exclusionCondition.versionId, versionId)).orderBy(asc(exclusionCondition.position));
+      const exclusions = await db
+        .select()
+        .from(exclusionCondition)
+        .where(eq(exclusionCondition.versionId, versionId))
+        .orderBy(asc(exclusionCondition.position));
       const parts = await db.select().from(criteriaPart).where(eq(criteriaPart.versionId, versionId)).orderBy(asc(criteriaPart.position));
       const sections = await db.select().from(criteriaSection).where(eq(criteriaSection.versionId, versionId)).orderBy(asc(criteriaSection.position));
       const groups = await db.select().from(criterionGroup).where(eq(criterionGroup.versionId, versionId)).orderBy(asc(criterionGroup.position));
@@ -173,7 +224,10 @@ export function criteriaVersionRepo(db: Db): CriteriaVersionRepo {
 
     async updateNode(kind, id, patch) {
       const table = nodeTable(kind);
-      await db.update(table).set(patch as Partial<NodeTable["$inferInsert"]>).where(eq(table.id, id));
+      await db
+        .update(table)
+        .set(patch as Partial<NodeTable["$inferInsert"]>)
+        .where(eq(table.id, id));
     },
 
     async insertNode(kind, versionId, row) {

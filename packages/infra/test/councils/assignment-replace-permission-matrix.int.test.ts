@@ -44,7 +44,11 @@ describe("#14 permission matrix: thay và bổ sung thành viên sau Giao chấm
   async function dossierIn(state: State): Promise<{ owner: UserActor; dossierId: string }> {
     if (state === "Đã chuyển tỉnh") {
       const s = await w.f.provinceReceived(w.ward, w.province, w.setId);
-      await w.t.app.councils.editAssignments(w.A.secretary, { dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }], members: [m(0).userId], advisors: [w.A.advisors[0]!.userId] });
+      await w.t.app.councils.editAssignments(w.A.secretary, {
+        dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
+        members: [m(0).userId],
+        advisors: [w.A.advisors[0]!.userId],
+      });
       return { owner: s.a, dossierId: s.dossierId };
     }
     const people = { members: [m(0), m(2)], advisors: [w.A.advisors[0]!] };
@@ -59,7 +63,13 @@ describe("#14 permission matrix: thay và bổ sung thành viên sau Giao chấm
     if (own.kind !== "own_sheet") throw new Error(own.kind);
     await w.t.app.scoring.confirmScoreSheet(m(2), { dossierId: d.dossierId, expectedVersion: own.sheet!.version });
     if (state === "Đã chốt điểm") {
-      await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
+      await w.t.app.scoring.createMeeting(w.A.secretary, {
+        roundId: w.roundId,
+        title: "Phiên họp",
+        heldOn: "2026-10-25",
+        location: "Sở",
+        dossierIds: [d.dossierId],
+      });
       await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: await versionOf(d.dossierId) });
     }
     return { owner: d.a, dossierId: d.dossierId };

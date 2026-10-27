@@ -6,13 +6,20 @@ import type { Pool } from "pg";
  * matched on the code, names are updated, nothing is deleted. Returns how many rows were read.
  */
 export async function seedWards(pool: Pool, csv: string): Promise<number> {
-  const lines = csv.replace(/^\uFEFF/, "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = csv
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const [header, ...rows] = lines;
   if (header?.toLowerCase().replace(/\s/g, "") !== "ma,ten") throw new Error('CSV header must be "ma,ten"');
   const wards = rows.map((line, i) => {
     const comma = line.indexOf(",");
     const code = line.slice(0, comma).trim();
-    const name = line.slice(comma + 1).trim().replace(/^"(.*)"$/, "$1");
+    const name = line
+      .slice(comma + 1)
+      .trim()
+      .replace(/^"(.*)"$/, "$1");
     if (comma < 0 || !/^\d{5}$/.test(code) || !name) throw new Error(`Line ${i + 2}: expected "<5-digit code>,<name>"`);
     return { code, name };
   });
@@ -20,10 +27,11 @@ export async function seedWards(pool: Pool, csv: string): Promise<number> {
   try {
     await client.query("BEGIN");
     for (const w of wards) {
-      await client.query(
-        "INSERT INTO org.ward (id, code, name) VALUES ($1, $2, $3) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name",
-        [uuidv7(), w.code, w.name],
-      );
+      await client.query("INSERT INTO org.ward (id, code, name) VALUES ($1, $2, $3) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name", [
+        uuidv7(),
+        w.code,
+        w.name,
+      ]);
     }
     await client.query("COMMIT");
   } catch (err) {

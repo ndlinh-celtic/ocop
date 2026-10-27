@@ -7,30 +7,30 @@ export function CriteriaSetHeading({ view, edit }: { view: CriteriaSetView; edit
   const { set } = view;
   return (
     <>
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-semibold">
-              Bộ {set.code}. {set.name}
-            </h1>
-            <StatusTag status={view.version.status} />
-            {edit?.({ node: "set", id: set.id, label: `Bộ ${set.code}`, values: { name: set.name, totalPoints: set.totalPoints } })}
-          </div>
-          <p className="text-sm text-text-2">
-            {view.productGroup} › {view.subgroup} · {set.totalPoints} điểm
-            {set.sourcePages.length > 0 && ` · trang PDF ${set.sourcePages.join("–")}`}
-          </p>
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-xl font-semibold">
+            Bộ {set.code}. {set.name}
+          </h1>
+          <StatusTag status={view.version.status} />
+          {edit?.({ node: "set", id: set.id, label: `Bộ ${set.code}`, values: { name: set.name, totalPoints: set.totalPoints } })}
         </div>
+        <p className="text-sm text-text-2">
+          {view.productGroup} › {view.subgroup} · {set.totalPoints} điểm
+          {set.sourcePages.length > 0 && ` · trang PDF ${set.sourcePages.join("–")}`}
+        </p>
+      </div>
 
-        {(set.extractionNote || set.footerNote) && (
-          <section className="rounded-lg border border-amber bg-amber-soft p-4 text-sm">
-            {set.extractionNote && (
-              <p>
-                <b>Ghi chú bóc tách:</b> {set.extractionNote}
-              </p>
-            )}
-            {set.footerNote && <p className="mt-1 text-text-2">{set.footerNote}</p>}
-          </section>
-        )}
+      {(set.extractionNote || set.footerNote) && (
+        <section className="rounded-lg border border-amber bg-amber-soft p-4 text-sm">
+          {set.extractionNote && (
+            <p>
+              <b>Ghi chú bóc tách:</b> {set.extractionNote}
+            </p>
+          )}
+          {set.footerNote && <p className="mt-1 text-text-2">{set.footerNote}</p>}
+        </section>
+      )}
     </>
   );
 }
@@ -42,84 +42,94 @@ export function CriteriaSetHeading({ view, edit }: { view: CriteriaSetView; edit
 export function CriteriaSetSheet({ set, edit }: { set: CriteriaSetDetail; edit?: EditSlot }) {
   return (
     <>
-        <section className="rounded-lg border bg-surface p-4">
-          <h2 className="mb-2 font-medium">Điều kiện loại</h2>
-          {set.exclusionConditions.length === 0 ? (
-            <p className="text-sm text-text-3">Phiếu không có dòng &ldquo;Hồ sơ bị loại khi…&rdquo;.</p>
-          ) : (
-            <ol className="list-decimal pl-5 text-sm">
-              {set.exclusionConditions.map((e, i) => (
-                <li key={e.id}>
-                  {e.description}{" "}
-                  {edit?.({ node: "exclusion", id: e.id, label: `Điều kiện loại ${i + 1}`, values: { description: e.description } })}
-                </li>
-              ))}
-            </ol>
-          )}
-          {edit && <div className="mt-2">{edit({ add: "exclusion", parent: { node: "set", id: set.id }, label: "Thêm điều kiện loại" })}</div>}
-        </section>
+      <section className="rounded-lg border bg-surface p-4">
+        <h2 className="mb-2 font-medium">Điều kiện loại</h2>
+        {set.exclusionConditions.length === 0 ? (
+          <p className="text-sm text-text-3">Phiếu không có dòng &ldquo;Hồ sơ bị loại khi…&rdquo;.</p>
+        ) : (
+          <ol className="list-decimal pl-5 text-sm">
+            {set.exclusionConditions.map((e, i) => (
+              <li key={e.id}>
+                {e.description} {edit?.({ node: "exclusion", id: e.id, label: `Điều kiện loại ${i + 1}`, values: { description: e.description } })}
+              </li>
+            ))}
+          </ol>
+        )}
+        {edit && <div className="mt-2">{edit({ add: "exclusion", parent: { node: "set", id: set.id }, label: "Thêm điều kiện loại" })}</div>}
+      </section>
 
-        {set.parts.map((part) => (
-          <section key={part.id} className="rounded-lg border bg-surface">
-            <h2 className="flex justify-between gap-3 border-b bg-surface-2 px-4 py-3 font-semibold">
-              <span>
-                Phần {part.code}. {part.name}
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                {part.points} điểm
-                {edit?.({ node: "part", id: part.id, label: `Phần ${part.code}`, values: { name: part.name, points: part.points } })}
-              </span>
-            </h2>
-            <div className="flex flex-col divide-y">
-              {part.sections.map((section) => (
-                <div key={section.id} className="px-4 py-3">
-                  <h3 className="flex justify-between gap-3 font-medium">
-                    <span>
-                      {section.code}. {section.name}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 text-text-2">
-                      {section.points} điểm
-                      {edit?.({ node: "section", id: section.id, label: `Mục ${section.code}`, values: { name: section.name, points: section.points } })}
-                    </span>
-                  </h3>
-                  <div className="mt-2 flex flex-col gap-3">
-                    {section.items.map((item) =>
-                      item.kind === "group" ? (
-                        <div key={item.id} className="rounded-md border border-line-strong p-3">
-                          <h4 className="flex justify-between gap-3 text-sm font-medium">
-                            <span>
-                              {item.code} {item.name}
-                            </span>
-                            <span className="flex shrink-0 items-center gap-2 text-text-2">
-                              {item.points} điểm
-                              {edit?.({ node: "criterionGroup", id: item.id, label: `Nhóm tiêu chí ${item.code}`, values: { name: item.name, points: item.points } })}
-                            </span>
-                          </h4>
-                          <div className="mt-2 flex flex-col gap-3">
-                            {item.criteria.map((c) => (
-                              <CriterionCard key={c.id} criterion={c} edit={edit} />
-                            ))}
-                            {edit && <div>{edit({ add: "criterion", parent: { node: "criterionGroup", id: item.id }, label: `Thêm tiêu chí vào nhóm ${item.code}` })}</div>}
-                          </div>
+      {set.parts.map((part) => (
+        <section key={part.id} className="rounded-lg border bg-surface">
+          <h2 className="flex justify-between gap-3 border-b bg-surface-2 px-4 py-3 font-semibold">
+            <span>
+              Phần {part.code}. {part.name}
+            </span>
+            <span className="flex shrink-0 items-center gap-2">
+              {part.points} điểm
+              {edit?.({ node: "part", id: part.id, label: `Phần ${part.code}`, values: { name: part.name, points: part.points } })}
+            </span>
+          </h2>
+          <div className="flex flex-col divide-y">
+            {part.sections.map((section) => (
+              <div key={section.id} className="px-4 py-3">
+                <h3 className="flex justify-between gap-3 font-medium">
+                  <span>
+                    {section.code}. {section.name}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-text-2">
+                    {section.points} điểm
+                    {edit?.({ node: "section", id: section.id, label: `Mục ${section.code}`, values: { name: section.name, points: section.points } })}
+                  </span>
+                </h3>
+                <div className="mt-2 flex flex-col gap-3">
+                  {section.items.map((item) =>
+                    item.kind === "group" ? (
+                      <div key={item.id} className="rounded-md border border-line-strong p-3">
+                        <h4 className="flex justify-between gap-3 text-sm font-medium">
+                          <span>
+                            {item.code} {item.name}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2 text-text-2">
+                            {item.points} điểm
+                            {edit?.({
+                              node: "criterionGroup",
+                              id: item.id,
+                              label: `Nhóm tiêu chí ${item.code}`,
+                              values: { name: item.name, points: item.points },
+                            })}
+                          </span>
+                        </h4>
+                        <div className="mt-2 flex flex-col gap-3">
+                          {item.criteria.map((c) => (
+                            <CriterionCard key={c.id} criterion={c} edit={edit} />
+                          ))}
+                          {edit && (
+                            <div>
+                              {edit({ add: "criterion", parent: { node: "criterionGroup", id: item.id }, label: `Thêm tiêu chí vào nhóm ${item.code}` })}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <CriterionCard key={item.id} criterion={item} edit={edit} />
-                      ),
-                    )}
-                    {edit && (
-                      <div className="flex flex-wrap gap-2">
-                        {edit({ add: "criterion", parent: { node: "section", id: section.id }, label: `Thêm tiêu chí vào mục ${section.code}` })}
-                        {edit({ add: "criterionGroup", parent: { node: "section", id: section.id }, label: `Thêm nhóm tiêu chí vào mục ${section.code}` })}
                       </div>
-                    )}
-                  </div>
+                    ) : (
+                      <CriterionCard key={item.id} criterion={item} edit={edit} />
+                    ),
+                  )}
+                  {edit && (
+                    <div className="flex flex-wrap gap-2">
+                      {edit({ add: "criterion", parent: { node: "section", id: section.id }, label: `Thêm tiêu chí vào mục ${section.code}` })}
+                      {edit({ add: "criterionGroup", parent: { node: "section", id: section.id }, label: `Thêm nhóm tiêu chí vào mục ${section.code}` })}
+                    </div>
+                  )}
                 </div>
-              ))}
-              {edit && <div className="px-4 py-3">{edit({ add: "section", parent: { node: "part", id: part.id }, label: `Thêm mục vào phần ${part.code}` })}</div>}
-            </div>
-          </section>
-        ))}
-        {edit && <div>{edit({ add: "part", parent: { node: "set", id: set.id }, label: "Thêm phần" })}</div>}
+              </div>
+            ))}
+            {edit && (
+              <div className="px-4 py-3">{edit({ add: "section", parent: { node: "part", id: part.id }, label: `Thêm mục vào phần ${part.code}` })}</div>
+            )}
+          </div>
+        </section>
+      ))}
+      {edit && <div>{edit({ add: "part", parent: { node: "set", id: set.id }, label: "Thêm phần" })}</div>}
     </>
   );
 }

@@ -162,14 +162,11 @@ export interface AggregateOnlyView {
 }
 
 /** #68: the Chủ tịch and Thư ký before Sẵn sàng chốt, each phiếu đã xác nhận with its dòng, no tổng hợp nor Cờ chênh lệch. */
-export type ConfirmedSheetsView = Pick<FullScoresView, "dossierId" | "dossierState" | "minGraders" | "set" | "thresholds" | "criteria" | "graders"> & { kind: "confirmed_sheets" };
+export type ConfirmedSheetsView = Pick<FullScoresView, "dossierId" | "dossierState" | "minGraders" | "set" | "thresholds" | "criteria" | "graders"> & {
+  kind: "confirmed_sheets";
+};
 
-export type DossierScores =
-  | { kind: "none" }
-  | ConfirmedSheetsView
-  | OwnSheetView
-  | FullScoresView
-  | AggregateOnlyView;
+export type DossierScores = { kind: "none" } | ConfirmedSheetsView | OwnSheetView | FullScoresView | AggregateOnlyView;
 
 /** The score view of a hồ sơ the reader is allowed (story 92, 95): see `scoresVisibility`. */
 export function readDossierScores(deps: CoreDeps) {
@@ -187,7 +184,16 @@ export function readDossierScores(deps: CoreDeps) {
         case "confirmed_sheets": {
           const { set, thresholds, order, graders, aggregation } = await aggregateOf(tx, dossier);
           await auditViewed(deps, tx, actor, dossier.id, "confirmed_sheets", graders);
-          return { kind: "confirmed_sheets", dossierId: dossier.id, dossierState: dossier.state, minGraders: aggregation.minGraders, set, thresholds, criteria: criteriaOf(order), graders };
+          return {
+            kind: "confirmed_sheets",
+            dossierId: dossier.id,
+            dossierState: dossier.state,
+            minGraders: aggregation.minGraders,
+            set,
+            thresholds,
+            criteria: criteriaOf(order),
+            graders,
+          };
         }
         case "full": {
           const view = result ? await finalizedView(tx, dossier, result) : await fullView(tx, dossier);
@@ -220,7 +226,10 @@ export function readDossierScores(deps: CoreDeps) {
 async function visibilityOf(tx: Tx, actor: UserActor, dossier: Dossier, ownSheetOnly: boolean) {
   const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
   const result = await tx.aggregateResults.current(dossier.id);
-  return { visibility: scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly, finalized: result !== null }), result };
+  return {
+    visibility: scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly, finalized: result !== null }),
+    result,
+  };
 }
 
 export interface AggregateSummaryRow {
@@ -260,9 +269,18 @@ export function aggregateSummaries(deps: CoreDeps) {
  * A thành viên's points shown with their name to another reader: a personal data access (NĐ 13/2023, CODING_STANDARDS.md
  * "Truy cập dữ liệu cá nhân"). A view whose only phiếu đã xác nhận is the reader's own, or has none, writes nothing.
  */
-async function auditViewed(deps: CoreDeps, tx: Tx, actor: UserActor, dossierId: string, view: Extract<ScoresVisibility, "confirmed_sheets" | "full">, graders: GraderScores[]) {
+async function auditViewed(
+  deps: CoreDeps,
+  tx: Tx,
+  actor: UserActor,
+  dossierId: string,
+  view: Extract<ScoresVisibility, "confirmed_sheets" | "full">,
+  graders: GraderScores[],
+) {
   if (!graders.some((g) => g.lines !== null && g.userId !== actor.userId)) return;
-  await tx.audit.append(auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossierId, metadata: { view } }));
+  await tx.audit.append(
+    auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "personal_data.viewed", targetType: "dossier", targetId: dossierId, metadata: { view } }),
+  );
 }
 
 /** Each thành viên chấm in force with their phiếu (not superseded), by name. */
@@ -273,7 +291,16 @@ export async function gradersOf(tx: Tx, dossierId: string): Promise<{ progress: 
   for (const a of members) {
     const sheet = sheets.find((s) => s.assignmentId === a.id) ?? null;
     const user = await tx.users.findById(a.userId);
-    rows.push({ progress: { userId: a.userId, fullName: user?.fullName ?? "", state: sheet?.state ?? null, sheetId: sheet?.id ?? null, confirmedAt: sheet?.confirmedAt ?? null }, sheet });
+    rows.push({
+      progress: {
+        userId: a.userId,
+        fullName: user?.fullName ?? "",
+        state: sheet?.state ?? null,
+        sheetId: sheet?.id ?? null,
+        confirmedAt: sheet?.confirmedAt ?? null,
+      },
+      sheet,
+    });
   }
   return rows.sort((x, y) => x.progress.fullName.localeCompare(y.progress.fullName, "vi"));
 }
@@ -408,7 +435,13 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
       edited: line?.edited ?? false,
       advisory:
         original && line?.advisoryVersionId
-          ? { versionId: line.advisoryVersionId, number: numberOf.get(line.advisoryVersionId) ?? 0, levelId: original.id, points: original.points, description: original.description }
+          ? {
+              versionId: line.advisoryVersionId,
+              number: numberOf.get(line.advisoryVersionId) ?? 0,
+              levelId: original.id,
+              points: original.points,
+              description: original.description,
+            }
           : null,
       adjustReason: line?.adjustReason ?? null,
     };
@@ -418,7 +451,15 @@ async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise
   return {
     kind: "own_sheet",
     dossierId: dossier.id,
-    sheet: sheet && { id: sheet.id, state: sheet.state, attempt: sheet.attempt, version: sheet.version, confirmedAt: sheet.confirmedAt, reauthMethod: sheet.reauthMethod, awaitingCopy: sheet.awaitingCopy },
+    sheet: sheet && {
+      id: sheet.id,
+      state: sheet.state,
+      attempt: sheet.attempt,
+      version: sheet.version,
+      confirmedAt: sheet.confirmedAt,
+      reauthMethod: sheet.reauthMethod,
+      awaitingCopy: sheet.awaitingCopy,
+    },
     set,
     thresholds,
     criteria,

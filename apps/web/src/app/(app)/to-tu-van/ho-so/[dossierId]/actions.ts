@@ -30,7 +30,11 @@ const paths = (dossierId: string) => {
 };
 
 /** Stories 44 to 50: lưu nháp; a colleague's newer save is reported, never overwritten. */
-export async function saveAdvisoryDraftAction(dossierId: string, draftVersion: number, input: AdvisoryContentInput): Promise<{ error?: string; draftVersion?: number }> {
+export async function saveAdvisoryDraftAction(
+  dossierId: string,
+  draftVersion: number,
+  input: AdvisoryContentInput,
+): Promise<{ error?: string; draftVersion?: number }> {
   const actor = await requireActor();
   const parsed = content.safeParse(input);
   if (!parsed.success) return { error: "Nội dung báo cáo không hợp lệ" };
@@ -39,7 +43,8 @@ export async function saveAdvisoryDraftAction(dossierId: string, draftVersion: n
     paths(dossierId);
     return saved;
   } catch (err) {
-    if (err instanceof DomainError && err.code === "version_conflict") return { error: "Đồng nghiệp đã lưu bản nháp trước anh/chị. Tải lại trang để xem bản mới nhất." };
+    if (err instanceof DomainError && err.code === "version_conflict")
+      return { error: "Đồng nghiệp đã lưu bản nháp trước anh/chị. Tải lại trang để xem bản mới nhất." };
     return { error: domainMessage(err) };
   }
 }
@@ -48,9 +53,17 @@ export async function saveAdvisoryDraftAction(dossierId: string, draftVersion: n
  * Stories 56, 57: phát hành phiên bản 1; refused with the Tiêu chí still lacking Điểm đề xuất or căn cứ. After a Sở trả
  * về (#69) it is phiên bản N+1 and the form carries its reason.
  */
-export async function issueAdvisoryReportAction(dossierId: string, expectedVersion: number, _prev: { error?: string }, form: FormData): Promise<{ error?: string }> {
+export async function issueAdvisoryReportAction(
+  dossierId: string,
+  expectedVersion: number,
+  _prev: { error?: string },
+  form: FormData,
+): Promise<{ error?: string }> {
   const actor = await requireActor();
-  const reason = z.string().max(2000).safeParse(form.get("reason") ?? "");
+  const reason = z
+    .string()
+    .max(2000)
+    .safeParse(form.get("reason") ?? "");
   if (!reason.success) return { error: "Lý do không hợp lệ" };
   try {
     await app().core.scoring.issueAdvisoryReport(actor, { dossierId, expectedVersion, reason: reason.data });
@@ -63,7 +76,12 @@ export async function issueAdvisoryReportAction(dossierId: string, expectedVersi
 }
 
 /** Stories 60, 61: phiên bản N+1 from the content edited from phiên bản N, with its reason. */
-export async function reissueAdvisoryReportAction(dossierId: string, expectedVersion: number, reason: string, input: AdvisoryContentInput): Promise<{ error?: string; version?: number; number?: number }> {
+export async function reissueAdvisoryReportAction(
+  dossierId: string,
+  expectedVersion: number,
+  reason: string,
+  input: AdvisoryContentInput,
+): Promise<{ error?: string; version?: number; number?: number }> {
   const actor = await requireActor();
   const parsed = content.safeParse(input);
   if (!parsed.success) return { error: "Nội dung báo cáo không hợp lệ" };
@@ -79,7 +97,9 @@ export async function reissueAdvisoryReportAction(dossierId: string, expectedVer
 const uploadInput = z.object({ fileName: z.string().min(1), contentType: z.string(), size: z.number().int().positive() });
 
 /** Story 48 step one: a pre-signed upload of a biên bản or ảnh kiểm tra thực địa. */
-export async function requestAdvisoryAttachmentUploadAction(input: z.infer<typeof uploadInput>): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
+export async function requestAdvisoryAttachmentUploadAction(
+  input: z.infer<typeof uploadInput>,
+): Promise<{ fileId: string; upload: UploadInstructions } | { error: string }> {
   const actor = await requireActor();
   const parsed = uploadInput.safeParse(input);
   if (!parsed.success) return { error: "Chọn tệp để tải lên" };
@@ -93,7 +113,9 @@ export async function requestAdvisoryAttachmentUploadAction(input: z.infer<typeo
 /** Step two: the upload is complete; the editor adds the file to the nháp at its next lưu nháp, while the scan runs. */
 export async function completeAdvisoryAttachmentAction(input: { fileId: string; parts?: { partNumber: number; etag: string }[] }): Promise<{ error?: string }> {
   const actor = await requireActor();
-  const parsed = z.object({ fileId: z.string(), parts: z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional() }).safeParse(input);
+  const parsed = z
+    .object({ fileId: z.string(), parts: z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string() })).optional() })
+    .safeParse(input);
   if (!parsed.success) return { error: "Nội dung không hợp lệ" };
   try {
     await app().core.files.completeUpload(actor, parsed.data);

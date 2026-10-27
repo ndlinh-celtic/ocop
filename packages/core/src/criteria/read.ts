@@ -12,7 +12,6 @@ import type { CriteriaVersion, VersionSummary, VersionTaxonomy } from "./version
  * (spec #16 story 33). A draft is reported as not found to everyone else.
  */
 
-
 export interface TaxonomySet {
   id: string;
   code: string;

@@ -135,7 +135,11 @@ function thresholdIssues(rows: VersionRows): ValidationIssue[] {
   const t = rows.thresholds;
   const issues: ValidationIssue[] = [];
   const at = { setId: null, setCode: null, criterionCode: null };
-  for (const [lower, upper] of [[2, 3], [3, 4], [4, 5]] as const) {
+  for (const [lower, upper] of [
+    [2, 3],
+    [3, 4],
+    [4, 5],
+  ] as const) {
     if (!(t[upper] > t[lower])) issues.push({ code: "thresholds_not_increasing", ...at, message: `Ngưỡng ${upper} sao phải lớn hơn ngưỡng ${lower} sao` });
   }
   for (const { set } of rows.sets) {

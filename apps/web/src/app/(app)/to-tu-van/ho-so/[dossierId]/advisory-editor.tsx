@@ -5,7 +5,13 @@ import { Save, Send, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { sendToStorage } from "@/lib/direct-upload";
-import { completeAdvisoryAttachmentAction, reissueAdvisoryReportAction, requestAdvisoryAttachmentUploadAction, saveAdvisoryDraftAction, type AdvisoryContentInput } from "./actions";
+import {
+  completeAdvisoryAttachmentAction,
+  reissueAdvisoryReportAction,
+  requestAdvisoryAttachmentUploadAction,
+  saveAdvisoryDraftAction,
+  type AdvisoryContentInput,
+} from "./actions";
 
 type Line = AdvisoryContentInput["lines"][number];
 
@@ -24,7 +30,14 @@ export interface EditorProps {
  * giá minh chứng, Điểm đề xuất, căn cứ and the minh chứng it cites; nhận xét tổng hợp, điểm cần lưu ý and tệp đính
  * kèm thực địa; with the sums by Phần kept live. The same form, prefilled from phiên bản N, issues N+1 (story 60).
  */
-export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, notes: initialNotes, attachments: initialAttachments, mode: initialMode }: EditorProps) {
+export function AdvisoryEditor({
+  dossierId,
+  criteria,
+  summary: initialSummary,
+  notes: initialNotes,
+  attachments: initialAttachments,
+  mode: initialMode,
+}: EditorProps) {
   const router = useRouter();
   // The version a save is made at moves with each save, here rather than through a remount: the form keeps what the
   // reader typed and the message it was shown. A colleague's save in between is reported as version_conflict (story 50).
@@ -33,7 +46,13 @@ export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, n
     Object.fromEntries(
       criteria.map((c) => [
         c.criterionId,
-        { criterionId: c.criterionId, levelId: c.line.levelId, basis: c.line.basis, evidenceFileIds: c.line.evidenceFileIds, evidenceAssessment: c.line.evidenceAssessment },
+        {
+          criterionId: c.criterionId,
+          levelId: c.line.levelId,
+          basis: c.line.basis,
+          evidenceFileIds: c.line.evidenceFileIds,
+          evidenceAssessment: c.line.evidenceAssessment,
+        },
       ]),
     ),
   );
@@ -108,7 +127,10 @@ export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, n
                 return (
                   <li key={c.criterionId} className="flex flex-col gap-2 p-4 text-sm" data-testid="advisory-line">
                     <p>
-                      <b>{c.code}</b> {c.name} <span className="text-text-3">(tối đa {c.maxPoints} điểm; Chủ thể tự chấm {c.submitted.points ?? "—"})</span>
+                      <b>{c.code}</b> {c.name}{" "}
+                      <span className="text-text-3">
+                        (tối đa {c.maxPoints} điểm; Chủ thể tự chấm {c.submitted.points ?? "—"})
+                      </span>
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <label className="flex flex-col gap-1">
@@ -162,7 +184,9 @@ export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, n
                               checked={line.evidenceFileIds.includes(ev.fileId)}
                               onChange={(e) =>
                                 update(c.criterionId, {
-                                  evidenceFileIds: e.target.checked ? [...line.evidenceFileIds, ev.fileId] : line.evidenceFileIds.filter((id) => id !== ev.fileId),
+                                  evidenceFileIds: e.target.checked
+                                    ? [...line.evidenceFileIds, ev.fileId]
+                                    : line.evidenceFileIds.filter((id) => id !== ev.fileId),
                                 })
                               }
                             />
@@ -229,7 +253,11 @@ export function AdvisoryEditor({ dossierId, criteria, summary: initialSummary, n
           {parts.map(([code, sum]) => `Phần ${code}: ${sum}`).join(" · ")} · <b>Tổng {total}</b>
         </span>
         {missing.length > 0 && <span className="text-amber">Còn thiếu Điểm đề xuất hoặc căn cứ: {missing.join(", ")}</span>}
-        <button type="submit" disabled={busy} className="ml-auto inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={busy}
+          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60"
+        >
           {mode.kind === "draft" ? <Save className="size-4" aria-hidden /> : <Send className="size-4" aria-hidden />}
           {mode.kind === "draft" ? "Lưu nháp" : `Phát hành phiên bản ${mode.nextNumber}`}
         </button>

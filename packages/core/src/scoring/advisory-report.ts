@@ -121,12 +121,19 @@ async function validContent(tx: Tx, actor: UserActor, rows: SetRows, latest: Sub
     if (l.levelId !== null && !rows.levels.some((v) => v.id === l.levelId && v.criterionId === l.criterionId)) {
       throw new DomainError("level_not_in_criterion", "Mức điểm đã chọn không thuộc tiêu chí này");
     }
-    if (l.evidenceAssessment !== null && !EVIDENCE_ASSESSMENTS.includes(l.evidenceAssessment)) throw new DomainError("invalid_input", "Đánh giá minh chứng không hợp lệ");
+    if (l.evidenceAssessment !== null && !EVIDENCE_ASSESSMENTS.includes(l.evidenceAssessment))
+      throw new DomainError("invalid_input", "Đánh giá minh chứng không hợp lệ");
     const cited = [...new Set(l.evidenceFileIds)];
     if (cited.length > MAX_FILES || cited.some((id) => !evidence.has(id))) {
       throw new DomainError("evidence_not_in_submission", "Chỉ viện dẫn được minh chứng của Phiên bản nộp mới nhất");
     }
-    byId.set(l.criterionId, { criterionId: l.criterionId, levelId: l.levelId, basis: text(l.basis), evidenceFileIds: cited, evidenceAssessment: l.evidenceAssessment });
+    byId.set(l.criterionId, {
+      criterionId: l.criterionId,
+      levelId: l.levelId,
+      basis: text(l.basis),
+      evidenceFileIds: cited,
+      evidenceAssessment: l.evidenceAssessment,
+    });
   }
   const attachmentFileIds = [...new Set(input.attachmentFileIds)];
   if (attachmentFileIds.length > MAX_FILES) throw new DomainError("invalid_input", "Quá nhiều tệp đính kèm");
@@ -168,7 +175,11 @@ async function compose(tx: Tx, dossier: Dossier, draft: Pick<AdvisoryReportDraft
       };
     }),
   );
-  const rank = rankStoredSet({ set, thresholds, scores: new Map(criteria.flatMap((c) => (c.line.points === null ? [] : [[c.criterionId, c.line.points] as const]))) });
+  const rank = rankStoredSet({
+    set,
+    thresholds,
+    scores: new Map(criteria.flatMap((c) => (c.line.points === null ? [] : [[c.criterionId, c.line.points] as const]))),
+  });
   return {
     criteria,
     fileName,
@@ -248,7 +259,14 @@ export function saveAdvisoryDraft(deps: CoreDeps) {
       // on the hồ sơ, so the version the Tổ trưởng, Thư ký and Sở hold stays valid.
       assertTransitionAllowed(actor, before, "dossier.advisory_report.edit", now);
       if (input.draftVersion !== stored.version) throw versionConflict();
-      const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
+      const content = await validContent(
+        tx,
+        actor,
+        await setRowsOf(tx, before),
+        await tx.dossiers.latestSubmission(before.id),
+        stored.attachmentFileIds,
+        input,
+      );
       const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: now, updatedBy: actor.userId };
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();
       await tx.audit.append(
@@ -269,7 +287,9 @@ export function saveAdvisoryDraft(deps: CoreDeps) {
 /** The Tổ trưởng of the hồ sơ's Hội đồng now, still holding a Phân vai Thành viên Tổ tư vấn in force on it (spec #49 "Hội đồng"). */
 async function assertLeader(tx: Tx, actor: UserActor, dossier: Dossier, now: Date) {
   const council = dossier.councilId ? await tx.councils.findById(dossier.councilId) : null;
-  const holds = council ? (await tx.roleAssignments.listForScope("advisory_member", "council", council.id)).some((a) => a.userId === actor.userId && isAssignmentActive(a, now)) : false;
+  const holds = council
+    ? (await tx.roleAssignments.listForScope("advisory_member", "council", council.id)).some((a) => a.userId === actor.userId && isAssignmentActive(a, now))
+    : false;
   if (!council || council.leaderUserId !== actor.userId || !holds) {
     throw new DomainError(forbidden().code, "Chỉ Tổ trưởng Tổ tư vấn của hội đồng mới phát hành được Báo cáo Tổ tư vấn");
   }
@@ -349,7 +369,11 @@ export function issueAdvisoryReport(deps: CoreDeps) {
       const now = deps.clock.now();
       const before = await lockDossier(tx, actor, input.dossierId);
       const number = (await tx.advisoryReports.versions(before.id)).length + 1;
-      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.issue", expectedVersion: input.expectedVersion, metadata: { number } });
+      const after = await transition(deps, tx, actor, before, {
+        action: "dossier.advisory_report.issue",
+        expectedVersion: input.expectedVersion,
+        metadata: { number },
+      });
       await assertLeader(tx, actor, before, now);
       if (number > 1 && reason === null) throw new DomainError("reason_required", "Ghi lý do phát hành phiên bản mới");
       const draft = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
@@ -365,7 +389,10 @@ export function issueAdvisoryReport(deps: CoreDeps) {
  * The nháp takes that content too, so it always holds what was issued last.
  */
 export function reissueAdvisoryReport(deps: CoreDeps) {
-  return async (actor: Actor, input: AdvisoryReportContent & { dossierId: string; expectedVersion: number; reason: string }): Promise<{ version: number; number: number }> => {
+  return async (
+    actor: Actor,
+    input: AdvisoryReportContent & { dossierId: string; expectedVersion: number; reason: string },
+  ): Promise<{ version: number; number: number }> => {
     authorize(actor, "dossier.advisory_report.write");
     const reason = reasonOf(input.reason, true)!;
     return deps.uow.run(async (tx) => {
@@ -373,11 +400,22 @@ export function reissueAdvisoryReport(deps: CoreDeps) {
       const before = await lockDossier(tx, actor, input.dossierId);
       const versions = await tx.advisoryReports.versions(before.id);
       const number = versions.length + 1;
-      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_report.reissue", expectedVersion: input.expectedVersion, metadata: { number } });
+      const after = await transition(deps, tx, actor, before, {
+        action: "dossier.advisory_report.reissue",
+        expectedVersion: input.expectedVersion,
+        metadata: { number },
+      });
       await assertLeader(tx, actor, before, now);
       if (versions.length === 0) throw new DomainError("no_issued_version", "Hồ sơ chưa có Báo cáo Tổ tư vấn đã phát hành");
       const stored = (await tx.advisoryReports.draft(before.id)) ?? emptyDraft(before.id);
-      const content = await validContent(tx, actor, await setRowsOf(tx, before), await tx.dossiers.latestSubmission(before.id), stored.attachmentFileIds, input);
+      const content = await validContent(
+        tx,
+        actor,
+        await setRowsOf(tx, before),
+        await tx.dossiers.latestSubmission(before.id),
+        stored.attachmentFileIds,
+        input,
+      );
       const draft: AdvisoryReportDraft = { dossierId: before.id, version: stored.version + 1, ...content, updatedAt: now, updatedBy: actor.userId };
       await issue(deps, tx, actor, before, draft, number, reason, now);
       if (!(await tx.advisoryReports.saveDraft(draft, stored.version))) throw versionConflict();
@@ -431,7 +469,12 @@ export function downloadAdvisoryFile(deps: CoreDeps) {
       if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
       const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
       await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), { action: "file.download_issued", targetType: "file", targetId: file.id, metadata: { dossierId: dossier.id } }),
+        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
+          action: "file.download_issued",
+          targetType: "file",
+          targetId: file.id,
+          metadata: { dossierId: dossier.id },
+        }),
       );
       return { url: get.url, expiresAt: get.expiresAt, fileName: file.fileName };
     });

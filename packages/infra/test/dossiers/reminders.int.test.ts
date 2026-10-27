@@ -114,7 +114,12 @@ describe("CT-12 nhắc hạn bổ sung (story 55)", () => {
     const officer = await f.staff("ward_officer", wardX);
     const s = await f.submitted(sets["Rau củ quả"]);
     const { version } = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
-    await t.app.dossiers.requestSupplement(officer, { dossierId: s.dossierId, expectedVersion: version, deadline: "2026-10-31", items: [{ content: "Bổ sung phiếu kiểm nghiệm" }] });
+    await t.app.dossiers.requestSupplement(officer, {
+      dossierId: s.dossierId,
+      expectedVersion: version,
+      deadline: "2026-10-31",
+      items: [{ content: "Bổ sung phiếu kiểm nghiệm" }],
+    });
 
     await t.app.dossiers.sendDueReminders(JOB); // 12 days ahead: the 14-day mốc
     await t.drainJobs();

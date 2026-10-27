@@ -73,7 +73,13 @@ export function startGrading(deps: CoreDeps) {
         );
 
         const tookEffect = await tx.assignments.takeEffect(before.id, now);
-        const scoreSheetIds = await openScoreSheets(deps, tx, before.id, members.map((a) => a.id), now);
+        const scoreSheetIds = await openScoreSheets(
+          deps,
+          tx,
+          before.id,
+          members.map((a) => a.id),
+          now,
+        );
         await tx.audit.append(
           auditEntry(actor, deps.ids.next(), now, {
             action: "council.assignments.took_effect",

@@ -22,8 +22,16 @@ export function ChangePasswordForm() {
         Nhập lại mật khẩu mới
         <input name="confirm" type="password" autoComplete="new-password" required className={field} />
       </label>
-      {state.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
-      {state.ok && <p role="status" className="text-sm text-brand">Đã đổi mật khẩu. Các phiên đăng nhập khác đã bị đăng xuất.</p>}
+      {state.error && (
+        <p role="alert" className="text-sm text-danger">
+          {state.error}
+        </p>
+      )}
+      {state.ok && (
+        <p role="status" className="text-sm text-brand">
+          Đã đổi mật khẩu. Các phiên đăng nhập khác đã bị đăng xuất.
+        </p>
+      )}
       <button type="submit" disabled={pending} className="self-start rounded-md bg-brand px-4 py-2 font-semibold text-brand-ink disabled:opacity-60">
         Đổi mật khẩu
       </button>

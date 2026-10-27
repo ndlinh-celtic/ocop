@@ -3,19 +3,36 @@ import { fileURLToPath } from "node:url";
 import type { Criterion, CriterionGroup, CriteriaSet, Part, RankThresholds, Section, Star } from "../src/criteria/model";
 
 // Test-only reader for the extracted QĐ 26/2026 file; the real import (#18) lives in core later.
-interface RawLevel { mo_ta: string; diem: number; sao_toi_thieu: number | null }
+interface RawLevel {
+  mo_ta: string;
+  diem: number;
+  sao_toi_thieu: number | null;
+}
 interface RawCriterion {
-  phan: string; phan_ten: string; phan_diem: number;
-  muc: string; muc_ten: string; muc_diem: number;
+  phan: string;
+  phan_ten: string;
+  phan_diem: number;
+  muc: string;
+  muc_ten: string;
+  muc_diem: number;
   nhom_con?: string;
-  ma: string; ten: string; diem_toi_da: number; yeu_cau: string; ghi_chu: string;
+  ma: string;
+  ten: string;
+  diem_toi_da: number;
+  yeu_cau: string;
+  ghi_chu: string;
   lua_chon: RawLevel[];
 }
-interface RawSet { bo: number; ten_bo: string; tong_diem: number; tieu_chi: RawCriterion[] }
+interface RawSet {
+  bo: number;
+  ten_bo: string;
+  tong_diem: number;
+  tieu_chi: RawCriterion[];
+}
 
-const raw = JSON.parse(
-  readFileSync(fileURLToPath(new URL("../../../docs/tieu-chi/ocop_tieu_chi_qd26_2026.json", import.meta.url)), "utf8"),
-) as { bo_tieu_chi: RawSet[] };
+const raw = JSON.parse(readFileSync(fileURLToPath(new URL("../../../docs/tieu-chi/ocop_tieu_chi_qd26_2026.json", import.meta.url)), "utf8")) as {
+  bo_tieu_chi: RawSet[];
+};
 
 export const QD26_THRESHOLDS: RankThresholds = { 2: 30, 3: 50, 4: 70, 5: 90 };
 
@@ -54,7 +71,8 @@ export function qd26Set(no: number): CriteriaSet {
     }
     const [groupCode = ""] = c.nhom_con.split(" ");
     let group = section.items.find((i) => i.kind === "group" && i.code === groupCode) as (CriterionGroup & { criteria: Criterion[] }) | undefined;
-    if (!group) section.items.push((group = { kind: "group", code: groupCode, name: c.nhom_con, points: Number(/\((\d+)đ\)/.exec(c.nhom_con)?.[1] ?? 0), criteria: [] }));
+    if (!group)
+      section.items.push((group = { kind: "group", code: groupCode, name: c.nhom_con, points: Number(/\((\d+)đ\)/.exec(c.nhom_con)?.[1] ?? 0), criteria: [] }));
     group.criteria.push(criterion);
   }
   return { code: String(set.bo), name: set.ten_bo, totalPoints: set.tong_diem, parts };

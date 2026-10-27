@@ -10,7 +10,24 @@ import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, ty
 import { dossierInScope, recordedAction, ruleAllows, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
 
 /** The fields of a hồ sơ a transition may change besides its state and version. */
-export type DossierPatch = Partial<Omit<Dossier, "id" | "code" | "entityId" | "criteriaSetId" | "criteriaVersionId" | "state" | "version" | "copiedFrom" | "createdAt" | "createdBy" | "updatedAt" | "councilId" | "readerAssignment">>;
+export type DossierPatch = Partial<
+  Omit<
+    Dossier,
+    | "id"
+    | "code"
+    | "entityId"
+    | "criteriaSetId"
+    | "criteriaVersionId"
+    | "state"
+    | "version"
+    | "copiedFrom"
+    | "createdAt"
+    | "createdBy"
+    | "updatedAt"
+    | "councilId"
+    | "readerAssignment"
+  >
+>;
 
 export interface TransitionInput {
   action: DossierAction;
@@ -100,7 +117,13 @@ export async function recordCreation(deps: CoreDeps, tx: Tx, actor: UserActor, d
  * loaded `before` with the narrow, locked DossierRepo.stateRow. The rule, the Vai trò and the version are checked as
  * transition() checks them; only state, version and updated_at change; timeline, audit and outbox are written the same.
  */
-export async function transitionByLookup(deps: CoreDeps, tx: Tx, actor: UserActor, before: DossierStateRow, input: Omit<TransitionInput, "patch">): Promise<DossierStateRow> {
+export async function transitionByLookup(
+  deps: CoreDeps,
+  tx: Tx,
+  actor: UserActor,
+  before: DossierStateRow,
+  input: Omit<TransitionInput, "patch">,
+): Promise<DossierStateRow> {
   const rule = ruleFor(input.action, before.state);
   if (!rule) {
     if (!TRANSITIONS.some((r) => r.action === input.action && ruleAllows(r, actor))) throw forbidden();
@@ -168,5 +191,15 @@ async function record(deps: CoreDeps, tx: Tx, actor: UserActor, now: Date, r: Re
       metadata: { ...r.metadata, ...(r.reason ? { reason: r.reason } : {}) },
     }),
   );
-  await emit(deps, tx, { type: r.event, payload: { dossierId: dossier.id, entityId: dossier.entityId, from: r.from, to: dossier.state, actorUserId: actor.userId, ...(r.notify ? { recipientUserIds: r.notify } : {}) } });
+  await emit(deps, tx, {
+    type: r.event,
+    payload: {
+      dossierId: dossier.id,
+      entityId: dossier.entityId,
+      from: r.from,
+      to: dossier.state,
+      actorUserId: actor.userId,
+      ...(r.notify ? { recipientUserIds: r.notify } : {}),
+    },
+  });
 }

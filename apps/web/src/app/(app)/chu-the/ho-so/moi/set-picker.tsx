@@ -55,8 +55,8 @@ export function SetPicker({
         <TriangleAlert className="size-5 shrink-0 text-amber" aria-hidden />
         <div className="flex flex-col gap-2">
           <p>
-            Hồ sơ sẽ được chấm theo Bộ tiêu chí bạn chọn, căn cứ {legalBasis}. <b>Bộ tiêu chí và văn bản căn cứ không đổi được sau khi tạo.</b> Nếu chọn
-            nhầm, hãy tạo hồ sơ mới.
+            Hồ sơ sẽ được chấm theo Bộ tiêu chí bạn chọn, căn cứ {legalBasis}. <b>Bộ tiêu chí và văn bản căn cứ không đổi được sau khi tạo.</b> Nếu chọn nhầm,
+            hãy tạo hồ sơ mới.
           </p>
           <label className="flex items-center gap-2 font-medium">
             <input type="checkbox" name="acknowledged" required /> Tôi đã hiểu

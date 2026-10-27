@@ -63,8 +63,7 @@ async function verifiedEntity(tx: Tx, actor: UserActor, now: Date) {
   return entity;
 }
 
-const setNotApplicable = () =>
-  new DomainError("criteria_set_not_applicable", "Bộ tiêu chí không thuộc phiên bản tiêu chí đang áp dụng, hãy chọn lại");
+const setNotApplicable = () => new DomainError("criteria_set_not_applicable", "Bộ tiêu chí không thuộc phiên bản tiêu chí đang áp dụng, hãy chọn lại");
 
 /** Story 19, SO-03: the mã hồ sơ, HS-<năm>-<số>, the year in giờ Việt Nam and the số running within it. */
 async function nextDossierCode(tx: Tx, now: Date): Promise<string> {

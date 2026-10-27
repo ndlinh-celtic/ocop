@@ -17,7 +17,11 @@ export function VerifyChainButton() {
       >
         {pending ? "Đang kiểm tra…" : "Kiểm tra toàn vẹn chuỗi"}
       </button>
-      {result?.ok && <span role="status" className="text-sm text-brand">Toàn vẹn: {result.checked} dòng đã niêm phong.</span>}
+      {result?.ok && (
+        <span role="status" className="text-sm text-brand">
+          Toàn vẹn: {result.checked} dòng đã niêm phong.
+        </span>
+      )}
       {result && !result.ok && (
         <span role="alert" className="text-sm text-danger">
           Chuỗi bị phá vỡ tại số {result.brokenAtSeq} ({result.reason}).

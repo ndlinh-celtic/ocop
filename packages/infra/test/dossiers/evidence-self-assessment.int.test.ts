@@ -119,7 +119,12 @@ describe("L02 CT-05 minh chứng theo tiêu chí (stories 20 to 22, 25)", () => 
     const { a, dossierId } = await draft();
     const fileId = await evidenceIn(a, dossierId, "Kết quả kiểm nghiệm.pdf");
 
-    await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: await versionOf(a, dossierId), fileId, criterionIds: [criterion["1.1"], criterion["3.1"]] });
+    await t.app.dossiers.linkEvidence(a, {
+      dossierId,
+      expectedVersion: await versionOf(a, dossierId),
+      fileId,
+      criterionIds: [criterion["1.1"], criterion["3.1"]],
+    });
 
     const { criteria } = await t.app.dossiers.selfAssessment(a, { dossierId });
     expect(criteria.map((c) => [c.code, c.evidence.map((e) => e.fileName)])).toEqual([
@@ -143,7 +148,9 @@ describe("L02 CT-05 minh chứng theo tiêu chí (stories 20 to 22, 25)", () => 
     }
     // Once the scan finds it clean, it can be tied; the infected one never.
     await t.drainJobs();
-    await expect(t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: blocked, criterionIds: [criterion["1.1"]] })).rejects.toMatchObject({
+    await expect(
+      t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: blocked, criterionIds: [criterion["1.1"]] }),
+    ).rejects.toMatchObject({
       code: "file_not_clean",
     });
     await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: scanning, criterionIds: [criterion["1.1"]] });
@@ -171,7 +178,12 @@ describe("L02 CT-05 minh chứng theo tiêu chí (stories 20 to 22, 25)", () => 
     const keep = await evidenceIn(a, dossierId, "Giữ.pdf");
     const drop = await evidenceIn(a, dossierId, "Gỡ.pdf");
     let version = await versionOf(a, dossierId);
-    ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: keep, criterionIds: [criterion["1.1"], criterion["2.1"]] }));
+    ({ version } = await t.app.dossiers.linkEvidence(a, {
+      dossierId,
+      expectedVersion: version,
+      fileId: keep,
+      criterionIds: [criterion["1.1"], criterion["2.1"]],
+    }));
     ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: drop, criterionIds: [criterion["2.1"]] }));
     ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: keep, criterionIds: [criterion["3.1"]] }));
 
@@ -194,7 +206,11 @@ describe("L02 CT-06 tự chấm thử (stories 23 to 25)", () => {
   it("estimates Phần A/B/C, tổng điểm and Hạng sao, naming the Tiêu chí that block the next Hạng sao", async () => {
     const { a, dossierId } = await draft();
     let version = await versionOf(a, dossierId);
-    for (const [code, points] of [["1.1", 40], ["2.1", 25], ["3.1", 15]] as const) {
+    for (const [code, points] of [
+      ["1.1", 40],
+      ["2.1", 25],
+      ["3.1", 15],
+    ] as const) {
       ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion[code], levelId: level(code, points) }));
     }
 
@@ -235,7 +251,12 @@ describe("L02 CT-06 tự chấm thử (stories 23 to 25)", () => {
 
   it("clears a pick, and refuses a Mức điểm of another Tiêu chí or another Phiên bản tiêu chí", async () => {
     const { a, dossierId } = await draft();
-    let { version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: await versionOf(a, dossierId), criterionId: criterion["2.1"], levelId: level("2.1", 25) });
+    let { version } = await t.app.dossiers.selfScore(a, {
+      dossierId,
+      expectedVersion: await versionOf(a, dossierId),
+      criterionId: criterion["2.1"],
+      levelId: level("2.1", 25),
+    });
     ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["2.1"], levelId: null }));
     expect((await t.app.dossiers.selfAssessment(a, { dossierId })).criteria[1]).toMatchObject({ levelId: null, points: null });
 
@@ -275,12 +296,21 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
     let version = await versionOf(a, dossierId);
     ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId, criterionIds: [criterion["2.1"]] }));
     ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["2.1"], levelId: level("2.1", 25) }));
-    ({ version } = await t.app.dossiers.explainCriterion(a, { dossierId, expectedVersion: version, criterionId: criterion["2.1"], explanation: "Có mẫu bao bì" }));
+    ({ version } = await t.app.dossiers.explainCriterion(a, {
+      dossierId,
+      expectedVersion: version,
+      criterionId: criterion["2.1"],
+      explanation: "Có mẫu bao bì",
+    }));
     await t.app.dossiers.removeEvidenceFile(a, { dossierId, expectedVersion: version, fileId });
 
     const admin = await f.admin();
     const audit = async (action: string) => (await t.app.audit.search(admin, { action: [action], targetId: dossierId }))[0];
-    expect(await audit("dossier.evidence.link")).toMatchObject({ actorUserId: a.userId, actorRole: "entity_owner", metadata: { fileId, criterionIds: [criterion["2.1"]] } });
+    expect(await audit("dossier.evidence.link")).toMatchObject({
+      actorUserId: a.userId,
+      actorRole: "entity_owner",
+      metadata: { fileId, criterionIds: [criterion["2.1"]] },
+    });
     expect(await audit("dossier.self_score")).toMatchObject({ metadata: { criterionId: criterion["2.1"], levelId: level("2.1", 25), points: 25 } });
     expect(await audit("dossier.explain")).toMatchObject({ metadata: { criterionId: criterion["2.1"] } });
     expect(await audit("dossier.evidence.remove")).toMatchObject({ metadata: { fileId } });
@@ -316,10 +346,16 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
 
     await expect(t.app.dossiers.selfAssessment(b, { dossierId })).rejects.toMatchObject(notFound);
     await expect(t.app.dossiers.selfAssessment(b, { dossierId: "not-a-uuid" })).rejects.toMatchObject(notFound);
-    await expect(t.app.dossiers.linkEvidence(b, { dossierId, expectedVersion: version, fileId, criterionIds: [criterion["1.1"]] })).rejects.toMatchObject(notFound);
+    await expect(t.app.dossiers.linkEvidence(b, { dossierId, expectedVersion: version, fileId, criterionIds: [criterion["1.1"]] })).rejects.toMatchObject(
+      notFound,
+    );
     await expect(t.app.dossiers.removeEvidenceFile(b, { dossierId, expectedVersion: version, fileId })).rejects.toMatchObject(notFound);
-    await expect(t.app.dossiers.selfScore(b, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], levelId: level("1.1", 10) })).rejects.toMatchObject(notFound);
-    await expect(t.app.dossiers.explainCriterion(b, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], explanation: "x" })).rejects.toMatchObject(notFound);
+    await expect(
+      t.app.dossiers.selfScore(b, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], levelId: level("1.1", 10) }),
+    ).rejects.toMatchObject(notFound);
+    await expect(
+      t.app.dossiers.explainCriterion(b, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], explanation: "x" }),
+    ).rejects.toMatchObject(notFound);
     await expect(t.app.dossiers.selfAssessment(await f.admin(), { dossierId })).rejects.toMatchObject({ code: "forbidden" });
   });
 
@@ -338,8 +374,12 @@ describe("L02 CT-05, CT-06 on record, in Phạm vi and only on the bản làm vi
     const invalid = { code: "invalid_state" };
     await expect(t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId, criterionIds: [] })).rejects.toMatchObject(invalid);
     await expect(t.app.dossiers.removeEvidenceFile(a, { dossierId, expectedVersion: version, fileId })).rejects.toMatchObject(invalid);
-    await expect(t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], levelId: null })).rejects.toMatchObject(invalid);
-    await expect(t.app.dossiers.explainCriterion(a, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], explanation: "x" })).rejects.toMatchObject(invalid);
+    await expect(t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], levelId: null })).rejects.toMatchObject(
+      invalid,
+    );
+    await expect(
+      t.app.dossiers.explainCriterion(a, { dossierId, expectedVersion: version, criterionId: criterion["1.1"], explanation: "x" }),
+    ).rejects.toMatchObject(invalid);
     expect((await t.app.dossiers.selfAssessment(a, { dossierId })).criteria[0]).toMatchObject({
       levelId: level("1.1", 40),
       evidence: [{ fileId, fileName: "Đã nộp.pdf" }],

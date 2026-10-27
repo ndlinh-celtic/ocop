@@ -85,11 +85,15 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     await scoreAndConfirm(m(0), early.dossierId, [40, 25, 35]);
     const { version } = await w.t.app.dossiers.get(w.A.chair, { dossierId: early.dossierId });
     await meetingWith(w.A.chair, []);
-    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: early.dossierId, expectedVersion: version })).rejects.toMatchObject({ code: "invalid_state" });
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: early.dossierId, expectedVersion: version })).rejects.toMatchObject({
+      code: "invalid_state",
+    });
 
     const d = await ready();
     const { dossierVersion } = await full(w.A.chair, d.dossierId);
-    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "not_in_open_meeting" });
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({
+      code: "not_in_open_meeting",
+    });
     expect((await full(w.A.chair, d.dossierId)).dossierState).toBe("member_confirmed");
   });
 
@@ -99,7 +103,9 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     const { dossierVersion } = await full(w.A.chair, d.dossierId);
     w.t.clock.advance(6 * 60_000);
 
-    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "reauth_required" });
+    await expect(w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({
+      code: "reauth_required",
+    });
     await w.t.app.identity.reauthenticate(w.A.chair, { password: PASSWORD });
     await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
 
@@ -116,11 +122,16 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect((await full(m(0), d.dossierId)).aggregate.total).toBe(72.5);
     expect((await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId, ownSheet: true })).kind).toBe("own_sheet");
     await expect(w.t.app.scoring.readDossierScores(m(3), { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
-    for (const reader of [w.province, w.ward, d.a]) expect(await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId })).toEqual({ kind: "none" });
+    for (const reader of [w.province, w.ward, d.a])
+      expect(await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId })).toEqual({ kind: "none" });
     expect(await w.t.app.dossiers.get(w.province, { dossierId: d.dossierId })).toMatchObject({ state: "score_finalized" });
 
     const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
-    expect(timeline.find((e) => e.action === "dossier.finalize")).toMatchObject({ fromState: "member_confirmed", toState: "score_finalized", metadata: { n: 1 } });
+    expect(timeline.find((e) => e.action === "dossier.finalize")).toMatchObject({
+      fromState: "member_confirmed",
+      toState: "score_finalized",
+      metadata: { n: 1 },
+    });
     const text = JSON.stringify(timeline);
     for (const x of [m(0), m(1), m(2)]) expect(text).not.toContain(x.fullName);
     expect(text).not.toContain("72.5");
@@ -137,7 +148,9 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
 
     await w.t.drainJobs();
     for (const x of [m(0), m(1), m(2)]) {
-      expect((await w.t.app.notifications.list(x)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/thanh-vien/diem-tong-hop/${d.dossierId}`)).toHaveLength(1);
+      expect(
+        (await w.t.app.notifications.list(x)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/thanh-vien/diem-tong-hop/${d.dossierId}`),
+      ).toHaveLength(1);
     }
     expect((await w.t.app.notifications.list(m(3))).filter((n) => n.kind === "dossier_score_finalized")).toEqual([]);
     const [audited] = await w.t.app.audit.search(await w.f.admin(), { action: ["scoring.result.finalized"], targetId: d.dossierId });
@@ -151,7 +164,14 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
       const { meetingId } = await meetingWith(w.A.secretary, [one.dossierId]);
 
       const view = await w.t.app.scoring.getMeeting(w.A.chair, { meetingId });
-      expect(view).toMatchObject({ title: "Phiên họp thứ nhất", heldOn: "2026-10-25", location: "Phòng họp Sở", state: "open", dossierCount: 1, finalizedCount: 0 });
+      expect(view).toMatchObject({
+        title: "Phiên họp thứ nhất",
+        heldOn: "2026-10-25",
+        location: "Phòng họp Sở",
+        state: "open",
+        dossierCount: 1,
+        finalizedCount: 0,
+      });
       expect(view.dossiers.map((d) => d.dossierId)).toEqual([one.dossierId]);
       expect(view.candidates.map((c) => c.dossierId)).toContain(two.dossierId);
       expect(view.candidates.map((c) => c.dossierId)).not.toContain(one.dossierId);
@@ -171,7 +191,9 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
 
       const early = await w.graded([m(0), m(1)]);
       const { meetingId } = await meetingWith(w.A.chair, []);
-      await expect(w.t.app.scoring.addMeetingDossiers(w.A.chair, { meetingId, dossierIds: [early.dossierId] })).rejects.toMatchObject({ code: "not_ready_to_finalize" });
+      await expect(w.t.app.scoring.addMeetingDossiers(w.A.chair, { meetingId, dossierIds: [early.dossierId] })).rejects.toMatchObject({
+        code: "not_ready_to_finalize",
+      });
     });
 
     it("closes once each hồ sơ is chốt or gỡ; a hồ sơ chốt stays and a closed Phiên họp takes no more", async () => {
@@ -182,14 +204,18 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
 
       const { dossierVersion } = await full(w.A.secretary, kept.dossierId);
       await w.t.app.scoring.finalize(w.A.secretary, { dossierId: kept.dossierId, expectedVersion: dossierVersion });
-      await expect(w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: kept.dossierId })).rejects.toMatchObject({ code: "not_in_meeting" });
+      await expect(w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: kept.dossierId })).rejects.toMatchObject({
+        code: "not_in_meeting",
+      });
       await w.t.app.scoring.removeMeetingDossier(w.A.secretary, { meetingId, dossierId: dropped.dossierId });
       await w.t.app.scoring.closeMeeting(w.A.chair, { meetingId });
 
       const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId });
       expect(view).toMatchObject({ state: "closed", dossierCount: 1, finalizedCount: 1, candidates: [] });
       expect(view.dossiers[0]).toMatchObject({ dossierId: kept.dossierId, state: "score_finalized", result: { n: 1, star: 4, total: 72.5, flagged: true } });
-      await expect(w.t.app.scoring.addMeetingDossiers(w.A.secretary, { meetingId, dossierIds: [dropped.dossierId] })).rejects.toMatchObject({ code: "meeting_closed" });
+      await expect(w.t.app.scoring.addMeetingDossiers(w.A.secretary, { meetingId, dossierIds: [dropped.dossierId] })).rejects.toMatchObject({
+        code: "meeting_closed",
+      });
     });
 
     it("is the Hội đồng's own: another Hội đồng finds neither the Phiên họp nor the hồ sơ, and a đợt not gán to it is refused", async () => {
@@ -222,7 +248,9 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     const { dossierVersion } = await full(w.A.secretary, d.dossierId);
 
     await w.t.app.scoring.finalize(w.A.chair, { dossierId: d.dossierId, expectedVersion: dossierVersion });
-    await expect(w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({ code: "version_conflict" });
+    await expect(w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: dossierVersion })).rejects.toMatchObject({
+      code: "version_conflict",
+    });
     expect((await full(w.A.secretary, d.dossierId)).result).toMatchObject({ n: 1, finalizedBy: { userId: w.A.chair.userId } });
   });
 });
@@ -234,9 +262,18 @@ describe("L15 chốt điểm dựa trên Tổ tư vấn, and kết thúc đợt 
   /** L10 to L12: the Tổ trưởng issues a Báo cáo Tổ tư vấn with PICKS and copies it into the phiếu: Thành viên xem xét. */
   async function throughAdvisoryCopy(leader: UserActor, dossierId: string) {
     await w.t.app.councils.setLeader(w.province, { councilId: w.A.councilId, userId: leader.userId });
-    const lines = PICKS.map((key) => ({ criterionId: w.criterionId(key.split(":")[0]!), levelId: w.level(key), basis: "Căn cứ hồ sơ", evidenceFileIds: [], evidenceAssessment: "sufficient" as const }));
+    const lines = PICKS.map((key) => ({
+      criterionId: w.criterionId(key.split(":")[0]!),
+      levelId: w.level(key),
+      basis: "Căn cứ hồ sơ",
+      evidenceFileIds: [],
+      evidenceAssessment: "sufficient" as const,
+    }));
     await w.t.app.scoring.saveAdvisoryDraft(leader, { dossierId, draftVersion: 0, lines, summary: "Nhận xét", notes: "", attachmentFileIds: [] });
-    const { version } = await w.t.app.scoring.issueAdvisoryReport(leader, { dossierId, expectedVersion: (await w.t.app.scoring.advisoryReport(leader, { dossierId })).dossierVersion });
+    const { version } = await w.t.app.scoring.issueAdvisoryReport(leader, {
+      dossierId,
+      expectedVersion: (await w.t.app.scoring.advisoryReport(leader, { dossierId })).dossierVersion,
+    });
     await w.t.app.scoring.copyAdvisory(leader, { dossiers: [{ dossierId, expectedVersion: version }], criteria: "all", recipients: "all" });
   }
 
@@ -261,7 +298,13 @@ describe("L15 chốt điểm dựa trên Tổ tư vấn, and kết thúc đợt 
     await w.t.app.identity.reauthenticate(w.A.secretary, { password: PASSWORD });
     const ready = await w.t.app.scoring.readDossierScores(w.A.secretary, { dossierId: d.dossierId });
     if (ready.kind !== "full") throw new Error(ready.kind);
-    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-12-01", location: "Sở", dossierIds: [d.dossierId] });
+    await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-12-01",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
     await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: ready.dossierVersion });
 
     const seen = await w.t.app.scoring.readDossierScores(advisor, { dossierId: d.dossierId });
@@ -269,7 +312,9 @@ describe("L15 chốt điểm dựa trên Tổ tư vấn, and kết thúc đợt 
     expect(JSON.stringify(seen)).not.toContain(m0.userId);
     expect(seen).not.toHaveProperty("graders");
     await w.t.drainJobs();
-    expect((await w.t.app.notifications.list(advisor)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/to-tu-van/ho-so/${d.dossierId}`)).toHaveLength(1);
+    expect(
+      (await w.t.app.notifications.list(advisor)).filter((n) => n.kind === "dossier_score_finalized" && n.link === `/to-tu-van/ho-so/${d.dossierId}`),
+    ).toHaveLength(1);
 
     await expect(w.t.app.rounds.endRound(w.province, { roundId: w.roundId })).resolves.toBeUndefined();
   });

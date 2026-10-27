@@ -58,7 +58,11 @@ describe("L15 Trả phiếu (#61)", () => {
     const d = await graded(2, 2);
     expect(await stateOf(d.dossierId)).toBe("member_confirmed");
 
-    const result = await w.t.app.scoring.returnScoreSheet(w.A.secretary, { dossierId: d.dossierId, sheetId: (await sheetOf(m(1), d.dossierId)).id, reason: "Chấm lại" });
+    const result = await w.t.app.scoring.returnScoreSheet(w.A.secretary, {
+      dossierId: d.dossierId,
+      sheetId: (await sheetOf(m(1), d.dossierId)).id,
+      reason: "Chấm lại",
+    });
 
     expect(result.dossierState).toBe("member_review");
     expect(await stateOf(d.dossierId)).toBe("member_review");
@@ -70,7 +74,11 @@ describe("L15 Trả phiếu (#61)", () => {
   it("returns a phiếu đã xác nhận while the hồ sơ is still Thành viên xem xét; it stays there", async () => {
     const d = await graded(3, 1);
 
-    const result = await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: (await sheetOf(m(0), d.dossierId)).id, reason: "Chấm lại" });
+    const result = await w.t.app.scoring.returnScoreSheet(w.A.chair, {
+      dossierId: d.dossierId,
+      sheetId: (await sheetOf(m(0), d.dossierId)).id,
+      reason: "Chấm lại",
+    });
 
     expect(result.dossierState).toBe("member_review");
     expect((await sheetOf(m(0), d.dossierId)).attempt).toBe(2);
@@ -98,8 +106,17 @@ describe("L15 Trả phiếu (#61)", () => {
         ["3.1", 35, "nhận xét 0"],
       ]);
     }
-    const row = await w.db.admin.query("SELECT state, superseded_by, superseded_reason, version, updated_at, reauth_method FROM scoring.score_sheet WHERE id = $1", [old.id]);
-    expect(row.rows[0]).toMatchObject({ state: "superseded", superseded_by: scoreSheetId, superseded_reason: "Xem lại 1.1", version: old.version, reauth_method: "password" });
+    const row = await w.db.admin.query(
+      "SELECT state, superseded_by, superseded_reason, version, updated_at, reauth_method FROM scoring.score_sheet WHERE id = $1",
+      [old.id],
+    );
+    expect(row.rows[0]).toMatchObject({
+      state: "superseded",
+      superseded_by: scoreSheetId,
+      superseded_reason: "Xem lại 1.1",
+      version: old.version,
+      reauth_method: "password",
+    });
     for (const other of [m(0), m(1), w.A.advisors[0]!]) {
       await expect(w.t.app.scoring.scoreSheetHistory(other, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "forbidden" });
     }
@@ -110,7 +127,13 @@ describe("L15 Trả phiếu (#61)", () => {
     const old = await sheetOf(m(0), d.dossierId);
     await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: old.id, reason: "Chấm lại" });
     const { version } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
-    await w.t.app.councils.replaceAssignment(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version, userId: m(0).userId, newUserId: m(3).userId, reason: "Bận" });
+    await w.t.app.councils.replaceAssignment(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: version,
+      userId: m(0).userId,
+      newUserId: m(3).userId,
+      reason: "Bận",
+    });
 
     const history = await w.t.app.scoring.scoreSheetHistory(w.A.secretary, { dossierId: d.dossierId });
 
@@ -170,8 +193,17 @@ describe("L15 Trả phiếu (#61)", () => {
   it("returns a phiếu Vắng, so that its thành viên grades for the first time (spec #49, after Mở khóa sau chốt)", async () => {
     const d = await graded(3, 2);
     // Chốt (#60) marks the nháp Vắng; Mở khóa sau chốt (#63) brings the hồ sơ back to Sẵn sàng chốt.
-    await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [d.dossierId] });
-    await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: (await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version });
+    await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
+    await w.t.app.scoring.finalize(w.A.secretary, {
+      dossierId: d.dossierId,
+      expectedVersion: (await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId })).version,
+    });
     const admin = await w.f.admin();
     const requestFileId = await w.f.uploadPdf(admin, "unlock_request", "Công văn.pdf");
     await w.t.app.scoring.unlockFinalized(admin, { dossierId: d.dossierId, requestFileId, requestedBy: "Chủ tịch Hội đồng A", reason: "Chấm bổ sung" });
@@ -190,7 +222,9 @@ describe("L15 Trả phiếu (#61)", () => {
     await w.t.app.scoring.returnScoreSheet(w.A.chair, { dossierId: d.dossierId, sheetId: old.id, reason: "Lý do riêng tư của hội đồng" });
     await w.t.drainJobs();
 
-    const notices = (await w.t.app.notifications.list(m(0))).filter((n) => n.kind === "dossier_score_sheet_returned" && n.link === `/thanh-vien/ho-so/${d.dossierId}`);
+    const notices = (await w.t.app.notifications.list(m(0))).filter(
+      (n) => n.kind === "dossier_score_sheet_returned" && n.link === `/thanh-vien/ho-so/${d.dossierId}`,
+    );
     expect(notices).toHaveLength(1);
     expect(notices[0]!.body).toContain("Lý do riêng tư của hội đồng");
     // By subject and hồ sơ, not position: the drained jobs may deliver m(0)'s Giao chấm email after this one.
@@ -203,8 +237,15 @@ describe("L15 Trả phiếu (#61)", () => {
     expect((await w.t.app.notifications.list(m(1))).filter((n) => n.kind === "dossier_score_sheet_returned" && n.link?.includes(d.dossierId))).toEqual([]);
 
     const [row] = await w.t.app.audit.search(await w.f.admin(), { action: ["dossier.score_sheet.return"], targetId: d.dossierId });
-    expect(row).toMatchObject({ actorUserId: w.A.chair.userId, actorRole: "council_chair", metadata: { scoreSheetId: old.id, reason: "Lý do riêng tư của hội đồng" } });
-    const outbox = await w.db.admin.query("SELECT type FROM platform.outbox WHERE payload->>'dossierId' = $1 AND type IN ('dossier.score_sheet_returned', 'scoring.score_sheet_returned')", [d.dossierId]);
+    expect(row).toMatchObject({
+      actorUserId: w.A.chair.userId,
+      actorRole: "council_chair",
+      metadata: { scoreSheetId: old.id, reason: "Lý do riêng tư của hội đồng" },
+    });
+    const outbox = await w.db.admin.query(
+      "SELECT type FROM platform.outbox WHERE payload->>'dossierId' = $1 AND type IN ('dossier.score_sheet_returned', 'scoring.score_sheet_returned')",
+      [d.dossierId],
+    );
     expect(outbox.rows.map((r) => r.type).sort()).toEqual(["dossier.score_sheet_returned", "scoring.score_sheet_returned"]);
     const timeline = JSON.stringify(await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId }));
     expect(timeline).not.toContain("score_sheet.return");

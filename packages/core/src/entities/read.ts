@@ -72,7 +72,12 @@ export function getEntity(deps: CoreDeps) {
       const representative = await representativeOf(tx, entity.id, now);
       if (!isOwnEntity(scope, entity.id)) {
         await tx.audit.append(
-          auditEntry(actor, deps.ids.next(), now, { action: "personal_data.viewed", targetType: "entity", targetId: entity.id, metadata: { view: "entity_detail" } }),
+          auditEntry(actor, deps.ids.next(), now, {
+            action: "personal_data.viewed",
+            targetType: "entity",
+            targetId: entity.id,
+            metadata: { view: "entity_detail" },
+          }),
         );
       }
       return {

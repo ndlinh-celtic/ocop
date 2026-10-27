@@ -106,11 +106,22 @@ describe("L09 HD-06 Giao chấm in chấm trực tiếp (stories 30, 33, 40)", (
     await start(A.secretary, d);
 
     const [moved] = await t.app.audit.search(await f.admin(), { action: ["dossier.grading.start_direct"], targetId: d.dossierId });
-    expect(moved).toMatchObject({ actorUserId: A.secretary.userId, actorRole: "council_secretary", before: { state: "forwarded_to_province" }, after: { state: "member_review" } });
+    expect(moved).toMatchObject({
+      actorUserId: A.secretary.userId,
+      actorRole: "council_secretary",
+      before: { state: "forwarded_to_province" },
+      after: { state: "member_review" },
+    });
     const [effect] = await t.app.audit.search(await f.admin(), { action: ["council.assignments.took_effect"], targetId: d.dossierId });
-    expect(effect!.metadata).toMatchObject({ gradingMode: "direct", members: expect.arrayContaining([A.members[0]!.userId, A.members[1]!.userId]), advisors: [] });
+    expect(effect!.metadata).toMatchObject({
+      gradingMode: "direct",
+      members: expect.arrayContaining([A.members[0]!.userId, A.members[1]!.userId]),
+      advisors: [],
+    });
     expect((effect!.metadata as { scoreSheetIds: string[] }).scoreSheetIds).toHaveLength(2);
-    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.grading_started' AND payload->>'dossierId' = $1", [d.dossierId]);
+    const outbox = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'dossier.grading_started' AND payload->>'dossierId' = $1", [
+      d.dossierId,
+    ]);
     expect(outbox.rows).toEqual([{ payload: expect.objectContaining({ from: "forwarded_to_province", to: "member_review" }) }]);
 
     const timeline = await t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });
@@ -225,7 +236,12 @@ describe("L09 HD-06 Chế độ chấm by the Thư ký, and Giao chấm dựa tr
 
     expect((await t.app.rounds.getRound(A.secretary, { roundId })).gradingMode).toBe("advisory_based");
     const [entry] = await t.app.audit.search(await f.admin(), { action: ["round.grading_mode_changed"], targetId: roundId });
-    expect(entry).toMatchObject({ actorUserId: A.secretary.userId, actorRole: "council_secretary", before: { gradingMode: "direct" }, after: { gradingMode: "advisory_based" } });
+    expect(entry).toMatchObject({
+      actorUserId: A.secretary.userId,
+      actorRole: "council_secretary",
+      before: { gradingMode: "direct" },
+      after: { gradingMode: "advisory_based" },
+    });
   });
 
   it("refuses Giao chấm without a Thành viên Tổ tư vấn (story 31)", async () => {
@@ -248,8 +264,12 @@ describe("L09 HD-06 Chế độ chấm by the Thư ký, and Giao chấm dựa tr
     expect(timeline.find((e) => e.action === "dossier.grading.start_advisory")).toMatchObject({ toState: "advisory_review" });
 
     await t.drainJobs();
-    expect((await t.app.notifications.list(A.advisors[0]!)).filter((n) => n.kind === "dossier_grading_started" && n.link === "/to-tu-van/hang-doi")).toHaveLength(1);
+    expect(
+      (await t.app.notifications.list(A.advisors[0]!)).filter((n) => n.kind === "dossier_grading_started" && n.link === "/to-tu-van/hang-doi"),
+    ).toHaveLength(1);
     expect(t.mailbox.to(A.advisors[0]!.email).at(-1)!.text).toContain("/to-tu-van/hang-doi");
-    expect((await t.app.notifications.list(A.members[0]!)).filter((n) => n.kind === "dossier_grading_started" && n.link === "/thanh-vien/ho-so")).toHaveLength(1);
+    expect((await t.app.notifications.list(A.members[0]!)).filter((n) => n.kind === "dossier_grading_started" && n.link === "/thanh-vien/ho-so")).toHaveLength(
+      1,
+    );
   });
 });

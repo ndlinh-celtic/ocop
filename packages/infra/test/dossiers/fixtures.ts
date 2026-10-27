@@ -267,7 +267,14 @@ export function fixtures(t: TestApp, wardId: () => string) {
       const level = wanted === undefined ? c.levels.reduce((a, b) => (b.points > a.points ? b : a)) : c.levels.find((l) => l.points === wanted)!;
       return { criterionId: c.criterionId, levelId: level.id, basis: `Căn cứ ${c.code}`, evidenceFileIds: [], evidenceAssessment: "sufficient" as const };
     });
-    await t.app.scoring.saveAdvisoryDraft(leader, { dossierId: s.dossierId, draftVersion: 0, lines, summary: "Nhận xét tổng hợp", notes: "", attachmentFileIds: [] });
+    await t.app.scoring.saveAdvisoryDraft(leader, {
+      dossierId: s.dossierId,
+      draftVersion: 0,
+      lines,
+      summary: "Nhận xét tổng hợp",
+      notes: "",
+      attachmentFileIds: [],
+    });
     const { dossierVersion } = await t.app.scoring.advisoryReport(leader, { dossierId: s.dossierId });
     const { version } = await t.app.scoring.issueAdvisoryReport(leader, { dossierId: s.dossierId, expectedVersion: dossierVersion });
     return { ...s, leader, version, state: "advisory_report_issued" as const };

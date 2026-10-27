@@ -136,7 +136,11 @@ describe("L07 SO-01 tạo Đợt đánh giá", () => {
     const officer = await staff();
     const { roundId } = await t.app.rounds.createRound(officer, roundInput({ name: "Đợt có dấu vết" }));
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.created"], targetId: roundId });
-    expect(entry).toMatchObject({ actorUserId: officer.userId, actorRole: "province_officer", after: { name: "Đợt có dấu vết", status: "draft", criteriaVersionId: published } });
+    expect(entry).toMatchObject({
+      actorUserId: officer.userId,
+      actorRole: "province_officer",
+      after: { name: "Đợt có dấu vết", status: "draft", criteriaVersionId: published },
+    });
     const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'round.created' AND payload->>'roundId' = $1", [roundId]);
     expect(rows).toHaveLength(1);
   });
@@ -202,7 +206,12 @@ describe("L07 SO-01 mở đợt", () => {
     const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'round.opened' AND payload->>'roundId' = $1", [opened]);
     expect(rows.map((r) => r.payload)).toEqual([{ roundId: opened, criteriaVersionId: published, submissionDeadline: "2026-11-30T16:59:59.000Z" }]);
     const [entry] = await t.app.audit.search(await admin(), { action: ["round.opened"], targetId: opened });
-    expect(entry).toMatchObject({ actorUserId: officer.userId, actorRole: "province_officer", before: { status: "draft" }, after: { status: "open_for_submission" } });
+    expect(entry).toMatchObject({
+      actorUserId: officer.userId,
+      actorRole: "province_officer",
+      before: { status: "draft" },
+      after: { status: "open_for_submission" },
+    });
   });
 
   it("gives every signed-in Người dùng the round Đang nhận nộp (for L02)", async () => {
@@ -233,26 +242,22 @@ describe("L07 SO-01 mở đợt", () => {
   describe("the database holds the rules too, as the app user", () => {
     it("refuses a second round Đang nhận nộp (partial unique index)", async () => {
       const { roundId } = await t.app.rounds.createRound(officer, roundInput());
-      await expect(
-        db.app.query("UPDATE round.round SET status = 'open_for_submission', opened_at = now() WHERE id = $1", [roundId]),
-      ).rejects.toThrow(/round_one_open/);
+      await expect(db.app.query("UPDATE round.round SET status = 'open_for_submission', opened_at = now() WHERE id = $1", [roundId])).rejects.toThrow(
+        /round_one_open/,
+      );
     });
 
     it("refuses to change the Phiên bản tiêu chí of an opened round", async () => {
       const other = await importDraft();
       await t.app.criteria.publishVersion(await admin(), { versionId: other });
-      await expect(db.app.query("UPDATE round.round SET criteria_version_id = $2 WHERE id = $1", [opened, other])).rejects.toThrow(
-        /criteria version is fixed/,
-      );
+      await expect(db.app.query("UPDATE round.round SET criteria_version_id = $2 WHERE id = $1", [opened, other])).rejects.toThrow(/criteria version is fixed/);
     });
 
     it("refuses to delete an opened round and to point a round at a draft version", async () => {
       await expect(db.app.query("DELETE FROM round.round WHERE id = $1", [opened])).rejects.toThrow(/cannot be deleted/);
       const { roundId } = await t.app.rounds.createRound(officer, roundInput());
       const draft = await importDraft();
-      await expect(db.app.query("UPDATE round.round SET criteria_version_id = $2 WHERE id = $1", [roundId, draft])).rejects.toThrow(
-        /is not published/,
-      );
+      await expect(db.app.query("UPDATE round.round SET criteria_version_id = $2 WHERE id = $1", [roundId, draft])).rejects.toThrow(/is not published/);
     });
 
     it("refuses deadlines out of order", async () => {

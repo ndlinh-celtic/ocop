@@ -57,7 +57,14 @@ describe("L05 XA-01 Cán bộ xã sees the Chủ thể with a hồ sơ in their 
     const { a } = await f.submitted(sets["Rau củ quả"]);
     const entityId = a.activeScope!.id!;
     const before = await t.app.entities.getEntity(a, { entityId });
-    await t.app.entities.updateEntity(a, { entityId, name: before.name, address: before.address, representativeName: before.representativeName, phone: before.phone, wardId: wardY });
+    await t.app.entities.updateEntity(a, {
+      entityId,
+      name: before.name,
+      address: before.address,
+      representativeName: before.representativeName,
+      phone: before.phone,
+      wardId: wardY,
+    });
 
     expect((await t.app.entities.listEntities(officerX)).map((e) => e.id)).toContain(entityId);
     expect(await t.app.entities.getEntity(officerX, { entityId })).toMatchObject({ id: entityId, ward: { id: wardY } });
@@ -87,7 +94,12 @@ describe("L05 XA-01 chi tiết hồ sơ theo Phiên bản nộp mới nhất (st
     let version = await f.completeDraft(a, created.dossierId);
     const fileId = await f.uploadPdf(a, "evidence", "Minh chứng.pdf");
     ({ version } = await t.app.dossiers.addEvidenceFile(a, { dossierId: created.dossierId, expectedVersion: version, fileId }));
-    ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId: created.dossierId, expectedVersion: version, fileId, criterionIds: [bare.criteriaWithoutEvidence[0]!.criterionId] }));
+    ({ version } = await t.app.dossiers.linkEvidence(a, {
+      dossierId: created.dossierId,
+      expectedVersion: version,
+      fileId,
+      criterionIds: [bare.criteriaWithoutEvidence[0]!.criterionId],
+    }));
     await t.app.dossiers.submit(a, { dossierId: created.dossierId, expectedVersion: version });
 
     expect((await t.app.dossiers.get(officerX, { dossierId: created.dossierId })).criteriaWithoutEvidence).toEqual([]);
@@ -97,7 +109,14 @@ describe("L05 XA-01 chi tiết hồ sơ theo Phiên bản nộp mới nhất (st
     const { a, dossierId } = await f.submitted(sets["Rau củ quả"]);
     const entityId = a.activeScope!.id!;
     const before = await t.app.entities.getEntity(a, { entityId });
-    await t.app.entities.updateEntity(a, { entityId, name: "Tên mới", address: before.address, representativeName: before.representativeName, phone: "0912345678", wardId: wardX });
+    await t.app.entities.updateEntity(a, {
+      entityId,
+      name: "Tên mới",
+      address: before.address,
+      representativeName: before.representativeName,
+      phone: "0912345678",
+      wardId: wardX,
+    });
 
     const view = await t.app.dossiers.get(officerX, { dossierId });
 
@@ -127,7 +146,10 @@ describe("L05 XA-01 danh sách hồ sơ của xã (stories 39, 43)", () => {
     const ofX2 = await t.app.dossiers.list(officerX2, { filter: "mine" });
     expect(ofX2.map((d) => d.id)).toContain(mine.dossierId);
     expect(ofX2.every((d) => d.handlerUserId === officerX2.userId)).toBe(true);
-    expect(ofX2.find((d) => d.id === mine.dossierId)).toMatchObject({ submittedAt: new Date("2026-10-21T01:00:00Z"), handler: { userId: officerX2.userId, fullName: expect.any(String) } });
+    expect(ofX2.find((d) => d.id === mine.dossierId)).toMatchObject({
+      submittedAt: new Date("2026-10-21T01:00:00Z"),
+      handler: { userId: officerX2.userId, fullName: expect.any(String) },
+    });
     expect((await t.app.dossiers.list(officerX, { filter: "mine" })).map((d) => d.id)).not.toContain(mine.dossierId);
 
     const ofState = await t.app.dossiers.list(officerX, { state: "withdrawn" });
@@ -209,7 +231,11 @@ describe("L05 thông báo (story 86)", () => {
     await t.drainJobs();
 
     for (const officer of [officerX, officerX2]) {
-      expect(await latestFor(officer, dossierId)).toMatchObject({ kind: "dossier_submitted", title: expect.stringContaining("Bưởi da xanh An Phú"), link: `/xa/ho-so/${dossierId}` });
+      expect(await latestFor(officer, dossierId)).toMatchObject({
+        kind: "dossier_submitted",
+        title: expect.stringContaining("Bưởi da xanh An Phú"),
+        link: `/xa/ho-so/${dossierId}`,
+      });
       expect(t.mailbox.to(officer.email).at(-1)).toMatchObject({ subject: expect.stringContaining("Hồ sơ mới nộp") });
       expect(t.mailbox.to(officer.email).at(-1)!.text).toContain(`/xa/ho-so/${dossierId}`);
     }
@@ -248,7 +274,12 @@ describe("L05 XA-03 Cán bộ phụ trách (stories 41, 43)", () => {
     expect(await t.app.dossiers.get(officerX, { dossierId })).toMatchObject({ handlerUserId: officerX.userId, receivedBy: officerX.userId });
     const changes = (await t.app.dossiers.timeline(a, { dossierId })).filter((e) => e.action === "dossier.handler.change");
     expect(changes).toMatchObject([
-      { actorUserId: officerX2.userId, fromState: "submitted_to_ward", toState: "submitted_to_ward", metadata: { fromHandlerUserId: officerX.userId, handlerUserId: officerX2.userId } },
+      {
+        actorUserId: officerX2.userId,
+        fromState: "submitted_to_ward",
+        toState: "submitted_to_ward",
+        metadata: { fromHandlerUserId: officerX.userId, handlerUserId: officerX2.userId },
+      },
       { actorUserId: officerX2.userId, metadata: { fromHandlerUserId: officerX2.userId, handlerUserId: officerX.userId } },
     ]);
     const audit = await t.app.audit.search(await f.admin(), { action: ["dossier.handler.change"], targetId: dossierId });

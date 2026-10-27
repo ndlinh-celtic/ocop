@@ -83,8 +83,20 @@ describe("L04 XA-05 yêu cầu bổ sung (story 50)", () => {
       deadline: new Date("2026-10-31T16:59:59Z"),
       closedAt: null,
       items: [
-        { position: 1, content: "Bổ sung phiếu kiểm nghiệm", criterionId: criterion.id, criterion: { code: "1.1", name: "Tiêu chí thử" }, legalDocumentTypeCode: null, response: "" },
-        { position: 2, legalDocumentTypeCode: "business_registration", legalDocumentTypeName: expect.stringContaining("Giấy chứng nhận đăng ký"), criterionId: null },
+        {
+          position: 1,
+          content: "Bổ sung phiếu kiểm nghiệm",
+          criterionId: criterion.id,
+          criterion: { code: "1.1", name: "Tiêu chí thử" },
+          legalDocumentTypeCode: null,
+          response: "",
+        },
+        {
+          position: 2,
+          legalDocumentTypeCode: "business_registration",
+          legalDocumentTypeName: expect.stringContaining("Giấy chứng nhận đăng ký"),
+          criterionId: null,
+        },
         { position: 3, content: "Ảnh bao bì", criterionId: null, legalDocumentTypeCode: null },
       ],
     });
@@ -95,7 +107,9 @@ describe("L04 XA-05 yêu cầu bổ sung (story 50)", () => {
       actorUserId: officerX.userId,
     });
     expect(await t.app.audit.search(await f.admin(), { action: ["dossier.supplement.request"], targetId: dossierId })).toHaveLength(1);
-    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.supplement_requested' AND payload->>'dossierId' = $1", [dossierId]);
+    const { rows } = await db.admin.query("SELECT 1 FROM platform.outbox WHERE type = 'dossier.supplement_requested' AND payload->>'dossierId' = $1", [
+      dossierId,
+    ]);
     expect(rows).toHaveLength(1);
   });
 
@@ -146,7 +160,12 @@ describe("L04 CT-11 bổ sung hồ sơ (story 51)", () => {
     ({ version } = await t.app.dossiers.addEvidenceFile(a, { dossierId, expectedVersion: version, fileId }));
     const [request] = await t.app.dossiers.supplementRequests(a, { dossierId });
     t.clock.set(new Date("2026-10-20T03:00:00Z"));
-    ({ version } = await t.app.dossiers.respondSupplementItem(a, { dossierId, expectedVersion: version, itemId: request!.items[0]!.id, response: "Đã tải phiếu kiểm nghiệm" }));
+    ({ version } = await t.app.dossiers.respondSupplementItem(a, {
+      dossierId,
+      expectedVersion: version,
+      itemId: request!.items[0]!.id,
+      response: "Đã tải phiếu kiểm nghiệm",
+    }));
 
     expect(await t.app.dossiers.get(a, { dossierId })).toMatchObject({ state: "supplement_requested", version, description: "Bưởi VietGAP, đã bổ sung" });
     expect((await t.app.dossiers.get(a, { dossierId })).evidence.map((e) => e.fileId)).toContain(fileId);
@@ -162,7 +181,8 @@ describe("L04 CT-11 bổ sung hồ sơ (story 51)", () => {
     const other = await supplementRequested();
     const [request] = await t.app.dossiers.supplementRequests(a, { dossierId });
     const [otherRequest] = await t.app.dossiers.supplementRequests(other.a, { dossierId: other.dossierId });
-    const answer = (actor: UserActor, itemId: string) => t.app.dossiers.respondSupplementItem(actor, { dossierId, expectedVersion: version, itemId, response: "Trả lời" });
+    const answer = (actor: UserActor, itemId: string) =>
+      t.app.dossiers.respondSupplementItem(actor, { dossierId, expectedVersion: version, itemId, response: "Trả lời" });
 
     await expect(answer(officerX, request!.items[0]!.id)).rejects.toMatchObject({ code: "forbidden" });
     await expect(answer(a, otherRequest!.items[0]!.id)).rejects.toMatchObject({ code: "not_found" });
@@ -184,7 +204,12 @@ describe("L04 CT-11 nộp lại (stories 52 to 54)", () => {
     expect(result).toEqual({ version: version + 1, submissionNumber: 2 });
     const [v1, v2] = await t.app.dossiers.submissions(a, { dossierId });
     expect(v1).toEqual(v1Before);
-    expect(v2).toMatchObject({ number: 2, submittedAt: new Date("2026-10-25T03:00:00Z"), wardId: wardX, snapshot: { product: { process: "Quy trình đã bổ sung" } } });
+    expect(v2).toMatchObject({
+      number: 2,
+      submittedAt: new Date("2026-10-25T03:00:00Z"),
+      wardId: wardX,
+      snapshot: { product: { process: "Quy trình đã bổ sung" } },
+    });
     expect(v2!.snapshot.documents.registrationForm).not.toBe(v1!.snapshot.documents.registrationForm);
     expect(v2!.snapshot.documents.selfAssessmentReport).not.toBe(v1!.snapshot.documents.selfAssessmentReport);
     expect(await documentBytes(a, dossierId, 1, "registration_form")).toEqual(formV1);
@@ -229,7 +254,9 @@ describe("L04 CT-11 nộp lại (stories 52 to 54)", () => {
     t.clock.set(new Date("2026-12-01T01:00:00Z"));
     const late = await f.verifiedOwner();
     const draft = await t.app.dossiers.create(late, { criteriaSetId: sets["Rau củ quả"] });
-    expect((await t.app.dossiers.submissionCheck(late, { dossierId: draft.dossierId })).blockers).toContainEqual(expect.objectContaining({ code: "no_open_round" }));
+    expect((await t.app.dossiers.submissionCheck(late, { dossierId: draft.dossierId })).blockers).toContainEqual(
+      expect.objectContaining({ code: "no_open_round" }),
+    );
 
     expect((await t.app.dossiers.submissionCheck(a, { dossierId })).blockers).toEqual([]);
     expect(await t.app.dossiers.submit(a, { dossierId, expectedVersion: version })).toMatchObject({ submissionNumber: 2 });
@@ -268,7 +295,11 @@ describe("L04 XA-05 đóng hồ sơ không bổ sung (story 56)", () => {
     await expect(close(a)).rejects.toMatchObject({ code: "forbidden" });
     const after = await close(officerX);
 
-    expect(await t.app.dossiers.get(officerX, { dossierId })).toMatchObject({ state: "rejected_preliminary", version: after.version, supplementDeadline: null });
+    expect(await t.app.dossiers.get(officerX, { dossierId })).toMatchObject({
+      state: "rejected_preliminary",
+      version: after.version,
+      supplementDeadline: null,
+    });
     expect((await t.app.dossiers.timeline(a, { dossierId })).at(-1)).toMatchObject({
       action: "dossier.supplement.close",
       fromState: "supplement_requested",
@@ -276,8 +307,14 @@ describe("L04 XA-05 đóng hồ sơ không bổ sung (story 56)", () => {
       actorUserId: officerX.userId,
       reason: "Không bổ sung",
     });
-    expect((await t.app.dossiers.get(a, { dossierId })).rejection).toMatchObject({ kind: "preliminary_reason", reasonCode: "no_supplement", text: "Không bổ sung" });
-    expect(await t.app.dossiers.supplementRequests(a, { dossierId })).toMatchObject([{ closedAt: new Date("2026-11-01T02:00:00Z"), outcome: "closed_unsupplemented" }]);
+    expect((await t.app.dossiers.get(a, { dossierId })).rejection).toMatchObject({
+      kind: "preliminary_reason",
+      reasonCode: "no_supplement",
+      text: "Không bổ sung",
+    });
+    expect(await t.app.dossiers.supplementRequests(a, { dossierId })).toMatchObject([
+      { closedAt: new Date("2026-11-01T02:00:00Z"), outcome: "closed_unsupplemented" },
+    ]);
     expect(await t.app.audit.search(await f.admin(), { action: ["dossier.supplement.close"], targetId: dossierId })).toHaveLength(1);
     await expect(t.app.dossiers.submit(a, { dossierId, expectedVersion: after.version })).rejects.toMatchObject({ code: "invalid_state" });
   });
@@ -313,7 +350,12 @@ describe("L04 thông báo yêu cầu bổ sung và nộp lại (stories 42, 51, 
     const bystander = await f.staff("ward_officer", wardX);
     const { a, dossierId, version: v0 } = await received();
     const { version: v1 } = await t.app.dossiers.changeHandler(officerX, { dossierId, expectedVersion: v0, handlerUserId: handler.userId });
-    const { version } = await t.app.dossiers.requestSupplement(officerX, { dossierId, expectedVersion: v1, deadline: "2026-10-31", items: [{ content: "Bổ sung" }] });
+    const { version } = await t.app.dossiers.requestSupplement(officerX, {
+      dossierId,
+      expectedVersion: v1,
+      deadline: "2026-10-31",
+      items: [{ content: "Bổ sung" }],
+    });
     await t.drainJobs();
 
     await t.app.dossiers.submit(a, { dossierId, expectedVersion: version });
@@ -332,14 +374,18 @@ describe("L04 yêu cầu bổ sung in the database, as the app user", () => {
     const { a, dossierId, version } = await supplementRequested();
     const [request] = await t.app.dossiers.supplementRequests(a, { dossierId });
     const item = request!.items[0]!.id;
-    await expect(db.app.query("UPDATE dossier.supplement_request SET deadline = now() WHERE id = $1", [request!.id])).rejects.toThrow(/only changes by being closed/);
+    await expect(db.app.query("UPDATE dossier.supplement_request SET deadline = now() WHERE id = $1", [request!.id])).rejects.toThrow(
+      /only changes by being closed/,
+    );
     await expect(db.app.query("UPDATE dossier.supplement_item SET content = 'khác' WHERE id = $1", [item])).rejects.toThrow(/only the answer/);
     await expect(db.app.query("DELETE FROM dossier.supplement_item WHERE id = $1", [item])).rejects.toThrow(/permission denied/);
 
     await t.app.dossiers.submit(a, { dossierId, expectedVersion: version });
 
     await expect(db.app.query("UPDATE dossier.supplement_item SET response = 'muộn' WHERE id = $1", [item])).rejects.toThrow(/only the answer/);
-    await expect(db.app.query("UPDATE dossier.supplement_request SET closed_at = now() WHERE id = $1", [request!.id])).rejects.toThrow(/only changes by being closed/);
+    await expect(db.app.query("UPDATE dossier.supplement_request SET closed_at = now() WHERE id = $1", [request!.id])).rejects.toThrow(
+      /only changes by being closed/,
+    );
   });
 });
 

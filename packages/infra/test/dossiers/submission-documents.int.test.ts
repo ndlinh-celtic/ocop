@@ -66,7 +66,12 @@ describe("L03 CT-09 Phiếu đăng ký and Báo cáo tự đánh giá generated 
     const best = [...criterion.levels].sort((x, y) => y.points - x.points)[0]!;
     ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: criterion.id, levelId: best.id }));
     ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId: evidenceId, criterionIds: [criterion.id] }));
-    ({ version } = await t.app.dossiers.explainCriterion(a, { dossierId, expectedVersion: version, criterionId: criterion.id, explanation: "Đạt chỉ tiêu vi sinh" }));
+    ({ version } = await t.app.dossiers.explainCriterion(a, {
+      dossierId,
+      expectedVersion: version,
+      criterionId: criterion.id,
+      explanation: "Đạt chỉ tiêu vi sinh",
+    }));
 
     await t.app.dossiers.submit(a, { dossierId, expectedVersion: version });
 

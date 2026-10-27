@@ -68,7 +68,9 @@ export function listReturnRequests(deps: CoreDeps) {
  * The states a Thành viên Tổ tư vấn can đề nghị trả về in, read off the transition table so the table stays the one
  * place that says until when (the first sao chép, #69). The Sở's hồ sơ list filters by the same list.
  */
-export const ADVISORY_RETURNABLE_STATES: readonly DossierState[] = DOSSIER_STATES.filter((state) => ruleFor("dossier.advisory_return_request", state) !== undefined);
+export const ADVISORY_RETURNABLE_STATES: readonly DossierState[] = DOSSIER_STATES.filter(
+  (state) => ruleFor("dossier.advisory_return_request", state) !== undefined,
+);
 
 /** Story 51: sends the Sở a đề nghị trả về of a hồ sơ the Sở can still trả về, with its lý do. */
 export function requestAdvisoryReturn(deps: CoreDeps) {
@@ -77,8 +79,18 @@ export function requestAdvisoryReturn(deps: CoreDeps) {
     const reason = reasonOf(input.reason);
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
-      const after = await transition(deps, tx, actor, before, { action: "dossier.advisory_return_request", expectedVersion: input.expectedVersion, metadata: { reason } });
-      await tx.dossiers.insertAdvisoryReturnRequest({ id: deps.ids.next(), dossierId: before.id, reason, requestedBy: actor.userId, requestedAt: after.updatedAt });
+      const after = await transition(deps, tx, actor, before, {
+        action: "dossier.advisory_return_request",
+        expectedVersion: input.expectedVersion,
+        metadata: { reason },
+      });
+      await tx.dossiers.insertAdvisoryReturnRequest({
+        id: deps.ids.next(),
+        dossierId: before.id,
+        reason,
+        requestedBy: actor.userId,
+        requestedAt: after.updatedAt,
+      });
       return { version: after.version };
     });
   };

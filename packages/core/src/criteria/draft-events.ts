@@ -4,17 +4,7 @@
  */
 
 /** The nodes of the tree, by the row type that stores them (version.ts `DraftNodeRows`). */
-export const DRAFT_NODE_KINDS = [
-  "productGroup",
-  "subgroup",
-  "set",
-  "exclusion",
-  "part",
-  "section",
-  "criterionGroup",
-  "criterion",
-  "scoreLevel",
-] as const;
+export const DRAFT_NODE_KINDS = ["productGroup", "subgroup", "set", "exclusion", "part", "section", "criterionGroup", "criterion", "scoreLevel"] as const;
 export type DraftNodeKind = (typeof DRAFT_NODE_KINDS)[number];
 
 /** What a change applies to: the version's own fields, its Ngưỡng hạng, or one node of the tree. */

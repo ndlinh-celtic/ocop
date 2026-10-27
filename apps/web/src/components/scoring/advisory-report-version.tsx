@@ -16,7 +16,8 @@ export function AdvisoryReportVersion({ dossierId, version, open = false }: { do
         <span className="font-semibold">Phiên bản {version.number}</span>
         <span className="text-sm text-text-2">
           {" "}
-          · phát hành lúc {formatVnDateTime(version.issuedAt)} bởi {version.issuedBy.fullName} · {report.estimate.total} điểm, ước lượng {report.estimate.star} sao
+          · phát hành lúc {formatVnDateTime(version.issuedAt)} bởi {version.issuedBy.fullName} · {report.estimate.total} điểm, ước lượng {report.estimate.star}{" "}
+          sao
         </span>
         {version.reason && <p className="mt-1 text-sm text-text-2">Lý do phát hành lại: {version.reason}</p>}
       </summary>

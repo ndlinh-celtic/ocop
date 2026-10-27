@@ -171,12 +171,16 @@ describe("L19 AD-04 xóa bản nháp", () => {
       after: null,
       metadata: { sets: 26 },
     });
-    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'criteria.version.deleted' AND payload->>'versionId' = $1", [versionId]);
+    const { rows } = await db.admin.query("SELECT payload FROM platform.outbox WHERE type = 'criteria.version.deleted' AND payload->>'versionId' = $1", [
+      versionId,
+    ]);
     expect(rows).toEqual([{ payload: { versionId } }]);
   });
 
   it("reports an unknown version as not found", async () => {
-    await expect(t.app.criteria.deleteVersion(await admin(), { versionId: "0190a000-0000-7000-8000-000000000000" })).rejects.toMatchObject({ code: "not_found" });
+    await expect(t.app.criteria.deleteVersion(await admin(), { versionId: "0190a000-0000-7000-8000-000000000000" })).rejects.toMatchObject({
+      code: "not_found",
+    });
   });
 });
 

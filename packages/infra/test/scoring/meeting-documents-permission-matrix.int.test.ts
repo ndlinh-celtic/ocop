@@ -8,17 +8,7 @@ import { scoringWorld } from "./world";
  * văn bản họp; only the Thư ký tải lên the biên bản đã ký; another Hội đồng sees no Phiên họp of A.
  */
 
-type Who =
-  | "Chủ tịch A"
-  | "Thư ký A"
-  | "Thành viên A"
-  | "Tổ tư vấn A"
-  | "Chủ tịch B"
-  | "Thư ký B"
-  | "Cán bộ Sở"
-  | "Cán bộ xã"
-  | "Chủ thể"
-  | "Quản trị";
+type Who = "Chủ tịch A" | "Thư ký A" | "Thành viên A" | "Tổ tư vấn A" | "Chủ tịch B" | "Thư ký B" | "Cán bộ Sở" | "Cán bộ xã" | "Chủ thể" | "Quản trị";
 type State = "Phiên họp mở" | "Phiên họp đã kết thúc";
 type Action = "sinh văn bản" | "tải lên biên bản" | "tải xuống biên bản";
 type Outcome = "allowed" | "not_found" | "forbidden";
@@ -77,7 +67,13 @@ describe("Permission matrix: văn bản họp and biên bản đã ký (#62)", (
   });
 
   async function meetingIn(state: State) {
-    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, { roundId: w.roundId, title: "Phiên họp", heldOn: "2026-10-25", location: "Sở", dossierIds: [] });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [],
+    });
     await w.t.app.scoring.attachMeetingMinutes(w.A.secretary, { meetingId, fileId: await w.f.uploadPdf(w.A.secretary, "meeting_minutes") });
     if (state === "Phiên họp đã kết thúc") await w.t.app.scoring.closeMeeting(w.A.secretary, { meetingId });
     return meetingId;

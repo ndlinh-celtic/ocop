@@ -57,7 +57,9 @@ export default async function CouncilPage({ params }: { params: Promise<{ counci
   const council = await app().core.councils.get(actor, { councilId }).catch(orNotFound);
   if (!council) notFound();
   const manage = can(actor, "council.manage");
-  const board = (["council_chair", "council_secretary", "council_member"] as const).flatMap((role) => council.members[role].map((member) => ({ role, member })));
+  const board = (["council_chair", "council_secretary", "council_member"] as const).flatMap((role) =>
+    council.members[role].map((member) => ({ role, member })),
+  );
   const advisory = council.members.advisory_member.map((member) => ({ role: "advisory_member" as const, member }));
   return (
     <div className="flex flex-col gap-6">

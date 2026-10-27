@@ -96,7 +96,12 @@ describe("L20 AD-01 Phân vai", () => {
   it("a Phân vai with a start date in the future is not active yet", async () => {
     const admin = await t.signInAs(ADMIN.email, ADMIN.password);
     const later = await activeOfficer("sau@tinh.gov.vn", "Ngô Văn Sau");
-    await t.app.identity.grantRole(admin, { userId: later, role: "ward_officer", scopeId: otherWardId, validFrom: new Date(t.clock.now().getTime() + minutes(60)) });
+    await t.app.identity.grantRole(admin, {
+      userId: later,
+      role: "ward_officer",
+      scopeId: otherWardId,
+      validFrom: new Date(t.clock.now().getTime() + minutes(60)),
+    });
     const user = await t.signInAs("sau@tinh.gov.vn", PASSWORD);
     expect(user.activeRole).toBeNull();
   });
@@ -169,7 +174,16 @@ describe("L20 AD-01 Phân vai", () => {
 
 describe("policy table for step 1 actions", () => {
   // Expected values written out from the spec, not derived from the policy itself.
-  const ADMIN_ONLY = ["user.create", "user.list", "user.resend_activation", "role.grant", "role.revoke", "audit.search", "delivery.list", "file.test_upload"] as const;
+  const ADMIN_ONLY = [
+    "user.create",
+    "user.list",
+    "user.resend_activation",
+    "role.grant",
+    "role.revoke",
+    "audit.search",
+    "delivery.list",
+    "file.test_upload",
+  ] as const;
   const SELF = ["notification.read_own", "role.switch_own", "totp.enroll_own", "password.change_own", "reauth.own"] as const;
 
   it.each(ROLES.map((r) => [r]))("%s", async (role: Role) => {

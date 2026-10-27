@@ -14,7 +14,10 @@ export function userRepo(db: Db): UserRepo {
     },
     async findByEmail(email) {
       // citext column: equality is case-insensitive.
-      const [row] = await db.select().from(userAccount).where(sql`${userAccount.email} = ${email}::citext`);
+      const [row] = await db
+        .select()
+        .from(userAccount)
+        .where(sql`${userAccount.email} = ${email}::citext`);
       return (row as User | undefined) ?? null;
     },
     async update(id, patch) {
@@ -49,7 +52,13 @@ export function roleAssignmentRepo(db: Db): RoleAssignmentRepo {
       const rows = await db
         .select()
         .from(roleAssignment)
-        .where(and(eq(roleAssignment.role, role), eq(roleAssignment.scopeType, scopeType), scopeId === null ? isNull(roleAssignment.scopeId) : eq(roleAssignment.scopeId, scopeId)))
+        .where(
+          and(
+            eq(roleAssignment.role, role),
+            eq(roleAssignment.scopeType, scopeType),
+            scopeId === null ? isNull(roleAssignment.scopeId) : eq(roleAssignment.scopeId, scopeId),
+          ),
+        )
         .orderBy(roleAssignment.createdAt);
       return rows.map(toAssignment);
     },
@@ -60,13 +69,7 @@ export function roleAssignmentRepo(db: Db): RoleAssignmentRepo {
       const [row] = await db
         .select({ id: roleAssignment.id })
         .from(roleAssignment)
-        .where(
-          and(
-            eq(roleAssignment.role, role),
-            lte(roleAssignment.validFrom, at),
-            or(isNull(roleAssignment.validTo), gt(roleAssignment.validTo, at)),
-          ),
-        )
+        .where(and(eq(roleAssignment.role, role), lte(roleAssignment.validFrom, at), or(isNull(roleAssignment.validTo), gt(roleAssignment.validTo, at))))
         .limit(1);
       return row !== undefined;
     },
@@ -96,10 +99,16 @@ export function sessionRepo(db: Db): SessionRepo {
         .where(and(eq(session.userId, userId), isNull(session.revokedAt), ne(session.id, keepSessionId)));
     },
     async revokeAllForUser(userId, at) {
-      await db.update(session).set({ revokedAt: at }).where(and(eq(session.userId, userId), isNull(session.revokedAt)));
+      await db
+        .update(session)
+        .set({ revokedAt: at })
+        .where(and(eq(session.userId, userId), isNull(session.revokedAt)));
     },
     async revoke(id, at) {
-      await db.update(session).set({ revokedAt: at }).where(and(eq(session.id, id), isNull(session.revokedAt)));
+      await db
+        .update(session)
+        .set({ revokedAt: at })
+        .where(and(eq(session.id, id), isNull(session.revokedAt)));
     },
   };
 }

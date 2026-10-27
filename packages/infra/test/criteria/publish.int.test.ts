@@ -218,18 +218,18 @@ describe("L19 bất biến ba lớp: trigger DB", () => {
         [published, set!.id, c!.id],
       ),
     ).rejects.toThrow(/published/);
-    await expect(db.app.query("INSERT INTO criteria.product_group (id, version_id, name, position) VALUES (gen_random_uuid(), $1, 'mới', 99)", [published])).rejects.toThrow(
-      /published/,
-    );
+    await expect(
+      db.app.query("INSERT INTO criteria.product_group (id, version_id, name, position) VALUES (gen_random_uuid(), $1, 'mới', 99)", [published]),
+    ).rejects.toThrow(/published/);
   });
 
   it("refuses the change even from the table owner, and the app user cannot switch the triggers off", async () => {
     await expect(db.admin.query("UPDATE criteria.criterion SET max_points = 0 WHERE version_id = $1", [published])).rejects.toThrow(/published/);
     await expect(db.app.query("ALTER TABLE criteria.criterion DISABLE TRIGGER ALL")).rejects.toThrow(/must be owner/);
     await expect(db.app.query("SET session_replication_role = replica")).rejects.toThrow(/permission denied/);
-    await expect(db.app.query("UPDATE criteria.version SET status = 'draft', published_at = NULL, published_by = NULL WHERE id = $1", [published])).rejects.toThrow(
-      /published/,
-    );
+    await expect(
+      db.app.query("UPDATE criteria.version SET status = 'draft', published_at = NULL, published_by = NULL WHERE id = $1", [published]),
+    ).rejects.toThrow(/published/);
   });
 
   it("leaves drafts free to change and delete", async () => {
@@ -268,4 +268,3 @@ describe("L19 mã sai định dạng (từ URL hoặc biểu mẫu)", () => {
     }
   });
 });
-

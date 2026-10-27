@@ -162,7 +162,11 @@ describe("L19 AD-03 nhập Phiên bản tiêu chí QĐ 26", () => {
       ["C", "CHẤT LƯỢNG SẢN PHẨM", 35],
     ]);
     expect(s.parts[0]!.sections[0]).toMatchObject({ code: "1", name: "TỔ CHỨC SẢN XUẤT", points: 18 });
-    expect(criteriaIn(s).slice(0, 3).map((c) => [c.code, c.name, c.maxPoints])).toEqual([
+    expect(
+      criteriaIn(s)
+        .slice(0, 3)
+        .map((c) => [c.code, c.name, c.maxPoints]),
+    ).toEqual([
       ["1.1", "Nguồn gốc sản phẩm", 3],
       ["1.2", "Vùng nguyên liệu được cấp chứng nhận chất lượng", 2],
       ["1.3", "Gia tăng giá trị", 3],
