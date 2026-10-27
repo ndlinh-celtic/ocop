@@ -143,7 +143,7 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     const { meetingId, done, best, low } = await meeting();
     const printed = async () =>
       (await w.t.app.audit.search(await w.f.admin(), { action: ["personal_data.viewed"] }))
-        .filter((v) => v.metadata.view === "meeting_document")
+        .filter((v) => v.metadata.view === "meeting_document" && v.metadata.meetingId === meetingId)
         .map((v) => [v.actorUserId, v.targetType, v.targetId, v.metadata.kind, v.metadata.meetingId]);
 
     await text(w.A.secretary, meetingId, "decision");
