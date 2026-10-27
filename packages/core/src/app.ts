@@ -57,7 +57,7 @@ import { assignmentCandidates, editAssignments, listAssignments } from "./counci
 import { startGrading } from "./councils/grading";
 import { addAssignment, assignmentHistory, replaceAssignment } from "./councils/replace";
 import { confirmScoreSheet, saveScoreSheet } from "./scoring/sheets";
-import { gradingProgress, readDossierScores } from "./scoring/read";
+import { aggregateSummaries, gradingProgress, readDossierScores } from "./scoring/read";
 import { addMeetingDossiers, closeMeeting, createMeeting, getMeeting, listMeetings, meetingOf, removeMeetingDossier } from "./scoring/meetings";
 import { finalizeDossier } from "./scoring/finalize";
 import { attachMeetingMinutes, downloadMeetingMinutes, generateMeetingDocument } from "./scoring/meeting-documents";
@@ -228,6 +228,7 @@ export function createCore(deps: CoreDeps) {
     },
     scoring: {
       readDossierScores: readDossierScores(deps),
+      aggregateSummaries: aggregateSummaries(deps),
       saveScoreSheet: saveScoreSheet(deps),
       confirmScoreSheet: confirmScoreSheet(deps),
       gradingProgress: gradingProgress(deps),
