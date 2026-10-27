@@ -66,6 +66,7 @@ Bước 1 đến 4 đã xong: nền tảng, tiêu chí và đợt, chủ thể v
 
 ## Chạy kiểm tra
 
+- Chạy `pnpm format` trước khi commit; CI chạy `pnpm format:check`.
 - Trong lúc TDD chỉ chạy file test đang làm: `pnpm -s int test/scoring/finalize.int.test.ts` (đường dẫn tính từ `packages/infra`, thêm `-t "<tên>"` để lọc). Cả bộ `pnpm test:int` chạy một lần trước khi báo xong.
 - Diff đổi audit, outbox, `version` hay trạng thái hồ sơ, hoặc đổi màn hình: chạy `pnpm e2e` một lần, sau khi đã sửa theo `/code-review`, trước khi push (cần Docker, cổng 8080 trống).
 - Điều phối nhiều implementer: tối đa 3 chạy cùng lúc.
