@@ -29,6 +29,9 @@ export {
   type SelfAssessmentReportData,
   type WardReportData,
   type MeetingDocumentData,
+  type FiveStarPackageDossierRow,
+  type FiveStarPackageIndexData,
+  type FiveStarProposalLetterData,
   type MeetingDocumentRow,
   type TemplateInspection,
   type TemplateTag,
@@ -349,3 +352,6 @@ export {
   type FiveStarRepo,
 } from "./results/five-star-model";
 export type { CloseFiveStarInput, FiveStarListInput, FiveStarRow, MarkFiveStarSentInput, ReturnFiveStarInput } from "./results/five-star";
+export { FIVE_STAR_PACKAGE_STATES, type FiveStarPackage, type FiveStarPackageRepo, type FiveStarPackageState } from "./results/five-star-package-model";
+export { FIVE_STAR_PACKAGE_DAYS, type FiveStarPackageView, type RequestFiveStarPackageInput } from "./results/five-star-package";
+export { ZIP_TYPE, type ArchiveEntry, type ArchiveSource, type ZipWriter } from "./documents/archive";

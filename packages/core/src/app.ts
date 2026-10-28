@@ -33,6 +33,7 @@ import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, und
 import { editGeneralComment } from "./results/general-comment";
 import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
 import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
+import { downloadFiveStarPackage, fiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -301,6 +302,10 @@ export function createCore(deps: CoreDeps) {
       returnFiveStarToProvince: returnFiveStarToProvince(deps),
       closeFiveStar: closeFiveStar(deps),
       downloadMinistryDocument: downloadMinistryDocument(deps),
+      // L17 SO-04 Gói đề nghị 5 sao (#89).
+      requestFiveStarPackage: requestFiveStarPackage(deps),
+      fiveStarPackages: fiveStarPackages(deps),
+      downloadFiveStarPackage: downloadFiveStarPackage(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

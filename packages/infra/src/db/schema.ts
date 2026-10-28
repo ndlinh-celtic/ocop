@@ -15,6 +15,7 @@ import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/cor
 import type { DocumentTemplate } from "@ocop/core";
 import type { DecisionKind, DecisionSection } from "@ocop/core";
 import type { FiveStarClosureOutcome } from "@ocop/core";
+import type { FiveStarPackageState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -800,4 +801,18 @@ export const fiveStarClosure = resultsSchema.table("five_star_closure", {
   fileId: uuid("file_id").notNull(),
   closedBy: uuid("closed_by").notNull(),
   closedAt: ts("closed_at").notNull(),
+});
+
+/** Gói đề nghị 5 sao (0053_five_star_package.sql, #89): pending → ready | failed, once. */
+export const fiveStarPackage = resultsSchema.table("five_star_package", {
+  id: uuid("id").primaryKey(),
+  requestedBy: uuid("requested_by").notNull(),
+  requestedAt: ts("requested_at").notNull(),
+  dossierIds: uuid("dossier_ids").array().notNull(),
+  state: text("state").$type<FiveStarPackageState>().notNull(),
+  storageKey: text("storage_key"),
+  size: bigint("size", { mode: "number" }),
+  expiresAt: ts("expires_at"),
+  completedAt: ts("completed_at"),
+  failure: text("failure"),
 });

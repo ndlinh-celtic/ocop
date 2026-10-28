@@ -24,6 +24,7 @@ import type { AggregateResultRepo, MeetingRepo } from "../scoring/meeting-model"
 import type { TemplateVersionRepo } from "../documents/template-version-model";
 import type { RecognitionDecisionRepo } from "../results/decision-model";
 import type { FiveStarRepo } from "../results/five-star-model";
+import type { FiveStarPackageRepo } from "../results/five-star-package-model";
 
 /** The repositories of one database transaction. */
 export interface Repos {
@@ -57,6 +58,7 @@ export interface Repos {
   templateVersions: TemplateVersionRepo;
   recognitionDecisions: RecognitionDecisionRepo;
   fiveStar: FiveStarRepo;
+  fiveStarPackages: FiveStarPackageRepo;
 }
 
 /** Everything a use case can touch inside one database transaction. */
