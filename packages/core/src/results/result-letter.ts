@@ -1,5 +1,6 @@
 import { auditEntry } from "../audit/audit";
 import { issueFileDownload } from "../files/download";
+import { starOutcome } from "./decision-model";
 import { assembleSet } from "../criteria/detail";
 import { criteriaOf } from "../criteria/model";
 import { PDF_TYPE } from "../documents/pdf";
@@ -72,7 +73,7 @@ async function letterResult(tx: Tx, actor: UserActor, d: Dossier): Promise<Aggre
   if (!can(actor, action, d)) throw forbidden();
   const result = await tx.aggregateResults.current(d.id);
   if (!result) throw new DomainError("invalid_state", "Hồ sơ chưa có kết quả chốt hiện hành");
-  if (result.star >= 3) throw starTooHigh();
+  if (starOutcome(result.star) !== "not_passed") throw starTooHigh();
   return result;
 }
 

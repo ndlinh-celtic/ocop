@@ -15,7 +15,7 @@ import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
 import { chotResultOf, ownMeeting } from "./meetings";
-import { DECISION_SECTION_LABEL, decisionDraftSections, sectionOf } from "../results/decision-model";
+import { DECISION_SECTION_LABEL, decisionDraftSections, sectionOf, starOutcome } from "../results/decision-model";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -102,7 +102,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
       // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
       // Mục (3) of the quyết định (#83, spec #79): it approves the kết quả, it recognizes nothing.
-      note: aggregate.star === 5 ? DECISION_SECTION_LABEL.five_star_proposal : "",
+      note: starOutcome(aggregate.star) === "five_star_proposal" ? DECISION_SECTION_LABEL.five_star_proposal : "",
       generalComment: d.generalComment ?? "",
       starValue: aggregate.star,
       dossierId: d.id,
@@ -129,7 +129,7 @@ export function generateMeetingDocument(deps: CoreDeps) {
       const council = await tx.councils.findById(meeting.councilId);
       const round = await tx.rounds.findById(meeting.roundId);
       const now = deps.clock.now();
-      const listed = input.kind === "decision" ? rows.filter((r) => r.starValue >= 3) : rows;
+      const listed = input.kind === "decision" ? rows.filter((r) => sectionOf(r.starValue) !== null) : rows;
       // The dự thảo quyết định công nhận only mục 3 and 4 sao; a hồ sơ 5 sao goes in its own mục (#79 review S3).
       const { sections, recognized } = decisionDraftSections(
         listed.flatMap((r) => {

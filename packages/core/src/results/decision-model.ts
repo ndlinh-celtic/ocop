@@ -44,12 +44,20 @@ export function decisionDraftSections(rows: readonly { section: DecisionSection;
   return { sections, recognized };
 }
 
+/** What a Hạng sao of the kết quả chốt means (GLOSSARY "Kết quả"): không đạt, công nhận 3 or 4 sao, or đề nghị Trung ương. */
+export type StarOutcome = "not_passed" | DecisionSection;
+
+const STAR_OUTCOME: Record<number, StarOutcome> = { 3: "three_star", 4: "four_star", 5: "five_star_proposal" };
+
+/** The one place a Hạng sao (1 to 5, as stored) is read as an outcome; below 3 sao is không đạt. */
+export function starOutcome(star: number): StarOutcome {
+  return STAR_OUTCOME[star] ?? "not_passed";
+}
+
 /** The mục of a hồ sơ from its Hạng sao (of the kết quả chốt hiện hành); null below 3 sao, which no decision names. */
 export function sectionOf(star: number): DecisionSection | null {
-  if (star >= 5) return "five_star_proposal";
-  if (star === 4) return "four_star";
-  if (star === 3) return "three_star";
-  return null;
+  const outcome = starOutcome(star);
+  return outcome === "not_passed" ? null : outcome;
 }
 
 /**
@@ -58,8 +66,9 @@ export function sectionOf(star: number): DecisionSection | null {
  * sao still đề nghị Trung ương, the tỉnh công nhận nothing. The kết quả chốt is never changed.
  */
 export function recognizedStar(result: { star: number }, returnedFromMinistry: boolean): 3 | 4 | null {
-  if (result.star === 3 || result.star === 4) return result.star;
-  if (result.star >= 5 && returnedFromMinistry) return 4;
+  const outcome = starOutcome(result.star);
+  if (outcome === "three_star") return 3;
+  if (outcome === "four_star" || (outcome === "five_star_proposal" && returnedFromMinistry)) return 4;
   return null;
 }
 

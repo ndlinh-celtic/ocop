@@ -1,4 +1,5 @@
 import { issueFileDownload } from "../files/download";
+import { starOutcome } from "./decision-model";
 import { lockDossier } from "../dossiers/edit";
 import { dossierNotFound, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -130,7 +131,7 @@ export function markFiveStarSent(deps: CoreDeps) {
     return deps.uow.run(async (tx) => {
       const before = await lockDossier(tx, actor, input.dossierId);
       // The guard sees the hồ sơ only; Hạng sao 5 is the kết quả chốt hiện hành's (never recomputed).
-      if (before.state === "score_finalized" && (await tx.aggregateResults.current(before.id))?.star !== 5) {
+      if (before.state === "score_finalized" && starOutcome((await tx.aggregateResults.current(before.id))?.star ?? 0) !== "five_star_proposal") {
         throw new DomainError("not_five_star", "Chỉ hồ sơ đạt hạng 5 sao mới được đề nghị Trung ương đánh giá 5 sao");
       }
       const after = await transition(deps, tx, actor, before, {
