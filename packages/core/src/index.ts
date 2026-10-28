@@ -297,3 +297,6 @@ export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
 export { MEETING_DOCUMENT_KINDS, MEETING_DOCUMENT_LABEL, type MeetingDocumentKind } from "./scoring/meeting-documents";
 export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";
 export { type FinalizedResultSummary, type UnlockInput, type UnlockTarget, type UnlockView } from "./scoring/unlock";
+export { MAX_GENERAL_COMMENT, type EditGeneralCommentInput } from "./results/general-comment";
+export { generalCommentVisible } from "./results/visibility";
+export { DEFAULT_UNDERPERFORMING_RATIO, underperformingCriteria, type UnderperformingCriterion, type UnderperformingReason } from "./results/underperforming";

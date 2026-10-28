@@ -85,6 +85,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.assignment.replace",
   "dossier.advisory_return_request",
   "dossier.unlock",
+  "dossier.general_comment.edit",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -126,6 +127,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.score_sheet_returned",
   "dossier.advisory_return_requested",
   "dossier.unlocked",
+  "dossier.general_comment_edited",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -476,7 +478,21 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     event: "dossier.assignment_changed",
     timeline: false,
   })),
+  // L16 CT-13, HD-10 (#80, spec #79 stories 1 to 4): the Chủ tịch or Thư ký writes the Nhận xét chung of a hồ sơ Đã chốt
+  // điểm until Công bố kết quả. It is a column of the hồ sơ, so a real change (not checkOnly); off the timeline.
+  {
+    action: "dossier.general_comment.edit",
+    from: "score_finalized",
+    to: "score_finalized",
+    roles: ["council_chair", "council_secretary"],
+    event: "dossier.general_comment_edited",
+    timeline: false,
+    guard: (d) => (d.resultPublishedAt === null ? null : resultPublished()),
+  },
 ];
+
+/** Công bố kết quả is final: what the Chủ thể was sent no longer changes (spec #79 stories 3, 23). */
+export const resultPublished = () => new DomainError("result_published", "Kết quả của hồ sơ đã được công bố nên không thay đổi được nữa");
 
 /** Guard of the Hội đồng rows: Tiếp nhận tại tỉnh in the current lượt gửi tỉnh. */
 function provinceReceived(d: Dossier): DomainError | null {

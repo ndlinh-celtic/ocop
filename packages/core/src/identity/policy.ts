@@ -105,6 +105,8 @@ const ROLE_ACTIONS = {
   "dossier.document.download_on_behalf": ["ward_officer"],
   // Cấu hình chung toàn hệ thống, such as the mốc nhắc hạn (story 37).
   "system.settings.manage": ["admin"],
+  // L16 CT-13, HD-10 (#80): the Nhận xét chung of a hồ sơ Đã chốt điểm; which hồ sơ and until when is the transition table.
+  "results.general_comment.write": ["council_chair", "council_secretary"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

@@ -100,6 +100,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
       // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
       note: aggregate.star === 5 ? "Đề nghị xét 5 sao" : "",
+      generalComment: d.generalComment ?? "",
       starValue: aggregate.star,
       dossierId: d.id,
       showsPoints: graders.some((g) => g.state === "confirmed" && g.total !== null),

@@ -8,6 +8,7 @@ import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { FinalizeButton } from "./finalize-button";
+import { GeneralCommentForm } from "./general-comment-form";
 import { ReturnPanel } from "./return-panel";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +124,15 @@ export default async function AggregatePage({ params }: { params: Promise<{ doss
           Chưa đủ phiếu: {scores.graders.filter((g) => g.state === "confirmed").length} / {scores.minGraders} phiếu đã xác nhận. Bảng hiện điểm các phiếu đã xác
           nhận; điểm tổng hợp, hạng sao và cờ chênh lệch tính khi hồ sơ Sẵn sàng chốt.
         </p>
+      )}
+      {scores.kind === "full" && scores.result && dossier.state === "score_finalized" && (
+        <GeneralCommentForm
+          dossierId={dossierId}
+          version={dossier.version}
+          text={dossier.generalComment ?? ""}
+          updated={dossier.generalCommentUpdatedAt ? formatVnDateTime(dossier.generalCommentUpdatedAt) : null}
+          locked={dossier.resultPublishedAt !== null}
+        />
       )}
       <AggregateTable view={scores} />
 

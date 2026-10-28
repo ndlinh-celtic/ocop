@@ -104,6 +104,15 @@ export interface Dossier extends ProductInfo {
   supplementDeadline: Date | null;
   copiedFrom: string | null;
   deletedAt: Date | null;
+  /**
+   * L16 Công bố kết quả (spec #79): set once, when a Quyết định công nhận naming the hồ sơ is recorded or its first Thư kết
+   * quả không đạt is issued; never reset (the DB refuses it). Mở khóa sau chốt and Nhận xét chung stop there.
+   */
+  resultPublishedAt: Date | null;
+  /** L16 CT-13, HD-10 (#80): the Nhận xét chung of the Chủ tịch or Thư ký, outside the snapshot chốt; null until written. */
+  generalComment: string | null;
+  generalCommentUpdatedAt: Date | null;
+  generalCommentUpdatedBy: string | null;
   /** Optimistic lock: every change goes through transition() and bumps it by one. */
   version: number;
   createdAt: Date;
