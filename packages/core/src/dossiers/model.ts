@@ -113,6 +113,12 @@ export interface Dossier extends ProductInfo {
   generalComment: string | null;
   generalCommentUpdatedAt: Date | null;
   generalCommentUpdatedBy: string | null;
+  /**
+   * L17 (#87, ADR 0009): the Sở chuyển về công nhận cấp tỉnh a hồ sơ Đã gửi đề nghị 5 sao on the Bộ's văn bản
+   * (`ministryReturnFileId`); it then waits, still Đã gửi đề nghị 5 sao, for a Quyết định công nhận bổ sung.
+   */
+  awaitingSupplementaryDecision: boolean;
+  ministryReturnFileId: string | null;
   /** Optimistic lock: every change goes through transition() and bumps it by one. */
   version: number;
   createdAt: Date;

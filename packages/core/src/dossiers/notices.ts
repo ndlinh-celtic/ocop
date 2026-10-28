@@ -78,6 +78,7 @@ export const NOTICE_EVENTS = [
   "dossier.advisory_return_requested",
   "dossier.unlocked",
   "dossier.result_published",
+  "dossier.five_star_closed",
   "result_letter.issued",
 ] as const;
 
@@ -483,6 +484,21 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           body,
           emailSubject: "Hồ sơ OCOP đã có kết quả",
           emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng. Đăng nhập để xem kết quả.",
+          link: ownerLink,
+        },
+      ];
+    }
+    // L17 SO-04 (#87, spec #79 story 58): đóng hồ sơ with Bộ công nhận 5 sao, to the Chủ thể; kết quả khác tells no one.
+    case "dossier.five_star_closed": {
+      if ((await tx.fiveStar.closureOf(dossier.id))?.outcome !== "ministry_recognized_5_star") return [];
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_five_star_recognized",
+          title: `Sản phẩm được Bộ công nhận 5 sao: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã được Bộ Nông nghiệp và Môi trường công nhận sản phẩm OCOP 5 sao.`,
+          emailSubject: "Hồ sơ OCOP được Bộ công nhận 5 sao",
+          emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá 5 sao của Trung ương. Đăng nhập để xem chi tiết.",
           link: ownerLink,
         },
       ];

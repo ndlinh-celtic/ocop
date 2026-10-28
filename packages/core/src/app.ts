@@ -32,6 +32,7 @@ import { recordStartup } from "./system/startup";
 import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
 import { editGeneralComment } from "./results/general-comment";
 import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
+import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
 import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
@@ -295,6 +296,12 @@ export function createCore(deps: CoreDeps) {
       meetingsForDecision: meetingsForDecision(deps),
       meetingDecision: meetingDecision(deps),
       downloadDecision: downloadDecision(deps),
+      // L17 SO-04 Đề xuất 5 sao: đánh dấu đã gửi, chuyển về, đóng hồ sơ (#87).
+      fiveStarList: fiveStarList(deps),
+      markFiveStarSent: markFiveStarSent(deps),
+      returnFiveStarToProvince: returnFiveStarToProvince(deps),
+      closeFiveStar: closeFiveStar(deps),
+      downloadMinistryDocument: downloadMinistryDocument(deps),
       // L16 HD-10, CT-13 Thư kết quả không đạt (#85).
       resultLetterDraft: resultLetterDraft(deps),
       previewResultLetter: previewResultLetter(deps),

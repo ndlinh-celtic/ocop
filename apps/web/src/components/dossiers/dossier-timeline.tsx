@@ -27,6 +27,10 @@ const ACTION_LABEL: Record<string, string> = {
   // L16 HD-11 (#83, story 67): Công bố kết quả by a Quyết định công nhận.
   "dossier.recognize": "Công bố kết quả: được công nhận theo Quyết định công nhận",
   "dossier.result_publish": "Công bố kết quả: đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao",
+  // L17 SO-04 (#87, story 67): the đề nghị 5 sao and the Bộ's answer.
+  "dossier.five_star.mark_sent": "Sở đã gửi đề nghị Trung ương đánh giá 5 sao",
+  "dossier.five_star.return_to_province": "Trung ương chuyển về, chờ tỉnh công nhận 4 sao",
+  "dossier.five_star.close": "Đóng hồ sơ theo kết quả của Bộ",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

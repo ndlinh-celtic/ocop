@@ -84,6 +84,55 @@ describe("L16 Quyết định công nhận and Công bố kết quả rows (#83)
   });
 });
 
+describe("L17 Đề xuất 5 sao rows (#87, ADR 0009)", () => {
+  const rowsOf = (action: string) => TRANSITIONS.filter((r) => r.action === action);
+  const dossier = (d: Partial<Dossier>) => ({ resultPublishedAt: null, awaitingSupplementaryDecision: false, ...d }) as Dossier;
+  const now = new Date();
+
+  it("lets only the Cán bộ Sở đánh dấu đã gửi, chuyển về and đóng hồ sơ, each a mốc of the timeline", () => {
+    expect(rowsOf("dossier.five_star.mark_sent")).toEqual([
+      expect.objectContaining({
+        from: "score_finalized",
+        to: "five_star_proposed",
+        roles: ["province_officer"],
+        event: "dossier.five_star_sent",
+        timeline: true,
+      }),
+    ]);
+    expect(rowsOf("dossier.five_star.return_to_province")).toEqual([
+      expect.objectContaining({
+        from: "five_star_proposed",
+        to: "five_star_proposed",
+        roles: ["province_officer"],
+        event: "dossier.five_star_returned",
+        timeline: true,
+      }),
+    ]);
+    expect(rowsOf("dossier.five_star.close")).toEqual([
+      expect.objectContaining({
+        from: "five_star_proposed",
+        to: "closed_offline",
+        roles: ["province_officer"],
+        event: "dossier.five_star_closed",
+        timeline: true,
+      }),
+    ]);
+  });
+
+  it("sends only a hồ sơ whose kết quả is Công bố", () => {
+    const [row] = rowsOf("dossier.five_star.mark_sent");
+    expect(row?.guard?.(dossier({}), now)).toMatchObject({ code: "result_not_published" });
+    expect(row?.guard?.(dossier({ resultPublishedAt: now }), now)).toBeNull();
+  });
+
+  it("neither chuyển về again nor đóng a hồ sơ waiting for its Quyết định công nhận bổ sung", () => {
+    for (const row of [...rowsOf("dossier.five_star.return_to_province"), ...rowsOf("dossier.five_star.close")]) {
+      expect(row.guard?.(dossier({}), now)).toBeNull();
+      expect(row.guard?.(dossier({ awaitingSupplementaryDecision: true }), now)).toMatchObject({ code: "awaiting_supplementary_decision" });
+    }
+  });
+});
+
 describe("L16 Thư kết quả không đạt rows (#85)", () => {
   const rowsOf = (action: string) => TRANSITIONS.filter((r) => r.action === action);
   const dossier = (resultPublishedAt: Date | null) => ({ resultPublishedAt }) as Dossier;

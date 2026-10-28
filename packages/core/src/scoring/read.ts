@@ -483,7 +483,8 @@ async function publishedResultView(tx: Tx, dossier: Dossier, result: AggregateRe
     star: result.star,
     outcome,
     recognizedStar,
-    standing: outcome === "recognized" ? `Công nhận ${recognizedStar} sao` : outcome === "five_star_proposal" ? FIVE_STAR_STANDING : "Không đạt",
+    standing:
+      outcome === "recognized" ? `Công nhận ${recognizedStar} sao` : outcome === "five_star_proposal" ? await fiveStarStanding(tx, dossier) : "Không đạt",
     generalComment: dossier.generalComment,
     letter: await publishedLetter(tx, dossier.id),
   };
@@ -505,6 +506,18 @@ async function publishedLetter(tx: Tx, dossierId: string): Promise<PublishedLett
 
 /** Spec #79 story 60: how a hồ sơ 5 sao Công bố reads to its Chủ thể. */
 export const FIVE_STAR_STANDING = "Đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao";
+
+/** Story 60 (#87): where a hồ sơ 5 sao stands after Công bố: sent to the Bộ, chuyển về, or closed on the Bộ's answer. */
+async function fiveStarStanding(tx: Tx, dossier: Dossier): Promise<string> {
+  if (dossier.state === "five_star_proposed") {
+    return dossier.awaitingSupplementaryDecision ? "Trung ương chuyển về, chờ tỉnh công nhận 4 sao" : "Tỉnh đã gửi đề nghị Trung ương đánh giá 5 sao";
+  }
+  if (dossier.state === "closed_offline") {
+    const closure = await tx.fiveStar.closureOf(dossier.id);
+    return closure?.outcome === "ministry_recognized_5_star" ? "Bộ công nhận 5 sao" : "Đã đóng theo văn bản của Bộ";
+  }
+  return FIVE_STAR_STANDING;
+}
 
 async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise<OwnSheetView> {
   const { sheet } = await ownSheet(tx, actor, dossier.id);
