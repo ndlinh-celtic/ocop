@@ -30,6 +30,7 @@ export {
   type WardReportData,
   type MeetingDocumentData,
   type ResultLetterData,
+  type RecognitionDecisionData,
   type MeetingDocumentRow,
   type TemplateInspection,
   type TemplateTag,
@@ -323,6 +324,7 @@ export {
   DECISION_KINDS,
   DECISION_SECTIONS,
   DECISION_SECTION_LABEL,
+  recognizedStar,
   sectionOf,
   type DecisionKind,
   type DecisionSection,
@@ -339,6 +341,7 @@ export {
   type RecordedDecision,
   type RecordMeetingDecisionInput,
 } from "./results/decision";
+export type { SupplementaryDecisionInput, SupplementaryDecisionView } from "./results/supplementary-decision";
 export type { ResultOutcome } from "./platform/events";
 export {
   FIVE_STAR_CLOSURE_LABEL,

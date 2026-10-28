@@ -39,6 +39,7 @@ import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedC
 import { amendDecision } from "./results/amend-decision";
 import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
+import { recordSupplementaryDecision, supplementaryDecisionDraft, supplementaryDecisions } from "./results/supplementary-decision";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -323,6 +324,10 @@ export function createCore(deps: CoreDeps) {
       downloadResultLetter: downloadResultLetter(deps),
       // L16 nhắc Giấy chứng nhận sắp hết hiệu lực, the daily worker job (#86).
       sendCertificateExpiryReminders: sendCertificateExpiryReminders(deps),
+      // L17 Quyết định công nhận bổ sung (#88).
+      recordSupplementaryDecision: recordSupplementaryDecision(deps),
+      supplementaryDecisionDraft: supplementaryDecisionDraft(deps),
+      supplementaryDecisions: supplementaryDecisions(deps),
       // L22 DC-05 Xuất Excel danh sách sản phẩm đạt sao (#91).
       exportStarList: exportStarList(deps),
     },

@@ -118,6 +118,14 @@ export interface MeetingDocumentData {
   generatedOn: string;
 }
 
+/**
+ * The dự thảo Quyết định công nhận: theo Phiên họp (#62, #83), or bổ sung (#88, ADR 0009) with `supplementary` set, no
+ * Phiên họp and only mục 4 sao. A template tells them apart with {#supplementary}…{/supplementary} and {^supplementary}.
+ */
+export interface RecognitionDecisionData extends MeetingDocumentData {
+  supplementary: boolean;
+}
+
 /** L16 HD-11 (#84, story 26): the bản nháp of a Giấy chứng nhận, đem đi ký số. */
 export interface CertificateData {
   /** Số hiệu giấy chứng nhận, e.g. 012/2026/GCN-OCOP. */
@@ -166,7 +174,7 @@ export interface DocumentTemplates {
   ward_report: WardReportData;
   meeting_score_table: MeetingDocumentData;
   meeting_minutes_draft: MeetingDocumentData;
-  recognition_decision_draft: MeetingDocumentData;
+  recognition_decision_draft: RecognitionDecisionData;
   certificate: CertificateData;
   result_letter: ResultLetterData;
 }

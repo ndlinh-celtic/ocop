@@ -1,5 +1,5 @@
 import type { RecognitionDecisionRepo } from "@ocop/core";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { recognitionDecision as d, recognitionDecisionDossier as dd } from "../db/schema";
 
@@ -39,6 +39,9 @@ export function recognitionDecisionRepo(db: Db): RecognitionDecisionRepo {
         .where(eq(dd.dossierId, dossierId))
         .orderBy(asc(d.recordedAt), asc(d.id));
       return rows.map((r) => ({ ...r.decision, section: r.section }));
+    },
+    async ofKind(kind) {
+      return db.select().from(d).where(eq(d.kind, kind)).orderBy(desc(d.recordedAt), desc(d.id));
     },
     async lock(id) {
       const [row] = await db.select().from(d).where(eq(d.id, id)).for("update");

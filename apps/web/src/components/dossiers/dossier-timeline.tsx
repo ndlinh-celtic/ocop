@@ -31,6 +31,8 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.five_star.mark_sent": "Sở đã gửi đề nghị Trung ương đánh giá 5 sao",
   "dossier.five_star.return_to_province": "Trung ương chuyển về, chờ tỉnh công nhận 4 sao",
   "dossier.five_star.close": "Đóng hồ sơ theo kết quả của Bộ",
+  // L17 (#88, story 57): Quyết định công nhận bổ sung.
+  "dossier.recognize_supplementary": "Được công nhận 4 sao theo Quyết định công nhận bổ sung",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

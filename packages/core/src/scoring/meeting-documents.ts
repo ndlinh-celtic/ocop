@@ -1,6 +1,6 @@
 import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
-import type { DocumentTemplate, MeetingDocumentData, MeetingDocumentRow } from "../documents/renderer";
+import type { DocumentTemplate, MeetingDocumentRow, RecognitionDecisionData } from "../documents/renderer";
 import { renderDocument } from "../documents/templates";
 import { dossierNotFound } from "../dossiers/model";
 import { authorize } from "../identity/policy";
@@ -130,7 +130,7 @@ export function generateMeetingDocument(deps: CoreDeps) {
       const round = await tx.rounds.findById(meeting.roundId);
       const now = deps.clock.now();
       const listed = input.kind === "decision" ? rows.filter((r) => r.starValue >= 3) : rows;
-      const data: MeetingDocumentData = {
+      const data: RecognitionDecisionData = {
         councilName: council?.name ?? "",
         roundName: round?.name ?? "",
         meetingTitle: meeting.title,
@@ -143,6 +143,8 @@ export function generateMeetingDocument(deps: CoreDeps) {
         count: String(listed.length),
         dossiers: reindex(listed),
         generatedOn: formatDayVn(vnDateOf(now)),
+        // The dự thảo theo Phiên họp, not bổ sung (#88); the other văn bản họp ignore it.
+        supplementary: false,
       };
       const { bytes } = await renderDocument(deps, tx, TEMPLATE[input.kind], data);
       await tx.audit.append(
