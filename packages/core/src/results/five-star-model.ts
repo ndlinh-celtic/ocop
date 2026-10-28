@@ -53,4 +53,6 @@ export interface FiveStarRepo {
   dispatchOf(dossierId: string): Promise<FiveStarDispatch | null>;
   insertClosure(c: FiveStarClosure): Promise<void>;
   closureOf(dossierId: string): Promise<FiveStarClosure | null>;
+  /** Every closure with this outcome, by ngày quyết định then dossier (#91 danh sách sản phẩm đạt sao). */
+  closures(outcome: FiveStarClosureOutcome): Promise<FiveStarClosure[]>;
 }

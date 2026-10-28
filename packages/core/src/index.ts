@@ -373,6 +373,7 @@ export {
 } from "./results/certificate-model";
 export { type CertificateView, type ListCertificatesInput, type UploadSignedCertificateInput } from "./results/certificate";
 export { type AmendDecisionInput } from "./results/amend-decision";
+export { type StarListInput } from "./results/star-list";
 export { type CertificateSettings } from "./system/settings";
 export { type LetterCriterion, type ResultLetter, type ResultLetterRepo } from "./results/result-letter-model";
 export {

@@ -1,3 +1,4 @@
+import { exportStarList } from "./results/star-list";
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
 import { editDraft } from "./criteria/edit";
@@ -332,6 +333,8 @@ export function createCore(deps: CoreDeps) {
       requestFiveStarPackage: requestFiveStarPackage(deps),
       fiveStarPackages: fiveStarPackages(deps),
       downloadFiveStarPackage: downloadFiveStarPackage(deps),
+      // L22 DC-05 Xuất Excel danh sách sản phẩm đạt sao (#91).
+      exportStarList: exportStarList(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

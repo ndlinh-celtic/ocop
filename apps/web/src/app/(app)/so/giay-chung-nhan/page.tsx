@@ -15,6 +15,7 @@ const isState = (v: string | undefined): v is CertificateState => (CERTIFICATE_S
 /**
  * L16 HD-11 (#84, spec #79 stories 26 to 29, 34): the Giấy chứng nhận the Sở issued, filtered by năm, trạng thái and
  * quyết định; the bản nháp of one giấy or of a whole quyết định (ZIP) to send for ký số, then the signed PDF of each.
+ * L22 DC-05 (#91): Xuất Excel danh sách sản phẩm đạt sao by năm cấp and Hạng công nhận.
  */
 export default async function CertificatesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor();
@@ -75,6 +76,38 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
             Tải bản nháp cả quyết định (ZIP)
           </a>
         )}
+      </form>
+
+      <form
+        method="get"
+        action="/xuat-excel/san-pham-dat-sao"
+        className="flex flex-wrap items-end gap-3 rounded-lg border bg-surface p-3 text-sm"
+        aria-label="Xuất danh sách sản phẩm đạt sao"
+      >
+        <span className="w-full font-medium">Danh sách sản phẩm đạt sao để đăng cổng thông tin tỉnh, gồm cả sản phẩm Bộ công nhận 5 sao</span>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium">Năm cấp</span>
+          <input
+            name="year"
+            defaultValue={year ?? ""}
+            inputMode="numeric"
+            pattern="\d{4}"
+            placeholder="Tất cả"
+            className="w-24 rounded-md border border-line-strong px-2 py-1.5"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium">Hạng công nhận</span>
+          <select name="star" defaultValue="" className="rounded-md border border-line-strong px-2 py-1.5">
+            <option value="">Tất cả</option>
+            <option value="3">3 sao</option>
+            <option value="4">4 sao</option>
+            <option value="5">5 sao (Bộ công nhận)</option>
+          </select>
+        </label>
+        <button type="submit" className="rounded-lg bg-brand px-3 py-1.5 font-semibold text-white">
+          Xuất Excel
+        </button>
       </form>
 
       <section className="overflow-x-auto rounded-lg border bg-surface shadow-card">

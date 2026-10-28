@@ -89,7 +89,7 @@ export function exportDossiers(deps: CoreDeps) {
 }
 
 /** YYYYMMDD-HHmm in giờ Việt Nam. */
-function stamp(at: Date): string {
+export function stamp(at: Date): string {
   const time = new Date(at.getTime() + 7 * 3_600_000).toISOString().slice(11, 16).replace(":", "");
   return `${vnDateOf(at).replaceAll("-", "")}-${time}`;
 }

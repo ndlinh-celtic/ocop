@@ -121,6 +121,8 @@ const ROLE_ACTIONS = {
   "results.result_letter.issue": ["province_officer"],
   // L17 SO-04 Gói đề nghị 5 sao (#89, stories 47 to 52): export, list and download the packages.
   "results.package.export": ["province_officer"],
+  // L22 DC-05 (#91, spec #79 stories 83, 84): Xuất Excel danh sách sản phẩm đạt sao for the cổng thông tin tỉnh.
+  "results.star_list.export": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */
