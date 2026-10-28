@@ -159,7 +159,12 @@ const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = 
   },
   meeting_score_table: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   meeting_minutes_draft: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
-  recognition_decision_draft: meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
+  recognition_decision_draft: {
+    ...meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
+    supplementary: opt(
+      "Quyết định công nhận bổ sung (không gắn Phiên họp, chỉ mục 4 sao): dùng {#supplementary}…{/supplementary} và {^supplementary}…{/supplementary}",
+    ),
+  },
   certificate: {
     code: req("Số hiệu giấy chứng nhận, ví dụ 012/2026/GCN-OCOP"),
     productName: req("Tên sản phẩm"),
@@ -358,7 +363,7 @@ export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] }
   },
   meeting_score_table: sampleMeeting,
   meeting_minutes_draft: sampleMeeting,
-  recognition_decision_draft: { ...sampleMeeting, count: "2" },
+  recognition_decision_draft: { ...sampleMeeting, count: "2", supplementary: false },
   certificate: {
     code: "012/2026/GCN-OCOP",
     productName: sampleEntity.productName,

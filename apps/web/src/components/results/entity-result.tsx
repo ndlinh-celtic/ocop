@@ -20,6 +20,12 @@ export function EntityResult({ view }: { view: PublishedResultView | null }) {
     <section className="flex flex-col gap-3 rounded-lg border bg-surface p-4 text-sm shadow-card" data-testid="entity-result">
       <h2 className="font-semibold">Kết quả đánh giá</h2>
       <p className="text-base font-semibold text-brand">{view.standing}</p>
+      {view.recognizedStar !== null && view.recognizedStar < view.star && (
+        // ADR 0009 (#88): Hạng công nhận 4 of a hồ sơ 5 sao Trung ương chuyển về; the Hạng sao of its kết quả stays.
+        <p className="text-text-2">
+          Hạng sao theo kết quả chấm: {view.star} sao. Trung ương chuyển về, tỉnh công nhận {view.recognizedStar} sao theo Quyết định công nhận bổ sung.
+        </p>
+      )}
       <p>
         {formatPoints(view.total)} điểm ({view.parts.map((p) => `Phần ${p.code} ${formatPoints(p.total)}`).join(", ")}).
       </p>

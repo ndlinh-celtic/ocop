@@ -36,6 +36,7 @@ import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDe
 import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
 import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedCertificate } from "./results/certificate";
 import { amendDecision } from "./results/amend-decision";
+import { recordSupplementaryDecision, supplementaryDecisionDraft, supplementaryDecisions } from "./results/supplementary-decision";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -313,6 +314,10 @@ export function createCore(deps: CoreDeps) {
       uploadSignedCertificate: uploadSignedCertificate(deps),
       downloadCertificate: downloadCertificate(deps),
       certificateDrafts: certificateDrafts(deps),
+      // L17 Quyết định công nhận bổ sung (#88).
+      recordSupplementaryDecision: recordSupplementaryDecision(deps),
+      supplementaryDecisionDraft: supplementaryDecisionDraft(deps),
+      supplementaryDecisions: supplementaryDecisions(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

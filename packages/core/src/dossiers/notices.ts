@@ -79,6 +79,7 @@ export const NOTICE_EVENTS = [
   "dossier.unlocked",
   "dossier.result_published",
   "dossier.five_star_closed",
+  "dossier.recognized_supplementary",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -500,6 +501,19 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
+    // L17 (#88, spec #79 stories 57, 60; ADR 0009): Quyết định công nhận bổ sung, to the Chủ thể: Hạng công nhận 4.
+    case "dossier.recognized_supplementary":
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_recognized_supplementary",
+          title: `Sản phẩm được công nhận 4 sao: ${product}`,
+          body: `Hồ sơ ${dossier.code} được tỉnh công nhận sản phẩm OCOP 4 sao theo Quyết định công nhận bổ sung. Xem kết quả trong hồ sơ.`,
+          emailSubject: "Hồ sơ OCOP đã được công nhận",
+          emailLine: "Hồ sơ OCOP của anh/chị đã được tỉnh công nhận theo Quyết định công nhận bổ sung. Đăng nhập để xem kết quả.",
+          link: ownerLink,
+        },
+      ];
     default:
       return [];
   }
