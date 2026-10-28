@@ -1,5 +1,6 @@
 import type { PdfConverter } from "../documents/pdf";
 import type { DocumentRenderer } from "../documents/renderer";
+import type { SpreadsheetWriter } from "../documents/spreadsheet";
 import type { FileStore } from "../files/file-store";
 import type { FileInspector } from "../files/inspection";
 import { DEFAULT_ALLOWED_TYPES } from "../files/model";
@@ -69,4 +70,6 @@ export interface CoreDeps {
   roundActivity: RoundActivity;
   /** DOCX → PDF for giấy chứng nhận, thư kết quả and mục lục gói 5 sao (#81). */
   pdf: PdfConverter;
+  /** The Excel files of Xuất Excel (DC-05, #90). */
+  spreadsheets: SpreadsheetWriter;
 }

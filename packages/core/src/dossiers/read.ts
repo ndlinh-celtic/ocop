@@ -2,7 +2,7 @@ import { authorize } from "../identity/policy";
 import { ROLES, SCOPE_OF_ROLE, type Role } from "../identity/roles";
 import { generalCommentVisible } from "../results/visibility";
 import { dataScopeOf, type DataScope } from "../identity/scope";
-import type { Actor } from "../shared/context";
+import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { assertIdShape, isUuid } from "../shared/ids";
 import type { Tx } from "../shared/uow";
@@ -162,25 +162,29 @@ export function getDossier(deps: CoreDeps) {
 export function listDossiers(deps: CoreDeps) {
   return async (actor: Actor, input: DossierListInput = {}): Promise<DossierSummary[]> => {
     authorize(actor, "dossier.read");
-    const scope = dataScopeOf(actor);
-    const filter: DossierListFilter = {
-      ...(input.state && (DOSSIER_STATES as readonly string[]).includes(input.state) ? { state: input.state } : {}),
-      ...(input.filter === "awaiting_receipt" ? { awaitingReceipt: true } : {}),
-      ...(input.filter === "mine" ? { handlerUserId: actor.userId } : {}),
-      ...(input.filter === "awaiting_province_receipt" ? { awaitingProvinceReceipt: true } : {}),
-      ...(input.filter === "advisory_return_requested" ? { advisoryReturnRequested: true } : {}),
-    };
-    // An id that cannot exist narrows to nothing rather than reaching the database.
-    for (const key of ["roundId", "wardId", "productGroupId"] as const) {
-      const id = input[key];
-      if (id === undefined || id === "") continue;
-      if (!isUuid(id)) return [];
-      filter[key] = id;
-    }
-    const now = deps.clock.now();
-    if (input.filter === "awaiting_next_round") filter.awaitingNextRoundAt = now;
-    return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter), now, actor.activeRole));
+    return deps.uow.run(async (tx) => listIn(tx, actor, input, deps.clock.now()));
   };
+}
+
+/** listDossiers inside the caller's transaction; Xuất Excel (#90) reads the same Phạm vi and bộ lọc as the list on screen. */
+export async function listIn(tx: Tx, actor: UserActor, input: DossierListInput, now: Date): Promise<DossierSummary[]> {
+  const scope = dataScopeOf(actor);
+  const filter: DossierListFilter = {
+    ...(input.state && (DOSSIER_STATES as readonly string[]).includes(input.state) ? { state: input.state } : {}),
+    ...(input.filter === "awaiting_receipt" ? { awaitingReceipt: true } : {}),
+    ...(input.filter === "mine" ? { handlerUserId: actor.userId } : {}),
+    ...(input.filter === "awaiting_province_receipt" ? { awaitingProvinceReceipt: true } : {}),
+    ...(input.filter === "advisory_return_requested" ? { advisoryReturnRequested: true } : {}),
+  };
+  // An id that cannot exist narrows to nothing rather than reaching the database.
+  for (const key of ["roundId", "wardId", "productGroupId"] as const) {
+    const id = input[key];
+    if (id === undefined || id === "") continue;
+    if (!isUuid(id)) return [];
+    filter[key] = id;
+  }
+  if (input.filter === "awaiting_next_round") filter.awaitingNextRoundAt = now;
+  return summarize(tx, scope, await tx.dossiers.list(scope, filter), now, actor.activeRole);
 }
 
 /** Story 34: the dòng thời gian of a hồ sơ within the reader's Phạm vi, oldest first. */

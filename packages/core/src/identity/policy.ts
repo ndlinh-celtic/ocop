@@ -109,6 +109,8 @@ const ROLE_ACTIONS = {
   "documents.template.manage": ["admin"],
   // L16 CT-13, HD-10 (#80): the Nhận xét chung of a hồ sơ Đã chốt điểm; which hồ sơ and until when is the transition table.
   "results.general_comment.write": ["council_chair", "council_secretary"],
+  // L22 DC-05 (#90, spec #79 stories 80 to 84): Xuất Excel danh sách hồ sơ; which hồ sơ is the exporter's DataScope.
+  "dossier.export": ["ward_officer", "province_officer", "council_chair", "council_secretary"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

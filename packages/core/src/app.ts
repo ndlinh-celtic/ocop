@@ -40,6 +40,7 @@ import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
 import { downloadSubmissionDocument } from "./dossiers/documents";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
+import { exportDossiers } from "./dossiers/export";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
 import { listAdvisoryReturnRequests, listReturnRequests, requestAdvisoryReturn, requestReturn } from "./dossiers/return-request";
@@ -179,6 +180,8 @@ export function createCore(deps: CoreDeps) {
       copy: copyDossier(deps),
       get: getDossier(deps),
       list: listDossiers(deps),
+      // L22 DC-05 Xuất Excel danh sách hồ sơ (#90).
+      exportDossiers: exportDossiers(deps),
       timeline: dossierTimeline(deps),
       updateProduct: updateProduct(deps),
       addEvidenceFile: addEvidenceFile(deps),

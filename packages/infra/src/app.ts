@@ -11,6 +11,7 @@ import {
   type PasswordHasher,
   type PdfConverter,
   type RoundActivity,
+  type SpreadsheetWriter,
 } from "@ocop/core";
 import type { Pool } from "pg";
 import { argon2Hasher } from "./adapters/argon2";
@@ -21,6 +22,7 @@ import type { Config } from "./config";
 import { PgUnitOfWork } from "./db/uow";
 import { docxRenderer } from "./documents/docx";
 import { gotenbergPdfConverter } from "./documents/gotenberg";
+import { excelSpreadsheetWriter } from "./documents/xlsx";
 import { clamdScanner, type VirusScanner } from "./files/clamd";
 import { createFileInspector } from "./files/inspector";
 import { createS3FileStore } from "./files/s3";
@@ -39,6 +41,7 @@ export interface AppOverrides {
   roundActivity?: RoundActivity;
   documents?: DocumentRenderer;
   pdf?: PdfConverter;
+  spreadsheets?: SpreadsheetWriter;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -150,5 +153,6 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
         url: config.GOTENBERG_URL ?? "http://gotenberg:3000",
         timeoutMs: config.GOTENBERG_TIMEOUT_SECONDS ? config.GOTENBERG_TIMEOUT_SECONDS * 1000 : undefined,
       }),
+    spreadsheets: overrides.spreadsheets ?? excelSpreadsheetWriter(),
   });
 }
