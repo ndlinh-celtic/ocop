@@ -340,6 +340,16 @@ export {
 } from "./results/decision";
 export type { ResultOutcome } from "./platform/events";
 export {
+  FIVE_STAR_CLOSURE_LABEL,
+  FIVE_STAR_CLOSURE_OUTCOMES,
+  type FiveStarCandidate,
+  type FiveStarClosure,
+  type FiveStarClosureOutcome,
+  type FiveStarDispatch,
+  type FiveStarRepo,
+} from "./results/five-star-model";
+export type { CloseFiveStarInput, FiveStarListInput, FiveStarRow, MarkFiveStarSentInput, ReturnFiveStarInput } from "./results/five-star";
+export {
   CERTIFICATE_STATES,
   CERTIFICATE_STATE_LABEL,
   DEFAULT_CERTIFICATE_CODE_SUFFIX,

@@ -21,6 +21,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   document_template: "documents.template.manage",
   meeting_minutes: "scoring.meeting.minutes.upload",
   recognition_decision: "results.decision.record",
+  ministry_document: "results.five_star.manage",
   signed_certificate: "results.certificate.upload",
 };
 
@@ -31,6 +32,7 @@ const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
   document_template: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
   meeting_minutes: ["application/pdf"],
   recognition_decision: ["application/pdf"],
+  ministry_document: ["application/pdf"],
   signed_certificate: ["application/pdf"],
 };
 

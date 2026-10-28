@@ -72,7 +72,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/so/hoi-dong", label: "Hội đồng", icon: Users, ready: true },
     { href: "/so/phien-hop", label: "Phiên họp, quyết định", icon: Stamp, ready: true },
     { href: "/so/giay-chung-nhan", label: "Giấy chứng nhận", icon: Award, ready: true },
-    { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: false },
+    { href: "/so/ho-so-5-sao", label: "Hồ sơ 5 sao", icon: Star, ready: true },
     STATS,
     CRITERIA,
     ...COMMON,

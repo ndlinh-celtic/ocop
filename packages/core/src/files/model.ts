@@ -17,6 +17,7 @@ export const FILE_PURPOSES = [
   "unlock_request",
   "document_template",
   "recognition_decision",
+  "ministry_document",
   "signed_certificate",
 ] as const;
 export type FilePurpose = (typeof FILE_PURPOSES)[number];
