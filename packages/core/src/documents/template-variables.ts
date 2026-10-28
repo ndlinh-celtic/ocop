@@ -1,4 +1,4 @@
-import type { DocumentTemplate, DocumentTemplates, MeetingDocumentData, TemplateTag } from "./renderer";
+import type { DocumentTemplate, DocumentTemplates, FiveStarPackageDossierRow, MeetingDocumentData, TemplateTag } from "./renderer";
 
 export type { TemplateTag };
 
@@ -40,6 +40,8 @@ export const TEMPLATE_LABEL: Record<DocumentTemplate, string> = {
   recognition_decision_draft: "Dự thảo quyết định công nhận",
   certificate: "Giấy chứng nhận sản phẩm OCOP",
   result_letter: "Thư kết quả không đạt",
+  five_star_proposal_letter: "Dự thảo văn bản đề nghị đánh giá 5 sao",
+  five_star_package_index: "Mục lục gói đề nghị 5 sao",
 };
 
 const req = (label: string) => ({ label, required: true });
@@ -207,6 +209,47 @@ const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = 
     advice: req("Lời khuyên cải thiện của Sở"),
     issuedOn: opt("Ngày phát hành thư"),
   },
+  five_star_proposal_letter: {
+    count: opt("Số hồ sơ đề nghị"),
+    dossiers: {
+      label: "Danh sách hồ sơ đề nghị Trung ương đánh giá 5 sao, mỗi hồ sơ một dòng",
+      required: true,
+      loop: {
+        index: opt("Số thứ tự"),
+        code: req("Mã hồ sơ"),
+        productName: req("Tên sản phẩm"),
+        entityName: req("Tên Chủ thể"),
+        address: opt("Địa chỉ Chủ thể"),
+        wardName: opt("Xã/phường"),
+        criteriaSet: opt("Bộ tiêu chí: mã - tên"),
+        total: req("Điểm tổng hợp đã chốt"),
+        star: opt("Hạng sao đã chốt"),
+        decision: opt("Số và ngày Quyết định công nhận"),
+      },
+    },
+    generatedOn: opt("Ngày lập dự thảo"),
+  },
+  five_star_package_index: {
+    count: opt("Số hồ sơ trong gói"),
+    rootFiles: { label: "Các tệp ở thư mục gốc của gói", loop: { name: req("Tên tệp") } },
+    dossiers: {
+      label: "Thư mục của từng hồ sơ",
+      required: true,
+      loop: {
+        index: opt("Số thứ tự"),
+        code: opt("Mã hồ sơ"),
+        productName: opt("Tên sản phẩm"),
+        entityName: opt("Tên Chủ thể"),
+        folder: req("Tên thư mục trong gói"),
+        files: {
+          label: "Các tệp trong thư mục, mỗi tệp một dòng",
+          required: true,
+          loop: { index: opt("Số thứ tự"), path: req("Đường dẫn tệp trong thư mục") },
+        },
+      },
+    },
+    generatedOn: opt("Ngày lập gói"),
+  },
 };
 
 /**
@@ -341,6 +384,19 @@ const sampleMeeting: MeetingDocumentData = {
   generatedOn: "16/11/2026",
 };
 
+const sampleFiveStarRow: FiveStarPackageDossierRow = {
+  index: "1",
+  code: "OCOP-2026-0002",
+  productName: "Trà xanh Mẫu",
+  entityName: "Công ty TNHH Trà Mẫu",
+  address: "Xã Đồi, tỉnh Mẫu",
+  wardName: "Xã Đồi",
+  criteriaSet: "B2 - Bộ tiêu chí sản phẩm chè",
+  total: "91,50",
+  star: "5 sao",
+  decision: "Số 123/QĐ-UBND, ngày 18/11/2026",
+};
+
 /** The fixed data a Sinh thử fills a template with (#82 story 77): every field set, every loop with rows. */
 export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] } = {
   registration_form: {
@@ -431,5 +487,24 @@ export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] }
     ],
     advice: "Bổ sung giấy chứng nhận an toàn thực phẩm và hoàn thiện nhãn mác.",
     issuedOn: "20/11/2026",
+  },
+  five_star_proposal_letter: { count: "1", dossiers: [sampleFiveStarRow], generatedOn: "20/11/2026" },
+  five_star_package_index: {
+    count: "1",
+    rootFiles: [{ name: "De nghi UBND tinh.docx" }, { name: "Muc luc.pdf" }],
+    dossiers: [
+      {
+        index: sampleFiveStarRow.index,
+        code: sampleFiveStarRow.code,
+        productName: sampleFiveStarRow.productName,
+        entityName: sampleFiveStarRow.entityName,
+        folder: "OCOP-2026-0002 - Tra xanh Mau",
+        files: [
+          { index: "1", path: "01 Phien ban nop 1/Phieu dang ky.docx" },
+          { index: "2", path: "05 Bang diem.xlsx" },
+        ],
+      },
+    ],
+    generatedOn: "20/11/2026",
   },
 };

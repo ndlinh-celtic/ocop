@@ -95,3 +95,21 @@ export async function downloadMinistryDocumentAction(id: string): Promise<{ url?
     return { error: domainMessage(err) };
   }
 }
+
+const packageInput = z.object({ dossierIds: z.array(z.string().min(1)).min(1, "Chọn ít nhất một hồ sơ để xuất gói") });
+
+export type ExportPackageState = { error?: string; requested?: boolean };
+
+/** L17 SO-04 (#89, stories 47 to 52): xuất Gói đề nghị 5 sao for the hồ sơ ticked in the list; a job builds it. */
+export async function exportPackageAction(_prev: ExportPackageState, form: FormData): Promise<ExportPackageState> {
+  const actor = await requireActor();
+  const parsed = packageInput.safeParse({ dossierIds: form.getAll("dossierIds").map(String) });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Chọn hồ sơ để xuất gói" };
+  try {
+    await app().core.results.requestFiveStarPackage(actor, parsed.data);
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+  revalidatePath(PATH);
+  return { requested: true };
+}

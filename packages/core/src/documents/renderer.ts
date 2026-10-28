@@ -168,6 +168,41 @@ export interface ResultLetterData {
   issuedOn: string;
 }
 
+/** One hồ sơ of the Gói đề nghị 5 sao in its văn bản (L17 SO-04, #89); values formatted for reading. */
+export interface FiveStarPackageDossierRow {
+  index: string;
+  code: string;
+  productName: string;
+  entityName: string;
+  address: string;
+  wardName: string;
+  /** "<mã> - <tên>" of the Bộ tiêu chí. */
+  criteriaSet: string;
+  total: string;
+  star: string;
+  /** "Số <số>, ngày <dd/mm/yyyy>" of the Quyết định công nhận naming the hồ sơ. */
+  decision: string;
+}
+
+/** Dự thảo văn bản đề nghị of the UBND tỉnh (#89, story 49): every hồ sơ of the package. */
+export interface FiveStarProposalLetterData {
+  count: string;
+  dossiers: FiveStarPackageDossierRow[];
+  generatedOn: string;
+}
+
+/** Mục lục of the Gói đề nghị 5 sao (#89, story 50): each file by folder, as named in the ZIP. */
+export interface FiveStarPackageIndexData {
+  count: string;
+  /** The files at the root of the ZIP. */
+  rootFiles: { name: string }[];
+  dossiers: (Pick<FiveStarPackageDossierRow, "index" | "code" | "productName" | "entityName"> & {
+    folder: string;
+    files: { index: string; path: string }[];
+  })[];
+  generatedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
@@ -177,6 +212,8 @@ export interface DocumentTemplates {
   recognition_decision_draft: RecognitionDecisionData;
   certificate: CertificateData;
   result_letter: ResultLetterData;
+  five_star_proposal_letter: FiveStarProposalLetterData;
+  five_star_package_index: FiveStarPackageIndexData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;

@@ -39,6 +39,7 @@ import { amendDecision } from "./results/amend-decision";
 import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
 import { recordSupplementaryDecision, supplementaryDecisionDraft, supplementaryDecisions } from "./results/supplementary-decision";
+import { downloadFiveStarPackage, fiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -327,6 +328,10 @@ export function createCore(deps: CoreDeps) {
       recordSupplementaryDecision: recordSupplementaryDecision(deps),
       supplementaryDecisionDraft: supplementaryDecisionDraft(deps),
       supplementaryDecisions: supplementaryDecisions(deps),
+      // L17 SO-04 Gói đề nghị 5 sao (#89).
+      requestFiveStarPackage: requestFiveStarPackage(deps),
+      fiveStarPackages: fiveStarPackages(deps),
+      downloadFiveStarPackage: downloadFiveStarPackage(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

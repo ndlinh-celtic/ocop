@@ -187,6 +187,7 @@ Cộng lại khoảng 5 đến 6 GB khi cao điểm, nên chọn **4 vCPU / 8 GB
 
 - DB: snapshot hằng đêm + WAL liên tục (dịch vụ quản lý, hoặc pgBackRest nếu tự chạy) để có PITR, đáp ứng RPO 15 phút.
 - Bucket: versioning bật cho `evidence/` và `certificates/`; Object Lock nếu nhà cung cấp hỗ trợ; sao chép sang vùng hoặc nhà cung cấp thứ hai bằng `rclone` theo lịch.
+- Lifecycle: bucket evidence có quy tắc xóa tiền tố `exports/` sau 7 ngày (Gói đề nghị 5 sao, #89) và hủy multipart dở dang sau 1 ngày; worker tự đặt khi `S3_AUTO_CREATE_BUCKETS=true`, môi trường khác do vận hành đặt.
 - Diễn tập khôi phục mỗi quý trên staging, ghi lại thời gian thực tế so với RTO.
 
 ### 6.4 Bảo mật và tuân thủ

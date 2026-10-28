@@ -1,3 +1,4 @@
+import type { ZipWriter } from "../documents/archive";
 import type { PdfConverter } from "../documents/pdf";
 import type { DocumentRenderer } from "../documents/renderer";
 import type { SpreadsheetWriter } from "../documents/spreadsheet";
@@ -72,4 +73,6 @@ export interface CoreDeps {
   pdf: PdfConverter;
   /** The Excel files of Xuất Excel (DC-05, #90). */
   spreadsheets: SpreadsheetWriter;
+  /** The ZIP of the Gói đề nghị 5 sao (#89). */
+  zip: ZipWriter;
 }

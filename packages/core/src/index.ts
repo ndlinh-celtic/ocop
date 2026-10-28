@@ -31,6 +31,9 @@ export {
   type MeetingDocumentData,
   type ResultLetterData,
   type RecognitionDecisionData,
+  type FiveStarPackageDossierRow,
+  type FiveStarPackageIndexData,
+  type FiveStarProposalLetterData,
   type MeetingDocumentRow,
   type TemplateInspection,
   type TemplateTag,
@@ -381,3 +384,6 @@ export {
   type ResultLetterDraftView,
   type ResultLetterInput,
 } from "./results/result-letter";
+export { FIVE_STAR_PACKAGE_STATES, type FiveStarPackage, type FiveStarPackageRepo, type FiveStarPackageState } from "./results/five-star-package-model";
+export { FIVE_STAR_PACKAGE_DAYS, type FiveStarPackageView, type RequestFiveStarPackageInput } from "./results/five-star-package";
+export { ZIP_TYPE, type ArchiveEntry, type ArchiveSource, type ZipWriter } from "./documents/archive";

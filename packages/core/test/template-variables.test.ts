@@ -26,7 +26,7 @@ function shapeOfData(data: object): Shape {
 }
 
 describe("Mẫu văn bản: danh sách biến (#82 story 72)", () => {
-  it("covers the six văn bản sinh từ mẫu of steps 3 and 4", () => {
+  it("covers the văn bản sinh từ mẫu of steps 3 to 5", () => {
     expect([...TEMPLATE_KINDS].sort()).toEqual(
       [
         "meeting_minutes_draft",
@@ -37,6 +37,8 @@ describe("Mẫu văn bản: danh sách biến (#82 story 72)", () => {
         "ward_report",
         "certificate",
         "result_letter",
+        "five_star_proposal_letter",
+        "five_star_package_index",
       ].sort(),
     );
   });

@@ -22,6 +22,7 @@ import { recognitionDecisionRepo } from "./recognition-decisions";
 import { fiveStarRepo } from "./five-star";
 import { certificateRepo } from "./certificates";
 import { resultLetterRepo } from "./result-letters";
+import { fiveStarPackageRepo } from "./five-star-packages";
 
 export function buildRepos(db: Db): Repos {
   return {
@@ -57,5 +58,6 @@ export function buildRepos(db: Db): Repos {
     fiveStar: fiveStarRepo(db),
     certificates: certificateRepo(db),
     resultLetters: resultLetterRepo(db),
+    fiveStarPackages: fiveStarPackageRepo(db),
   };
 }

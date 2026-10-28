@@ -12,6 +12,7 @@ import {
   type PdfConverter,
   type RoundActivity,
   type SpreadsheetWriter,
+  type ZipWriter,
 } from "@ocop/core";
 import type { Pool } from "pg";
 import { argon2Hasher } from "./adapters/argon2";
@@ -23,6 +24,7 @@ import { PgUnitOfWork } from "./db/uow";
 import { docxRenderer } from "./documents/docx";
 import { gotenbergPdfConverter } from "./documents/gotenberg";
 import { excelSpreadsheetWriter } from "./documents/xlsx";
+import { archiverZipWriter } from "./documents/zip";
 import { clamdScanner, type VirusScanner } from "./files/clamd";
 import { createFileInspector } from "./files/inspector";
 import { createS3FileStore } from "./files/s3";
@@ -42,6 +44,7 @@ export interface AppOverrides {
   documents?: DocumentRenderer;
   pdf?: PdfConverter;
   spreadsheets?: SpreadsheetWriter;
+  zip?: ZipWriter;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -154,5 +157,6 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
         timeoutMs: config.GOTENBERG_TIMEOUT_SECONDS ? config.GOTENBERG_TIMEOUT_SECONDS * 1000 : undefined,
       }),
     spreadsheets: overrides.spreadsheets ?? excelSpreadsheetWriter(),
+    zip: overrides.zip ?? archiverZipWriter(),
   });
 }

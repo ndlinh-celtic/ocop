@@ -5,6 +5,7 @@ import { draftCertificate } from "../results/certificate";
 import { emailCertificateExpiry, notifyCertificateExpiry } from "../results/certificate-expiry";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
+import { buildFiveStarPackage, notifyFiveStarPackage } from "../results/five-star-package";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
 import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
 import type { CoreDeps } from "../shared/deps";
@@ -78,6 +79,15 @@ export const CONSUMERS = {
   "results.certificate-expiry-email": {
     events: ["certificate.expiry_due"],
     handle: emailCertificateExpiry,
+  },
+  // L17 SO-04 Gói đề nghị 5 sao (#89): the build job, then the notice in the app.
+  "results.five-star-package": {
+    events: ["five_star_package.requested"],
+    handle: buildFiveStarPackage,
+  },
+  "notifications.five-star-package": {
+    events: ["five_star_package.ready", "five_star_package.failed"],
+    handle: notifyFiveStarPackage,
   },
 } as const satisfies Record<string, Consumer>;
 

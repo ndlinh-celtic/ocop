@@ -1,4 +1,5 @@
 import type { UserActor } from "@ocop/core";
+import type { DraftExtras } from "../dossiers/fixtures";
 import { scoringWorld } from "../scoring/world";
 
 /**
@@ -44,11 +45,11 @@ export function resultsWorld() {
 
   const versionOf = async (dossierId: string) => (await w.t.app.dossiers.get(w.A.secretary, { dossierId })).version;
 
-  /** Hồ sơ Sẵn sàng chốt with these điểm, all in one new open Phiên họp. */
-  async function meetingOf(recipes: Points[][]) {
+  /** Hồ sơ Sẵn sàng chốt with these điểm, all in one new open Phiên họp; each Nháp got `draft`. */
+  async function meetingOf(recipes: Points[][], draft: DraftExtras = {}) {
     const dossiers: { a: UserActor; dossierId: string }[] = [];
     for (const [p0, p1] of recipes) {
-      const d = await w.graded([m(0), m(1)]);
+      const d = await w.graded([m(0), m(1)], [], draft);
       await scoreAndConfirm(m(0), d.dossierId, p0!);
       await scoreAndConfirm(m(1), d.dossierId, p1!);
       dossiers.push({ a: d.a, dossierId: d.dossierId });
@@ -66,8 +67,8 @@ export function resultsWorld() {
   const finalize = async (dossierId: string) => w.t.app.scoring.finalize(w.A.secretary, { dossierId, expectedVersion: await versionOf(dossierId) });
 
   /** A closed Phiên họp whose hồ sơ, given by their điểm, are all chốt. */
-  async function closedMeeting(recipes: Points[][]) {
-    const meeting = await meetingOf(recipes);
+  async function closedMeeting(recipes: Points[][], draft: DraftExtras = {}) {
+    const meeting = await meetingOf(recipes, draft);
     for (const d of meeting.dossiers) await finalize(d.dossierId);
     await w.t.app.scoring.closeMeeting(w.A.secretary, { meetingId: meeting.meetingId });
     return meeting;
