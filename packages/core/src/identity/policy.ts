@@ -107,6 +107,8 @@ const ROLE_ACTIONS = {
   "system.settings.manage": ["admin"],
   // #82 (stories 70 to 79): Mẫu văn bản có phiên bản, Quản trị alone.
   "documents.template.manage": ["admin"],
+  // L16 CT-13, HD-10 (#80): the Nhận xét chung of a hồ sơ Đã chốt điểm; which hồ sơ and until when is the transition table.
+  "results.general_comment.write": ["council_chair", "council_secretary"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

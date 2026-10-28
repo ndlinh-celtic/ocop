@@ -1,5 +1,6 @@
 import { authorize } from "../identity/policy";
-import { ROLES, SCOPE_OF_ROLE } from "../identity/roles";
+import { ROLES, SCOPE_OF_ROLE, type Role } from "../identity/roles";
+import { generalCommentVisible } from "../results/visibility";
 import { dataScopeOf, type DataScope } from "../identity/scope";
 import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -84,7 +85,7 @@ function flagsOf(latest: Submission | null, entity: Entity | null, now: Date): D
   return flags;
 }
 
-async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Date): Promise<DossierSummary[]> {
+async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Date, role: Role | null): Promise<DossierSummary[]> {
   const versions = new Map((await tx.criteriaVersions.findByIds([...new Set(dossiers.map((d) => d.criteriaVersionId))])).map((v) => [v.id, v]));
   const sets = new Map<string, { id: string; code: string; name: string }>();
   for (const id of new Set(dossiers.map((d) => d.criteriaSetId))) {
@@ -107,6 +108,8 @@ async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Dat
   }
   return dossiers.map((d) => ({
     ...d,
+    // L16 (#80): the Nhận xét chung only for who may read it; the Chủ thể from Công bố kết quả on.
+    ...(generalCommentVisible(role, d) ? {} : { generalComment: null, generalCommentUpdatedAt: null, generalCommentUpdatedBy: null }),
     criteriaSet: sets.get(d.criteriaSetId) ?? { id: d.criteriaSetId, code: "", name: "" },
     criteriaVersion: { id: d.criteriaVersionId, legalBasis: versions.get(d.criteriaVersionId)?.legalBasis ?? "" },
     entity: { id: d.entityId, name: entities.get(d.entityId) ?? "" },
@@ -135,7 +138,7 @@ export function getDossier(deps: CoreDeps) {
       assertIdShape(input.dossierId, dossierNotFound);
       const dossier = await tx.dossiers.findById(scope, input.dossierId);
       if (!dossier) throw dossierNotFound();
-      const [summary] = await summarize(tx, scope, [dossier], deps.clock.now());
+      const [summary] = await summarize(tx, scope, [dossier], deps.clock.now(), actor.activeRole);
       // The origin is shown only while the reader still sees it.
       const origin = dossier.copiedFrom ? await tx.dossiers.findById(scope, dossier.copiedFrom) : null;
       const latest = await tx.dossiers.latestSubmission(dossier.id);
@@ -176,7 +179,7 @@ export function listDossiers(deps: CoreDeps) {
     }
     const now = deps.clock.now();
     if (input.filter === "awaiting_next_round") filter.awaitingNextRoundAt = now;
-    return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter), now));
+    return deps.uow.run(async (tx) => summarize(tx, scope, await tx.dossiers.list(scope, filter), now, actor.activeRole));
   };
 }
 

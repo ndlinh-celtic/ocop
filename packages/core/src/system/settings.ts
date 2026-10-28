@@ -5,6 +5,7 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import type { Tx } from "../shared/uow";
+import { DEFAULT_UNDERPERFORMING_RATIO } from "../results/underperforming";
 
 const REMINDER_MILESTONES = "reminder_milestones";
 
@@ -59,6 +60,53 @@ export function setReminderMilestones(deps: CoreDeps) {
       );
       await emit(deps, tx, { type: "system.setting_changed", payload: { key: REMINDER_MILESTONES } });
       return { days };
+    });
+  };
+}
+
+const UNDERPERFORMING_RATIO = "results.underperforming_ratio";
+
+const invalidRatio = () =>
+  new DomainError("invalid_underperforming_ratio", "Tỷ lệ Tiêu chí dưới mức là một số lớn hơn 0 và không quá 1 (ví dụ 0,5 là 50% điểm tối đa)");
+
+/** A number in (0, 1]; refuses anything else. */
+function normalizeRatio(ratio: unknown): number {
+  if (typeof ratio !== "number" || !Number.isFinite(ratio) || ratio <= 0 || ratio > 1) throw invalidRatio();
+  return ratio;
+}
+
+/** L16 (#80, story 37): the ratio of điểm tối đa below which a Tiêu chí is dưới mức, default 0,5. */
+export async function underperformingRatioIn(tx: Tx): Promise<number> {
+  const stored = await tx.systemSettings.get(UNDERPERFORMING_RATIO);
+  return stored === null || stored === undefined ? DEFAULT_UNDERPERFORMING_RATIO : normalizeRatio(stored);
+}
+
+export function underperformingRatio(deps: CoreDeps) {
+  return async (actor: Actor): Promise<{ ratio: number }> => {
+    authorize(actor, "system.settings.manage");
+    return deps.uow.run(async (tx) => ({ ratio: await underperformingRatioIn(tx) }));
+  };
+}
+
+/** Story 35: Quản trị sets the Tiêu chí dưới mức ratio; views and Thư kết quả không đạt computed afterwards use it. */
+export function setUnderperformingRatio(deps: CoreDeps) {
+  return async (actor: Actor, input: { ratio: unknown }): Promise<{ ratio: number }> => {
+    authorize(actor, "system.settings.manage");
+    const ratio = normalizeRatio(input.ratio);
+    return deps.uow.run(async (tx) => {
+      const before = await underperformingRatioIn(tx);
+      const now = deps.clock.now();
+      await tx.systemSettings.put(UNDERPERFORMING_RATIO, ratio, now, actor.userId);
+      await tx.audit.append(
+        auditEntry(actor, deps.ids.next(), now, {
+          action: "system.underperforming_ratio_changed",
+          targetType: "system_setting",
+          before: { ratio: before },
+          after: { ratio },
+        }),
+      );
+      await emit(deps, tx, { type: "system.setting_changed", payload: { key: UNDERPERFORMING_RATIO } });
+      return { ratio };
     });
   };
 }

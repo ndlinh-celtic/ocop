@@ -23,7 +23,7 @@ type Who =
   | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Đã chốt điểm";
 type Action = "chốt" | "lập Phiên họp với hồ sơ" | "xem điểm";
-type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "not_ready_to_finalize" | "full" | "none";
+type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "not_ready_to_finalize" | "full" | "aggregate_only" | "none";
 
 const ROWS: [Who, Action, State, Outcome][] = [
   // Chốt (stories 116, 117): the Chủ tịch and Thư ký of the Hội đồng, a hồ sơ Sẵn sàng chốt in a Phiên họp.
@@ -60,7 +60,8 @@ const ROWS: [Who, Action, State, Outcome][] = [
   ["Thành viên A, không Phân công", "xem điểm", "Đã chốt điểm", "not_found"],
   ["Tổ tư vấn A, không Phân công", "xem điểm", "Đã chốt điểm", "not_found"],
   ["Thư ký B", "xem điểm", "Đã chốt điểm", "not_found"],
-  ["Cán bộ Sở", "xem điểm", "Đã chốt điểm", "none"],
+  // L16 (#80, story 68): the Sở sees the kết quả chốt, never a phiếu.
+  ["Cán bộ Sở", "xem điểm", "Đã chốt điểm", "aggregate_only"],
   ["Cán bộ xã", "xem điểm", "Đã chốt điểm", "none"],
   ["Chủ thể", "xem điểm", "Đã chốt điểm", "none"],
   ["Quản trị", "xem điểm", "Đã chốt điểm", "none"],
@@ -133,7 +134,7 @@ describe("Permission matrix: Phiên họp and chốt điểm (#60)", () => {
   it.each(ROWS)("%s / %s / %s → %s", async (who, action, state, outcome) => {
     const d = await dossierIn(state);
     const run = attempt(who, action, d);
-    if (outcome === "allowed" || outcome === "full" || outcome === "none") await expect(run).resolves.toBe(outcome);
+    if (outcome === "allowed" || outcome === "full" || outcome === "aggregate_only" || outcome === "none") await expect(run).resolves.toBe(outcome);
     else await expect(run).rejects.toMatchObject({ code: outcome });
   });
 });

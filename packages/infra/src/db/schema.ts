@@ -464,6 +464,11 @@ export const dossier = dossierSchema.table("dossier", {
   createdAt: ts("created_at").notNull(),
   createdBy: uuid("created_by").notNull(),
   updatedAt: ts("updated_at").notNull(),
+  // 0045_general_comment.sql
+  resultPublishedAt: ts("result_published_at"),
+  generalComment: text("general_comment"),
+  generalCommentUpdatedAt: ts("general_comment_updated_at"),
+  generalCommentUpdatedBy: uuid("general_comment_updated_by"),
 });
 
 // Mã hồ sơ, one counter row per year (0029_province_receipt.sql).

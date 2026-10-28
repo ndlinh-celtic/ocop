@@ -29,7 +29,8 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
-import { reminderMilestones, setReminderMilestones } from "./system/settings";
+import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
+import { editGeneralComment } from "./results/general-comment";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -276,6 +277,14 @@ export function createCore(deps: CoreDeps) {
       recordStartup: recordStartup(deps),
       reminderMilestones: reminderMilestones(deps),
       setReminderMilestones: setReminderMilestones(deps),
+      // L16 Tiêu chí dưới mức (#80).
+      underperformingRatio: underperformingRatio(deps),
+      setUnderperformingRatio: setUnderperformingRatio(deps),
+    },
+    // Bước 5 Kết quả (spec #79).
+    results: {
+      // L16 Nhận xét chung (#80).
+      editGeneralComment: editGeneralComment(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

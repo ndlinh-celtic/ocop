@@ -75,9 +75,11 @@ describe("L15 Audit of the full score view (#73)", () => {
     });
     await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version });
 
-    for (const who of [d.a, w.ward, w.province, await w.f.admin()]) {
+    for (const who of [d.a, w.ward, await w.f.admin()]) {
       expect(await w.t.app.scoring.readDossierScores(who, { dossierId: d.dossierId })).toEqual({ kind: "none" });
     }
+    // L16 (#80): the Sở sees the kết quả without any phiếu or name, so it is no personal data access.
+    expect((await w.t.app.scoring.readDossierScores(w.province, { dossierId: d.dossierId })).kind).toBe("aggregate_only");
     expect(await viewed(d.dossierId)).toEqual([]);
 
     // After chốt the S63 list shows the stored tổng hợp, still without an audit.

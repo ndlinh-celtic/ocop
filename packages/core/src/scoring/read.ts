@@ -18,6 +18,8 @@ import type { ScoreSheet, ScoreSheetState } from "./score-sheet-model";
 import { aggregateScores, type AggregateScores } from "./aggregate";
 import { ownSheet, setRowsOf, sheetOrder } from "./sheets";
 import type { AggregateResult, FinalizedSnapshot } from "./meeting-model";
+import { underperformingCriteria, type UnderperformingCriterion } from "../results/underperforming";
+import { underperformingRatioIn } from "../system/settings";
 
 /*
  * Who sees which points of a hồ sơ (spec #49 "Tổng hợp, Cờ chênh lệch, quyền xem điểm"; stories 92, 93, 95, 98, 124, 132).
@@ -59,14 +61,19 @@ export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly 
     case "advisory_member":
       // Story 123: the Tổ tư vấn sees the kết quả chốt, never a thành viên's phiếu.
       return finalized ? "aggregate_only" : "none";
+    case "province_officer":
+      // L16 (#80, spec #79 story 68): the Sở sees the kết quả chốt hiện hành, with Tiêu chí dưới mức, never a phiếu.
+      return finalized ? "aggregate_only" : "none";
     default:
-      // Chủ thể, Cán bộ xã, Cán bộ Sở, Quản trị (stories 124, 125, 132).
+      // Chủ thể, Cán bộ xã, Quản trị (stories 124, 125, 132).
       return "none";
   }
 }
 
 /** A Vai trò that may read any score view loads the hồ sơ first; the others get `none` without a lookup. */
 const COUNCIL_READERS: readonly Role[] = ["council_chair", "council_secretary", "council_member", "advisory_member"];
+/** readDossierScores' readers: the Hội đồng, and the Sở from chốt (#80). */
+const SCORE_READERS: readonly Role[] = [...COUNCIL_READERS, "province_officer"];
 
 export interface GraderProgress {
   userId: string;
@@ -159,6 +166,8 @@ export interface AggregateOnlyView {
   criteria: FullScoresView["criteria"];
   aggregate: AggregateScores;
   result: { n: number; finalizedAt: Date; sha256: string };
+  /** L16 (#80, story 37): the Tiêu chí dưới mức of the kết quả chốt, for the Sở; null for the Tổ tư vấn. */
+  underperforming: UnderperformingCriterion[] | null;
 }
 
 /** #68: the Chủ tịch and Thư ký before Sẵn sàng chốt, each phiếu đã xác nhận with its dòng, no tổng hợp nor Cờ chênh lệch. */
@@ -173,7 +182,7 @@ export function readDossierScores(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; ownSheet?: boolean }): Promise<DossierScores> => {
     if (actor.kind !== "user") throw forbidden();
     // Quản trị reads no hồ sơ at all (story 83, 132): it gets `none` like any Vai trò outside the Hội đồng.
-    if (!actor.activeRole || !COUNCIL_READERS.includes(actor.activeRole)) return { kind: "none" };
+    if (!actor.activeRole || !SCORE_READERS.includes(actor.activeRole)) return { kind: "none" };
     authorize(actor, "dossier.read");
     return deps.uow.run(async (tx) => {
       assertIdShape(input.dossierId, dossierNotFound);
@@ -211,6 +220,7 @@ export function readDossierScores(deps: CoreDeps) {
             criteria: full.criteria,
             aggregate: full.aggregate,
             result: { n: result!.n, finalizedAt: result!.finalizedAt, sha256: result!.sha256 },
+            underperforming: actor.activeRole === "province_officer" ? underperformingCriteria(result!, full.set, await underperformingRatioIn(tx)) : null,
           };
         }
         case "own_sheet":

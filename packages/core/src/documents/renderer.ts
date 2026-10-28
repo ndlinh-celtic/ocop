@@ -97,6 +97,8 @@ export interface MeetingDocumentRow {
   status: string;
   /** Dự thảo quyết định: "Đề nghị xét 5 sao" from the 5-sao Ngưỡng hạng up. */
   note: string;
+  /** L16 (#80, story 8): the Nhận xét chung of the Chủ tịch or Thư ký, empty until written. */
+  generalComment: string;
 }
 
 /**

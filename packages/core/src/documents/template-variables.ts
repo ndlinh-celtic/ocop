@@ -89,6 +89,7 @@ function meetingSpecs(required: { top: (keyof MeetingDocumentData)[]; row: strin
         advisorySummary: row("advisorySummary", "Nhận xét tổng hợp của Báo cáo Tổ tư vấn"),
         status: row("status", "Đã chốt hoặc Tạm tính"),
         note: row("note", "Ghi chú, ví dụ đề nghị xét 5 sao"),
+        generalComment: row("generalComment", "Nhận xét chung của Hội đồng về hồ sơ, nếu có"),
       },
     },
     generatedOn: top("generatedOn", "Ngày lập văn bản"),
@@ -265,6 +266,7 @@ const sampleMeeting: MeetingDocumentData = {
       advisorySummary: "Sản phẩm có câu chuyện tốt, cần hoàn thiện bao bì.",
       status: "Đã chốt",
       note: "",
+      generalComment: "Đề nghị chủ thể hoàn thiện nhãn mác trước khi cấp giấy chứng nhận.",
     },
     {
       index: "2",
@@ -285,6 +287,7 @@ const sampleMeeting: MeetingDocumentData = {
       advisorySummary: "Sản phẩm tiêu biểu.",
       status: "Đã chốt",
       note: "Đề nghị xét 5 sao",
+      generalComment: "Sản phẩm đạt chất lượng cao, đề nghị giới thiệu xét 5 sao.",
     },
   ],
   generatedOn: "16/11/2026",
