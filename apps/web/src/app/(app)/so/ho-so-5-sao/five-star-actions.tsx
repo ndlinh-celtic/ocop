@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { DossierState, FiveStarClosureOutcome } from "@ocop/core";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -43,7 +44,13 @@ export function FiveStarActions({
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string>();
 
-  if (state === "five_star_proposed" && awaiting) return <span className="text-sm text-text-3">Chờ Quyết định công nhận bổ sung</span>;
+  if (state === "five_star_proposed" && awaiting) {
+    return (
+      <Link href="/so/ho-so-5-sao/quyet-dinh-bo-sung" className="text-sm text-brand">
+        Ghi nhận Quyết định công nhận bổ sung
+      </Link>
+    );
+  }
 
   const run = async (e: FormEvent<HTMLFormElement>, act: (form: FormData) => Promise<{ error?: string }>, confirm?: string) => {
     e.preventDefault();

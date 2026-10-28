@@ -93,6 +93,7 @@ export const DOSSIER_ACTIONS = [
   "dossier.five_star.close",
   "dossier.result_letter.issue",
   "dossier.result_letter.correct",
+  "dossier.recognize_supplementary",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -140,6 +141,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.five_star_returned",
   "dossier.five_star_closed",
   "dossier.result_letter_corrected",
+  "dossier.recognized_supplementary",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -585,6 +587,24 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["province_officer"],
     event: "dossier.result_letter_corrected",
     timeline: true,
+  },
+  // L17 (#88, spec #79 story 57; ADR 0009): ghi nhận a Quyết định công nhận bổ sung runs this per hồ sơ it names: a hồ sơ
+  // chuyển về công nhận cấp tỉnh becomes Công nhận 3/4 sao (Hạng công nhận 4) and its cờ chờ is cleared (the use case's
+  // patch). Its kết quả chốt and Hạng sao 5 stay. A row of the Chủ thể's timeline (story 67).
+  {
+    action: "dossier.recognize_supplementary",
+    from: "five_star_proposed",
+    to: "recognized",
+    roles: ["province_officer"],
+    event: "dossier.recognized_supplementary",
+    timeline: true,
+    guard: (d) =>
+      d.awaitingSupplementaryDecision
+        ? null
+        : new DomainError(
+            "not_awaiting_supplementary_decision",
+            "Hồ sơ chưa được chuyển về công nhận cấp tỉnh nên không có trong Quyết định công nhận bổ sung",
+          ),
   },
 ];
 

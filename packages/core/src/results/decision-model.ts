@@ -25,6 +25,17 @@ export function sectionOf(star: number): DecisionSection | null {
   return null;
 }
 
+/**
+ * Hạng công nhận (GLOSSARY.md, ADR 0009): the Hạng sao the tỉnh công nhận, printed on the Giấy chứng nhận. It is the Hạng
+ * sao of the kết quả chốt from 3 to 4 sao; a hồ sơ 5 sao is công nhận 4 sao only once the Bộ trả về; below 3 sao, or 5
+ * sao still đề nghị Trung ương, the tỉnh công nhận nothing. The kết quả chốt is never changed.
+ */
+export function recognizedStar(result: { star: number }, returnedFromMinistry: boolean): 3 | 4 | null {
+  if (result.star === 3 || result.star === 4) return result.star;
+  if (result.star >= 5 && returnedFromMinistry) return 4;
+  return null;
+}
+
 export interface RecognitionDecision {
   id: string;
   kind: DecisionKind;
@@ -54,6 +65,8 @@ export interface RecognitionDecisionRepo {
   dossiers(decisionId: string): Promise<RecognitionDecisionDossier[]>;
   /** The decisions naming a hồ sơ, oldest first, with its mục in each. */
   ofDossier(dossierId: string): Promise<(RecognitionDecision & { section: DecisionSection })[]>;
+  /** The decisions of a kind, newest recorded first (#88: the Quyết định công nhận bổ sung). */
+  ofKind(kind: DecisionKind): Promise<RecognitionDecision[]>;
   /** SELECT … FOR UPDATE (#84). */
   lock(id: string): Promise<RecognitionDecision | null>;
   /** Story 17 (#84): corrects the số and ngày ký, the only columns the DB lets change. */

@@ -37,6 +37,9 @@ export default async function FiveStarPage({ searchParams }: { searchParams: Pro
           tỉnh hoặc đóng hồ sơ.
         </p>
       </div>
+      <Link href="/so/ho-so-5-sao/quyet-dinh-bo-sung" className="w-fit rounded-lg border px-3 py-1.5 text-sm text-brand">
+        Quyết định công nhận bổ sung →
+      </Link>
       <nav className="flex gap-2 text-sm" aria-label="Lọc danh sách">
         {FILTERS.map((f) => (
           <Link

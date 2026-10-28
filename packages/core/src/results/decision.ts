@@ -15,7 +15,14 @@ import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
 import { issueCertificates } from "./certificate";
-import { sectionOf, type DecisionKind, type DecisionSection, type RecognitionDecision, type RecognitionDecisionDossier } from "./decision-model";
+import {
+  recognizedStar,
+  sectionOf,
+  type DecisionKind,
+  type DecisionSection,
+  type RecognitionDecision,
+  type RecognitionDecisionDossier,
+} from "./decision-model";
 
 /*
  * L16 HD-11 Quyết định công nhận theo Phiên họp (#83, spec #79 stories 9 to 16, 19 to 21). The Cán bộ Sở records the
@@ -148,7 +155,10 @@ export function recordMeetingDecision(deps: CoreDeps) {
         tx,
         actor,
         decision,
-        named.flatMap((n) => (n.section === "five_star_proposal" ? [] : [{ dossierId: n.dossierId, recognizedStar: n.section === "four_star" ? 4 : 3 }])),
+        results.flatMap((r) => {
+          const star = recognizedStar({ star: r.star! }, false);
+          return star === null ? [] : [{ dossierId: r.dossierId, recognizedStar: star }];
+        }),
       );
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
@@ -219,7 +229,7 @@ export interface MeetingForDecision {
   decision: { id: string; number: string; signedOn: string } | null;
 }
 
-async function decisionView(tx: Tx, d: RecognitionDecision): Promise<DecisionView> {
+export async function decisionView(tx: Tx, d: RecognitionDecision): Promise<DecisionView> {
   const file = await tx.files.findById(d.fileId);
   const user = await tx.users.findById(d.recordedBy);
   return {
