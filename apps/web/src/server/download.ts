@@ -12,7 +12,10 @@ export function domainErrorResponse(err: unknown): Response {
 }
 
 /** A file to save, never cached: an ASCII `filename` for old clients beside the UTF-8 `filename*`. */
-export function attachmentResponse(body: Uint8Array | AsyncIterable<Uint8Array>, file: { fileName: string; contentType: string; asciiName?: string }): Response {
+export function attachmentResponse(
+  body: Uint8Array | AsyncIterable<Uint8Array>,
+  file: { fileName: string; contentType: string; asciiName?: string },
+): Response {
   const ascii = (file.asciiName ?? file.fileName).replace(/[^\x20-\x7e]|["\\]/g, "_");
   return new Response(body instanceof Uint8Array ? Buffer.from(body) : (Readable.toWeb(Readable.from(body)) as ReadableStream<Uint8Array>), {
     headers: {

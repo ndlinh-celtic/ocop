@@ -40,12 +40,7 @@ export function reminderRepo(db: Db): ReminderRepo {
               db
                 .select({ one: sql`1` })
                 .from(reminderSent)
-                .where(
-                  and(
-                    eq(reminderSent.kind, "certificate_expiry"),
-                    eq(reminderSent.contextId, certificate.id),
-                  ),
-                ),
+                .where(and(eq(reminderSent.kind, "certificate_expiry"), eq(reminderSent.contextId, certificate.id))),
             ),
           ),
         )

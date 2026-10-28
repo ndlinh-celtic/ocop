@@ -20,9 +20,7 @@ export default async function CertificateSettingsPage() {
       </section>
       <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 shadow-card">
         <h2 className="font-semibold">Tiêu chí dưới mức</h2>
-        <p className="text-sm text-text-2">
-          Tiêu chí có điểm trung bình dưới tỷ lệ này so với điểm tối đa được gợi ý vào Thư kết quả không đạt. Mặc định 50%.
-        </p>
+        <p className="text-sm text-text-2">Tiêu chí có điểm trung bình dưới tỷ lệ này so với điểm tối đa được gợi ý vào Thư kết quả không đạt. Mặc định 50%.</p>
         <UnderperformingRatioForm ratio={ratio} />
       </section>
     </div>
