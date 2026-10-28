@@ -17,6 +17,8 @@ x-app-env: &app-env
   S3_CORS_ORIGINS: ${APP_BASE_URL:-http://localhost:8080}
   CLAMD_HOST: clamd
   CLAMD_PORT: "3310"
+  GOTENBERG_URL: http://gotenberg:3000
+  GOTENBERG_TIMEOUT_SECONDS: "60"
 
 services:
   postgres:
@@ -76,6 +78,23 @@ services:
       start_period: 300s
       retries: 10
 
+  # DOCX → PDF (#81). Internal only: no published port. The client gives up after GOTENBERG_TIMEOUT_SECONDS,
+  # a little after Gotenberg's own --api-timeout; --api-body-limit matches the client's 20 MB DOCX limit.
+  gotenberg:
+    image: gotenberg/gotenberg:8.39.0
+    command:
+      - gotenberg
+      - --api-timeout=50s
+      - --api-body-limit=20MB
+      - --libreoffice-max-queue-size=10
+      - --libreoffice-restart-after=10
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      start_period: 30s
+      retries: 10
+
   migrate:
     build: { context: ., dockerfile: infra/docker/Dockerfile, target: migrate }
     environment:
@@ -91,6 +110,7 @@ services:
       replicas: 2
     depends_on:
       migrate: { condition: service_completed_successfully }
+      gotenberg: { condition: service_healthy }
 
   worker:
     build: { context: ., dockerfile: infra/docker/Dockerfile, target: worker }
@@ -103,6 +123,7 @@ services:
       # Every upload goes through the scan, and every email through SMTP.
       clamd: { condition: service_healthy }
       mailpit: { condition: service_started }
+      gotenberg: { condition: service_healthy }
 
   caddy:
     image: caddy:2-alpine
