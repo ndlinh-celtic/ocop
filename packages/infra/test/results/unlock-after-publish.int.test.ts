@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { UserActor } from "@ocop/core";
 import { ADMIN } from "../dossiers/fixtures";
-import { FIVE, resultsWorld, THREE } from "./results-world";
+import { FIVE, resultsWorld, THREE, TWO } from "./results-world";
 
 /*
  * L15 Mở khóa sau chốt after Công bố kết quả (#83, spec #79 story 20, ADR 0008): once a Quyết định công nhận names a hồ sơ,
@@ -34,6 +34,17 @@ describe("L16 Mở khóa sau chốt is refused once the kết quả is Công b�
       expect(results.rows).toEqual([{ superseded_at: null }]);
     }
     expect((await w.t.app.dossiers.get(w.province, { dossierId: dossiers[1]!.dossierId })).state).toBe("score_finalized");
+  });
+
+  it("refuses it for a hồ sơ with a Thư kết quả không đạt (#85, story 45)", async () => {
+    const { dossiers } = await closedMeeting([TWO]);
+    const { dossierId } = dossiers[0]!;
+    const { version } = await w.t.app.dossiers.get(w.province, { dossierId });
+    await w.t.app.results.issueResultLetter(w.province, { dossierId, expectedVersion: version, criterionIds: [], advice: "" });
+
+    await expect(unlock(dossierId)).rejects.toMatchObject({ code: "invalid_state" });
+    const results = await w.db.admin.query("SELECT superseded_at FROM scoring.aggregate_result WHERE dossier_id = $1", [dossierId]);
+    expect(results.rows).toEqual([{ superseded_at: null }]);
   });
 
   it("still lets Quản trị Mở khóa a hồ sơ Đã chốt điểm before Công bố kết quả", async () => {

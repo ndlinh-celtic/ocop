@@ -36,8 +36,15 @@ describe("Mẫu văn bản: danh sách biến (#82 story 72)", () => {
         "self_assessment_report",
         "ward_report",
         "certificate",
+        "result_letter",
       ].sort(),
     );
+  });
+
+  it("covers the Thư kết quả không đạt (#85), which must list the Tiêu chí dưới mức and the lời khuyên", () => {
+    expect(TEMPLATE_KINDS).toContain("result_letter");
+    const required = TEMPLATE_VARIABLES.result_letter.filter((v) => v.required).map((v) => v.name);
+    expect(required).toEqual(expect.arrayContaining(["dossierCode", "productName", "total", "star", "criteria", "advice"]));
   });
 
   // TEMPLATE_SAMPLES is typed DocumentTemplates[K], so its fields are exactly the type's: comparing the two shapes

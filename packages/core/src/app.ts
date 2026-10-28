@@ -36,6 +36,7 @@ import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDe
 import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
 import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedCertificate } from "./results/certificate";
 import { amendDecision } from "./results/amend-decision";
+import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
@@ -314,6 +315,11 @@ export function createCore(deps: CoreDeps) {
       uploadSignedCertificate: uploadSignedCertificate(deps),
       downloadCertificate: downloadCertificate(deps),
       certificateDrafts: certificateDrafts(deps),
+      // L16 HD-10, CT-13 Thư kết quả không đạt (#85).
+      resultLetterDraft: resultLetterDraft(deps),
+      previewResultLetter: previewResultLetter(deps),
+      issueResultLetter: issueResultLetter(deps),
+      downloadResultLetter: downloadResultLetter(deps),
       // L16 nhắc Giấy chứng nhận sắp hết hiệu lực, the daily worker job (#86).
       sendCertificateExpiryReminders: sendCertificateExpiryReminders(deps),
     },
