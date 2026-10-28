@@ -1,3 +1,4 @@
+import type { DossierListInput } from "@ocop/core";
 import { Flag, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
@@ -21,9 +22,15 @@ const SHEET = {
  * Giao chấm and chốt, with each thành viên chấm's phiếu state and how many are confirmed against the đợt's người
  * chấm tối thiểu. No points appear here; a hồ sơ Sẵn sàng chốt shows its Cờ chênh lệch and links to S43 (#59).
  */
-export default async function GradingProgressPage() {
+export default async function GradingProgressPage({ searchParams }: { searchParams: Promise<{ dot?: string }> }) {
   const actor = await requireActor();
-  const rows = await app().core.scoring.gradingProgress(actor);
+  const { dot } = await searchParams;
+  const all = await app().core.scoring.gradingProgress(actor);
+  const rounds = [...new Map(all.flatMap((r) => (r.round ? [[r.round.id, r.round.name] as const] : []))).entries()];
+  // The đợt on screen also narrows the Xuất Excel (#79 review), like the xã and Sở lists.
+  const roundId = dot && rounds.some(([id]) => id === dot) ? dot : undefined;
+  const input: DossierListInput = roundId ? { roundId } : {};
+  const rows = roundId ? all.filter((r) => r.round?.id === roundId) : all;
   const confirmed = rows.reduce((n, r) => n + r.confirmed, 0);
   const graders = rows.reduce((n, r) => n + r.graders, 0);
   return (
@@ -33,9 +40,23 @@ export default async function GradingProgressPage() {
           <h1 className="text-xl font-semibold">Tiến độ chấm</h1>
           <p className="text-sm text-text-2">Ai đã xác nhận phiếu, ai chưa, theo từng hồ sơ. Điểm của thành viên không hiện ở đây.</p>
         </div>
-        {/* #90 (story 82): every hồ sơ of the Hội đồng, chốt or not, with the điểm tổng hợp it may see. */}
-        <ExportExcelLink />
+        {/* #90 (story 82): every hồ sơ of the Hội đồng (of the đợt picked), chốt or not, with the điểm tổng hợp it may see. */}
+        <ExportExcelLink input={input} />
       </div>
+      {rounds.length > 1 && (
+        <nav aria-label="Lọc theo đợt" className="flex flex-wrap gap-2 text-sm">
+          {[["", "Tất cả đợt"] as const, ...rounds].map(([id, name]) => (
+            <Link
+              key={id || "all"}
+              href={id ? `/hoi-dong/tien-do?dot=${id}` : "/hoi-dong/tien-do"}
+              aria-current={(roundId ?? "") === id ? "page" : undefined}
+              className={`rounded-full border px-3 py-1 ${(roundId ?? "") === id ? "border-brand bg-brand-soft text-brand" : "border-line-strong"}`}
+            >
+              {name}
+            </Link>
+          ))}
+        </nav>
+      )}
       {rows.length === 0 ? (
         <EmptyState icon={ListChecks} title="Chưa có hồ sơ đang chấm">
           Hồ sơ sẽ hiện ở đây sau khi Thư ký hội đồng Giao chấm.

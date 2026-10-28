@@ -2,7 +2,7 @@
 
 import type { CertificateSettings } from "@ocop/core";
 import { useActionState } from "react";
-import { setCertificateSettingsAction, type CertificateSettingsState } from "./actions";
+import { setCertificateSettingsAction, setUnderperformingRatioAction, type CertificateSettingsState } from "./actions";
 
 /** The settings of Giấy chứng nhận (story 35). */
 export function CertificateSettingsForm({ settings }: { settings: CertificateSettings }) {
@@ -28,6 +28,36 @@ export function CertificateSettingsForm({ settings }: { settings: CertificateSet
         </p>
       )}
       {state.saved && !pending && <p className="text-sm text-text-2">Đã lưu cấu hình giấy chứng nhận.</p>}
+      <div>
+        <button type="submit" disabled={pending} className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink disabled:opacity-60">
+          {pending ? "Đang lưu…" : "Lưu"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** The tỷ lệ Tiêu chí dưới mức (story 35, #79 review), entered as a % of điểm tối đa. */
+export function UnderperformingRatioForm({ ratio }: { ratio: number }) {
+  const [state, action, pending] = useActionState<CertificateSettingsState, FormData>(setUnderperformingRatioAction, {});
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm font-medium">
+        Tỷ lệ Tiêu chí dưới mức (% điểm tối đa)
+        <input
+          name="percent"
+          required
+          inputMode="decimal"
+          defaultValue={String(Math.round(ratio * 1000) / 10).replace(".", ",")}
+          className="rounded-md border border-line-strong bg-surface px-3 py-2"
+        />
+      </label>
+      {state.error && (
+        <p role="alert" className="text-sm text-danger">
+          {state.error}
+        </p>
+      )}
+      {state.saved && !pending && <p className="text-sm text-text-2">Đã lưu tỷ lệ Tiêu chí dưới mức.</p>}
       <div>
         <button type="submit" disabled={pending} className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink disabled:opacity-60">
           {pending ? "Đang lưu…" : "Lưu"}
