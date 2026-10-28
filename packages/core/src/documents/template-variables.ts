@@ -1,0 +1,347 @@
+import type { DocumentTemplate, DocumentTemplates, MeetingDocumentData, TemplateTag } from "./renderer";
+
+export type { TemplateTag };
+
+/**
+ * The variables of each Mẫu văn bản as data (#82 stories 72, 74): what the Quản trị reads before editing a template in
+ * Word, and what an uploaded template is checked against. A variable is a {tag}; a loop {#name}…{/name} repeats its
+ * biến con once per row. Required variables must appear in every template of the loại, so a văn bản never leaves out
+ * what identifies it (the hồ sơ, sản phẩm, điểm, Hạng sao).
+ */
+export interface TemplateVariable {
+  name: string;
+  label: string;
+  required: boolean;
+  /** For a loop, its biến con; a loop's own tag is {#name}…{/name}. */
+  children?: readonly TemplateVariable[];
+}
+
+/** One spec per field of T: a loop for an array field, with a spec per field of its rows. Missing or extra keys fail to compile. */
+type VariableSpecs<T> = {
+  [K in keyof T]-?: T[K] extends readonly (infer Row)[]
+    ? { label: string; required?: boolean; loop: VariableSpecs<Row> }
+    : { label: string; required?: boolean };
+};
+
+function list<T>(specs: VariableSpecs<T>): TemplateVariable[] {
+  return Object.entries(specs).map(([name, spec]) => {
+    const s = spec as { label: string; required?: boolean; loop?: VariableSpecs<unknown> };
+    return { name, label: s.label, required: s.required ?? false, ...(s.loop ? { children: list(s.loop) } : {}) };
+  });
+}
+
+/** Display names of the loại văn bản sinh từ mẫu. */
+export const TEMPLATE_LABEL: Record<DocumentTemplate, string> = {
+  registration_form: "Phiếu đăng ký sản phẩm",
+  self_assessment_report: "Báo cáo tự đánh giá",
+  ward_report: "Báo cáo đánh giá cấp xã",
+  meeting_score_table: "Bảng tổng hợp điểm",
+  meeting_minutes_draft: "Dự thảo biên bản họp Hội đồng",
+  recognition_decision_draft: "Dự thảo quyết định công nhận",
+};
+
+const req = (label: string) => ({ label, required: true });
+const opt = (label: string) => ({ label });
+
+const entityFields = {
+  entityName: req("Tên Chủ thể"),
+  entityKind: opt("Loại hình Chủ thể (doanh nghiệp, hợp tác xã, hộ kinh doanh...)"),
+  identifier: opt("Mã số thuế, hoặc số định danh cá nhân đã che của hộ kinh doanh"),
+  address: opt("Địa chỉ Chủ thể"),
+  representativeName: opt("Họ tên người đại diện"),
+  phone: opt("Số điện thoại"),
+  productName: req("Tên sản phẩm"),
+  criteriaSetCode: req("Mã Bộ tiêu chí"),
+  criteriaSetName: opt("Tên Bộ tiêu chí"),
+};
+
+/** The văn bản họp share their data; the quyết định lists only hồ sơ từ 3 sao, without điểm từng thành viên. */
+function meetingSpecs(required: { top: (keyof MeetingDocumentData)[]; row: string[] }): VariableSpecs<MeetingDocumentData> {
+  const r = <T extends { label: string }>(name: string, s: T, names: readonly string[]) => ({ ...s, required: names.includes(name) });
+  const top = (name: keyof MeetingDocumentData, label: string) => r(name, { label }, required.top);
+  const row = (name: string, label: string) => r(name, { label }, required.row);
+  return {
+    councilName: top("councilName", "Tên Hội đồng"),
+    roundName: top("roundName", "Tên đợt đánh giá"),
+    meetingTitle: top("meetingTitle", "Tên Phiên họp"),
+    heldOn: top("heldOn", "Ngày họp"),
+    location: top("location", "Địa điểm họp"),
+    status: top("status", "Tình trạng số liệu: đã chốt toàn bộ, hay bản nháp còn hồ sơ tạm tính"),
+    count: top("count", "Số hồ sơ được liệt kê"),
+    dossiers: {
+      ...top("dossiers", "Danh sách hồ sơ của Phiên họp, mỗi hồ sơ một dòng"),
+      loop: {
+        index: row("index", "Số thứ tự"),
+        code: row("code", "Mã hồ sơ"),
+        entityName: row("entityName", "Tên Chủ thể"),
+        address: row("address", "Địa chỉ Chủ thể"),
+        productName: row("productName", "Tên sản phẩm"),
+        criteriaSet: row("criteriaSet", "Bộ tiêu chí: mã - tên"),
+        graders: {
+          ...row("graders", "Thành viên chấm của hồ sơ, mỗi người một dòng"),
+          loop: { fullName: opt("Họ tên thành viên"), points: opt("Tổng điểm của thành viên, hoặc Vắng / Chưa xác nhận") },
+        },
+        total: row("total", "Điểm tổng hợp"),
+        star: row("star", "Hạng sao"),
+        flag: row("flag", "Cờ chênh lệch điểm lớn, nếu có"),
+        unmet: row("unmet", "Sao tối thiểu chưa đạt"),
+        absent: row("absent", "Thành viên vắng"),
+        advisorySummary: row("advisorySummary", "Nhận xét tổng hợp của Báo cáo Tổ tư vấn"),
+        status: row("status", "Đã chốt hoặc Tạm tính"),
+        note: row("note", "Ghi chú, ví dụ đề nghị xét 5 sao"),
+      },
+    },
+    generatedOn: top("generatedOn", "Ngày lập văn bản"),
+  };
+}
+
+const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = {
+  registration_form: {
+    wardName: opt("Tên xã/phường nhận hồ sơ"),
+    roundName: opt("Tên đợt đánh giá"),
+    ...entityFields,
+    description: opt("Mô tả sản phẩm"),
+    ingredients: opt("Thành phần, nguyên liệu"),
+    process: opt("Quy trình sản xuất"),
+    packaging: opt("Bao bì, nhãn mác"),
+    qualityDeclaration: opt("Công bố chất lượng"),
+    legalDocuments: {
+      label: "Giấy tờ pháp lý, mỗi giấy tờ một dòng",
+      loop: { typeName: opt("Loại giấy tờ"), documentNumber: opt("Số giấy tờ"), issuedOn: opt("Ngày cấp") },
+    },
+    submissionNumber: req("Số thứ tự Phiên bản nộp"),
+    submittedOn: req("Ngày nộp"),
+  },
+  self_assessment_report: {
+    entityName: req("Tên Chủ thể"),
+    address: opt("Địa chỉ Chủ thể"),
+    representativeName: opt("Họ tên người đại diện"),
+    productName: req("Tên sản phẩm"),
+    criteriaSetCode: req("Mã Bộ tiêu chí"),
+    criteriaSetName: opt("Tên Bộ tiêu chí"),
+    legalBasis: opt("Căn cứ pháp lý của Bộ tiêu chí"),
+    roundName: opt("Tên đợt đánh giá"),
+    criteria: {
+      label: "Các Tiêu chí tự chấm, mỗi Tiêu chí một dòng",
+      required: true,
+      loop: {
+        partCode: opt("Phần (A, B, C)"),
+        code: req("Mã Tiêu chí"),
+        name: opt("Tên Tiêu chí"),
+        points: req("Điểm tự chấm"),
+        explanation: opt("Giải trình"),
+        evidence: opt("Minh chứng"),
+      },
+    },
+    total: req("Tổng điểm tự chấm"),
+    star: req("Hạng sao tự đánh giá"),
+    submissionNumber: req("Số thứ tự Phiên bản nộp"),
+    submittedOn: opt("Ngày nộp"),
+  },
+  ward_report: {
+    wardName: req("Tên xã/phường"),
+    roundName: opt("Tên đợt đánh giá"),
+    ...entityFields,
+    criteriaSetCode: opt("Mã Bộ tiêu chí"),
+    submissionNumber: opt("Số thứ tự Phiên bản nộp"),
+    submittedOn: opt("Ngày nộp"),
+    selfScoreTotal: opt("Tổng điểm tự chấm"),
+    selfScoreStar: opt("Hạng sao tự đánh giá"),
+    checklist: {
+      label: "Checklist sơ bộ, mỗi mục một dòng",
+      required: true,
+      loop: { index: opt("Số thứ tự"), label: req("Nội dung kiểm tra"), result: req("Kết quả") },
+    },
+    suggestion: req("Đề xuất: đủ hoặc chưa đủ điều kiện chuyển tỉnh"),
+    generatedOn: opt("Ngày lập báo cáo"),
+  },
+  meeting_score_table: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
+  meeting_minutes_draft: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
+  recognition_decision_draft: meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
+};
+
+/**
+ * Every loại văn bản sinh từ mẫu. A new loại (Giấy chứng nhận, Thư kết quả không đạt...) adds its data type to
+ * DocumentTemplates, then its entries here (SPECS, TEMPLATE_LABEL, TEMPLATE_SAMPLES) and its default .docx in
+ * @ocop/infra: the compiler points at each.
+ */
+export const TEMPLATE_KINDS = Object.keys(SPECS) as DocumentTemplate[];
+
+export const TEMPLATE_VARIABLES: Record<DocumentTemplate, readonly TemplateVariable[]> = Object.fromEntries(
+  TEMPLATE_KINDS.map((k) => [k, list(SPECS[k] as VariableSpecs<unknown>)]),
+) as Record<string, TemplateVariable[]> as Record<DocumentTemplate, readonly TemplateVariable[]>;
+
+export interface TemplateProblem {
+  code: "template_unknown_variable" | "template_missing_variable";
+  /** Biến con are named loop.child. */
+  variables: string[];
+}
+
+interface Scope {
+  path: string;
+  vars: readonly TemplateVariable[];
+}
+
+/**
+ * Story 74: a template may use only the variables of its loại, each where it has a value (a biến con inside its
+ * loop; a variable of the whole văn bản anywhere), and must use every required one. Unknown variables are
+ * reported first, as a template with a misspelt name usually also misses the right one.
+ */
+export function checkTemplateTags(kind: DocumentTemplate, tags: readonly TemplateTag[]): TemplateProblem | null {
+  const unknown = new Set<string>();
+  const used = new Set<string>();
+  const at = (scope: Scope, name: string) => (scope.path ? `${scope.path}.${name}` : name);
+
+  const visit = (list: readonly TemplateTag[], scopes: Scope[]) => {
+    for (const tag of list) {
+      const name = typeof tag === "string" ? tag : tag.name;
+      let found: { scope: Scope; variable: TemplateVariable } | null = null;
+      for (let i = scopes.length - 1; i >= 0 && !found; i--) {
+        const variable = scopes[i]!.vars.find((v) => v.name === name);
+        if (variable) found = { scope: scopes[i]!, variable };
+      }
+      const innermost = scopes[scopes.length - 1]!;
+      if (!found) unknown.add(at(innermost, name));
+      else used.add(at(found.scope, name));
+      if (typeof tag === "string") continue;
+      const loop = found?.variable.children;
+      visit(tag.children, loop ? [...scopes, { path: at(found!.scope, name), vars: loop }] : scopes);
+    }
+  };
+  visit(tags, [{ path: "", vars: TEMPLATE_VARIABLES[kind] }]);
+  if (unknown.size > 0) return { code: "template_unknown_variable", variables: [...unknown] };
+
+  const missing: string[] = [];
+  const require = (vars: readonly TemplateVariable[], path: string) => {
+    for (const v of vars) {
+      const p = path ? `${path}.${v.name}` : v.name;
+      if (v.required && !used.has(p)) missing.push(p);
+      else if (v.children && used.has(p)) require(v.children, p);
+    }
+  };
+  require(TEMPLATE_VARIABLES[kind], "");
+  return missing.length > 0 ? { code: "template_missing_variable", variables: missing } : null;
+}
+
+export const isTemplateKind = (value: unknown): value is DocumentTemplate => typeof value === "string" && (TEMPLATE_KINDS as string[]).includes(value);
+
+const sampleEntity = {
+  entityName: "Hợp tác xã Nông nghiệp Mẫu",
+  entityKind: "Hợp tác xã",
+  identifier: "0101234567",
+  address: "Thôn Đông, xã Mẫu, tỉnh Mẫu",
+  representativeName: "Nguyễn Văn Mẫu",
+  phone: "0901234567",
+  productName: "Mật ong hoa nhãn Mẫu",
+  criteriaSetCode: "B1",
+  criteriaSetName: "Bộ tiêu chí sản phẩm thực phẩm tươi sống",
+};
+
+const sampleMeeting: MeetingDocumentData = {
+  councilName: "Hội đồng đánh giá, phân hạng sản phẩm OCOP tỉnh",
+  roundName: "Đợt đánh giá năm 2026",
+  meetingTitle: "Phiên họp thứ nhất",
+  heldOn: "15/11/2026",
+  location: "Hội trường Sở Nông nghiệp và Môi trường",
+  status: "Số liệu đã chốt của toàn bộ hồ sơ trong Phiên họp.",
+  count: "2",
+  dossiers: [
+    {
+      index: "1",
+      code: "OCOP-2026-0001",
+      entityName: sampleEntity.entityName,
+      address: sampleEntity.address,
+      productName: sampleEntity.productName,
+      criteriaSet: "B1 - Bộ tiêu chí sản phẩm thực phẩm tươi sống",
+      graders: [
+        { fullName: "Trần Thị Thành Viên", points: "78,00" },
+        { fullName: "Lê Văn Thành Viên", points: "74,00" },
+      ],
+      total: "76,00",
+      star: "4 sao",
+      flag: "",
+      unmet: "",
+      absent: "",
+      advisorySummary: "Sản phẩm có câu chuyện tốt, cần hoàn thiện bao bì.",
+      status: "Đã chốt",
+      note: "",
+    },
+    {
+      index: "2",
+      code: "OCOP-2026-0002",
+      entityName: "Công ty TNHH Trà Mẫu",
+      address: "Xã Đồi, tỉnh Mẫu",
+      productName: "Trà xanh Mẫu",
+      criteriaSet: "B2 - Bộ tiêu chí sản phẩm chè",
+      graders: [
+        { fullName: "Trần Thị Thành Viên", points: "92,00" },
+        { fullName: "Lê Văn Thành Viên", points: "91,00" },
+      ],
+      total: "91,50",
+      star: "5 sao",
+      flag: "",
+      unmet: "",
+      absent: "",
+      advisorySummary: "Sản phẩm tiêu biểu.",
+      status: "Đã chốt",
+      note: "Đề nghị xét 5 sao",
+    },
+  ],
+  generatedOn: "16/11/2026",
+};
+
+/** The fixed data a Sinh thử fills a template with (#82 story 77): every field set, every loop with rows. */
+export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] } = {
+  registration_form: {
+    wardName: "Xã Mẫu",
+    roundName: "Đợt đánh giá năm 2026",
+    ...sampleEntity,
+    description: "Mật ong nguyên chất thu hoạch từ hoa nhãn.",
+    ingredients: "Mật ong hoa nhãn 100%.",
+    process: "Thu hoạch, lọc, tách nước, đóng chai.",
+    packaging: "Chai thủy tinh 500 ml, nhãn có mã truy xuất.",
+    qualityDeclaration: "Bản tự công bố số 01/2026/MAU.",
+    legalDocuments: [
+      { typeName: "Giấy chứng nhận đăng ký hợp tác xã", documentNumber: "0101234567", issuedOn: "02/01/2020" },
+      { typeName: "Giấy chứng nhận cơ sở đủ điều kiện an toàn thực phẩm", documentNumber: "12/2025/ATTP", issuedOn: "10/03/2025" },
+    ],
+    submissionNumber: "1",
+    submittedOn: "01/10/2026",
+  },
+  self_assessment_report: {
+    entityName: sampleEntity.entityName,
+    address: sampleEntity.address,
+    representativeName: sampleEntity.representativeName,
+    productName: sampleEntity.productName,
+    criteriaSetCode: sampleEntity.criteriaSetCode,
+    criteriaSetName: sampleEntity.criteriaSetName,
+    legalBasis: "Quyết định số 26/2026/QĐ-TTg",
+    roundName: "Đợt đánh giá năm 2026",
+    criteria: [
+      { partCode: "A", code: "1.1", name: "Nguồn nguyên liệu", points: "4", explanation: "Nguyên liệu tại địa phương.", evidence: "Hợp đồng thu mua.pdf" },
+      { partCode: "B", code: "5.1", name: "Tiêu chuẩn sản phẩm", points: "3", explanation: "Đã tự công bố.", evidence: "Bản tự công bố.pdf" },
+    ],
+    total: "72,00",
+    star: "4 sao",
+    submissionNumber: "1",
+    submittedOn: "01/10/2026",
+  },
+  ward_report: {
+    wardName: "Xã Mẫu",
+    roundName: "Đợt đánh giá năm 2026",
+    ...sampleEntity,
+    submissionNumber: "1",
+    submittedOn: "01/10/2026",
+    selfScoreTotal: "72,00",
+    selfScoreStar: "4 sao",
+    checklist: [
+      { index: "1", label: "Có đủ giấy tờ pháp lý", result: "Đạt" },
+      { index: "2", label: "Phiếu đăng ký được ký đúng", result: "Đạt" },
+    ],
+    suggestion: "Đủ điều kiện chuyển tỉnh",
+    generatedOn: "05/10/2026",
+  },
+  meeting_score_table: sampleMeeting,
+  meeting_minutes_draft: sampleMeeting,
+  recognition_decision_draft: { ...sampleMeeting, count: "2" },
+};

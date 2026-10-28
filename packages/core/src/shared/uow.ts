@@ -21,6 +21,7 @@ import type { AssignmentRepo } from "../councils/assignment-model";
 import type { AdvisoryReportRepo } from "../scoring/advisory-report-model";
 import type { ScoreSheetRepo } from "../scoring/score-sheet-model";
 import type { AggregateResultRepo, MeetingRepo } from "../scoring/meeting-model";
+import type { TemplateVersionRepo } from "../documents/template-version-model";
 
 /** The repositories of one database transaction. */
 export interface Repos {
@@ -51,6 +52,7 @@ export interface Repos {
   advisoryReports: AdvisoryReportRepo;
   meetings: MeetingRepo;
   aggregateResults: AggregateResultRepo;
+  templateVersions: TemplateVersionRepo;
 }
 
 /** Everything a use case can touch inside one database transaction. */

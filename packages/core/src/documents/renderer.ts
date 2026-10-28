@@ -127,9 +127,26 @@ export interface DocumentTemplates {
 
 export type DocumentTemplate = keyof DocumentTemplates;
 
+/**
+ * A tag read from a template: a plain {name}, or a section {#name}…{/name} (also {^name}) with the tags inside it.
+ * A section on a loop repeats per row; a section on any other variable shows its content when the value is not empty.
+ */
+export type TemplateTag = string | { name: string; children: readonly TemplateTag[] };
+
+/** What reading a template's tags found: its tags, or why it cannot be a template (#82 story 75). */
+export type TemplateInspection = { ok: true; tags: TemplateTag[] } | { ok: false; error: "not_docx" } | { ok: false; error: "syntax"; details: string[] };
+
 /** Fills a Word template (docxtemplater in @ocop/infra) and returns the DOCX bytes. */
 export interface DocumentRenderer {
-  render<K extends DocumentTemplate>(template: K, data: DocumentTemplates[K]): Promise<Uint8Array>;
+  /**
+   * Fills `source`, the bytes of a Mẫu văn bản uploaded as a phiên bản (#82), or else the mẫu mặc định shipped with
+   * the app. Use cases go through renderDocument (templates.ts), which picks the mẫu đang dùng.
+   */
+  render<K extends DocumentTemplate>(template: K, data: DocumentTemplates[K], source?: Uint8Array): Promise<Uint8Array>;
+  /** Reads the tags of a template without filling it. */
+  inspect(source: Uint8Array): TemplateInspection;
+  /** The mẫu mặc định of a loại, as shipped. */
+  builtIn(template: DocumentTemplate): Uint8Array;
 }
 
 export const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";

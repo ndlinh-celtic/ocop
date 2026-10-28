@@ -1,6 +1,7 @@
 import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
 import type { DocumentTemplate, MeetingDocumentData, MeetingDocumentRow } from "../documents/renderer";
+import { renderDocument } from "../documents/templates";
 import { dossierNotFound } from "../dossiers/model";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
@@ -140,7 +141,7 @@ export function generateMeetingDocument(deps: CoreDeps) {
         dossiers: reindex(listed),
         generatedOn: formatDayVn(vnDateOf(now)),
       };
-      const bytes = await deps.documents.render(TEMPLATE[input.kind], data);
+      const { bytes } = await renderDocument(deps, tx, TEMPLATE[input.kind], data);
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
           action: "scoring.meeting.document_generated",

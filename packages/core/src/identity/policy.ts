@@ -105,6 +105,8 @@ const ROLE_ACTIONS = {
   "dossier.document.download_on_behalf": ["ward_officer"],
   // Cấu hình chung toàn hệ thống, such as the mốc nhắc hạn (story 37).
   "system.settings.manage": ["admin"],
+  // #82 (stories 70 to 79): Mẫu văn bản có phiên bản, Quản trị alone.
+  "documents.template.manage": ["admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

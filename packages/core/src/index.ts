@@ -30,7 +30,21 @@ export {
   type WardReportData,
   type MeetingDocumentData,
   type MeetingDocumentRow,
+  type TemplateInspection,
+  type TemplateTag,
 } from "./documents/renderer";
+export {
+  checkTemplateTags,
+  isTemplateKind,
+  TEMPLATE_KINDS,
+  TEMPLATE_LABEL,
+  TEMPLATE_SAMPLES,
+  TEMPLATE_VARIABLES,
+  type TemplateProblem,
+  type TemplateVariable,
+} from "./documents/template-variables";
+export { renderDocument, type RenderedDocument, type TemplateKindView, type TemplateVersionView } from "./documents/templates";
+export type { TemplateVersion, TemplateVersionRepo } from "./documents/template-version-model";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";

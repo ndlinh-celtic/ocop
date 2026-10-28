@@ -71,6 +71,7 @@ import { attachMeetingMinutes, downloadMeetingMinutes, generateMeetingDocument }
 import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 import { finalizedResults, unlockFinalized, unlockTarget } from "./scoring/unlock";
 import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
+import { activateTemplate, downloadTemplate, listTemplates, previewTemplate, uploadTemplate } from "./documents/templates";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -275,6 +276,13 @@ export function createCore(deps: CoreDeps) {
       recordStartup: recordStartup(deps),
       reminderMilestones: reminderMilestones(deps),
       setReminderMilestones: setReminderMilestones(deps),
+    },
+    documents: {
+      listTemplates: listTemplates(deps),
+      downloadTemplate: downloadTemplate(deps),
+      uploadTemplate: uploadTemplate(deps),
+      activateTemplate: activateTemplate(deps),
+      previewTemplate: previewTemplate(deps),
     },
   };
 }

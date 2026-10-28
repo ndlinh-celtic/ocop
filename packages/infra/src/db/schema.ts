@@ -12,6 +12,7 @@ import type {
 } from "@ocop/core";
 import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
+import type { DocumentTemplate } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -733,4 +734,15 @@ export const unlockRequest = scoringSchema.table("unlock_request", {
   unlockedBy: uuid("unlocked_by").notNull(),
   unlockedAt: ts("unlocked_at").notNull(),
   reauthMethod: text("reauth_method").$type<"totp" | "password">().notNull(),
+});
+
+/** Mẫu văn bản có phiên bản (0046_document_template_version.sql, #82): insert only, but for `active`. */
+export const documentTemplateVersion = platform.table("document_template_version", {
+  id: uuid("id").primaryKey(),
+  kind: text("kind").$type<DocumentTemplate>().notNull(),
+  n: integer("n").notNull(),
+  fileId: uuid("file_id").notNull(),
+  uploadedBy: uuid("uploaded_by").notNull(),
+  uploadedAt: ts("uploaded_at").notNull(),
+  active: boolean("active").notNull(),
 });

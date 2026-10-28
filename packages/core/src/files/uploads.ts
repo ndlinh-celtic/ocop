@@ -18,6 +18,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   advisory_attachment: "dossier.advisory_report.upload",
   grading_evidence: "scoring.evidence.upload",
   unlock_request: "scoring.unlock",
+  document_template: "documents.template.manage",
   meeting_minutes: "scoring.meeting.minutes.upload",
 };
 
@@ -25,6 +26,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
 const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
   signed_ward_report: ["application/pdf"],
   unlock_request: ["application/pdf"],
+  document_template: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
   meeting_minutes: ["application/pdf"],
 };
 
