@@ -115,6 +115,8 @@ async function newDraft(
     generalComment: null,
     generalCommentUpdatedAt: null,
     generalCommentUpdatedBy: null,
+    awaitingSupplementaryDecision: false,
+    ministryReturnFileId: null,
     version: 1,
     createdAt: now,
     createdBy: actor.userId,

@@ -14,6 +14,7 @@ import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import type { DocumentTemplate } from "@ocop/core";
 import type { DecisionKind, DecisionSection } from "@ocop/core";
+import type { FiveStarClosureOutcome } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -470,6 +471,9 @@ export const dossier = dossierSchema.table("dossier", {
   generalComment: text("general_comment"),
   generalCommentUpdatedAt: ts("general_comment_updated_at"),
   generalCommentUpdatedBy: uuid("general_comment_updated_by"),
+  // 0051_five_star_proposal.sql
+  awaitingSupplementaryDecision: boolean("awaiting_supplementary_decision").notNull(),
+  ministryReturnFileId: uuid("ministry_return_file_id"),
 });
 
 // Mã hồ sơ, one counter row per year (0029_province_receipt.sql).
@@ -777,3 +781,23 @@ export const recognitionDecisionDossier = resultsSchema.table(
   },
   (t) => [primaryKey({ columns: [t.decisionId, t.dossierId] })],
 );
+
+/** Đánh dấu đã gửi đề nghị 5 sao (0051_five_star_proposal.sql, #87): append-only, one per hồ sơ. */
+export const fiveStarDispatch = resultsSchema.table("five_star_dispatch", {
+  dossierId: uuid("dossier_id").primaryKey(),
+  dispatchNumber: text("dispatch_number").notNull(),
+  sentOn: date("sent_on", { mode: "string" }).notNull(),
+  recordedBy: uuid("recorded_by").notNull(),
+  recordedAt: ts("recorded_at").notNull(),
+});
+
+/** Đóng hồ sơ đề nghị 5 sao on the Bộ's answer (0051_five_star_proposal.sql, #87): append-only, one per hồ sơ. */
+export const fiveStarClosure = resultsSchema.table("five_star_closure", {
+  dossierId: uuid("dossier_id").primaryKey(),
+  outcome: text("outcome").$type<FiveStarClosureOutcome>().notNull(),
+  decisionNumber: text("decision_number"),
+  decidedOn: date("decided_on", { mode: "string" }),
+  fileId: uuid("file_id").notNull(),
+  closedBy: uuid("closed_by").notNull(),
+  closedAt: ts("closed_at").notNull(),
+});

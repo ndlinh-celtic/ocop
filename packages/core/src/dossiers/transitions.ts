@@ -88,6 +88,9 @@ export const DOSSIER_ACTIONS = [
   "dossier.general_comment.edit",
   "dossier.recognize",
   "dossier.result_publish",
+  "dossier.five_star.mark_sent",
+  "dossier.five_star.return_to_province",
+  "dossier.five_star.close",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -131,6 +134,9 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.unlocked",
   "dossier.general_comment_edited",
   "dossier.result_published",
+  "dossier.five_star_sent",
+  "dossier.five_star_returned",
+  "dossier.five_star_closed",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -525,7 +531,42 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     timeline: true,
     guard: (d) => unpublished(d),
   },
+  // L17 SO-04 (#87, spec #79 stories 53, 54, 58, 59; ADR 0009): the Cán bộ Sở đánh dấu đã gửi a hồ sơ 5 sao Công bố
+  // (markFiveStarSent also checks the Hạng sao 5 of its kết quả chốt hiện hành, which the guard cannot see). On the Bộ's
+  // answer it chuyển về công nhận cấp tỉnh (cờ chờ Quyết định công nhận bổ sung, same state) or đóng hồ sơ; a hồ sơ with
+  // the cờ is not closed, it waits for the quyết định bổ sung (#88). All three are rows of the Chủ thể's timeline (story 67).
+  {
+    action: "dossier.five_star.mark_sent",
+    from: "score_finalized",
+    to: "five_star_proposed",
+    roles: ["province_officer"],
+    event: "dossier.five_star_sent",
+    timeline: true,
+    guard: (d) => (d.resultPublishedAt !== null ? null : new DomainError("result_not_published", "Kết quả của hồ sơ chưa được công bố")),
+  },
+  {
+    action: "dossier.five_star.return_to_province",
+    from: "five_star_proposed",
+    to: "five_star_proposed",
+    roles: ["province_officer"],
+    event: "dossier.five_star_returned",
+    timeline: true,
+    guard: (d) => (d.awaitingSupplementaryDecision ? alreadyReturned() : null),
+  },
+  {
+    action: "dossier.five_star.close",
+    from: "five_star_proposed",
+    to: "closed_offline",
+    roles: ["province_officer"],
+    event: "dossier.five_star_closed",
+    timeline: true,
+    guard: (d) => (d.awaitingSupplementaryDecision ? alreadyReturned() : null),
+  },
 ];
+
+/** A hồ sơ chuyển về công nhận cấp tỉnh waits for its Quyết định công nhận bổ sung (ADR 0009). */
+const alreadyReturned = () =>
+  new DomainError("awaiting_supplementary_decision", "Hồ sơ đã được chuyển về công nhận cấp tỉnh, đang chờ Quyết định công nhận bổ sung");
 
 /** The guard of the rows that end with Công bố kết quả or must not follow it. */
 const unpublished = (d: Pick<Dossier, "resultPublishedAt">) => (d.resultPublishedAt === null ? null : resultPublished());

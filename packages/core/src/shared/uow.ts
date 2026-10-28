@@ -23,6 +23,7 @@ import type { ScoreSheetRepo } from "../scoring/score-sheet-model";
 import type { AggregateResultRepo, MeetingRepo } from "../scoring/meeting-model";
 import type { TemplateVersionRepo } from "../documents/template-version-model";
 import type { RecognitionDecisionRepo } from "../results/decision-model";
+import type { FiveStarRepo } from "../results/five-star-model";
 
 /** The repositories of one database transaction. */
 export interface Repos {
@@ -55,6 +56,7 @@ export interface Repos {
   aggregateResults: AggregateResultRepo;
   templateVersions: TemplateVersionRepo;
   recognitionDecisions: RecognitionDecisionRepo;
+  fiveStar: FiveStarRepo;
 }
 
 /** Everything a use case can touch inside one database transaction. */
