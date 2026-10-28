@@ -23,7 +23,7 @@ export function gotenbergPdfConverter(settings: GotenbergSettings): PdfConverter
     async toPdf(docx) {
       if (docx.byteLength > maxBytes) throw new PdfConversionError(`DOCX of ${docx.byteLength} bytes exceeds the ${maxBytes}-byte limit`);
       const form = new FormData();
-      form.append("files", new Blob([docx], { type: DOCX_TYPE }), "document.docx");
+      form.append("files", new Blob([new Uint8Array(docx)], { type: DOCX_TYPE }), "document.docx");
       let res: Response;
       let body: Uint8Array;
       try {
