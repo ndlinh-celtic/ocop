@@ -21,6 +21,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   document_template: "documents.template.manage",
   meeting_minutes: "scoring.meeting.minutes.upload",
   recognition_decision: "results.decision.record",
+  signed_certificate: "results.certificate.upload",
 };
 
 /** Purposes that accept fewer types than the deployment allows: a signed Báo cáo đánh giá cấp xã is a PDF (story 65). */
@@ -30,6 +31,7 @@ const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
   document_template: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
   meeting_minutes: ["application/pdf"],
   recognition_decision: ["application/pdf"],
+  signed_certificate: ["application/pdf"],
 };
 
 export type UploadInstructions =

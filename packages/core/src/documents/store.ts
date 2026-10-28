@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { auditEntry } from "../audit/audit";
-import type { UserActor } from "../shared/context";
+import type { SystemActor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import type { Tx } from "../shared/uow";
 import { DOCX_TYPE } from "./renderer";
@@ -14,25 +14,35 @@ import { DOCX_TYPE } from "./renderer";
 export async function storeGeneratedDocument(
   deps: CoreDeps,
   tx: Tx,
-  actor: UserActor,
-  input: { fileName: string; bytes: Uint8Array; metadata: Record<string, unknown> },
+  actor: UserActor | SystemActor,
+  input: {
+    fileName: string;
+    bytes: Uint8Array;
+    metadata: Record<string, unknown>;
+    contentType?: string;
+    /** Who the file belongs to when a system job generates it (#84); a user actor owns what they generate. */
+    ownerUserId?: string;
+  },
 ): Promise<string> {
+  const contentType = input.contentType ?? DOCX_TYPE;
+  const ownerUserId = actor.kind === "user" ? actor.userId : input.ownerUserId;
+  if (!ownerUserId) throw new Error("a generated document needs an owner");
   const id = deps.ids.next();
   const storageKey = `files/${id}`;
   const now = deps.clock.now();
   tx.onRollback(() => deps.files.delete(storageKey));
-  await deps.files.put(storageKey, input.bytes, DOCX_TYPE);
+  await deps.files.put(storageKey, input.bytes, contentType);
   await tx.files.insert({
     id,
-    ownerUserId: actor.userId,
+    ownerUserId,
     purpose: "generated_document",
     storageKey,
     fileName: input.fileName,
-    declaredType: DOCX_TYPE,
+    declaredType: contentType,
     size: input.bytes.byteLength,
     multipartUploadId: null,
     status: "clean",
-    detectedType: DOCX_TYPE,
+    detectedType: contentType,
     sha256: createHash("sha256").update(input.bytes).digest("hex"),
     blockReason: null,
     createdAt: now,

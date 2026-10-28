@@ -118,6 +118,21 @@ export interface MeetingDocumentData {
   generatedOn: string;
 }
 
+/** L16 HD-11 (#84, story 26): the bản nháp of a Giấy chứng nhận, đem đi ký số. */
+export interface CertificateData {
+  /** Số hiệu giấy chứng nhận, e.g. 012/2026/GCN-OCOP. */
+  code: string;
+  productName: string;
+  entityName: string;
+  address: string;
+  /** Hạng công nhận, e.g. "4 sao". */
+  star: string;
+  issuedOn: string;
+  expiresOn: string;
+  decisionNumber: string;
+  decisionSignedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
@@ -125,6 +140,7 @@ export interface DocumentTemplates {
   meeting_score_table: MeetingDocumentData;
   meeting_minutes_draft: MeetingDocumentData;
   recognition_decision_draft: MeetingDocumentData;
+  certificate: CertificateData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;

@@ -1,6 +1,7 @@
 import type { SystemActor } from "../shared/context";
 import { emailDossierEvent, NOTICE_EVENTS, notifyDossierEvent } from "../dossiers/notices";
 import { emailReminder, notifyReminder } from "../dossiers/reminders";
+import { draftCertificate } from "../results/certificate";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
@@ -62,6 +63,11 @@ export const CONSUMERS = {
   "dossiers.reminder-email": {
     events: ["dossier.reminder_due"],
     handle: emailReminder,
+  },
+  // L16 HD-11 (#84): the bản nháp PDF of a Giấy chứng nhận, outside the transaction that issued it.
+  "results.certificate-draft": {
+    events: ["certificate.issued", "certificate.amended"],
+    handle: draftCertificate,
   },
 } as const satisfies Record<string, Consumer>;
 

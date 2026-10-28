@@ -339,3 +339,21 @@ export {
   type RecordMeetingDecisionInput,
 } from "./results/decision";
 export type { ResultOutcome } from "./platform/events";
+export {
+  CERTIFICATE_STATES,
+  CERTIFICATE_STATE_LABEL,
+  DEFAULT_CERTIFICATE_CODE_SUFFIX,
+  DEFAULT_CERTIFICATE_EXPIRY_REMINDER_MONTHS,
+  DEFAULT_CERTIFICATE_VALIDITY_MONTHS,
+  certificateExpiry,
+  formatCertificateCode,
+  orderForNumbering,
+  type Certificate,
+  type CertificateFilter,
+  type CertificateRepo,
+  type CertificateSignedFile,
+  type CertificateState,
+} from "./results/certificate-model";
+export { type CertificateView, type ListCertificatesInput, type UploadSignedCertificateInput } from "./results/certificate";
+export { type AmendDecisionInput } from "./results/amend-decision";
+export { type CertificateSettings } from "./system/settings";

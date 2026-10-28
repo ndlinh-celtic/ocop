@@ -10,6 +10,7 @@ import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
 import { requireActor } from "@/server/session";
 import { downloadDecisionAction } from "./actions";
+import { AmendDecisionForm } from "./amend-form";
 import { DecisionForm } from "./decision-form";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +99,10 @@ export default async function ProvinceMeetingPage({ params }: { params: Promise<
                 <span className="text-amber">Đang quét virus</span>
               )}
             </p>
+            <Link href={`/so/giay-chung-nhan?decisionId=${decision.id}`} className="w-fit text-brand">
+              Giấy chứng nhận của quyết định →
+            </Link>
+            <AmendDecisionForm decisionId={decision.id} number={decision.number} signedOn={decision.signedOn} />
           </div>
         ) : meeting.state === "open" ? (
           <p className="text-sm text-text-3">Phiên họp chưa kết thúc. Hội đồng cần chốt điểm và kết thúc Phiên họp trước.</p>

@@ -60,6 +60,10 @@ export type DomainEventBody =
       type: "scoring.score_sheet_returned";
       payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string };
     }
+  // L16 HD-11 (#84): a Giấy chứng nhận issued, or whose ngày cấp changed with its quyết định (its bản nháp is generated
+  // again while Chờ ký), or whose signed PDF was uploaded (`n` = 1, 2, …).
+  | { type: "certificate.issued" | "certificate.amended"; payload: { certificateId: string; dossierId: string; entityId: string; decisionId: string } }
+  | { type: "certificate.signed"; payload: { certificateId: string; dossierId: string; entityId: string; n: number } }
   | {
       type: DossierEventType;
       /**

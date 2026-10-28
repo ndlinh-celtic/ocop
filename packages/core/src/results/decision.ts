@@ -14,6 +14,7 @@ import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
+import { issueCertificates } from "./certificate";
 import { sectionOf, type DecisionKind, type DecisionSection, type RecognitionDecision, type RecognitionDecisionDossier } from "./decision-model";
 
 /*
@@ -55,7 +56,7 @@ export class MeetingPendingDossiersError extends DomainError {
   }
 }
 
-function numberOf(value: unknown): string {
+export function numberOf(value: unknown): string {
   const text = typeof value === "string" ? value.trim() : "";
   if (!text) throw new DomainError("decision_number_required", "Cần nhập số quyết định");
   if (text.length > MAX_NUMBER) throw new DomainError("field_too_long", "Số quyết định quá dài");
@@ -141,7 +142,14 @@ export function recordMeetingDecision(deps: CoreDeps) {
         throw new DomainError("meeting_already_has_decision", "Phiên họp này đã có Quyết định công nhận");
       }
       for (const { dossierId, section } of named) await publish(deps, tx, actor, dossierId, section, decision);
-      // #84 issues the Giấy chứng nhận of the three_star and four_star hồ sơ here, in this transaction (cert_counter).
+      // #84: the Giấy chứng nhận of the hồ sơ recognized, numbered in this transaction; Hạng công nhận = Hạng sao here.
+      await issueCertificates(
+        deps,
+        tx,
+        actor,
+        decision,
+        named.flatMap((n) => (n.section === "five_star_proposal" ? [] : [{ dossierId: n.dossierId, recognizedStar: n.section === "four_star" ? 4 : 3 }])),
+      );
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
           action: "results.decision.recorded",

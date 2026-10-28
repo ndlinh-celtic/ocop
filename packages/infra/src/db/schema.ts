@@ -14,6 +14,7 @@ import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import type { DocumentTemplate } from "@ocop/core";
 import type { DecisionKind, DecisionSection } from "@ocop/core";
+import type { CertificateState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -776,4 +777,41 @@ export const recognitionDecisionDossier = resultsSchema.table(
     section: text("section").$type<DecisionSection>().notNull(),
   },
   (t) => [primaryKey({ columns: [t.decisionId, t.dossierId] })],
+);
+
+/** Số thứ tự of Giấy chứng nhận per year (0048_certificate.sql, #84). */
+export const certCounter = resultsSchema.table("cert_counter", {
+  year: integer("year").primaryKey(),
+  lastSeq: integer("last_seq").notNull(),
+});
+
+/** Giấy chứng nhận (0048_certificate.sql, #84): never removed; số hiệu and Hạng công nhận never change. */
+export const certificate = resultsSchema.table("certificate", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  decisionId: uuid("decision_id").notNull(),
+  year: integer("year").notNull(),
+  seq: integer("seq").notNull(),
+  code: text("code").notNull(),
+  recognizedStar: smallint("recognized_star").notNull(),
+  issuedOn: date("issued_on", { mode: "string" }).notNull(),
+  expiresOn: date("expires_on", { mode: "string" }).notNull(),
+  state: text("state").$type<CertificateState>().notNull(),
+  draftFileId: uuid("draft_file_id"),
+  templateVersionId: uuid("template_version_id"),
+  issuedAt: ts("issued_at").notNull(),
+});
+
+/** Every signed PDF uploaded for a Giấy chứng nhận: append-only. */
+export const certificateSignedFile = resultsSchema.table(
+  "certificate_signed_file",
+  {
+    certificateId: uuid("certificate_id").notNull(),
+    n: integer("n").notNull(),
+    fileId: uuid("file_id").notNull(),
+    reason: text("reason"),
+    uploadedBy: uuid("uploaded_by").notNull(),
+    uploadedAt: ts("uploaded_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.certificateId, t.n] })],
 );
