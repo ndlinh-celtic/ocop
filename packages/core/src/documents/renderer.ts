@@ -95,7 +95,7 @@ export interface MeetingDocumentRow {
   advisorySummary: string;
   /** "Đã chốt" or "Tạm tính". */
   status: string;
-  /** Dự thảo quyết định: "Đề nghị xét 5 sao" from the 5-sao Ngưỡng hạng up. */
+  /** Dự thảo quyết định: mục (3) "Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao" for a hồ sơ 5 sao (#83). */
   note: string;
   /** L16 (#80, story 8): the Nhận xét chung of the Chủ tịch or Thư ký, empty until written. */
   generalComment: string;

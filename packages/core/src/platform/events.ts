@@ -5,6 +5,9 @@ import type { ReminderPayload } from "../dossiers/reminder-model";
 import type { DossierEventType } from "../dossiers/transitions";
 import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
+/** Công bố kết quả (#83, spec #79): what a hồ sơ's kết quả became for its Chủ thể. */
+export type ResultOutcome = "recognized" | "five_star_proposal" | "not_passed";
+
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
   | { type: "identity.user.created"; payload: { userId: string } }
@@ -63,7 +66,16 @@ export type DomainEventBody =
        * `actorUserId`: who made the move; absent on events recorded before it was added. `recipientUserIds`: who
        * its notices go to, when only the use case knows them (sao chép, L12).
        */
-      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string; recipientUserIds?: string[] };
+      payload: {
+        dossierId: string;
+        entityId: string;
+        from: DossierState | null;
+        to: DossierState;
+        actorUserId?: string;
+        recipientUserIds?: string[];
+        /** dossier.result_published only. */
+        outcome?: ResultOutcome;
+      };
     };
 
 export type EventType = DomainEventBody["type"];

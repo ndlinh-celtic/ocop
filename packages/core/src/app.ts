@@ -31,6 +31,7 @@ import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
 import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
 import { editGeneralComment } from "./results/general-comment";
+import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -285,6 +286,11 @@ export function createCore(deps: CoreDeps) {
     results: {
       // L16 Nhận xét chung (#80).
       editGeneralComment: editGeneralComment(deps),
+      // L16 HD-11 Quyết định công nhận theo Phiên họp and Công bố kết quả (#83).
+      recordMeetingDecision: recordMeetingDecision(deps),
+      meetingsForDecision: meetingsForDecision(deps),
+      meetingDecision: meetingDecision(deps),
+      downloadDecision: downloadDecision(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

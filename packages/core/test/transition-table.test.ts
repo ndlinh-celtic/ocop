@@ -49,3 +49,37 @@ describe("L16 Nhận xét chung row (#80)", () => {
     expect(row?.guard?.(dossier(new Date("2026-10-27T03:00:00Z")), new Date())).toMatchObject({ code: "result_published" });
   });
 });
+
+describe("L16 Quyết định công nhận and Công bố kết quả rows (#83)", () => {
+  const rowsOf = (action: string) => TRANSITIONS.filter((r) => r.action === action);
+  const dossier = (resultPublishedAt: Date | null) => ({ resultPublishedAt }) as Dossier;
+  const published = new Date("2026-10-27T03:00:00Z");
+
+  it("lets only the Cán bộ Sở recognize a hồ sơ Đã chốt điểm, or Công bố it while it stays Đã chốt điểm, both on the timeline", () => {
+    expect(rowsOf("dossier.recognize")).toEqual([
+      expect.objectContaining({ from: "score_finalized", to: "recognized", roles: ["province_officer"], event: "dossier.result_published", timeline: true }),
+    ]);
+    expect(rowsOf("dossier.result_publish")).toEqual([
+      expect.objectContaining({
+        from: "score_finalized",
+        to: "score_finalized",
+        roles: ["province_officer"],
+        event: "dossier.result_published",
+        timeline: true,
+      }),
+    ]);
+  });
+
+  it("publishes a hồ sơ once only", () => {
+    for (const row of [...rowsOf("dossier.recognize"), ...rowsOf("dossier.result_publish")]) {
+      expect(row.guard?.(dossier(null), new Date())).toBeNull();
+      expect(row.guard?.(dossier(published), new Date())).toMatchObject({ code: "result_published" });
+    }
+  });
+
+  it("refuses Mở khóa sau chốt once the kết quả is Công bố (stories 20, 45)", () => {
+    const [unlock] = rowsOf("dossier.unlock");
+    expect(unlock?.guard?.(dossier(null), new Date())).toBeNull();
+    expect(unlock?.guard?.(dossier(published), new Date())).toMatchObject({ code: "result_published" });
+  });
+});

@@ -24,6 +24,9 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.advisory_report.reissue": "Tổ tư vấn phát hành báo cáo phiên bản mới",
   // L15 HD-08 (story 137): chốt điểm, without the points.
   "dossier.finalize": "Hội đồng chốt điểm",
+  // L16 HD-11 (#83, story 67): Công bố kết quả by a Quyết định công nhận.
+  "dossier.recognize": "Công bố kết quả: được công nhận theo Quyết định công nhận",
+  "dossier.result_publish": "Công bố kết quả: đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",

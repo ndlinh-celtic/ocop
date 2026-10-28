@@ -169,7 +169,7 @@ export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardi
   d.state === "submitted_to_ward" && round !== null && now > round.forwardingDeadline;
 
 /** What the narrow lookup of DossierRepo.stateRow loads: the mã and state, and what a transition records. */
-export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId">;
+export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId" | "resultPublishedAt">;
 
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.

@@ -77,6 +77,7 @@ export const NOTICE_EVENTS = [
   "council.assignment.added",
   "dossier.advisory_return_requested",
   "dossier.unlocked",
+  "dossier.result_published",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -459,6 +460,27 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           emailSubject: "Phiếu chấm của anh/chị được Trả phiếu",
           emailLine: "Hội đồng vừa Trả phiếu chấm của anh/chị cho một hồ sơ OCOP để chấm lại.",
           link: `/thanh-vien/ho-so/${dossier.id}`,
+        },
+      ];
+    }
+    // L16 CT-13 (#83, spec #79 story 63): Công bố kết quả, to the Chủ thể; what the kết quả is shows only in the app.
+    case "dossier.result_published": {
+      const outcome = event.payload.outcome;
+      const body =
+        outcome === "recognized"
+          ? `Hồ sơ ${dossier.code} đã được công nhận sản phẩm OCOP. Xem điểm, hạng và nhận xét của Hội đồng trong hồ sơ.`
+          : outcome === "five_star_proposal"
+            ? `Hồ sơ ${dossier.code} đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao. Xem điểm và nhận xét của Hội đồng trong hồ sơ.`
+            : `Hồ sơ ${dossier.code} đã có kết quả đánh giá. Xem kết quả trong hồ sơ.`;
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_result_published",
+          title: `Hồ sơ đã có kết quả: ${product}`,
+          body,
+          emailSubject: "Hồ sơ OCOP đã có kết quả",
+          emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng. Đăng nhập để xem kết quả.",
+          link: ownerLink,
         },
       ];
     }

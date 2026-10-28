@@ -6,6 +6,7 @@ import type { UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError, forbidden } from "../shared/errors";
 import type { Tx } from "../shared/uow";
+import type { ResultOutcome } from "../platform/events";
 import { DOSSIER_STATE_LABEL, dossierNotFound, versionConflict, type Dossier, type DossierState, type DossierStateRow } from "./model";
 import { dossierInScope, recordedAction, ruleAllows, ruleFor, TRANSITIONS, type DossierAction, type DossierEventType } from "./transitions";
 
@@ -40,6 +41,8 @@ export interface TransitionInput {
   metadata?: Record<string, unknown>;
   /** The Người dùng the outbox event names for its notices, when only the use case knows them (sao chép, L12). */
   notify?: string[];
+  /** Công bố kết quả (#83): what the Chủ thể is told, carried by the dossier.result_published event. */
+  outcome?: ResultOutcome;
 }
 
 /**
@@ -67,6 +70,7 @@ export async function transition(deps: CoreDeps, tx: Tx, actor: UserActor, befor
     reason: input.reason ?? null,
     metadata: input.metadata ?? {},
     notify: input.notify,
+    outcome: input.outcome,
   });
   return after;
 }
@@ -132,6 +136,9 @@ export async function transitionByLookup(
   if (rule.lookup !== true || !ruleAllows(rule, actor)) throw forbidden();
   if (input.expectedVersion !== before.version) throw versionConflict();
   const now = deps.clock.now();
+  // A lookup row's guard reads only what the narrow row loads (the unlock guard: Công bố kết quả, #83).
+  const refusal = rule.guard?.(before as Dossier, now);
+  if (refusal) throw refusal;
   const after: DossierStateRow = { ...before, state: rule.to, version: before.version + 1 };
   if (!(await tx.dossiers.updateState(before.id, before.version, rule.to, now))) throw versionConflict();
   await record(deps, tx, actor, now, {
@@ -156,6 +163,7 @@ interface Recorded {
   reason: string | null;
   metadata: Record<string, unknown>;
   notify?: string[];
+  outcome?: ResultOutcome;
 }
 
 /**
@@ -200,6 +208,7 @@ async function record(deps: CoreDeps, tx: Tx, actor: UserActor, now: Date, r: Re
       to: dossier.state,
       actorUserId: actor.userId,
       ...(r.notify ? { recipientUserIds: r.notify } : {}),
+      ...(r.outcome ? { outcome: r.outcome } : {}),
     },
   });
 }

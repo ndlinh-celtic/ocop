@@ -115,7 +115,9 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     expect(doc).toContain("QUYẾT ĐỊNH");
     expect(doc).toContain("Công nhận 2 sản phẩm đạt chuẩn OCOP");
     expect(doc).toContain(`| ${PRODUCT.productName} | ${done.entityName} | Ấp 1 | 1 - Rau củ quả | 72,5 | 4 sao |  |`);
-    expect(doc).toContain(`| ${PRODUCT.productName} | ${best.entityName} | Ấp 1 | 1 - Rau củ quả | 100 | 5 sao | Đề nghị xét 5 sao |`);
+    expect(doc).toContain(
+      `| ${PRODUCT.productName} | ${best.entityName} | Ấp 1 | 1 - Rau củ quả | 100 | 5 sao | Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao |`,
+    );
     expect(doc).not.toContain(low.entityName);
   });
 
@@ -260,7 +262,7 @@ describe("L15 dự thảo quyết định when a Sao tối thiểu caps the Hạ
   const w = scoringWorld({ minGraders: 2, fiveStarMinimum: true });
   const m = (i: number) => w.A.members[i]!;
 
-  it("notes Đề nghị xét 5 sao only for a hồ sơ whose Hạng sao is 5, not one at 90 điểm capped to 4 sao", async () => {
+  it("notes đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao only for a hồ sơ whose Hạng sao is 5, not one at 90 điểm capped to 4 sao", async () => {
     const d = await w.graded([m(0), m(1)]);
     for (const [actor, a] of [
       [m(0), 40],
@@ -290,7 +292,7 @@ describe("L15 dự thảo quyết định when a Sao tối thiểu caps the Hạ
 
     const doc = docxText(bytes);
     expect(doc).toContain("| 90 | 4 sao |  |");
-    expect(doc).not.toContain("Đề nghị xét 5 sao");
+    expect(doc).not.toContain("phân hạng 5 sao");
   });
 });
 

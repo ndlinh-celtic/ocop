@@ -286,7 +286,7 @@ const sampleMeeting: MeetingDocumentData = {
       absent: "",
       advisorySummary: "Sản phẩm tiêu biểu.",
       status: "Đã chốt",
-      note: "Đề nghị xét 5 sao",
+      note: "Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao",
       generalComment: "Sản phẩm đạt chất lượng cao, đề nghị giới thiệu xét 5 sao.",
     },
   ],

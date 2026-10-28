@@ -16,6 +16,7 @@ export const FILE_PURPOSES = [
   "meeting_minutes",
   "unlock_request",
   "document_template",
+  "recognition_decision",
 ] as const;
 export type FilePurpose = (typeof FILE_PURPOSES)[number];
 /** Every purpose a stored file may have: the uploadable ones, and văn bản the server generates (#37). */

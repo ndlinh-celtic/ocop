@@ -13,6 +13,7 @@ import type {
 import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import type { DocumentTemplate } from "@ocop/core";
+import type { DecisionKind, DecisionSection } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -751,3 +752,28 @@ export const documentTemplateVersion = platform.table("document_template_version
   uploadedAt: ts("uploaded_at").notNull(),
   active: boolean("active").notNull(),
 });
+
+export const resultsSchema = pgSchema("results");
+
+/** Quyết định công nhận (0047_recognition_decision.sql, #83): never removed; one per Phiên họp. */
+export const recognitionDecision = resultsSchema.table("recognition_decision", {
+  id: uuid("id").primaryKey(),
+  kind: text("kind").$type<DecisionKind>().notNull(),
+  meetingId: uuid("meeting_id"),
+  number: text("number").notNull(),
+  signedOn: date("signed_on", { mode: "string" }).notNull(),
+  fileId: uuid("file_id").notNull(),
+  recordedBy: uuid("recorded_by").notNull(),
+  recordedAt: ts("recorded_at").notNull(),
+});
+
+/** The hồ sơ of a Quyết định công nhận with their mục: append-only. */
+export const recognitionDecisionDossier = resultsSchema.table(
+  "recognition_decision_dossier",
+  {
+    decisionId: uuid("decision_id").notNull(),
+    dossierId: uuid("dossier_id").notNull(),
+    section: text("section").$type<DecisionSection>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.decisionId, t.dossierId] })],
+);

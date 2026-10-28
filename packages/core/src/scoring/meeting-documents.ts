@@ -15,6 +15,7 @@ import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
 import { chotResultOf, ownMeeting } from "./meetings";
+import { DECISION_SECTION_LABEL } from "../results/decision-model";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -100,7 +101,8 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       // A kết quả a Mở khóa superseded is not printed: the hồ sơ is tạm tính until chốt again (ADR 0008).
       status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
       // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
-      note: aggregate.star === 5 ? "Đề nghị xét 5 sao" : "",
+      // Mục (3) of the quyết định (#83, spec #79): it approves the kết quả, it recognizes nothing.
+      note: aggregate.star === 5 ? DECISION_SECTION_LABEL.five_star_proposal : "",
       generalComment: d.generalComment ?? "",
       starValue: aggregate.star,
       dossierId: d.id,

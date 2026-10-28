@@ -293,7 +293,8 @@ export {
   type VisibilityFacts,
 } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
-export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView } from "./scoring/read";
+export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView, PublishedResultView } from "./scoring/read";
+export { FIVE_STAR_STANDING } from "./scoring/read";
 export {
   MEETING_STATES,
   type AggregateResult,
@@ -315,3 +316,24 @@ export { type FinalizedResultSummary, type UnlockInput, type UnlockTarget, type 
 export { MAX_GENERAL_COMMENT, type EditGeneralCommentInput } from "./results/general-comment";
 export { generalCommentVisible } from "./results/visibility";
 export { DEFAULT_UNDERPERFORMING_RATIO, underperformingCriteria, type UnderperformingCriterion, type UnderperformingReason } from "./results/underperforming";
+export {
+  DECISION_KINDS,
+  DECISION_SECTIONS,
+  DECISION_SECTION_LABEL,
+  sectionOf,
+  type DecisionKind,
+  type DecisionSection,
+  type RecognitionDecision,
+  type RecognitionDecisionDossier,
+  type RecognitionDecisionRepo,
+} from "./results/decision-model";
+export {
+  MeetingPendingDossiersError,
+  type DecisionView,
+  type MeetingDecisionDossier,
+  type MeetingDecisionView,
+  type MeetingForDecision,
+  type RecordedDecision,
+  type RecordMeetingDecisionInput,
+} from "./results/decision";
+export type { ResultOutcome } from "./platform/events";

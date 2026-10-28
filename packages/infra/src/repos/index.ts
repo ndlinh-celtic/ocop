@@ -18,6 +18,7 @@ import { assignmentRepo, councilRepo, scoreSheetRepo } from "./councils";
 import { advisoryReportRepo } from "./advisory-reports";
 import { aggregateResultRepo, meetingRepo } from "./meetings";
 import { templateVersionRepo } from "./template-versions";
+import { recognitionDecisionRepo } from "./recognition-decisions";
 
 export function buildRepos(db: Db): Repos {
   return {
@@ -49,5 +50,6 @@ export function buildRepos(db: Db): Repos {
     meetings: meetingRepo(db),
     aggregateResults: aggregateResultRepo(db),
     templateVersions: templateVersionRepo(db),
+    recognitionDecisions: recognitionDecisionRepo(db),
   };
 }

@@ -20,6 +20,7 @@ import { ownSheet, setRowsOf, sheetOrder } from "./sheets";
 import type { AggregateResult, FinalizedSnapshot } from "./meeting-model";
 import { underperformingCriteria, type UnderperformingCriterion } from "../results/underperforming";
 import { underperformingRatioIn } from "../system/settings";
+import type { ResultOutcome } from "../platform/events";
 
 /*
  * Who sees which points of a hồ sơ (spec #49 "Tổng hợp, Cờ chênh lệch, quyền xem điểm"; stories 92, 93, 95, 98, 124, 132).
@@ -27,7 +28,7 @@ import { underperformingRatioIn } from "../system/settings";
  * the chủ đầu tư's answers (`docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`, GLOSSARY.md), so change it there and nowhere else.
  */
 
-export type ScoresVisibility = "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "none";
+export type ScoresVisibility = "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "published_result" | "none";
 
 /** Sẵn sàng chốt and every state after chốt (a Mở khóa sau chốt goes back to Sẵn sàng chốt). */
 const READY_OR_LATER: readonly DossierState[] = DOSSIER_STATES.slice(DOSSIER_STATES.indexOf("member_confirmed"));
@@ -41,6 +42,8 @@ export interface VisibilityFacts {
   ownSheetOnly?: boolean;
   /** Whether the hồ sơ has a kết quả chốt hiện hành (#60); a Mở khóa sau chốt supersedes it. */
   finalized?: boolean;
+  /** Whether its kết quả is Công bố (#83): `result_published_at` set. */
+  published?: boolean;
 }
 
 /**
@@ -49,7 +52,14 @@ export interface VisibilityFacts {
  * in `docs/to-questionnaire-so-nnmt-hoi-dong-va-ket-qua.md`); a thành viên sees their own phiếu, and everything
  * once both their phiếu is confirmed and the hồ sơ is Sẵn sàng chốt (L15 step 4 "họp xem điểm của nhau").
  */
-export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly = false, finalized = false }: VisibilityFacts): ScoresVisibility {
+export function scoresVisibility({
+  role,
+  state,
+  ownSheetConfirmed,
+  ownSheetOnly = false,
+  finalized = false,
+  published = false,
+}: VisibilityFacts): ScoresVisibility {
   const ready = READY_OR_LATER.includes(state);
   switch (role) {
     case "council_chair":
@@ -64,16 +74,19 @@ export function scoresVisibility({ role, state, ownSheetConfirmed, ownSheetOnly 
     case "province_officer":
       // L16 (#80, spec #79 story 68): the Sở sees the kết quả chốt hiện hành, with Tiêu chí dưới mức, never a phiếu.
       return finalized ? "aggregate_only" : "none";
+    case "entity_owner":
+      // L16 CT-13 (#83, spec #79 stories 62, 64, 65): the Chủ thể sees its kết quả from Công bố kết quả, never a phiếu.
+      return finalized && published ? "published_result" : "none";
     default:
-      // Chủ thể, Cán bộ xã, Quản trị (stories 124, 125, 132).
+      // Cán bộ xã, Quản trị (stories 124, 125, 132; spec #79 story 69).
       return "none";
   }
 }
 
 /** A Vai trò that may read any score view loads the hồ sơ first; the others get `none` without a lookup. */
 const COUNCIL_READERS: readonly Role[] = ["council_chair", "council_secretary", "council_member", "advisory_member"];
-/** readDossierScores' readers: the Hội đồng, and the Sở from chốt (#80). */
-const SCORE_READERS: readonly Role[] = [...COUNCIL_READERS, "province_officer"];
+/** readDossierScores' readers: the Hội đồng, the Sở from chốt (#80), the Chủ thể from Công bố kết quả (#83). */
+const SCORE_READERS: readonly Role[] = [...COUNCIL_READERS, "province_officer", "entity_owner"];
 
 export interface GraderProgress {
   userId: string;
@@ -175,7 +188,29 @@ export type ConfirmedSheetsView = Pick<FullScoresView, "dossierId" | "dossierSta
   kind: "confirmed_sheets";
 };
 
-export type DossierScores = { kind: "none" } | ConfirmedSheetsView | OwnSheetView | FullScoresView | AggregateOnlyView;
+/**
+ * L16 CT-13 (#83, spec #79 stories 60, 62, 65): what the Chủ thể sees from Công bố kết quả. Only the kết quả chốt hiện
+ * hành as a whole and the Nhận xét chung: no phiếu, no thành viên, no Báo cáo Tổ tư vấn, no Tiêu chí dưới mức.
+ */
+export interface PublishedResultView {
+  kind: "published_result";
+  dossierId: string;
+  dossierState: DossierState;
+  publishedAt: Date;
+  total: number;
+  /** Điểm theo Phần A, B, C. */
+  parts: { code: string; total: number }[];
+  /** Hạng sao of the kết quả chốt. */
+  star: number;
+  outcome: ResultOutcome;
+  /** Hạng công nhận (ADR 0009) once recognized; null otherwise. */
+  recognizedStar: number | null;
+  /** How the app words the kết quả: "Công nhận 4 sao", "Đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao", "Không đạt". */
+  standing: string;
+  generalComment: string | null;
+}
+
+export type DossierScores = { kind: "none" } | ConfirmedSheetsView | OwnSheetView | FullScoresView | AggregateOnlyView | PublishedResultView;
 
 /** The score view of a hồ sơ the reader is allowed (story 92, 95): see `scoresVisibility`. */
 export function readDossierScores(deps: CoreDeps) {
@@ -223,6 +258,8 @@ export function readDossierScores(deps: CoreDeps) {
             underperforming: actor.activeRole === "province_officer" ? underperformingCriteria(result!, full.set, await underperformingRatioIn(tx)) : null,
           };
         }
+        case "published_result":
+          return publishedResultView(tx, dossier, result!);
         case "own_sheet":
           return ownSheetView(tx, actor, dossier);
         case "none":
@@ -237,7 +274,14 @@ async function visibilityOf(tx: Tx, actor: UserActor, dossier: Dossier, ownSheet
   const ownSheetConfirmed = actor.activeRole === "council_member" && (await ownSheet(tx, actor, dossier.id)).sheet?.state === "confirmed";
   const result = await tx.aggregateResults.current(dossier.id);
   return {
-    visibility: scoresVisibility({ role: actor.activeRole, state: dossier.state, ownSheetConfirmed, ownSheetOnly, finalized: result !== null }),
+    visibility: scoresVisibility({
+      role: actor.activeRole,
+      state: dossier.state,
+      ownSheetConfirmed,
+      ownSheetOnly,
+      finalized: result !== null,
+      published: dossier.resultPublishedAt !== null,
+    }),
     result,
   };
 }
@@ -411,6 +455,29 @@ async function finalizedView(tx: Tx, dossier: Dossier, result: AggregateResult):
     },
   };
 }
+
+/** The Chủ thể's kết quả: its mục in the newest Quyết định công nhận naming it decides the outcome; none is không đạt. */
+async function publishedResultView(tx: Tx, dossier: Dossier, result: AggregateResult): Promise<PublishedResultView> {
+  const section = (await tx.recognitionDecisions.ofDossier(dossier.id)).at(-1)?.section ?? null;
+  const recognizedStar = section === "three_star" ? 3 : section === "four_star" ? 4 : null;
+  const outcome: ResultOutcome = recognizedStar !== null ? "recognized" : section === "five_star_proposal" ? "five_star_proposal" : "not_passed";
+  return {
+    kind: "published_result",
+    dossierId: dossier.id,
+    dossierState: dossier.state,
+    publishedAt: dossier.resultPublishedAt!,
+    total: result.total,
+    parts: result.parts.map((p) => ({ code: p.code, total: p.total })),
+    star: result.star,
+    outcome,
+    recognizedStar,
+    standing: outcome === "recognized" ? `Công nhận ${recognizedStar} sao` : outcome === "five_star_proposal" ? FIVE_STAR_STANDING : "Không đạt",
+    generalComment: dossier.generalComment,
+  };
+}
+
+/** Spec #79 story 60: how a hồ sơ 5 sao Công bố reads to its Chủ thể. */
+export const FIVE_STAR_STANDING = "Đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao";
 
 async function ownSheetView(tx: Tx, actor: UserActor, dossier: Dossier): Promise<OwnSheetView> {
   const { sheet } = await ownSheet(tx, actor, dossier.id);

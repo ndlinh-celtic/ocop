@@ -109,6 +109,8 @@ const ROLE_ACTIONS = {
   "documents.template.manage": ["admin"],
   // L16 CT-13, HD-10 (#80): the Nhận xét chung of a hồ sơ Đã chốt điểm; which hồ sơ and until when is the transition table.
   "results.general_comment.write": ["council_chair", "council_secretary"],
+  // L16 HD-11 (#83, story 21): ghi nhận and read the Quyết định công nhận of a Phiên họp, the Cán bộ Sở alone.
+  "results.decision.record": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

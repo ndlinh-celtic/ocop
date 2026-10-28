@@ -86,6 +86,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.advisory_return_request",
   "dossier.unlock",
   "dossier.general_comment.edit",
+  "dossier.recognize",
+  "dossier.result_publish",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
 
@@ -128,6 +130,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.advisory_return_requested",
   "dossier.unlocked",
   "dossier.general_comment_edited",
+  "dossier.result_published",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
 
@@ -446,7 +449,18 @@ export const TRANSITIONS: readonly TransitionRule[] = [
   },
   // L15 Mở khóa sau chốt (stories 127 to 131, ADR 0008): Quản trị takes a hồ sơ Đã chốt điểm back to Sẵn sàng chốt on
   // the Hội đồng's văn bản yêu cầu; unlockFinalized supersedes the kết quả. Off the Chủ thể's timeline (spec #49).
-  { action: "dossier.unlock", from: "score_finalized", to: "member_confirmed", roles: ["admin"], event: "dossier.unlocked", timeline: false, lookup: true },
+  // Never once Công bố kết quả (#83, spec #79 stories 20, 45), a hồ sơ 5 sao still Đã chốt điểm included. The guard reads
+  // only what DossierRepo.stateRow loads, since transitionByLookup passes it that row.
+  {
+    action: "dossier.unlock",
+    from: "score_finalized",
+    to: "member_confirmed",
+    roles: ["admin"],
+    event: "dossier.unlocked",
+    timeline: false,
+    lookup: true,
+    guard: (d) => unpublished(d),
+  },
   // L15 HD-05 (stories 102 to 105): Trả phiếu by the Chủ tịch or Thư ký before chốt. The one that leaves the phiếu
   // đã xác nhận below người chấm tối thiểu takes the hồ sơ back to Thành viên xem xét, its own action because ruleFor
   // looks a row up by action and state; returnScoreSheet picks it. Off the Chủ thể's timeline (story 137).
@@ -487,9 +501,34 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     roles: ["council_chair", "council_secretary"],
     event: "dossier.general_comment_edited",
     timeline: false,
-    guard: (d) => (d.resultPublishedAt === null ? null : resultPublished()),
+    guard: (d) => unpublished(d),
+  },
+  // L16 HD-11 (#83, spec #79 stories 14, 15): ghi nhận a Quyết định công nhận runs one of these per hồ sơ it names, setting
+  // Công bố kết quả. Hồ sơ 3 and 4 sao become Công nhận 3/4 sao; a hồ sơ 5 sao stays Đã chốt điểm, Công bố as "đạt điểm đề
+  // nghị Trung ương đánh giá, phân hạng 5 sao". The use case picks the row by the Hạng sao of the kết quả chốt hiện hành.
+  // Both are rows of the Chủ thể's timeline (story 67) and emit dossier.result_published with the outcome.
+  {
+    action: "dossier.recognize",
+    from: "score_finalized",
+    to: "recognized",
+    roles: ["province_officer"],
+    event: "dossier.result_published",
+    timeline: true,
+    guard: (d) => unpublished(d),
+  },
+  {
+    action: "dossier.result_publish",
+    from: "score_finalized",
+    to: "score_finalized",
+    roles: ["province_officer"],
+    event: "dossier.result_published",
+    timeline: true,
+    guard: (d) => unpublished(d),
   },
 ];
+
+/** The guard of the rows that end with Công bố kết quả or must not follow it. */
+const unpublished = (d: Pick<Dossier, "resultPublishedAt">) => (d.resultPublishedAt === null ? null : resultPublished());
 
 /** Công bố kết quả is final: what the Chủ thể was sent no longer changes (spec #79 stories 3, 23). */
 export const resultPublished = () => new DomainError("result_published", "Kết quả của hồ sơ đã được công bố nên không thay đổi được nữa");
