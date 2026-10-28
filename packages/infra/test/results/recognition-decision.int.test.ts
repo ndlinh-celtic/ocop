@@ -127,6 +127,14 @@ describe("L16 Quyết định công nhận of a Phiên họp (#83)", () => {
     await expect(record(meetingId, w.province, { number: "124/QĐ-UBND" })).rejects.toMatchObject({ code: "meeting_already_has_decision" });
   });
 
+  it("checks the conditions in the spec's order: a hồ sơ chờ chốt is reported before the quyết định already recorded (#79)", async () => {
+    const { meetingId, dossiers } = await closedMeeting([THREE, FOUR]);
+    await record(meetingId);
+    await w.db.admin.query("UPDATE scoring.aggregate_result SET superseded_at = now() WHERE dossier_id = $1", [dossiers[1]!.dossierId]);
+
+    await expect(record(meetingId, w.province, { number: "124/QĐ-UBND" })).rejects.toMatchObject({ code: "meeting_has_pending_dossiers" });
+  });
+
   it("requires a số, a ngày ký not in the future and the Cán bộ Sở's own clean PDF (story 9)", async () => {
     const { meetingId } = await closedMeeting([THREE]);
     const fileId = await decisionFile();

@@ -106,9 +106,6 @@ export function recordMeetingDecision(deps: CoreDeps) {
       const meeting = await tx.meetings.lock(input.meetingId);
       if (!meeting) throw meetingNotFound();
       if (meeting.state !== "closed") throw new DomainError("meeting_not_closed", "Phiên họp chưa kết thúc nên chưa ghi nhận được quyết định");
-      if (await tx.recognitionDecisions.ofMeeting(meeting.id)) {
-        throw new DomainError("meeting_already_has_decision", "Phiên họp này đã có Quyết định công nhận");
-      }
       const results = await meetingResults(tx, meeting.id);
       const pending = results.filter((r) => r.star === null);
       if (pending.length > 0) {
@@ -125,6 +122,10 @@ export function recordMeetingDecision(deps: CoreDeps) {
         .sort((a, b) => a.dossierId.localeCompare(b.dossierId));
       if (named.length === 0) {
         throw new DomainError("decision_without_recognized", "Phiên họp không có hồ sơ nào đạt từ 3 sao nên không có quyết định công nhận");
+      }
+      // Checked last, in the spec's order (#79): not closed, hồ sơ chờ chốt, nothing from 3 sao, already recorded.
+      if (await tx.recognitionDecisions.ofMeeting(meeting.id)) {
+        throw new DomainError("meeting_already_has_decision", "Phiên họp này đã có Quyết định công nhận");
       }
       const file = await ownUpload(
         tx,
