@@ -42,6 +42,12 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
   await boss.work("dossiers.due-reminders", async () => {
     await core.dossiers.sendDueReminders(systemActor("dossiers.due-reminders"));
   });
+  // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, daily; a giấy whose day has passed unreminded goes out on the
+  // next run, and the ledger keeps it to one reminder per ngày hết hiệu lực.
+  await boss.schedule("results.certificate-expiry-reminders", "0 8 * * *", null, { tz });
+  await boss.work("results.certificate-expiry-reminders", async () => {
+    await core.results.sendCertificateExpiryReminders(systemActor("results.certificate-expiry-reminders"));
+  });
 
   let running = true;
   let timer: NodeJS.Timeout | undefined;

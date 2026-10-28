@@ -64,6 +64,11 @@ export type DomainEventBody =
   // again while Chờ ký), or whose signed PDF was uploaded (`n` = 1, 2, …).
   | { type: "certificate.issued" | "certificate.amended"; payload: { certificateId: string; dossierId: string; entityId: string; decisionId: string } }
   | { type: "certificate.signed"; payload: { certificateId: string; dossierId: string; entityId: string; n: number } }
+  // L16 (#86): a Giấy chứng nhận reached its one mốc nhắc before the ngày hết hiệu lực (YYYY-MM-DD).
+  | {
+      type: "certificate.expiry_due";
+      payload: { certificateId: string; dossierId: string; entityId: string; expiresOn: string; daysLeft: number };
+    }
   | {
       type: DossierEventType;
       /**

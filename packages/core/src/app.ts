@@ -36,6 +36,7 @@ import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDe
 import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
 import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedCertificate } from "./results/certificate";
 import { amendDecision } from "./results/amend-decision";
+import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -313,6 +314,8 @@ export function createCore(deps: CoreDeps) {
       uploadSignedCertificate: uploadSignedCertificate(deps),
       downloadCertificate: downloadCertificate(deps),
       certificateDrafts: certificateDrafts(deps),
+      // L16 nhắc Giấy chứng nhận sắp hết hiệu lực, the daily worker job (#86).
+      sendCertificateExpiryReminders: sendCertificateExpiryReminders(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),

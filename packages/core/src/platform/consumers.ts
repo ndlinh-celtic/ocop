@@ -2,6 +2,7 @@ import type { SystemActor } from "../shared/context";
 import { emailDossierEvent, NOTICE_EVENTS, notifyDossierEvent } from "../dossiers/notices";
 import { emailReminder, notifyReminder } from "../dossiers/reminders";
 import { draftCertificate } from "../results/certificate";
+import { emailCertificateExpiry, notifyCertificateExpiry } from "../results/certificate-expiry";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
@@ -68,6 +69,15 @@ export const CONSUMERS = {
   "results.certificate-draft": {
     events: ["certificate.issued", "certificate.amended"],
     handle: draftCertificate,
+  },
+  // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, in the app and by email.
+  "notifications.certificate-expiry": {
+    events: ["certificate.expiry_due"],
+    handle: notifyCertificateExpiry,
+  },
+  "results.certificate-expiry-email": {
+    events: ["certificate.expiry_due"],
+    handle: emailCertificateExpiry,
   },
 } as const satisfies Record<string, Consumer>;
 

@@ -506,7 +506,7 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
 }
 
 /** The Người dùng holding an active Phân vai Cán bộ Sở (Phạm vi tỉnh). */
-function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
+export function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
   return activeHolders(tx, "province_officer", "province", null, now);
 }
 

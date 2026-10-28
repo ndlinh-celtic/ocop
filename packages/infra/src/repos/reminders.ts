@@ -1,7 +1,7 @@
 import type { ReminderRepo, SystemSettingRepo } from "@ocop/core";
-import { and, count, eq, gte, inArray, isNull } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNull, notExists, sql } from "drizzle-orm";
 import type { Db } from "../db/types";
-import { dossier, reminderSent, systemSetting } from "../db/schema";
+import { certificate, dossier, reminderSent, systemSetting } from "../db/schema";
 
 export function reminderRepo(db: Db): ReminderRepo {
   return {
@@ -26,6 +26,31 @@ export function reminderRepo(db: Db): ReminderRepo {
         .where(and(eq(dossier.roundId, roundId), inArray(dossier.state, ["submitted_to_ward", "supplement_requested"])))
         .groupBy(dossier.wardId);
       return rows.flatMap((r) => (r.wardId ? [{ wardId: r.wardId, count: r.count }] : []));
+    },
+    async unremindedCertificates(today) {
+      // The deadline is expiryDeadline(expires_on) of core: midnight giờ Việt Nam of the ngày hết hiệu lực.
+      return db
+        .select({ certificateId: certificate.id, dossierId: certificate.dossierId, entityId: dossier.entityId, expiresOn: certificate.expiresOn })
+        .from(certificate)
+        .innerJoin(dossier, eq(dossier.id, certificate.dossierId))
+        .where(
+          and(
+            gte(certificate.expiresOn, today),
+            notExists(
+              db
+                .select({ one: sql`1` })
+                .from(reminderSent)
+                .where(
+                  and(
+                    eq(reminderSent.kind, "certificate_expiry"),
+                    eq(reminderSent.contextId, certificate.id),
+                    eq(reminderSent.deadline, sql`(${certificate.expiresOn}::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')`),
+                  ),
+                ),
+            ),
+          ),
+        )
+        .orderBy(certificate.expiresOn, certificate.id);
     },
     async record(r) {
       const inserted = await db.insert(reminderSent).values(r).onConflictDoNothing().returning({ kind: reminderSent.kind });

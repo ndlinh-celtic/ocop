@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { expiryReminderDay } from "../src/results/certificate-expiry";
 import { certificateExpiry, formatCertificateCode, orderForNumbering } from "../src/results/certificate-model";
 
 /*
@@ -55,5 +56,17 @@ describe("orderForNumbering", () => {
     expect(orderForNumbering(rows).map((r) => r.code)).toEqual(["OCOP-2026-0002", "OCOP-2026-0004", "OCOP-2026-0001", "OCOP-2026-0003"]);
     // The input is not reordered.
     expect(rows[0]!.code).toBe("OCOP-2026-0003");
+  });
+});
+
+describe("expiryReminderDay (#86)", () => {
+  it("is the same day of the month the given months earlier", () => {
+    expect(expiryReminderDay("2029-10-12", 6)).toBe("2029-04-12");
+    expect(expiryReminderDay("2029-03-15", 6)).toBe("2028-09-15");
+  });
+
+  it("falls on the last day of a shorter month", () => {
+    expect(expiryReminderDay("2029-08-31", 6)).toBe("2029-02-28");
+    expect(expiryReminderDay("2028-08-31", 6)).toBe("2028-02-29");
   });
 });

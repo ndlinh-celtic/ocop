@@ -74,7 +74,7 @@ async function candidates(tx: Tx, now: Date): Promise<Candidate[]> {
   return out;
 }
 
-const TARGET_TYPE: Record<ReminderKind, string> = { submission: "entity", supplement: "entity", forwarding: "ward" };
+const TARGET_TYPE: Record<ReminderKind, string> = { submission: "entity", supplement: "entity", forwarding: "ward", certificate_expiry: "certificate" };
 
 /**
  * The worker job: sends each reminder whose mốc has come, once per (loại hạn, đối tượng, hạn, mốc). The
