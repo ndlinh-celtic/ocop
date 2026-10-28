@@ -107,17 +107,23 @@ describe("L15 văn bản họp and biên bản đã ký (#62)", () => {
     for (const blank of ["Thành phần tham dự: ....", "Ý kiến thảo luận: ....", "Kết luận của Hội đồng: ...."]) expect(doc).toContain(blank);
   });
 
-  it("sinh the dự thảo quyết định with the hồ sơ from 3 sao only, and đề nghị xét 5 sao for a hồ sơ 5 sao (story 112)", async () => {
+  it("sinh the dự thảo quyết định: hồ sơ 3 and 4 sao công nhận by mục, a hồ sơ 5 sao in its own mục, not công nhận (story 112, #79)", async () => {
     const { meetingId, done, best, low } = await meeting();
 
     const doc = await text(w.A.secretary, meetingId, "decision");
 
     expect(doc).toContain("QUYẾT ĐỊNH");
-    expect(doc).toContain("Công nhận 2 sản phẩm đạt chuẩn OCOP");
-    expect(doc).toContain(`| ${PRODUCT.productName} | ${done.entityName} | Ấp 1 | 1 - Rau củ quả | 72,5 | 4 sao |  |`);
-    expect(doc).toContain(
-      `| ${PRODUCT.productName} | ${best.entityName} | Ấp 1 | 1 - Rau củ quả | 100 | 5 sao | Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao |`,
-    );
+    expect(doc).toContain("Công nhận 1 sản phẩm đạt chuẩn OCOP");
+    const fourStar = doc.indexOf("1. Sản phẩm được công nhận đạt 4 sao (1 sản phẩm)");
+    const fiveStar = doc.indexOf("2. Sản phẩm đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao (1 sản phẩm)");
+    expect(fourStar).toBeGreaterThan(-1);
+    expect(fiveStar).toBeGreaterThan(fourStar);
+    const doneRow = doc.indexOf(`| ${PRODUCT.productName} | ${done.entityName} | Ấp 1 | 1 - Rau củ quả | 72,5 | 4 sao |`);
+    const bestRow = doc.indexOf(`| ${PRODUCT.productName} | ${best.entityName} | Ấp 1 | 1 - Rau củ quả | 100 | 5 sao |`);
+    expect(doneRow).toBeGreaterThan(fourStar);
+    expect(doneRow).toBeLessThan(fiveStar);
+    expect(bestRow).toBeGreaterThan(fiveStar);
+    expect(doc).not.toContain("đạt 3 sao");
     expect(doc).not.toContain(low.entityName);
   });
 

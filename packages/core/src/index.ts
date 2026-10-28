@@ -31,6 +31,7 @@ export {
   type MeetingDocumentData,
   type ResultLetterData,
   type RecognitionDecisionData,
+  type DecisionDraftSection,
   type FiveStarPackageDossierRow,
   type FiveStarPackageIndexData,
   type FiveStarProposalLetterData,

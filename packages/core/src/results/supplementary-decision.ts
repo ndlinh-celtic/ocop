@@ -16,7 +16,7 @@ import { formatDayVn, formatDecimalVn } from "../shared/format";
 import { assertIdShape } from "../shared/ids";
 import { issueCertificates } from "./certificate";
 import { decisionView, numberOf, signedOnOf, type DecisionView, type RecordedDecision } from "./decision";
-import { DECISION_SECTION_LABEL, recognizedStar, type RecognitionDecision, type RecognitionDecisionDossier } from "./decision-model";
+import { DECISION_SECTION_LABEL, decisionDraftSections, recognizedStar, type RecognitionDecision, type RecognitionDecisionDossier } from "./decision-model";
 
 /*
  * L17 Quyết định công nhận bổ sung (#88, spec #79 stories 56, 57; ADR 0009). No Phiên họp: the Cán bộ Sở picks the hồ
@@ -151,6 +151,7 @@ export function supplementaryDecisionDraft(deps: CoreDeps) {
       const rounds: string[] = [];
       for (const roundId of new Set(rows.flatMap((r) => (r.roundId ? [r.roundId] : [])))) rounds.push((await tx.rounds.findById(roundId))?.name ?? "");
       const now = deps.clock.now();
+      const { sections, recognized } = decisionDraftSections(rows.map(({ roundId: _r, ...row }) => ({ section: "four_star" as const, row })));
       const data: RecognitionDecisionData = {
         supplementary: true,
         councilName: "",
@@ -159,8 +160,9 @@ export function supplementaryDecisionDraft(deps: CoreDeps) {
         heldOn: "",
         location: "",
         status: "Hồ sơ đã gửi đề nghị Trung ương đánh giá 5 sao, được chuyển về công nhận cấp tỉnh hạng 4 sao.",
-        count: String(rows.length),
-        dossiers: rows.map(({ roundId: _r, ...r }, i) => ({ ...r, index: String(i + 1) })),
+        count: String(recognized.length),
+        dossiers: recognized,
+        sections,
         generatedOn: formatDayVn(vnDateOf(now)),
       };
       const { bytes, templateVersionId } = await renderDocument(deps, tx, "recognition_decision_draft", data);

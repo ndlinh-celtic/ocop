@@ -118,12 +118,23 @@ export interface MeetingDocumentData {
   generatedOn: string;
 }
 
+/** One mục of the dự thảo Quyết định công nhận: 3 sao, 4 sao, or đạt điểm đề nghị Trung ương đánh giá 5 sao. */
+export interface DecisionDraftSection {
+  /** Số thứ tự of the mục among those printed. */
+  index: string;
+  heading: string;
+  count: string;
+  dossiers: MeetingDocumentRow[];
+}
+
 /**
  * The dự thảo Quyết định công nhận: theo Phiên họp (#62, #83), or bổ sung (#88, ADR 0009) with `supplementary` set, no
  * Phiên họp and only mục 4 sao. A template tells them apart with {#supplementary}…{/supplementary} and {^supplementary}.
+ * `count` and `dossiers` are the hồ sơ công nhận (3 and 4 sao) only; `sections` adds the mục 5 sao, which công nhận nothing.
  */
 export interface RecognitionDecisionData extends MeetingDocumentData {
   supplementary: boolean;
+  sections: DecisionDraftSection[];
 }
 
 /** L16 HD-11 (#84, story 26): the bản nháp of a Giấy chứng nhận, đem đi ký số. */

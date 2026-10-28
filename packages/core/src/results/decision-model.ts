@@ -1,3 +1,5 @@
+import type { DecisionDraftSection, MeetingDocumentRow } from "../documents/renderer";
+
 /*
  * Quyết định công nhận (L16 HD-11, #83, spec #79 "Quyết định công nhận", GLOSSARY.md, ADR 0009). The Chủ tịch UBND tỉnh
  * signs it outside the system; the Cán bộ Sở records the signed PDF with its số and ngày ký. A decision of a Phiên họp
@@ -16,6 +18,31 @@ export const DECISION_SECTION_LABEL: Record<DecisionSection, string> = {
   four_star: "Công nhận 4 sao",
   five_star_proposal: "Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao",
 };
+
+/** The heading of each mục in the dự thảo quyết định (#79 review: mục 5 sao reads exactly as in the mẫu QĐ 26). */
+const DECISION_DRAFT_HEADING: Record<DecisionSection, string> = {
+  three_star: "Sản phẩm được công nhận đạt 3 sao",
+  four_star: "Sản phẩm được công nhận đạt 4 sao",
+  five_star_proposal: "Sản phẩm đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao",
+};
+
+/**
+ * The mục of a dự thảo quyết định, in order 3 sao, 4 sao, 5 sao, each with its rows numbered from 1; a mục without hồ
+ * sơ is left out and the others numbered in turn. Only mục 3 and 4 sao are công nhận: `recognized` is what Điều 1 counts.
+ */
+export function decisionDraftSections(rows: readonly { section: DecisionSection; row: MeetingDocumentRow }[]): {
+  sections: DecisionDraftSection[];
+  recognized: MeetingDocumentRow[];
+} {
+  const sections: DecisionDraftSection[] = [];
+  for (const section of DECISION_SECTIONS) {
+    const dossiers = rows.filter((r) => r.section === section).map(({ row }, i) => ({ ...row, index: String(i + 1) }));
+    if (dossiers.length === 0) continue;
+    sections.push({ index: String(sections.length + 1), heading: DECISION_DRAFT_HEADING[section], count: String(dossiers.length), dossiers });
+  }
+  const recognized = rows.filter((r) => r.section !== "five_star_proposal").map(({ row }, i) => ({ ...row, index: String(i + 1) }));
+  return { sections, recognized };
+}
 
 /** The mục of a hồ sơ from its Hạng sao (of the kết quả chốt hiện hành); null below 3 sao, which no decision names. */
 export function sectionOf(star: number): DecisionSection | null {

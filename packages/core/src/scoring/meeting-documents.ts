@@ -15,7 +15,7 @@ import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
 import { chotResultOf, ownMeeting } from "./meetings";
-import { DECISION_SECTION_LABEL } from "../results/decision-model";
+import { DECISION_SECTION_LABEL, decisionDraftSections, sectionOf } from "../results/decision-model";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -130,6 +130,13 @@ export function generateMeetingDocument(deps: CoreDeps) {
       const round = await tx.rounds.findById(meeting.roundId);
       const now = deps.clock.now();
       const listed = input.kind === "decision" ? rows.filter((r) => r.starValue >= 3) : rows;
+      // The dự thảo quyết định công nhận only mục 3 and 4 sao; a hồ sơ 5 sao goes in its own mục (#79 review S3).
+      const { sections, recognized } = decisionDraftSections(
+        listed.flatMap((r) => {
+          const section = sectionOf(r.starValue);
+          return section ? [{ section, row: reindex([r])[0]! }] : [];
+        }),
+      );
       const data: RecognitionDecisionData = {
         councilName: council?.name ?? "",
         roundName: round?.name ?? "",
@@ -140,11 +147,12 @@ export function generateMeetingDocument(deps: CoreDeps) {
           pending === 0
             ? "Số liệu đã chốt của toàn bộ hồ sơ trong Phiên họp."
             : `Bản nháp: còn ${pending} hồ sơ chưa chốt điểm, số liệu của các hồ sơ này là tạm tính.`,
-        count: String(listed.length),
-        dossiers: reindex(listed),
+        count: String(input.kind === "decision" ? recognized.length : listed.length),
+        dossiers: input.kind === "decision" ? recognized : reindex(listed),
         generatedOn: formatDayVn(vnDateOf(now)),
         // The dự thảo theo Phiên họp, not bổ sung (#88); the other văn bản họp ignore it.
         supplementary: false,
+        sections,
       };
       const { bytes } = await renderDocument(deps, tx, TEMPLATE[input.kind], data);
       await tx.audit.append(

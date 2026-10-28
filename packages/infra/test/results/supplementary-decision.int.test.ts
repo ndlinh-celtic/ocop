@@ -196,6 +196,8 @@ describe("L17 Quyết định công nhận bổ sung (#88)", () => {
     const rows = text.split("\n").filter((l) => l.includes(" | 4 sao | "));
     expect(rows).toHaveLength(2);
     expect(text).not.toContain("5 sao |");
+    expect(text).toContain("1. Sản phẩm được công nhận đạt 4 sao (2 sản phẩm)");
+    expect(text).not.toContain("phân hạng 5 sao");
     expect(rows.every((r) => r.includes("Hạng sao theo kết quả chốt: 5 sao"))).toBe(true);
 
     for (const d of [a, b, notPicked]) expect(await dossier(d.dossierId)).toMatchObject({ state: "five_star_proposed", version: d.version });

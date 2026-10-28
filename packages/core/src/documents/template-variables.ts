@@ -100,6 +100,33 @@ function meetingSpecs(required: { top: (keyof MeetingDocumentData)[]; row: strin
   };
 }
 
+/**
+ * The dự thảo quyết định (#79 review S3): its mục 3 sao, 4 sao and đạt điểm đề nghị Trung ương đánh giá 5 sao are the loop
+ * `sections`, each with its hồ sơ; `count` and `dossiers` hold only the hồ sơ công nhận (3 and 4 sao).
+ */
+function recognitionDecisionSpecs(): VariableSpecs<DocumentTemplates["recognition_decision_draft"]> {
+  const base = meetingSpecs({ top: ["status"], row: ["productName", "entityName", "star"] });
+  return {
+    ...base,
+    count: opt("Số sản phẩm được công nhận (3 và 4 sao)"),
+    dossiers: { ...base.dossiers, label: "Danh sách hồ sơ được công nhận (3 và 4 sao), mỗi hồ sơ một dòng", required: false },
+    supplementary: opt(
+      "Quyết định công nhận bổ sung (không gắn Phiên họp, chỉ mục 4 sao): dùng {#supplementary}…{/supplementary} và {^supplementary}…{/supplementary}",
+    ),
+    sections: {
+      label:
+        "Các mục của quyết định, mỗi mục một bảng: công nhận 3 sao, công nhận 4 sao, đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao (mục này không công nhận); mục không có hồ sơ được bỏ",
+      required: true,
+      loop: {
+        index: opt("Số thứ tự của mục"),
+        heading: req("Tên mục"),
+        count: opt("Số sản phẩm của mục"),
+        dossiers: { ...base.dossiers, label: "Hồ sơ của mục, mỗi hồ sơ một dòng", required: true },
+      },
+    },
+  };
+}
+
 const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = {
   registration_form: {
     wardName: opt("Tên xã/phường nhận hồ sơ"),
@@ -162,12 +189,7 @@ const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = 
   },
   meeting_score_table: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   meeting_minutes_draft: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
-  recognition_decision_draft: {
-    ...meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
-    supplementary: opt(
-      "Quyết định công nhận bổ sung (không gắn Phiên họp, chỉ mục 4 sao): dùng {#supplementary}…{/supplementary} và {^supplementary}…{/supplementary}",
-    ),
-  },
+  recognition_decision_draft: recognitionDecisionSpecs(),
   certificate: {
     code: req("Số hiệu giấy chứng nhận, ví dụ 012/2026/GCN-OCOP"),
     productName: req("Tên sản phẩm"),
@@ -450,7 +472,21 @@ export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] }
   },
   meeting_score_table: sampleMeeting,
   meeting_minutes_draft: sampleMeeting,
-  recognition_decision_draft: { ...sampleMeeting, count: "2", supplementary: false },
+  recognition_decision_draft: {
+    ...sampleMeeting,
+    count: "1",
+    dossiers: [sampleMeeting.dossiers[0]!],
+    supplementary: false,
+    sections: [
+      { index: "1", heading: "Sản phẩm được công nhận đạt 4 sao", count: "1", dossiers: [sampleMeeting.dossiers[0]!] },
+      {
+        index: "2",
+        heading: "Sản phẩm đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao",
+        count: "1",
+        dossiers: [{ ...sampleMeeting.dossiers[1]!, index: "1" }],
+      },
+    ],
+  },
   certificate: {
     code: "012/2026/GCN-OCOP",
     productName: sampleEntity.productName,

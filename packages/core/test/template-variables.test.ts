@@ -128,6 +128,17 @@ describe("Mẫu văn bản: kiểm biến của mẫu tải lên (#82 story 74)"
     expect(checkTemplateTags("registration_form", [...registration, "typeName"])).toEqual({ code: "template_unknown_variable", variables: ["typeName"] });
   });
 
+  it("requires the dự thảo quyết định to list its hồ sơ by mục, so the mục 5 sao is never among those công nhận (#79)", () => {
+    const flat: TemplateTag[] = ["status", { name: "dossiers", children: ["productName", "entityName", "star"] }];
+    expect(checkTemplateTags("recognition_decision_draft", flat)).toEqual({ code: "template_missing_variable", variables: ["sections"] });
+    const bySection: TemplateTag[] = [
+      "status",
+      "count",
+      { name: "sections", children: ["index", "heading", "count", { name: "dossiers", children: ["index", "productName", "entityName", "star"] }] },
+    ];
+    expect(checkTemplateTags("recognition_decision_draft", bySection)).toBeNull();
+  });
+
   it("refuses a loop whose required biến con is missing", () => {
     const tags: TemplateTag[] = [
       "meetingTitle",
