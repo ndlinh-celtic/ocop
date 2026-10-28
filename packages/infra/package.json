@@ -26,6 +26,7 @@
     "@react-email/render": "^2.1.1",
     "docxtemplater": "^3.71.1",
     "drizzle-orm": "^0.45.4",
+    "exceljs": "^4.4.0",
     "file-type": "^22.2.0",
     "nodemailer": "^8",
     "otplib": "^13.5.0",

@@ -46,6 +46,7 @@ export {
 export { renderDocument, type RenderedDocument, type TemplateKindView, type TemplateVersionView } from "./documents/templates";
 export type { TemplateVersion, TemplateVersionRepo } from "./documents/template-version-model";
 export { PDF_TYPE, PdfConversionError, type PdfConverter } from "./documents/pdf";
+export { XLSX_TYPE, type SpreadsheetCell, type SpreadsheetColumn, type SpreadsheetSheet, type SpreadsheetWriter } from "./documents/spreadsheet";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
@@ -219,6 +220,7 @@ export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";
 export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
+export type { ExportedFile } from "./dossiers/export";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
 export type { ChecklistItemView, ChecklistResultInput, ChecklistSuggestion, DossierChecklist } from "./dossiers/checklist";

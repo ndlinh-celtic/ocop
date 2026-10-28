@@ -111,6 +111,8 @@ const ROLE_ACTIONS = {
   "results.general_comment.write": ["council_chair", "council_secretary"],
   // L16 HD-11 (#83, story 21): ghi nhận and read the Quyết định công nhận of a Phiên họp, the Cán bộ Sở alone.
   "results.decision.record": ["province_officer"],
+  // L22 DC-05 (#90, spec #79 stories 80 to 84): Xuất Excel danh sách hồ sơ; which hồ sơ is the exporter's DataScope.
+  "dossier.export": ["ward_officer", "province_officer", "council_chair", "council_secretary"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

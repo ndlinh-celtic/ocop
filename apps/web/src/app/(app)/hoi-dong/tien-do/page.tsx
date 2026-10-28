@@ -1,6 +1,7 @@
 import { Flag, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
+import { ExportExcelLink } from "@/components/dossiers/export-excel-link";
 import { EmptyState } from "@/components/empty-state";
 import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
@@ -27,9 +28,13 @@ export default async function GradingProgressPage() {
   const graders = rows.reduce((n, r) => n + r.graders, 0);
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Tiến độ chấm</h1>
-        <p className="text-sm text-text-2">Ai đã xác nhận phiếu, ai chưa, theo từng hồ sơ. Điểm của thành viên không hiện ở đây.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Tiến độ chấm</h1>
+          <p className="text-sm text-text-2">Ai đã xác nhận phiếu, ai chưa, theo từng hồ sơ. Điểm của thành viên không hiện ở đây.</p>
+        </div>
+        {/* #90 (story 82): every hồ sơ of the Hội đồng, chốt or not, with the điểm tổng hợp it may see. */}
+        <ExportExcelLink />
       </div>
       {rows.length === 0 ? (
         <EmptyState icon={ListChecks} title="Chưa có hồ sơ đang chấm">
