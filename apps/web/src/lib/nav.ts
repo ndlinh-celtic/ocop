@@ -114,6 +114,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/quan-tri/bo-tieu-chi", label: "Bộ tiêu chí", icon: ListTree, ready: true },
     { href: "/quan-tri/danh-muc", label: "Danh mục", icon: Library, ready: false },
     { href: "/quan-tri/nhac-han", label: "Mốc nhắc hạn", icon: BellRing, ready: true },
+    { href: "/quan-tri/mau-van-ban", label: "Mẫu văn bản", icon: FileText, ready: true },
     { href: "/quan-tri/nhat-ky", label: "Nhật ký", icon: ScrollText, ready: true },
     { href: "/quan-tri/thu-tai-tep", label: "Thử tải tệp", icon: Upload, ready: true },
     ...COMMON,
