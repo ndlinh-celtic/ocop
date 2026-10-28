@@ -122,7 +122,7 @@ export default async function FiveStarPage({ searchParams }: { searchParams: Pro
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <span className="text-text-2">{r.returnFile.fileName}</span>
                         {r.returnFile.status === "clean" ? (
-                          <DownloadButton fileId={`${r.dossierId}:${r.returnFile.id}`} download={downloadMinistryDocumentAction} label="Tải" />
+                          <DownloadButton fileId={r.returnFile.id} download={downloadMinistryDocumentAction.bind(null, r.dossierId)} label="Tải" />
                         ) : r.returnFile.status === "blocked" ? (
                           <span className="text-danger">Tệp bị chặn</span>
                         ) : (

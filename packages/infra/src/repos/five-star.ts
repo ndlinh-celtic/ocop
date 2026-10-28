@@ -2,6 +2,7 @@ import type { FiveStarRepo } from "@ocop/core";
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { aggregateResult, dossier, fiveStarClosure, fiveStarDispatch } from "../db/schema";
+import { currentResultOf } from "./meetings";
 
 /** Đề xuất 5 sao (#87): the list reads the kết quả chốt hiện hành as stored; the DB keeps the records append-only. */
 export function fiveStarRepo(db: Db): FiveStarRepo {
@@ -15,7 +16,7 @@ export function fiveStarRepo(db: Db): FiveStarRepo {
       return db
         .select({ dossierId: dossier.id, star: aggregateResult.star, total: aggregateResult.total })
         .from(dossier)
-        .innerJoin(aggregateResult, and(eq(aggregateResult.dossierId, dossier.id), isNull(aggregateResult.supersededAt)))
+        .innerJoin(aggregateResult, currentResultOf(dossier.id))
         .where(and(isNull(dossier.deletedAt), filter.awaiting === undefined ? or(published5, sent) : sent));
     },
     async insertDispatch(d) {

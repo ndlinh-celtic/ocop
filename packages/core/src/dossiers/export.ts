@@ -2,7 +2,7 @@ import { auditEntry } from "../audit/audit";
 import { XLSX_TYPE, type SpreadsheetCell, type SpreadsheetColumn } from "../documents/spreadsheet";
 import { authorize } from "../identity/policy";
 import type { Role } from "../identity/roles";
-import { vnDateOf } from "../rounds/model";
+import { vnDateOf, vnTimeOf } from "../rounds/model";
 import { scoresVisibility } from "../scoring/read";
 import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -90,6 +90,5 @@ export function exportDossiers(deps: CoreDeps) {
 
 /** YYYYMMDD-HHmm in giờ Việt Nam. */
 export function stamp(at: Date): string {
-  const time = new Date(at.getTime() + 7 * 3_600_000).toISOString().slice(11, 16).replace(":", "");
-  return `${vnDateOf(at).replaceAll("-", "")}-${time}`;
+  return `${vnDateOf(at).replaceAll("-", "")}-${vnTimeOf(at).replace(":", "")}`;
 }

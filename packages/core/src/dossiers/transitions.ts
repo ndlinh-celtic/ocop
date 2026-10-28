@@ -580,6 +580,8 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     timeline: true,
     guard: (d) => unpublished(d),
   },
+  // Same state, yet not `checkOnly` (CODING_STANDARDS "Version hồ sơ"): a thư đính chính changes what the hồ sơ tells
+  // its Chủ thể, so it goes through transition() for the outbox event that emails the notice and for the timeline row.
   {
     action: "dossier.result_letter.correct",
     from: "not_passed",

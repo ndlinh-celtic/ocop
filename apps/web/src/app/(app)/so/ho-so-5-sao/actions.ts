@@ -84,12 +84,15 @@ export async function closeAction(dossierId: string, input: z.infer<typeof close
   return done(dossierId);
 }
 
-/** A short-lived link to the Bộ's văn bản of a hồ sơ; the DownloadButton passes `<dossierId>:<fileId>`. */
-export async function downloadMinistryDocumentAction(id: string): Promise<{ url?: string; error?: string }> {
+const ministryDocumentInput = z.object({ dossierId: z.string().min(1), fileId: z.string().min(1) });
+
+/** A short-lived link to the Bộ's văn bản of a hồ sơ; the page binds the hồ sơ, the DownloadButton passes the file. */
+export async function downloadMinistryDocumentAction(dossierId: string, fileId: string): Promise<{ url?: string; error?: string }> {
   const actor = await requireActor();
-  const [dossierId = "", fileId = ""] = id.split(":");
+  const parsed = ministryDocumentInput.safeParse({ dossierId, fileId });
+  if (!parsed.success) return { error: "Không tìm thấy văn bản của Bộ" };
   try {
-    const { url } = await app().core.results.downloadMinistryDocument(actor, { dossierId, fileId });
+    const { url } = await app().core.results.downloadMinistryDocument(actor, parsed.data);
     return { url };
   } catch (err) {
     return { error: domainMessage(err) };
