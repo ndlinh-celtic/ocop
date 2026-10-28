@@ -1,3 +1,4 @@
+import type { PdfConverter } from "../documents/pdf";
 import type { DocumentRenderer } from "../documents/renderer";
 import type { FileStore } from "../files/file-store";
 import type { FileInspector } from "../files/inspection";
@@ -66,4 +67,6 @@ export interface CoreDeps {
   settings: CoreSettings;
   /** Phiếu chấm and hồ sơ of a Đợt đánh giá, as the rounds module sees them (#27). */
   roundActivity: RoundActivity;
+  /** DOCX → PDF for giấy chứng nhận, thư kết quả and mục lục gói 5 sao (#81). */
+  pdf: PdfConverter;
 }

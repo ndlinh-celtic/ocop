@@ -9,6 +9,7 @@ import {
   type IdGen,
   type Mailer,
   type PasswordHasher,
+  type PdfConverter,
   type RoundActivity,
 } from "@ocop/core";
 import type { Pool } from "pg";
@@ -19,6 +20,7 @@ import { otplibTotp } from "./adapters/totp";
 import type { Config } from "./config";
 import { PgUnitOfWork } from "./db/uow";
 import { docxRenderer } from "./documents/docx";
+import { gotenbergPdfConverter } from "./documents/gotenberg";
 import { clamdScanner, type VirusScanner } from "./files/clamd";
 import { createFileInspector } from "./files/inspector";
 import { createS3FileStore } from "./files/s3";
@@ -36,6 +38,7 @@ export interface AppOverrides {
   /** Tests stand in for phiếu chấm and hồ sơ; the placeholder answers until steps 3-4 build them. */
   roundActivity?: RoundActivity;
   documents?: DocumentRenderer;
+  pdf?: PdfConverter;
 }
 
 export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "APP_BASE_URL" | "SMTP_URL" | "MAIL_FROM"> &
@@ -53,6 +56,8 @@ export type AppConfig = Pick<Config, "TOTP_REQUIRED" | "TOTP_ENCRYPTION_KEY" | "
       | "FILE_MAX_MB"
       | "CLAMD_HOST"
       | "CLAMD_PORT"
+      | "GOTENBERG_URL"
+      | "GOTENBERG_TIMEOUT_SECONDS"
     >
   > &
   Partial<
@@ -139,5 +144,11 @@ export function createApp(pool: Pool, config: AppConfig, overrides: AppOverrides
     documents: overrides.documents ?? docxRenderer(),
     settings,
     roundActivity: overrides.roundActivity ?? roundActivity,
+    pdf:
+      overrides.pdf ??
+      gotenbergPdfConverter({
+        url: config.GOTENBERG_URL ?? "http://gotenberg:3000",
+        timeoutMs: config.GOTENBERG_TIMEOUT_SECONDS ? config.GOTENBERG_TIMEOUT_SECONDS * 1000 : undefined,
+      }),
   });
 }
