@@ -91,6 +91,8 @@ export const DOSSIER_ACTIONS = [
   "dossier.five_star.mark_sent",
   "dossier.five_star.return_to_province",
   "dossier.five_star.close",
+  "dossier.result_letter.issue",
+  "dossier.result_letter.correct",
   "dossier.recognize_supplementary",
 ] as const;
 export type DossierAction = (typeof DOSSIER_ACTIONS)[number];
@@ -138,6 +140,7 @@ export const DOSSIER_EVENT_TYPES = [
   "dossier.five_star_sent",
   "dossier.five_star_returned",
   "dossier.five_star_closed",
+  "dossier.result_letter_corrected",
   "dossier.recognized_supplementary",
 ] as const;
 export type DossierEventType = (typeof DOSSIER_EVENT_TYPES)[number];
@@ -563,6 +566,27 @@ export const TRANSITIONS: readonly TransitionRule[] = [
     event: "dossier.five_star_closed",
     timeline: true,
     guard: (d) => (d.awaitingSupplementaryDecision ? alreadyReturned() : null),
+  },
+  // L16 HD-10 (#85, spec #79 stories 40, 41, 43): the Cán bộ Sở issues the Thư kết quả không đạt of a hồ sơ Đã chốt điểm
+  // dưới 3 sao, Công bố its kết quả as Không đạt; a thư đính chính is the same-state row after it. The Hạng sao lives on
+  // the kết quả chốt, not on the hồ sơ, so issueResultLetter checks it before taking the row (as recordMeetingDecision
+  // does). Both are rows of the Chủ thể's timeline.
+  {
+    action: "dossier.result_letter.issue",
+    from: "score_finalized",
+    to: "not_passed",
+    roles: ["province_officer"],
+    event: "dossier.result_published",
+    timeline: true,
+    guard: (d) => unpublished(d),
+  },
+  {
+    action: "dossier.result_letter.correct",
+    from: "not_passed",
+    to: "not_passed",
+    roles: ["province_officer"],
+    event: "dossier.result_letter_corrected",
+    timeline: true,
   },
   // L17 (#88, spec #79 story 57; ADR 0009): ghi nhận a Quyết định công nhận bổ sung runs this per hồ sơ it names: a hồ sơ
   // chuyển về công nhận cấp tỉnh becomes Công nhận 3/4 sao (Hạng công nhận 4) and its cờ chờ is cleared (the use case's

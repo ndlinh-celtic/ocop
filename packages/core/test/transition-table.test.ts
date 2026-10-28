@@ -132,3 +132,33 @@ describe("L17 Đề xuất 5 sao rows (#87, ADR 0009)", () => {
     }
   });
 });
+
+describe("L16 Thư kết quả không đạt rows (#85)", () => {
+  const rowsOf = (action: string) => TRANSITIONS.filter((r) => r.action === action);
+  const dossier = (resultPublishedAt: Date | null) => ({ resultPublishedAt }) as Dossier;
+
+  it("lets only the Cán bộ Sở issue the letter, Đã chốt điểm to Không đạt, Công bố once, on the timeline (stories 40, 41)", () => {
+    expect(rowsOf("dossier.result_letter.issue")).toEqual([
+      expect.objectContaining({ from: "score_finalized", to: "not_passed", roles: ["province_officer"], event: "dossier.result_published", timeline: true }),
+    ]);
+    const [issue] = rowsOf("dossier.result_letter.issue");
+    expect(issue?.guard?.(dossier(null), new Date())).toBeNull();
+    expect(issue?.guard?.(dossier(new Date("2026-10-27T03:00:00Z")), new Date())).toMatchObject({ code: "result_published" });
+  });
+
+  it("lets only the Cán bộ Sở issue a thư đính chính of a hồ sơ Không đạt, which stays Không đạt (story 43)", () => {
+    expect(rowsOf("dossier.result_letter.correct")).toEqual([
+      expect.objectContaining({
+        from: "not_passed",
+        to: "not_passed",
+        roles: ["province_officer"],
+        event: "dossier.result_letter_corrected",
+        timeline: true,
+      }),
+    ]);
+  });
+
+  it("has no Mở khóa sau chốt out of Không đạt (story 45)", () => {
+    expect(TRANSITIONS.filter((r) => r.from === "not_passed").map((r) => r.action)).toEqual(["dossier.result_letter.correct"]);
+  });
+});
