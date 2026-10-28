@@ -216,7 +216,7 @@ describe("L16 Thư kết quả không đạt (#85)", () => {
     );
     const mail = w.t.mailbox.to(d.a.email).filter((e) => e.text.includes(`/chu-the/ho-so/${d.dossierId}`) && e.subject.includes("kết quả"));
     expect(mail.map((e) => e.subject).sort()).toEqual(["Hồ sơ OCOP có Thư kết quả đánh giá", "Hồ sơ OCOP có Thư kết quả đính chính"]);
-    for (const e of mail) expect(e.text).not.toMatch(/45|Tiêu chí 3\.1/);
+    for (const e of mail) expect(e.text.replaceAll(`/chu-the/ho-so/${d.dossierId}`, "")).not.toMatch(/45|Tiêu chí 3\.1/);
   });
 
   it("writes the timeline, audit and outbox with the letter; a failed PDF conversion leaves nothing (story 40)", async () => {
