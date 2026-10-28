@@ -1,4 +1,5 @@
 import { auditEntry } from "../audit/audit";
+import { issueFileDownload } from "../files/download";
 import { lockDossier } from "../dossiers/edit";
 import type { DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -324,19 +325,8 @@ export function downloadDecision(deps: CoreDeps) {
     assertIdShape(input.decisionId, notFound);
     return deps.uow.run(async (tx) => {
       const decision = await tx.recognitionDecisions.findById(input.decisionId);
-      const file = decision && (await tx.files.findById(decision.fileId));
-      if (!decision || !file) throw notFound();
-      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
-      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
-          action: "file.download_issued",
-          targetType: "file",
-          targetId: file.id,
-          metadata: { decisionId: decision.id },
-        }),
-      );
-      return { url: get.url, expiresAt: get.expiresAt };
+      if (!decision) throw notFound();
+      return issueFileDownload(deps, tx, actor, decision.fileId, notFound, { decisionId: decision.id });
     });
   };
 }

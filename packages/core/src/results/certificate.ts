@@ -1,4 +1,5 @@
 import { auditEntry } from "../audit/audit";
+import { issueFileDownload } from "../files/download";
 import { PDF_TYPE } from "../documents/pdf";
 import type { CertificateData } from "../documents/renderer";
 import { storeGeneratedDocument } from "../documents/store";
@@ -206,7 +207,7 @@ async function viewOf(tx: Tx, scope: DataScope, cert: Certificate, decisions: Ma
 /** Story 34: the Giấy chứng nhận, newest year first then by số thứ tự, filtered by năm, trạng thái and quyết định. */
 export function listCertificates(deps: CoreDeps) {
   return async (actor: Actor, input: ListCertificatesInput = {}): Promise<CertificateView[]> => {
-    authorize(actor, "results.certificate.upload");
+    authorize(actor, "results.certificate.manage");
     const filter = filterOf(input);
     return deps.uow.run(async (tx) => {
       const scope = dataScopeOf(actor);
@@ -229,7 +230,7 @@ export interface UploadSignedCertificateInput {
 /** Stories 28, 29: the signed PDF of a giấy; Chờ ký → Đã ký. A re-upload needs a lý do; every earlier one is kept. */
 export function uploadSignedCertificate(deps: CoreDeps) {
   return async (actor: Actor, input: UploadSignedCertificateInput): Promise<{ n: number; state: CertificateState }> => {
-    authorize(actor, "results.certificate.upload");
+    authorize(actor, "results.certificate.manage");
     assertIdShape(input.certificateId, certificateNotFound);
     const reason = typeof input.reason === "string" ? input.reason.trim() : "";
     if (reason.length > MAX_REASON) throw new DomainError("field_too_long", "Lý do quá dài");
@@ -270,7 +271,7 @@ export function uploadSignedCertificate(deps: CoreDeps) {
 /** Story 27: a short-lived link to the bản nháp, or to the newest signed PDF, audited like any download. */
 export function downloadCertificate(deps: CoreDeps) {
   return async (actor: Actor, input: { certificateId: string; version: "draft" | "signed" }): Promise<{ url: string; expiresAt: Date }> => {
-    authorize(actor, "results.certificate.upload");
+    authorize(actor, "results.certificate.manage");
     assertIdShape(input.certificateId, certificateNotFound);
     return deps.uow.run(async (tx) => {
       const cert = await tx.certificates.findById(input.certificateId);
@@ -281,19 +282,7 @@ export function downloadCertificate(deps: CoreDeps) {
           ? new DomainError("certificate_draft_pending", "Bản nháp giấy chứng nhận đang được tạo")
           : new DomainError("not_found", "Giấy chứng nhận chưa có bản đã ký");
       }
-      const file = await tx.files.findById(fileId);
-      if (!file) throw certificateNotFound();
-      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
-      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
-          action: "file.download_issued",
-          targetType: "file",
-          targetId: file.id,
-          metadata: { certificateId: cert.id, version: input.version },
-        }),
-      );
-      return { url: get.url, expiresAt: get.expiresAt };
+      return issueFileDownload(deps, tx, actor, fileId, certificateNotFound, { certificateId: cert.id, version: input.version });
     });
   };
 }
@@ -310,7 +299,7 @@ async function readAll(deps: CoreDeps, storageKey: string): Promise<Uint8Array> 
  */
 export function certificateDrafts(deps: CoreDeps) {
   return async (actor: Actor, input: { decisionId: string }): Promise<{ fileName: string; files: { name: string; bytes: Uint8Array }[] }> => {
-    authorize(actor, "results.certificate.upload");
+    authorize(actor, "results.certificate.manage");
     assertIdShape(input.decisionId, decisionNotFound);
     return deps.uow.run(async (tx) => {
       const decision = await tx.recognitionDecisions.findById(input.decisionId);

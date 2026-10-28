@@ -1,4 +1,5 @@
 import { auditEntry } from "../audit/audit";
+import { issueFileDownload } from "../files/download";
 import { assembleSet } from "../criteria/detail";
 import { criteriaOf } from "../criteria/model";
 import { PDF_TYPE } from "../documents/pdf";
@@ -339,8 +340,7 @@ export function issueResultLetter(deps: CoreDeps) {
  */
 export function downloadResultLetter(deps: CoreDeps) {
   return async (actor: Actor, input: { dossierId: string; letterId?: string }): Promise<{ url: string; expiresAt: Date }> => {
-    authorize(actor, "dossier.read");
-    if (actor.activeRole !== "entity_owner" && actor.activeRole !== "province_officer") throw forbidden();
+    authorize(actor, "results.result_letter.download");
     const notFound = () => new DomainError("not_found", "Không tìm thấy Thư kết quả");
     if (input.letterId !== undefined) assertIdShape(input.letterId, notFound);
     return deps.uow.run(async (tx) => {
@@ -348,19 +348,9 @@ export function downloadResultLetter(deps: CoreDeps) {
       const letters = await tx.resultLetters.list(d.id);
       const newest = letters.at(-1);
       const letter = input.letterId === undefined ? newest : letters.find((l) => l.id === input.letterId);
-      if (!letter || (actor.activeRole === "entity_owner" && letter !== newest)) throw notFound();
-      const file = await tx.files.findById(letter.fileId);
-      if (!file) throw notFound();
-      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
-          action: "file.download_issued",
-          targetType: "file",
-          targetId: file.id,
-          metadata: { dossierId: d.id, letterId: letter.id, n: letter.n },
-        }),
-      );
-      return { url: get.url, expiresAt: get.expiresAt };
+      // An earlier phiên bản only for who issues them; the Chủ thể sees the newest alone (story 44).
+      if (!letter || (letter !== newest && !can(actor, "results.result_letter.issue"))) throw notFound();
+      return issueFileDownload(deps, tx, actor, letter.fileId, notFound, { dossierId: d.id, letterId: letter.id, n: letter.n });
     });
   };
 }

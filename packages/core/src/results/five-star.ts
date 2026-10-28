@@ -1,4 +1,4 @@
-import { auditEntry } from "../audit/audit";
+import { issueFileDownload } from "../files/download";
 import { lockDossier } from "../dossiers/edit";
 import { dossierNotFound, type DossierState } from "../dossiers/model";
 import { transition } from "../dossiers/transition";
@@ -230,19 +230,7 @@ export function downloadMinistryDocument(deps: CoreDeps) {
       if (!d) throw dossierNotFound();
       const closure = await tx.fiveStar.closureOf(d.id);
       if (input.fileId !== d.ministryReturnFileId && input.fileId !== closure?.fileId) throw notFound();
-      const file = await tx.files.findById(input.fileId);
-      if (!file) throw notFound();
-      if (file.status !== "clean") throw new DomainError("file_not_ready", "Tệp chưa sẵn sàng để tải xuống");
-      const get = await deps.files.presignGet(file.storageKey, { fileName: file.fileName, expiresInSec: deps.settings.files.downloadUrlTtlSec });
-      await tx.audit.append(
-        auditEntry(actor, deps.ids.next(), deps.clock.now(), {
-          action: "file.download_issued",
-          targetType: "file",
-          targetId: file.id,
-          metadata: { dossierId: d.id },
-        }),
-      );
-      return { url: get.url, expiresAt: get.expiresAt };
+      return issueFileDownload(deps, tx, actor, input.fileId, notFound, { dossierId: d.id });
     });
   };
 }

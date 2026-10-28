@@ -116,9 +116,11 @@ const ROLE_ACTIONS = {
   // L17 SO-04 Đề xuất 5 sao (#87): the list, đánh dấu đã gửi, chuyển về, đóng hồ sơ and the Bộ's văn bản.
   "results.five_star.manage": ["province_officer"],
   // L16 HD-11 (#84, stories 26 to 30, 34): the Giấy chứng nhận, listed, downloaded and signed by the Cán bộ Sở alone.
-  "results.certificate.upload": ["province_officer"],
+  "results.certificate.manage": ["province_officer"],
   // L16 HD-10 (#85, spec #79 stories 36 to 43): soạn, xem trước and phát hành the Thư kết quả không đạt, the Cán bộ Sở alone.
   "results.result_letter.issue": ["province_officer"],
+  // Its PDF (story 66): the Chủ thể of the hồ sơ (the newest phiên bản only) and the Cán bộ Sở; which hồ sơ is the DataScope.
+  "results.result_letter.download": ["entity_owner", "province_officer"],
   // L17 SO-04 Gói đề nghị 5 sao (#89, stories 47 to 52): export, list and download the packages.
   "results.package.export": ["province_officer"],
   // L22 DC-05 (#91, spec #79 stories 83, 84): Xuất Excel danh sách sản phẩm đạt sao for the cổng thông tin tỉnh.

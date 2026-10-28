@@ -188,6 +188,15 @@ describe("L16 Thư kết quả không đạt (#85)", () => {
     expect(old.url).toContain(await keyOf(first.fileId));
   });
 
+  it("gives no link to a letter whose PDF is not clean (#79)", async () => {
+    const d = await twoStar();
+    const { fileId } = await issue(d.dossierId);
+    await w.db.admin.query("UPDATE platform.file SET status = 'blocked' WHERE id = $1", [fileId]);
+
+    await expect(w.t.app.results.downloadResultLetter(d.a, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "file_not_ready" });
+    await expect(w.t.app.results.downloadResultLetter(w.province, { dossierId: d.dossierId })).rejects.toMatchObject({ code: "file_not_ready" });
+  });
+
   it("keeps each letter as issued: the DB refuses UPDATE, DELETE and TRUNCATE on result_letter (story 43)", async () => {
     const d = await twoStar();
     const { letterId } = await issue(d.dossierId);
