@@ -25,6 +25,8 @@ const DAY_MS = 86_400_000;
 const MAX_DOSSIERS = 50;
 const LIST_LIMIT = 30;
 
+const notCandidate = () => new DomainError("not_five_star_candidate", "Chỉ xuất gói cho hồ sơ trong danh sách Đề xuất 5 sao");
+
 const packageNotFound = () => new DomainError("not_found", "Không tìm thấy gói đề nghị 5 sao");
 
 export interface RequestFiveStarPackageInput {
@@ -81,8 +83,6 @@ export function requestFiveStarPackage(deps: CoreDeps) {
     });
   };
 }
-
-const notCandidate = () => new DomainError("not_five_star_candidate", "Chỉ xuất gói cho hồ sơ trong danh sách Đề xuất 5 sao");
 
 export interface FiveStarPackageView {
   id: string;
@@ -176,6 +176,8 @@ export async function buildFiveStarPackage(c: ConsumerContext): Promise<void> {
     await emit(deps, tx, { type: "five_star_package.ready", payload: { packageId: p.id, requestedBy: p.requestedBy } });
   } catch (err) {
     const failure = err instanceof DomainError ? err.message : "Lỗi hệ thống khi tạo gói";
+    // The Sở reads `failure`; operators need the cause, in the worker's log.
+    console.error(JSON.stringify({ level: "error", msg: "five-star package failed", packageId: p.id, error: String(err) }));
     await tx.fiveStarPackages.markFailed(p.id, { failure, completedAt: deps.clock.now() });
     await emit(deps, tx, { type: "five_star_package.failed", payload: { packageId: p.id, requestedBy: p.requestedBy } });
   }

@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import PizZip from "pizzip";
 import { describe, expect, it } from "vitest";
+import { scoringWorld } from "../scoring/world";
 import { FIVE, FOUR, resultsWorld } from "./results-world";
 
 /*
@@ -238,6 +239,44 @@ describe("L17 Gói đề nghị 5 sao (#89): the record of an export", () => {
       code: "42501",
     });
     await expect(w.db.app.query("delete from results.five_star_package where id = $1", [packageId])).rejects.toMatchObject({ code: "42501" });
+  });
+});
+
+describe("L17 Gói đề nghị 5 sao (#89) in a đợt dựa trên Tổ tư vấn", () => {
+  const w = scoringWorld({ gradingMode: "advisory_based", minGraders: 1 });
+
+  it("adds the newest phiên bản Báo cáo Tổ tư vấn of the hồ sơ (story 48)", async () => {
+    const m0 = w.A.members[0]!;
+    // Every Tiêu chí at its highest Mức điểm: 100 điểm, 5 sao.
+    const d = await w.f.advisoryCopied(w.ward, w.province, w.setId, w.A.secretary, { members: [m0], advisors: [w.A.advisors[0]!] });
+    const own = await w.t.app.scoring.readDossierScores(m0, { dossierId: d.dossierId });
+    if (own.kind !== "own_sheet") throw new Error(own.kind);
+    await w.t.app.scoring.confirmScoreSheet(m0, { dossierId: d.dossierId, expectedVersion: own.sheet!.version });
+    const { meetingId } = await w.t.app.scoring.createMeeting(w.A.secretary, {
+      roundId: w.roundId,
+      title: "Phiên họp",
+      heldOn: "2026-10-25",
+      location: "Sở",
+      dossierIds: [d.dossierId],
+    });
+    const { version } = await w.t.app.dossiers.get(w.A.secretary, { dossierId: d.dossierId });
+    await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: version });
+    await w.t.app.scoring.closeMeeting(w.A.secretary, { meetingId });
+    const fileId = await w.f.uploadPdf(w.province, "recognition_decision", "QĐ công nhận.pdf");
+    await w.t.app.results.recordMeetingDecision(w.province, { meetingId, number: "9/QĐ-UBND", signedOn: "2026-10-19", fileId });
+
+    const { packageId } = await w.t.app.results.requestFiveStarPackage(w.province, { dossierIds: [d.dossierId] });
+    await w.t.drainJobs();
+    const { url } = await w.t.app.results.downloadFiveStarPackage(w.province, { packageId });
+    const zip = new PizZip(Buffer.from(await (await fetch(url)).arrayBuffer()));
+    const { code } = await w.t.app.dossiers.get(w.province, { dossierId: d.dossierId });
+    const report = zip.file(`${code} - Buoi da xanh An Phu/03 Bao cao To tu van/Bao cao To tu van phien ban 1.xlsx`);
+    expect(report).not.toBeNull();
+
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(report!.asNodeBuffer() as unknown as ArrayBuffer);
+    expect(book.getWorksheet("Diem de xuat")!.getRow(2).getCell(6).value).toBe("Căn cứ 1.1");
+    expect(book.getWorksheet("Nhan xet")!.getRow(2).getCell(2).value).toBe("Nhận xét tổng hợp");
   });
 });
 
