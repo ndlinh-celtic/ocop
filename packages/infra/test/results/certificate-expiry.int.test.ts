@@ -72,6 +72,21 @@ describe("L16 nhắc Giấy chứng nhận sắp hết hiệu lực (#86)", () =
     expect(await remindersOf(x.a, x.dossierId)).toMatchObject([{ title: expect.stringContaining("09/10/2029") }]);
   });
 
+  it("does not remind a giấy again when the ngày ký of its quyết định is corrected after the reminder", async () => {
+    const { decisionId, dossiers } = await recognized("2026-10-15"); // hết hiệu lực 15/10/2029
+    const [x] = dossiers;
+    await run("2029-04-15");
+    expect(await remindersOf(x.a, x.dossierId)).toHaveLength(1);
+
+    await w.t.app.results.amendDecision(w.province, { decisionId, number: "123/QĐ-UBND", signedOn: "2026-10-20", reason: "Sửa ngày ký" });
+    await w.t.drainJobs();
+    await run("2029-04-20");
+    await run("2029-06-01");
+    expect(await remindersOf(x.a, x.dossierId)).toHaveLength(1);
+    expect(await remindersOf(w.province, x.dossierId)).toHaveLength(1);
+    expect(emailsOf(x.a, x.dossierId)).toHaveLength(1);
+  });
+
   it("uses the number of months Quản trị sets, and a later change does not remind the same giấy again (story 35)", async () => {
     const admin = await w.f.admin();
     const settings = await w.t.app.system.certificateSettings(admin);

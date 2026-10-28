@@ -16,9 +16,9 @@ import { certificateExpiry } from "./certificate-model";
 /*
  * L16 nhắc Giấy chứng nhận sắp hết hiệu lực (#86, spec #79 stories 32, 33, 35). One mốc: `certificate.expiry_reminder_months`
  * (6 by default) calendar months before the ngày hết hiệu lực. From that day until the giấy expires, the daily job reminds
- * its Chủ thể and the Cán bộ Sở once, through the reminder ledger (kind certificate_expiry). The ledger's deadline is the
- * ngày hết hiệu lực, so a giấy whose ngày hết hiệu lực is recomputed (its quyết định's ngày ký corrected) is reminded on
- * the new date.
+ * its Chủ thể and the Cán bộ Sở once, through the reminder ledger (kind certificate_expiry, context the giấy). A giấy
+ * whose ngày hết hiệu lực is recomputed (its quyết định's ngày ký corrected) before its reminder is reminded by the new
+ * date; once reminded it is never reminded again, even if the date moves later.
  */
 
 const DAY_MS = 86_400_000;

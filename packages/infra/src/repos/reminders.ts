@@ -28,7 +28,7 @@ export function reminderRepo(db: Db): ReminderRepo {
       return rows.flatMap((r) => (r.wardId ? [{ wardId: r.wardId, count: r.count }] : []));
     },
     async unremindedCertificates(today) {
-      // The deadline is expiryDeadline(expires_on) of core: midnight giờ Việt Nam of the ngày hết hiệu lực.
+      // One reminder per giấy, whatever its ngày hết hiệu lực became since (#79 review S1).
       return db
         .select({ certificateId: certificate.id, dossierId: certificate.dossierId, entityId: dossier.entityId, expiresOn: certificate.expiresOn })
         .from(certificate)
@@ -44,7 +44,6 @@ export function reminderRepo(db: Db): ReminderRepo {
                   and(
                     eq(reminderSent.kind, "certificate_expiry"),
                     eq(reminderSent.contextId, certificate.id),
-                    eq(reminderSent.deadline, sql`(${certificate.expiresOn}::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')`),
                   ),
                 ),
             ),

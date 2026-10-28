@@ -39,8 +39,8 @@ export interface ReminderRepo {
   /** Per xã, how many hồ sơ of the đợt are still Đã nộp xã or Yêu cầu bổ sung (not gửi tỉnh). */
   unforwardedByWard(roundId: string): Promise<{ wardId: string; count: number }[]>;
   /**
-   * Giấy chứng nhận not yet expired on `today` (YYYY-MM-DD, giờ Việt Nam) and not yet reminded for their current ngày
-   * hết hiệu lực, i.e. with no certificate_expiry row whose deadline is `expiryDeadline(expiresOn)`.
+   * Giấy chứng nhận not yet expired on `today` (YYYY-MM-DD, giờ Việt Nam) and never reminded, i.e. with no
+   * certificate_expiry row for the giấy, whatever its deadline (a giấy is reminded once, spec #79 story 32).
    */
   unremindedCertificates(today: string): Promise<{ certificateId: string; dossierId: string; entityId: string; expiresOn: string }[]>;
   /** Records a reminder; false, adding nothing, when it is already recorded. */
