@@ -50,6 +50,7 @@ describe("L16 the Chủ thể's view of its kết quả (#83)", () => {
       recognizedStar: 4,
       standing: "Công nhận 4 sao",
       generalComment: "Cần hoàn thiện bao bì.",
+      letter: null,
     });
     const text = JSON.stringify(view);
     for (const m of [...w.A.members, ...w.A.advisors]) expect(text).not.toContain(m.fullName);

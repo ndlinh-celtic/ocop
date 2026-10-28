@@ -40,6 +40,9 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.self_score": "Tự chấm thử",
   "dossier.explain": "Viết giải trình",
   "dossier.supplement.respond": "Trả lời yêu cầu bổ sung",
+  // L16 HD-10 (#85): Công bố kết quả không đạt by the Thư kết quả, then each thư đính chính.
+  "dossier.result_letter.issue": "Công bố kết quả: Sở phát hành Thư kết quả không đạt",
+  "dossier.result_letter.correct": "Sở phát hành thư đính chính Thư kết quả",
 };
 
 const ON_BEHALF = "_on_behalf";

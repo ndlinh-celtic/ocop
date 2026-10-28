@@ -15,7 +15,7 @@ import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/cor
 import type { DocumentTemplate } from "@ocop/core";
 import type { DecisionKind, DecisionSection } from "@ocop/core";
 import type { FiveStarClosureOutcome } from "@ocop/core";
-import type { CertificateState } from "@ocop/core";
+import type { CertificateState, LetterCriterion } from "@ocop/core";
 import type { FiveStarPackageState } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
@@ -839,6 +839,20 @@ export const certificateSignedFile = resultsSchema.table(
   },
   (t) => [primaryKey({ columns: [t.certificateId, t.n] })],
 );
+
+/** Thư kết quả không đạt (0049_result_letter.sql, #85): insert only; a thư đính chính is the next n. */
+export const resultLetter = resultsSchema.table("result_letter", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  n: integer("n").notNull(),
+  criteria: jsonb("criteria").$type<LetterCriterion[]>().notNull(),
+  advice: text("advice").notNull(),
+  reason: text("reason"),
+  fileId: uuid("file_id").notNull(),
+  templateVersionId: uuid("template_version_id"),
+  issuedBy: uuid("issued_by").notNull(),
+  issuedAt: ts("issued_at").notNull(),
+});
 
 /** Gói đề nghị 5 sao (0053_five_star_package.sql, #89): pending → ready | failed, once. */
 export const fiveStarPackage = resultsSchema.table("five_star_package", {

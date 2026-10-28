@@ -117,6 +117,8 @@ const ROLE_ACTIONS = {
   "results.five_star.manage": ["province_officer"],
   // L16 HD-11 (#84, stories 26 to 30, 34): the Giấy chứng nhận, listed, downloaded and signed by the Cán bộ Sở alone.
   "results.certificate.upload": ["province_officer"],
+  // L16 HD-10 (#85, spec #79 stories 36 to 43): soạn, xem trước and phát hành the Thư kết quả không đạt, the Cán bộ Sở alone.
+  "results.result_letter.issue": ["province_officer"],
   // L17 SO-04 Gói đề nghị 5 sao (#89, stories 47 to 52): export, list and download the packages.
   "results.package.export": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;

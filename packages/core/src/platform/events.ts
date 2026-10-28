@@ -83,7 +83,9 @@ export type DomainEventBody =
         /** dossier.result_published only. */
         outcome?: ResultOutcome;
       };
-    };
+    }
+  // L16 HD-10 (#85): a Thư kết quả không đạt, `n` > 1 for a thư đính chính; the Chủ thể is told of each.
+  | { type: "result_letter.issued"; payload: { dossierId: string; entityId: string; letterId: string; n: number } };
 
 export type EventType = DomainEventBody["type"];
 
