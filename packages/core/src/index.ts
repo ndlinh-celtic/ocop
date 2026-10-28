@@ -31,6 +31,7 @@ export {
   type MeetingDocumentData,
   type MeetingDocumentRow,
 } from "./documents/renderer";
+export { PDF_TYPE, PdfConversionError, type PdfConverter } from "./documents/pdf";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
