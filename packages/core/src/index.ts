@@ -29,6 +29,7 @@ export {
   type SelfAssessmentReportData,
   type WardReportData,
   type MeetingDocumentData,
+  type ResultLetterData,
   type MeetingDocumentRow,
   type TemplateInspection,
   type TemplateTag,
@@ -295,7 +296,7 @@ export {
   type VisibilityFacts,
 } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
-export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView, PublishedResultView } from "./scoring/read";
+export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView, PublishedLetter, PublishedResultView } from "./scoring/read";
 export { FIVE_STAR_STANDING } from "./scoring/read";
 export {
   MEETING_STATES,
@@ -339,3 +340,13 @@ export {
   type RecordMeetingDecisionInput,
 } from "./results/decision";
 export type { ResultOutcome } from "./platform/events";
+export { type LetterCriterion, type ResultLetter, type ResultLetterRepo } from "./results/result-letter-model";
+export {
+  LETTER_REASON_LABEL,
+  MAX_ADVICE,
+  MAX_CORRECTION_REASON,
+  type IssuedLetter,
+  type LetterView,
+  type ResultLetterDraftView,
+  type ResultLetterInput,
+} from "./results/result-letter";

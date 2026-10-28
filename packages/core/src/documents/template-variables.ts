@@ -38,6 +38,7 @@ export const TEMPLATE_LABEL: Record<DocumentTemplate, string> = {
   meeting_score_table: "Bảng tổng hợp điểm",
   meeting_minutes_draft: "Dự thảo biên bản họp Hội đồng",
   recognition_decision_draft: "Dự thảo quyết định công nhận",
+  result_letter: "Thư kết quả không đạt",
 };
 
 const req = (label: string) => ({ label, required: true });
@@ -159,6 +160,36 @@ const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = 
   meeting_score_table: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   meeting_minutes_draft: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   recognition_decision_draft: meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
+  result_letter: {
+    letterNumber: opt("Số thứ tự phiên bản thư: 1, hoặc 2 trở đi cho thư đính chính"),
+    correctionNote: opt("Ghi chú đính chính (thư nào được đính chính và lý do), để trống ở thư đầu tiên"),
+    dossierCode: req("Mã hồ sơ"),
+    entityName: req("Tên Chủ thể"),
+    address: opt("Địa chỉ Chủ thể"),
+    representativeName: opt("Họ tên người đại diện"),
+    productName: req("Tên sản phẩm"),
+    criteriaSetCode: opt("Mã Bộ tiêu chí"),
+    criteriaSetName: opt("Tên Bộ tiêu chí"),
+    roundName: opt("Tên đợt đánh giá"),
+    total: req("Điểm tổng hợp"),
+    parts: { label: "Điểm theo Phần, mỗi Phần một dòng", loop: { code: opt("Phần (A, B, C)"), total: opt("Điểm của Phần") } },
+    star: req("Hạng sao"),
+    generalComment: opt("Nhận xét chung của Hội đồng"),
+    criteria: {
+      label: "Tiêu chí dưới mức, mỗi Tiêu chí một dòng",
+      required: true,
+      loop: {
+        index: opt("Số thứ tự"),
+        code: req("Mã Tiêu chí"),
+        name: opt("Tên Tiêu chí"),
+        average: opt("Điểm trung bình"),
+        maxPoints: opt("Điểm tối đa"),
+        reason: opt("Lý do: Sao tối thiểu chưa đạt, điểm dưới tỷ lệ, hoặc Sở bổ sung"),
+      },
+    },
+    advice: req("Lời khuyên cải thiện của Sở"),
+    issuedOn: opt("Ngày phát hành thư"),
+  },
 };
 
 /**
@@ -347,4 +378,30 @@ export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] }
   meeting_score_table: sampleMeeting,
   meeting_minutes_draft: sampleMeeting,
   recognition_decision_draft: { ...sampleMeeting, count: "2" },
+  result_letter: {
+    letterNumber: "2",
+    correctionNote: "Thư này đính chính Thư kết quả số 1. Lý do: bổ sung tiêu chí còn thiếu.",
+    dossierCode: "OCOP-2026-0003",
+    entityName: sampleEntity.entityName,
+    address: sampleEntity.address,
+    representativeName: sampleEntity.representativeName,
+    productName: sampleEntity.productName,
+    criteriaSetCode: sampleEntity.criteriaSetCode,
+    criteriaSetName: sampleEntity.criteriaSetName,
+    roundName: "Đợt đánh giá năm 2026",
+    total: "45,00",
+    parts: [
+      { code: "A", total: "20,00" },
+      { code: "B", total: "15,00" },
+      { code: "C", total: "10,00" },
+    ],
+    star: "2 sao (không đạt)",
+    generalComment: "Sản phẩm chưa có hồ sơ chứng nhận chất lượng.",
+    criteria: [
+      { index: "1", code: "1.1", name: "Nguồn nguyên liệu", average: "10,00", maxPoints: "40", reason: "Sao tối thiểu chưa đạt" },
+      { index: "2", code: "3.1", name: "Chất lượng sản phẩm", average: "5,00", maxPoints: "35", reason: "Điểm trung bình dưới tỷ lệ" },
+    ],
+    advice: "Bổ sung giấy chứng nhận an toàn thực phẩm và hoàn thiện nhãn mác.",
+    issuedOn: "20/11/2026",
+  },
 };

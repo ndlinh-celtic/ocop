@@ -14,6 +14,7 @@ import type { AdvisoryReportSnapshot, EvidenceAssessment } from "@ocop/core";
 import type { AggregateResult, FinalizedSnapshot, MeetingState } from "@ocop/core";
 import type { DocumentTemplate } from "@ocop/core";
 import type { DecisionKind, DecisionSection } from "@ocop/core";
+import type { LetterCriterion } from "@ocop/core";
 import { bigint, boolean, date, integer, jsonb, numeric, pgSchema, primaryKey, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Mirrors the reviewed SQL in migrations/; the SQL is the source of truth.
@@ -777,3 +778,17 @@ export const recognitionDecisionDossier = resultsSchema.table(
   },
   (t) => [primaryKey({ columns: [t.decisionId, t.dossierId] })],
 );
+
+/** Thư kết quả không đạt (0049_result_letter.sql, #85): insert only; a thư đính chính is the next n. */
+export const resultLetter = resultsSchema.table("result_letter", {
+  id: uuid("id").primaryKey(),
+  dossierId: uuid("dossier_id").notNull(),
+  n: integer("n").notNull(),
+  criteria: jsonb("criteria").$type<LetterCriterion[]>().notNull(),
+  advice: text("advice").notNull(),
+  reason: text("reason"),
+  fileId: uuid("file_id").notNull(),
+  templateVersionId: uuid("template_version_id"),
+  issuedBy: uuid("issued_by").notNull(),
+  issuedAt: ts("issued_at").notNull(),
+});

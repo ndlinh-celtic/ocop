@@ -208,6 +208,18 @@ export interface PublishedResultView {
   /** How the app words the kết quả: "Công nhận 4 sao", "Đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao", "Không đạt". */
   standing: string;
   generalComment: string | null;
+  /** L16 CT-13 (#85, story 44): the newest phiên bản of the Thư kết quả không đạt, if any; the PDF downloads separately. */
+  letter: PublishedLetter | null;
+}
+
+export interface PublishedLetter {
+  id: string;
+  n: number;
+  issuedAt: Date;
+  criteria: { code: string; name: string; average: number; maxPoints: number }[];
+  advice: string;
+  /** Why this thư đính chính was issued; null for the first letter. */
+  reason: string | null;
 }
 
 export type DossierScores = { kind: "none" } | ConfirmedSheetsView | OwnSheetView | FullScoresView | AggregateOnlyView | PublishedResultView;
@@ -473,6 +485,21 @@ async function publishedResultView(tx: Tx, dossier: Dossier, result: AggregateRe
     recognizedStar,
     standing: outcome === "recognized" ? `Công nhận ${recognizedStar} sao` : outcome === "five_star_proposal" ? FIVE_STAR_STANDING : "Không đạt",
     generalComment: dossier.generalComment,
+    letter: await publishedLetter(tx, dossier.id),
+  };
+}
+
+/** Only what the letter itself prints: no lý do of the Tiêu chí dưới mức, no other phiên bản (story 44). */
+async function publishedLetter(tx: Tx, dossierId: string): Promise<PublishedLetter | null> {
+  const l = (await tx.resultLetters.list(dossierId)).at(-1);
+  if (!l) return null;
+  return {
+    id: l.id,
+    n: l.n,
+    issuedAt: l.issuedAt,
+    criteria: l.criteria.map((c) => ({ code: c.code, name: c.name, average: c.average, maxPoints: c.maxPoints })),
+    advice: l.advice,
+    reason: l.reason,
   };
 }
 

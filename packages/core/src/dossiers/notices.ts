@@ -78,6 +78,7 @@ export const NOTICE_EVENTS = [
   "dossier.advisory_return_requested",
   "dossier.unlocked",
   "dossier.result_published",
+  "result_letter.issued",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -466,6 +467,8 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
     // L16 CT-13 (#83, spec #79 story 63): Công bố kết quả, to the Chủ thể; what the kết quả is shows only in the app.
     case "dossier.result_published": {
       const outcome = event.payload.outcome;
+      // Không đạt is Công bố by the Thư kết quả không đạt: its result_letter.issued notice tells the Chủ thể, once (#85).
+      if (outcome === "not_passed") return [];
       const body =
         outcome === "recognized"
           ? `Hồ sơ ${dossier.code} đã được công nhận sản phẩm OCOP. Xem điểm, hạng và nhận xét của Hội đồng trong hồ sơ.`
@@ -480,6 +483,26 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
           body,
           emailSubject: "Hồ sơ OCOP đã có kết quả",
           emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng. Đăng nhập để xem kết quả.",
+          link: ownerLink,
+        },
+      ];
+    }
+    // L16 HD-10, CT-13 (#85, spec #79 stories 40, 44): the Thư kết quả không đạt and each thư đính chính, to the Chủ thể;
+    // the letter itself is read and downloaded in the app.
+    case "result_letter.issued": {
+      const correction = event.payload.n > 1;
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: correction ? "result_letter_corrected" : "result_letter_issued",
+          title: correction ? `Thư kết quả đính chính: ${product}` : `Hồ sơ đã có kết quả: ${product}`,
+          body: correction
+            ? `Sở phát hành thư đính chính Thư kết quả của hồ sơ ${dossier.code}. Xem và tải thư mới nhất trong hồ sơ.`
+            : `Hồ sơ ${dossier.code} chưa đạt hạng 3 sao. Xem và tải Thư kết quả, gồm các tiêu chí cần cải thiện, trong hồ sơ.`,
+          emailSubject: correction ? "Hồ sơ OCOP có Thư kết quả đính chính" : "Hồ sơ OCOP có Thư kết quả đánh giá",
+          emailLine: correction
+            ? "Sở Nông nghiệp và Môi trường vừa phát hành thư đính chính Thư kết quả của hồ sơ OCOP của anh/chị. Đăng nhập để xem."
+            : "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng và Thư kết quả của Sở. Đăng nhập để xem.",
           link: ownerLink,
         },
       ];

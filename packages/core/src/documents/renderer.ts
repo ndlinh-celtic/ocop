@@ -118,6 +118,33 @@ export interface MeetingDocumentData {
   generatedOn: string;
 }
 
+/** L16 HD-10 Thư kết quả không đạt (#85, spec #79 stories 36 to 43); values formatted for reading. */
+export interface ResultLetterData {
+  /** "1" for the letter, "2"… for a thư đính chính. */
+  letterNumber: string;
+  /** Empty for the first letter; for a thư đính chính, which letter it corrects and why. */
+  correctionNote: string;
+  dossierCode: string;
+  entityName: string;
+  address: string;
+  representativeName: string;
+  productName: string;
+  criteriaSetCode: string;
+  criteriaSetName: string;
+  roundName: string;
+  /** Điểm tổng hợp of the kết quả chốt. */
+  total: string;
+  /** Điểm theo Phần A, B, C. */
+  parts: { code: string; total: string }[];
+  /** "2 sao (không đạt)". */
+  star: string;
+  generalComment: string;
+  /** Tiêu chí dưới mức, as the Sở settled them. */
+  criteria: { index: string; code: string; name: string; average: string; maxPoints: string; reason: string }[];
+  advice: string;
+  issuedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
@@ -125,6 +152,7 @@ export interface DocumentTemplates {
   meeting_score_table: MeetingDocumentData;
   meeting_minutes_draft: MeetingDocumentData;
   recognition_decision_draft: MeetingDocumentData;
+  result_letter: ResultLetterData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;

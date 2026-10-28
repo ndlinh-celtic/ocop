@@ -15,24 +15,25 @@ export async function storeGeneratedDocument(
   deps: CoreDeps,
   tx: Tx,
   actor: UserActor,
-  input: { fileName: string; bytes: Uint8Array; metadata: Record<string, unknown> },
+  input: { fileName: string; bytes: Uint8Array; metadata: Record<string, unknown>; contentType?: string },
 ): Promise<string> {
+  const contentType = input.contentType ?? DOCX_TYPE;
   const id = deps.ids.next();
   const storageKey = `files/${id}`;
   const now = deps.clock.now();
   tx.onRollback(() => deps.files.delete(storageKey));
-  await deps.files.put(storageKey, input.bytes, DOCX_TYPE);
+  await deps.files.put(storageKey, input.bytes, contentType);
   await tx.files.insert({
     id,
     ownerUserId: actor.userId,
     purpose: "generated_document",
     storageKey,
     fileName: input.fileName,
-    declaredType: DOCX_TYPE,
+    declaredType: contentType,
     size: input.bytes.byteLength,
     multipartUploadId: null,
     status: "clean",
-    detectedType: DOCX_TYPE,
+    detectedType: contentType,
     sha256: createHash("sha256").update(input.bytes).digest("hex"),
     blockReason: null,
     createdAt: now,

@@ -27,9 +27,22 @@ function shapeOfData(data: object): Shape {
 
 describe("Mẫu văn bản: danh sách biến (#82 story 72)", () => {
   it("covers the six văn bản sinh từ mẫu of steps 3 and 4", () => {
-    expect([...TEMPLATE_KINDS].sort()).toEqual(
-      ["meeting_minutes_draft", "meeting_score_table", "recognition_decision_draft", "registration_form", "self_assessment_report", "ward_report"].sort(),
+    expect(TEMPLATE_KINDS).toEqual(
+      expect.arrayContaining([
+        "meeting_minutes_draft",
+        "meeting_score_table",
+        "recognition_decision_draft",
+        "registration_form",
+        "self_assessment_report",
+        "ward_report",
+      ]),
     );
+  });
+
+  it("covers the Thư kết quả không đạt (#85), which must list the Tiêu chí dưới mức and the lời khuyên", () => {
+    expect(TEMPLATE_KINDS).toContain("result_letter");
+    const required = TEMPLATE_VARIABLES.result_letter.filter((v) => v.required).map((v) => v.name);
+    expect(required).toEqual(expect.arrayContaining(["dossierCode", "productName", "total", "star", "criteria", "advice"]));
   });
 
   // TEMPLATE_SAMPLES is typed DocumentTemplates[K], so its fields are exactly the type's: comparing the two shapes

@@ -32,6 +32,7 @@ import { recordStartup } from "./system/startup";
 import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
 import { editGeneralComment } from "./results/general-comment";
 import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
+import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -294,6 +295,11 @@ export function createCore(deps: CoreDeps) {
       meetingsForDecision: meetingsForDecision(deps),
       meetingDecision: meetingDecision(deps),
       downloadDecision: downloadDecision(deps),
+      // L16 HD-10, CT-13 Thư kết quả không đạt (#85).
+      resultLetterDraft: resultLetterDraft(deps),
+      previewResultLetter: previewResultLetter(deps),
+      issueResultLetter: issueResultLetter(deps),
+      downloadResultLetter: downloadResultLetter(deps),
     },
     documents: {
       listTemplates: listTemplates(deps),
