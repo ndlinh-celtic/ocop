@@ -22,6 +22,7 @@ const UPLOAD_ACTION: Record<FilePurpose, Action> = {
   meeting_minutes: "scoring.meeting.minutes.upload",
   recognition_decision: "results.decision.record",
   ministry_document: "results.five_star.manage",
+  signed_certificate: "results.certificate.upload",
 };
 
 /** Purposes that accept fewer types than the deployment allows: a signed Báo cáo đánh giá cấp xã is a PDF (story 65). */
@@ -32,6 +33,7 @@ const PURPOSE_TYPES: Partial<Record<FilePurpose, readonly string[]>> = {
   meeting_minutes: ["application/pdf"],
   recognition_decision: ["application/pdf"],
   ministry_document: ["application/pdf"],
+  signed_certificate: ["application/pdf"],
 };
 
 export type UploadInstructions =

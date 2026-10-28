@@ -35,6 +35,7 @@ describe("Mẫu văn bản: danh sách biến (#82 story 72)", () => {
         "registration_form",
         "self_assessment_report",
         "ward_report",
+        "certificate",
         "five_star_proposal_letter",
         "five_star_package_index",
       ].sort(),

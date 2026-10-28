@@ -352,6 +352,24 @@ export {
   type FiveStarRepo,
 } from "./results/five-star-model";
 export type { CloseFiveStarInput, FiveStarListInput, FiveStarRow, MarkFiveStarSentInput, ReturnFiveStarInput } from "./results/five-star";
+export {
+  CERTIFICATE_STATES,
+  CERTIFICATE_STATE_LABEL,
+  DEFAULT_CERTIFICATE_CODE_SUFFIX,
+  DEFAULT_CERTIFICATE_EXPIRY_REMINDER_MONTHS,
+  DEFAULT_CERTIFICATE_VALIDITY_MONTHS,
+  certificateExpiry,
+  formatCertificateCode,
+  orderForNumbering,
+  type Certificate,
+  type CertificateFilter,
+  type CertificateRepo,
+  type CertificateSignedFile,
+  type CertificateState,
+} from "./results/certificate-model";
+export { type CertificateView, type ListCertificatesInput, type UploadSignedCertificateInput } from "./results/certificate";
+export { type AmendDecisionInput } from "./results/amend-decision";
+export { type CertificateSettings } from "./system/settings";
 export { FIVE_STAR_PACKAGE_STATES, type FiveStarPackage, type FiveStarPackageRepo, type FiveStarPackageState } from "./results/five-star-package-model";
 export { FIVE_STAR_PACKAGE_DAYS, type FiveStarPackageView, type RequestFiveStarPackageInput } from "./results/five-star-package";
 export { ZIP_TYPE, type ArchiveEntry, type ArchiveSource, type ZipWriter } from "./documents/archive";

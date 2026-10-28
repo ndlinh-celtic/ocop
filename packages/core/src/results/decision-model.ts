@@ -54,4 +54,8 @@ export interface RecognitionDecisionRepo {
   dossiers(decisionId: string): Promise<RecognitionDecisionDossier[]>;
   /** The decisions naming a hồ sơ, oldest first, with its mục in each. */
   ofDossier(dossierId: string): Promise<(RecognitionDecision & { section: DecisionSection })[]>;
+  /** SELECT … FOR UPDATE (#84). */
+  lock(id: string): Promise<RecognitionDecision | null>;
+  /** Story 17 (#84): corrects the số and ngày ký, the only columns the DB lets change. */
+  amend(id: string, fields: { number: string; signedOn: string }): Promise<void>;
 }

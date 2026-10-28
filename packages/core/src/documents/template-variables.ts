@@ -38,6 +38,7 @@ export const TEMPLATE_LABEL: Record<DocumentTemplate, string> = {
   meeting_score_table: "Bảng tổng hợp điểm",
   meeting_minutes_draft: "Dự thảo biên bản họp Hội đồng",
   recognition_decision_draft: "Dự thảo quyết định công nhận",
+  certificate: "Giấy chứng nhận sản phẩm OCOP",
   five_star_proposal_letter: "Dự thảo văn bản đề nghị đánh giá 5 sao",
   five_star_package_index: "Mục lục gói đề nghị 5 sao",
 };
@@ -161,6 +162,17 @@ const SPECS: { [K in DocumentTemplate]: VariableSpecs<DocumentTemplates[K]> } = 
   meeting_score_table: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   meeting_minutes_draft: meetingSpecs({ top: ["meetingTitle", "heldOn", "status", "dossiers"], row: ["code", "productName", "total", "star"] }),
   recognition_decision_draft: meetingSpecs({ top: ["status", "dossiers"], row: ["productName", "entityName", "star"] }),
+  certificate: {
+    code: req("Số hiệu giấy chứng nhận, ví dụ 012/2026/GCN-OCOP"),
+    productName: req("Tên sản phẩm"),
+    entityName: req("Tên Chủ thể"),
+    address: opt("Địa chỉ Chủ thể"),
+    star: req("Hạng công nhận, ví dụ 4 sao"),
+    issuedOn: req("Ngày cấp (ngày ký quyết định công nhận)"),
+    expiresOn: req("Ngày hết hiệu lực"),
+    decisionNumber: req("Số Quyết định công nhận"),
+    decisionSignedOn: opt("Ngày ký Quyết định công nhận"),
+  },
   five_star_proposal_letter: {
     count: opt("Số hồ sơ đề nghị"),
     dossiers: {
@@ -403,6 +415,17 @@ export const TEMPLATE_SAMPLES: { [K in DocumentTemplate]: DocumentTemplates[K] }
   meeting_score_table: sampleMeeting,
   meeting_minutes_draft: sampleMeeting,
   recognition_decision_draft: { ...sampleMeeting, count: "2" },
+  certificate: {
+    code: "012/2026/GCN-OCOP",
+    productName: sampleEntity.productName,
+    entityName: sampleEntity.entityName,
+    address: sampleEntity.address,
+    star: "4 sao",
+    issuedOn: "19/11/2026",
+    expiresOn: "19/11/2029",
+    decisionNumber: "123/QĐ-UBND",
+    decisionSignedOn: "19/11/2026",
+  },
   five_star_proposal_letter: { count: "1", dossiers: [sampleFiveStarRow], generatedOn: "20/11/2026" },
   five_star_package_index: {
     count: "1",

@@ -30,9 +30,12 @@ import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
 import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
+import { certificateSettings, setCertificateSettings } from "./system/settings";
 import { editGeneralComment } from "./results/general-comment";
 import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
 import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
+import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedCertificate } from "./results/certificate";
+import { amendDecision } from "./results/amend-decision";
 import { downloadFiveStarPackage, fiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
@@ -286,6 +289,9 @@ export function createCore(deps: CoreDeps) {
       // L16 Tiêu chí dưới mức (#80).
       underperformingRatio: underperformingRatio(deps),
       setUnderperformingRatio: setUnderperformingRatio(deps),
+      // L16 HD-11 Giấy chứng nhận (#84).
+      certificateSettings: certificateSettings(deps),
+      setCertificateSettings: setCertificateSettings(deps),
     },
     // Bước 5 Kết quả (spec #79).
     results: {
@@ -302,6 +308,12 @@ export function createCore(deps: CoreDeps) {
       returnFiveStarToProvince: returnFiveStarToProvince(deps),
       closeFiveStar: closeFiveStar(deps),
       downloadMinistryDocument: downloadMinistryDocument(deps),
+      // L16 HD-11 Giấy chứng nhận, sửa số hoặc ngày ký quyết định (#84).
+      amendDecision: amendDecision(deps),
+      listCertificates: listCertificates(deps),
+      uploadSignedCertificate: uploadSignedCertificate(deps),
+      downloadCertificate: downloadCertificate(deps),
+      certificateDrafts: certificateDrafts(deps),
       // L17 SO-04 Gói đề nghị 5 sao (#89).
       requestFiveStarPackage: requestFiveStarPackage(deps),
       fiveStarPackages: fiveStarPackages(deps),

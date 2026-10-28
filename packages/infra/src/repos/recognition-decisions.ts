@@ -40,5 +40,12 @@ export function recognitionDecisionRepo(db: Db): RecognitionDecisionRepo {
         .orderBy(asc(d.recordedAt), asc(d.id));
       return rows.map((r) => ({ ...r.decision, section: r.section }));
     },
+    async lock(id) {
+      const [row] = await db.select().from(d).where(eq(d.id, id)).for("update");
+      return row ?? null;
+    },
+    async amend(id, fields) {
+      await db.update(d).set({ number: fields.number, signedOn: fields.signedOn }).where(eq(d.id, id));
+    },
   };
 }

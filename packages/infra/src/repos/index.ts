@@ -20,6 +20,7 @@ import { aggregateResultRepo, meetingRepo } from "./meetings";
 import { templateVersionRepo } from "./template-versions";
 import { recognitionDecisionRepo } from "./recognition-decisions";
 import { fiveStarRepo } from "./five-star";
+import { certificateRepo } from "./certificates";
 import { fiveStarPackageRepo } from "./five-star-packages";
 
 export function buildRepos(db: Db): Repos {
@@ -54,6 +55,7 @@ export function buildRepos(db: Db): Repos {
     templateVersions: templateVersionRepo(db),
     recognitionDecisions: recognitionDecisionRepo(db),
     fiveStar: fiveStarRepo(db),
+    certificates: certificateRepo(db),
     fiveStarPackages: fiveStarPackageRepo(db),
   };
 }

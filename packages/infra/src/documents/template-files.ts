@@ -12,6 +12,7 @@ export const TEMPLATE_FILES: Record<DocumentTemplate, string> = {
   meeting_score_table: "bang-tong-hop-diem.docx",
   meeting_minutes_draft: "du-thao-bien-ban-hop.docx",
   recognition_decision_draft: "du-thao-quyet-dinh-cong-nhan.docx",
+  certificate: "giay-chung-nhan.docx",
   five_star_proposal_letter: "du-thao-van-ban-de-nghi-5-sao.docx",
   five_star_package_index: "muc-luc-goi-5-sao.docx",
 };

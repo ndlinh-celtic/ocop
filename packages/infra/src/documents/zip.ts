@@ -1,6 +1,7 @@
 import archiver from "archiver";
 import type { ArchiveSource, ZipWriter } from "@ocop/core";
 import { Readable } from "node:stream";
+import PizZip from "pizzip";
 
 /** Opens the stored object only when archiver reaches the entry, so one download runs at a time. */
 async function* opened(open: ArchiveSource): AsyncIterable<Uint8Array> {
@@ -20,4 +21,11 @@ export function archiverZipWriter(): ZipWriter {
       return archive;
     },
   };
+}
+
+/** A ZIP of a few small generated files, built in memory (bản nháp giấy chứng nhận of one quyết định, #84). */
+export function zipFiles(files: readonly { name: string; bytes: Uint8Array }[]): Uint8Array {
+  const zip = new PizZip();
+  for (const f of files) zip.file(f.name, f.bytes, { binary: true });
+  return zip.generate({ type: "uint8array", compression: "DEFLATE" });
 }
