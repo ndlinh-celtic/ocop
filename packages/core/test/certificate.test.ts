@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expiryReminderDay } from "../src/results/certificate-expiry";
-import { certificateExpiry, formatCertificateCode, orderForNumbering } from "../src/results/certificate-model";
+import { certificateExpiry, formatCertificateCode, orderForNumbering, validityMonthsOf } from "../src/results/certificate-model";
 
 /*
  * L16 HD-11 (#84, spec #79 stories 23, 24, 31, GLOSSARY "Số hiệu giấy chứng nhận"): the số hiệu of a Giấy chứng nhận,
@@ -68,5 +68,14 @@ describe("expiryReminderDay (#86)", () => {
   it("falls on the last day of a shorter month", () => {
     expect(expiryReminderDay("2029-08-31", 6)).toBe("2029-02-28");
     expect(expiryReminderDay("2028-08-31", 6)).toBe("2028-02-29");
+  });
+});
+
+describe("validityMonthsOf", () => {
+  it("gives back the months a giấy was issued for, also when the ngày hết hiệu lực was clamped to the end of a month", () => {
+    expect(validityMonthsOf("2026-10-19", "2029-10-19")).toBe(36);
+    expect(validityMonthsOf("2026-01-31", "2026-02-28")).toBe(1);
+    expect(validityMonthsOf("2028-02-29", "2031-02-28")).toBe(36);
+    expect(validityMonthsOf("2027-01-31", "2028-02-29")).toBe(13);
   });
 });

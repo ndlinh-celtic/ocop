@@ -7,16 +7,15 @@ import type { Actor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
-import { certificateSettingsIn } from "../system/settings";
 import { yearOf } from "./certificate";
-import { certificateExpiry } from "./certificate-model";
+import { certificateExpiry, validityMonthsOf } from "./certificate-model";
 import { numberOf, signedOnOf } from "./decision";
 
 /*
  * L16 HD-11 (#84, spec #79 stories 17, 18, 30): the Cán bộ Sở corrects the số or ngày ký of a recorded Quyết định công
- * nhận, with a lý do. Its Giấy chứng nhận keep their số hiệu; their ngày cấp and ngày hết hiệu lực follow the ngày ký,
- * and the bản nháp of those still Chờ ký is generated again. A ngày ký in another year is refused: the số thứ tự of the
- * giấy belong to the year they were numbered in.
+ * nhận, with a lý do. Its Giấy chứng nhận keep their số hiệu and thời hạn hiệu lực; their ngày cấp and ngày hết hiệu lực
+ * follow the ngày ký, and the bản nháp of those still Chờ ký is generated again. A ngày ký in another year is refused:
+ * the số thứ tự of the giấy belong to the year they were numbered in.
  */
 
 const MAX_REASON = 1000;
@@ -49,14 +48,14 @@ export function amendDecision(deps: CoreDeps) {
         throw new DomainError("decision_year_change", "Không sửa được ngày ký sang năm khác vì số hiệu giấy chứng nhận đã cấp theo năm của ngày ký");
       }
       await tx.recognitionDecisions.amend(before.id, { number, signedOn });
-      const { validityMonths } = await certificateSettingsIn(tx);
       const certificates = await tx.certificates.ofDecision(before.id);
       for (const cert of certificates) {
         const redraft = cert.state === "awaiting_signature";
         await tx.certificates.update({
           ...cert,
           issuedOn: signedOn,
-          expiresOn: certificateExpiry(signedOn, validityMonths),
+          // The giấy keeps the thời hạn it was issued with, not the current setting (#79 review S2).
+          expiresOn: certificateExpiry(signedOn, validityMonthsOf(cert.issuedOn, cert.expiresOn)),
           ...(redraft ? { draftFileId: null, templateVersionId: null } : {}),
         });
         if (!redraft) continue;

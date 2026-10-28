@@ -94,6 +94,16 @@ export function certificateExpiry(issuedOn: string, months: number): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/**
+ * The thời hạn hiệu lực (months) a giấy was issued for, read back from its ngày cấp and ngày hết hiệu lực. Exact, since
+ * `certificateExpiry` only clamps the day, never the month.
+ */
+export function validityMonthsOf(issuedOn: string, expiresOn: string): number {
+  const [iy, im] = issuedOn.split("-").map(Number) as [number, number];
+  const [ey, em] = expiresOn.split("-").map(Number) as [number, number];
+  return ey * 12 + em - (iy * 12 + im);
+}
+
 /** Story 24: the order the hồ sơ of one quyết định are numbered in: Hạng công nhận descending, then mã hồ sơ. */
 export function orderForNumbering<T extends { code: string; recognizedStar: number }>(rows: readonly T[]): T[] {
   return [...rows].sort((a, b) => b.recognizedStar - a.recognizedStar || a.code.localeCompare(b.code));
