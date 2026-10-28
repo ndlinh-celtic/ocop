@@ -234,6 +234,52 @@ _Avoid_: Cuộc họp (khi nói chung), kỳ họp
 Việc Quản trị mở lại điểm đã chốt của một hồ sơ theo văn bản yêu cầu của Hội đồng, có lý do; xử lý sự cố, không phải nghiệp vụ thường.
 _Avoid_: Sửa điểm, hủy chốt
 
+## Kết quả
+
+**Nhận xét chung**:
+Nhận xét của hội đồng về một hồ sơ sau khi chốt điểm, do Chủ tịch hoặc Thư ký viết; là phần nhận xét duy nhất Chủ thể được thấy.
+_Avoid_: Nhận xét công khai, nhận xét của hội đồng (khi lẫn với nhận xét trên Phiếu chấm)
+
+**Quyết định công nhận**:
+Quyết định của Chủ tịch UBND tỉnh về kết quả một Phiên họp, gồm ba mục: công nhận 3 sao, công nhận 4 sao, và danh sách đạt điểm đề nghị Trung ương đánh giá 5 sao (mục này chỉ phê duyệt kết quả, không công nhận). Ký ngoài hệ thống; Sở ghi nhận bản đã ký kèm số và ngày ký.
+_Avoid_: Quyết định phê duyệt, quyết định của hội đồng
+
+**Thư kết quả không đạt**:
+Văn bản Sở phát hành cho Chủ thể khi hồ sơ dưới 3 sao: điểm, hạng, Nhận xét chung, các Tiêu chí dưới mức, lời khuyên cải thiện và hướng dẫn nộp lại ở đợt sau. Không ký số; bất biến sau khi phát hành.
+_Avoid_: Thông báo không đạt, công văn trả lời
+
+**Tiêu chí dưới mức**:
+Tiêu chí của một hồ sơ có Sao tối thiểu không đạt, hoặc có điểm trung bình dưới một tỷ lệ của điểm tối đa (mặc định 50%); Sở điều chỉnh được danh sách trước khi phát hành Thư kết quả không đạt.
+_Avoid_: Tiêu chí yếu, tiêu chí cần cải thiện (khi nói về danh sách tính tự động)
+
+**Quyết định công nhận bổ sung**:
+Quyết định công nhận 4 sao cho các hồ sơ Bộ trả về sau khi tỉnh đề nghị 5 sao; không gắn với Phiên họp, Sở chọn các hồ sơ đưa vào.
+_Avoid_: Quyết định kế tiếp, quyết định điều chỉnh
+
+**Hạng công nhận**:
+Hạng sao ghi trên Giấy chứng nhận; bằng Hạng sao của kết quả chốt, trừ hồ sơ Bộ trả về được công nhận 4 sao. Hạng sao và kết quả chốt không đổi.
+_Avoid_: Hạng sao (khi nói về hạng ghi trên giấy), hạng chính thức
+
+**Công bố kết quả**:
+Thời điểm kết quả của hồ sơ thành chính thức với Chủ thể: khi Quyết định công nhận có tên hồ sơ được ghi nhận, hoặc khi Thư kết quả không đạt được phát hành.
+_Avoid_: Công khai kết quả, gửi kết quả
+
+**Giấy chứng nhận**:
+Giấy chứng nhận sản phẩm OCOP 3 hoặc 4 sao cấp cho một hồ sơ theo một Quyết định công nhận; có số hiệu, ngày cấp (ngày ký quyết định), Hạng công nhận và ngày hết hiệu lực. Chờ ký đến khi Sở tải bản đã ký lên thì Đã ký.
+_Avoid_: Chứng chỉ, GCN (trong giao diện)
+
+**Số hiệu giấy chứng nhận**:
+Mã dạng số thứ tự/năm/đuôi cấu hình (ví dụ `012/2026/GCN-OCOP`), số thứ tự đánh lại từ 1 mỗi năm theo năm của ngày ký quyết định; không trùng, không đổi sau khi cấp.
+_Avoid_: Số giấy, mã chứng nhận
+
+**Gói đề nghị 5 sao**:
+Tệp ZIP Sở xuất cho một hoặc nhiều hồ sơ đề xuất 5 sao, mỗi hồ sơ một thư mục văn bản và minh chứng, kèm dự thảo văn bản đề nghị của UBND tỉnh và mục lục; gửi Bộ ngoài hệ thống.
+_Avoid_: Gói hồ sơ 5 sao (khi lẫn với Phiên bản nộp), hồ sơ gửi Bộ
+
+**Mẫu văn bản**:
+Tệp Word dùng để sinh một loại văn bản (giấy chứng nhận, quyết định, biên bản, bảng tổng hợp, thư kết quả…). Mỗi loại có một mẫu mặc định của phần mềm; Quản trị tải mẫu mặc định về, hiệu chỉnh bố cục và câu chữ, rồi tải lên thành phiên bản mẫu mới. Văn bản đã sinh giữ nguyên mẫu lúc sinh.
+_Avoid_: Template, biểu mẫu (khi nói về hồ sơ Chủ thể nộp)
+
 ## Quan hệ
 
 - Một **Chủ thể** có đúng một **Người dùng** đại diện ở giai đoạn phát hành 1, liên kết qua một **Phân vai** Chủ thể.
@@ -271,7 +317,7 @@ _Avoid_: Sửa điểm, hủy chốt
 - Tổ tư vấn đề nghị Sở trả hồ sơ về xã, và Sở trả về được, cho đến trước lần sao chép đầu (Tổ tư vấn thẩm định hoặc Đã có báo cáo Tổ tư vấn); hồ sơ lên tỉnh lại giữ Phân công, nháp và các phiên bản Báo cáo Tổ tư vấn đã phát hành, nhưng phải Tiếp nhận tại tỉnh và Giao chấm lại; phát hành tiếp là phiên bản N+1 có lý do. Từ Thành viên xem xét trở đi hồ sơ không trả về xã được.
 - Phiếu chấm còn chưa xác nhận khi chốt điểm là **Vắng**.
 - Điểm tổng hợp là trung bình cộng tổng điểm các Phiếu chấm đã xác nhận, 2 chữ số thập phân, không loại điểm cao nhất hay thấp nhất; Vắng không vào mẫu số. Sao tối thiểu so bằng điểm trung bình của Tiêu chí đó. Cờ chênh lệch xét trên tổng điểm.
-- Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký thấy điểm từng Phiếu chấm ngay khi phiếu được xác nhận (phiếu nháp chỉ hiện trạng thái), còn điểm tổng hợp và Cờ chênh lệch chỉ từ Sẵn sàng chốt. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên.
+- Thành viên hội đồng thấy Phiếu chấm của người khác và điểm tổng hợp chỉ khi đã xác nhận phiếu của mình và hồ sơ Sẵn sàng chốt; Chủ tịch và Thư ký thấy điểm từng Phiếu chấm ngay khi phiếu được xác nhận (phiếu nháp chỉ hiện trạng thái), còn điểm tổng hợp và Cờ chênh lệch chỉ từ Sẵn sàng chốt. Tổ tư vấn thấy điểm tổng hợp sau khi chốt. Chủ thể, xã và Sở không bao giờ thấy Phiếu chấm của từng thành viên trên màn hình; Cán bộ Sở thấy điểm tổng hợp từ khi chốt điểm, và văn bản chính thức của hội đồng (biên bản đã ký, bảng điểm) đi vào Gói đề nghị 5 sao gửi Bộ.
 - **Hạng sao** tính từ điểm tổng hợp, hội đồng không sửa tay; muốn đổi hạng thì **Trả phiếu** để chấm lại trước khi chốt.
 - Sao chép lại từ một phiên bản Báo cáo Tổ tư vấn mới cập nhật từng Tiêu chí mà thành viên chưa sửa; Tiêu chí đã sửa được giữ và báo lại, Phiếu chấm đã xác nhận được giữ toàn bộ.
 - Chủ tịch hoặc Thư ký chốt điểm từng hồ sơ Sẵn sàng chốt, có **Xác thực lại**; Phiếu chấm chưa xác nhận lúc đó là **Vắng**.
@@ -279,3 +325,15 @@ _Avoid_: Sửa điểm, hủy chốt
 - Mỗi **Đợt đánh giá** được Cán bộ Sở gán một **Hội đồng** trước khi Tiếp nhận tại tỉnh; đổi được đến lần Giao chấm đầu tiên của đợt.
 - Chủ tịch và Thư ký thấy hồ sơ của các đợt gán cho Hội đồng mình từ khi Tiếp nhận tại tỉnh; Thành viên hội đồng và Thành viên Tổ tư vấn chỉ thấy hồ sơ mình có **Phân công** đã Giao chấm và chưa bị thay.
 - Ở chế độ dựa trên Tổ tư vấn, thành viên chỉ chấm được sau lần sao chép đầu tiên từ **Báo cáo Tổ tư vấn** đã phát hành; Tổ tư vấn phát hành phiên bản mới được đến khi chốt điểm.
+- Hồ sơ 3 hoặc 4 sao chuyển sang Công nhận 3/4 sao khi Sở ghi nhận **Quyết định công nhận** đã ký của Phiên họp đã chốt hồ sơ đó; hồ sơ 5 sao trong cùng quyết định ở lại Đã chốt điểm, vào danh sách đề xuất 5 sao.
+- Hồ sơ dưới 3 sao chuyển sang Không đạt khi Sở phát hành **Thư kết quả không đạt**, không cần Quyết định công nhận.
+- **Nhận xét chung** sửa được từ khi chốt điểm đến khi kết quả được công bố (Quyết định công nhận được ghi nhận hoặc Thư kết quả không đạt được phát hành).
+- Một **Mẫu văn bản** chỉ được dùng các biến của loại văn bản đó; tệp tải lên dùng biến lạ hoặc thiếu biến bắt buộc thì bị từ chối.
+- Hồ sơ có tên trong một Quyết định công nhận đã ghi nhận, hoặc đã có Thư kết quả không đạt, không **Mở khóa sau chốt** được nữa.
+- Mỗi hồ sơ được công nhận có đúng một **Giấy chứng nhận**; sửa số hoặc ngày ký quyết định đã ghi nhận phải có lý do, Số hiệu giấy chứng nhận giữ nguyên, ngày cấp và ngày hết hiệu lực tính lại. Quyết định đã ghi nhận không hủy được.
+- Giấy chứng nhận hết hiệu lực sau 36 tháng kể từ ngày ký quyết định (cấu hình); Sở và Chủ thể được nhắc một lần trước 6 tháng (cấu hình).
+- Xuất **Gói đề nghị 5 sao** không đổi trạng thái; Sở đánh dấu đã gửi (số công văn, ngày gửi) thì hồ sơ thành Đã gửi đề nghị 5 sao. Bộ trả về: Sở chuyển về công nhận cấp tỉnh, hồ sơ chờ một **Quyết định công nhận bổ sung** rồi mới thành Công nhận 3/4 sao. Bộ công nhận 5 sao hoặc kết quả khác: Sở đóng hồ sơ kèm văn bản của Bộ.
+- **Chủ thể** thấy điểm tổng hợp, điểm theo Phần, Hạng sao, Nhận xét chung từ khi **Công bố kết quả**; trước đó chỉ thấy trạng thái.
+- Quyết định công nhận chỉ ghi nhận được khi Phiên họp đã đóng và mọi hồ sơ trong đó đã chốt điểm; mỗi Phiên họp có tối đa một Quyết định công nhận.
+- Sửa **Thư kết quả không đạt** đã phát hành là phát hành thư đính chính (phiên bản tiếp theo) có lý do; Chủ thể thấy phiên bản mới nhất. Tải lại bản đã ký của **Giấy chứng nhận** phải có lý do, bản cũ được giữ.
+- Cán bộ Sở ghi nhận quyết định, phát hành thư, xử lý Gói đề nghị 5 sao và giấy chứng nhận; Chủ tịch và Thư ký viết **Nhận xét chung**; Quản trị quản lý **Mẫu văn bản**.
