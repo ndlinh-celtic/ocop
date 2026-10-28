@@ -1,7 +1,7 @@
 import { DOCX_TYPE } from "@ocop/core";
 import { z } from "zod";
 import { app } from "@/server/app";
-import { domainMessage } from "@/server/errors";
+import { attachmentResponse, domainErrorResponse, textResponse } from "@/server/download";
 import { requireActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -13,18 +13,11 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const actor = await requireActor();
   const parsed = z.array(z.string().min(1)).min(1).max(500).safeParse(new URL(req.url).searchParams.getAll("id"));
-  if (!parsed.success) return new Response("Chọn ít nhất một hồ sơ", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
-  let doc;
+  if (!parsed.success) return textResponse("Chọn ít nhất một hồ sơ", 400);
   try {
-    doc = await app().core.results.supplementaryDecisionDraft(actor, { dossierIds: parsed.data });
+    const doc = await app().core.results.supplementaryDecisionDraft(actor, { dossierIds: parsed.data });
+    return attachmentResponse(doc.bytes, { fileName: doc.fileName, contentType: DOCX_TYPE, asciiName: "du-thao-quyet-dinh-bo-sung.docx" });
   } catch (err) {
-    return new Response(domainMessage(err), { status: 409, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return domainErrorResponse(err);
   }
-  return new Response(Buffer.from(doc.bytes), {
-    headers: {
-      "content-type": DOCX_TYPE,
-      "content-disposition": `attachment; filename="du-thao-quyet-dinh-bo-sung.docx"; filename*=UTF-8''${encodeURIComponent(doc.fileName)}`,
-      "cache-control": "no-store",
-    },
-  });
 }

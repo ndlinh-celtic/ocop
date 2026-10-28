@@ -96,10 +96,15 @@ describe("L16 Giấy chứng nhận (#84)", () => {
 
   it("puts every bản nháp of a quyết định in one download (story 27)", async () => {
     const { decisionId, certificates } = await recorded();
-    const { fileName, files } = await w.t.app.results.certificateDrafts(w.province, { decisionId });
+    const { fileName, contentType, stream } = await w.t.app.results.certificateDrafts(w.province, { decisionId });
     expect(fileName).toBe("Giay chung nhan - QD 123-QĐ-UBND.zip");
-    expect(files.map((f) => f.name)).toEqual(certificates.map((c) => `Giay chung nhan ${c.code.replaceAll("/", "-")}.pdf`));
-    expect(Buffer.from(files[0]!.bytes).subarray(0, 4).toString()).toBe("%PDF");
+    expect(contentType).toBe("application/zip");
+    const chunks: Uint8Array[] = [];
+    for await (const c of stream) chunks.push(c);
+    const zip = new PizZip(Buffer.concat(chunks));
+    const names = certificates.map((c) => `Giay chung nhan ${c.code.replaceAll("/", "-")}.pdf`);
+    expect(Object.keys(zip.files)).toEqual(names);
+    expect(Buffer.from(zip.file(names[0]!)!.asUint8Array()).subarray(0, 4).toString()).toBe("%PDF");
   });
 
   it("moves a giấy to Đã ký with its signed PDF; a re-upload needs a lý do and keeps the earlier one (stories 28, 29)", async () => {

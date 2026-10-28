@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
-import { domainMessage } from "@/server/errors";
+import { domainErrorResponse } from "@/server/download";
 import { requireActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ package
   try {
     link = await app().core.results.downloadFiveStarPackage(actor, { packageId }).catch(orNotFound);
   } catch (err) {
-    return new Response(domainMessage(err), { status: 409, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return domainErrorResponse(err);
   }
   if (!link) notFound();
   return new Response(null, { status: 303, headers: { location: link.url, "cache-control": "no-store" } });

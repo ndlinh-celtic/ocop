@@ -1,7 +1,6 @@
-import { DomainError } from "@ocop/core";
 import { z } from "zod";
 import { app } from "@/server/app";
-import { domainMessage } from "@/server/errors";
+import { attachmentResponse, domainErrorResponse, textResponse } from "@/server/download";
 import { requireActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +21,7 @@ const Query = z.object({
 export async function GET(req: Request) {
   const actor = await requireActor();
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
-  if (!parsed.success) return new Response("Bộ lọc không hợp lệ", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
+  if (!parsed.success) return textResponse("Bộ lọc không hợp lệ", 400);
   const { year, star } = parsed.data;
   let file;
   try {
@@ -31,14 +30,7 @@ export async function GET(req: Request) {
       ...(star ? { star: Number(star) } : {}),
     });
   } catch (err) {
-    const status = err instanceof DomainError && err.code === "forbidden" ? 403 : 409;
-    return new Response(domainMessage(err), { status, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return domainErrorResponse(err);
   }
-  return new Response(Buffer.from(file.bytes), {
-    headers: {
-      "content-type": file.contentType,
-      "content-disposition": `attachment; filename="${file.fileName}"; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
-      "cache-control": "no-store",
-    },
-  });
+  return attachmentResponse(file.bytes, file);
 }

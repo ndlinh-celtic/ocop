@@ -1,7 +1,5 @@
-import { DomainError } from "@ocop/core";
-import { zipFiles } from "@ocop/infra";
 import { app } from "@/server/app";
-import { domainMessage } from "@/server/errors";
+import { attachmentResponse, domainErrorResponse } from "@/server/download";
 import { requireActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -10,18 +8,10 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ decisionId: string }> }) {
   const actor = await requireActor();
   const { decisionId } = await params;
-  let drafts;
   try {
-    drafts = await app().core.results.certificateDrafts(actor, { decisionId });
+    const drafts = await app().core.results.certificateDrafts(actor, { decisionId });
+    return attachmentResponse(drafts.stream, drafts);
   } catch (err) {
-    const status = err instanceof DomainError ? (err.code === "forbidden" ? 403 : err.code === "not_found" ? 404 : 409) : 500;
-    return new Response(domainMessage(err), { status, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return domainErrorResponse(err);
   }
-  return new Response(Buffer.from(zipFiles(drafts.files)), {
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="${drafts.fileName.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(drafts.fileName)}`,
-      "cache-control": "no-store",
-    },
-  });
 }

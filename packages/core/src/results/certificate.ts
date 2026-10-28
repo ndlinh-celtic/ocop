@@ -1,4 +1,5 @@
 import { auditEntry } from "../audit/audit";
+import { ZIP_TYPE, type ArchiveEntry } from "../documents/archive";
 import { issueFileDownload } from "../files/download";
 import { PDF_TYPE } from "../documents/pdf";
 import type { CertificateData } from "../documents/renderer";
@@ -287,18 +288,12 @@ export function downloadCertificate(deps: CoreDeps) {
   };
 }
 
-async function readAll(deps: CoreDeps, storageKey: string): Promise<Uint8Array> {
-  const chunks: Uint8Array[] = [];
-  for await (const c of await deps.files.read(storageKey)) chunks.push(c);
-  return Buffer.concat(chunks);
-}
-
 /**
  * Story 27: the bản nháp of every giấy of a quyết định, for one ZIP to send for ký hàng loạt. Refused while one is
  * still being generated, so the ZIP is never short of a giấy.
  */
 export function certificateDrafts(deps: CoreDeps) {
-  return async (actor: Actor, input: { decisionId: string }): Promise<{ fileName: string; files: { name: string; bytes: Uint8Array }[] }> => {
+  return async (actor: Actor, input: { decisionId: string }): Promise<{ fileName: string; contentType: string; stream: AsyncIterable<Uint8Array> }> => {
     authorize(actor, "results.certificate.manage");
     assertIdShape(input.decisionId, decisionNotFound);
     return deps.uow.run(async (tx) => {
@@ -309,11 +304,12 @@ export function certificateDrafts(deps: CoreDeps) {
       if (certs.some((c) => c.draftFileId === null)) {
         throw new DomainError("certificate_draft_pending", "Còn bản nháp giấy chứng nhận đang được tạo, thử lại sau ít phút");
       }
-      const files: { name: string; bytes: Uint8Array }[] = [];
+      const entries: ArchiveEntry[] = [];
       for (const c of certs) {
         const file = await tx.files.findById(c.draftFileId!);
         if (!file) throw new Error(`draft ${c.draftFileId} of certificate ${c.id} is missing`);
-        files.push({ name: fileNameOf(c), bytes: await readAll(deps, file.storageKey) });
+        // Read from storage only as the ZIP reaches it, after the transaction; a stored bản nháp never changes.
+        entries.push({ path: fileNameOf(c), content: () => deps.files.read(file.storageKey) });
       }
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), deps.clock.now(), {
@@ -323,7 +319,11 @@ export function certificateDrafts(deps: CoreDeps) {
           metadata: { certificates: certs.map((c) => c.id) },
         }),
       );
-      return { fileName: `Giay chung nhan - QD ${decision.number.replace(/[\\/:*?"<>|]+/g, "-")}.zip`, files };
+      return {
+        fileName: `Giay chung nhan - QD ${decision.number.replace(/[\\/:*?"<>|]+/g, "-")}.zip`,
+        contentType: ZIP_TYPE,
+        stream: deps.zip.zip(entries),
+      };
     });
   };
 }
