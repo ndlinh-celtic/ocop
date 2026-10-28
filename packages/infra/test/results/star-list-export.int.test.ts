@@ -28,7 +28,7 @@ async function readBack(bytes: Uint8Array) {
 const shown = (v: ExcelJS.CellValue) => (v instanceof Date ? v.toISOString().slice(0, 10).split("-").reverse().join("/") : v);
 
 describe("L22 Xuất Excel danh sách sản phẩm đạt sao (#91)", () => {
-  const { w, closedMeeting, record } = resultsWorld();
+  const { w, closedMeeting, record, decisionFile } = resultsWorld();
 
   const dossier = (dossierId: string) => w.t.app.dossiers.get(w.province, { dossierId });
   const rowOf = (rows: Row[], code: string) => rows.filter((r) => r["Mã hồ sơ"] === code);
@@ -132,6 +132,27 @@ describe("L22 Xuất Excel danh sách sản phẩm đạt sao (#91)", () => {
     ]);
     expect(rowOf(rows, other!.code)).toEqual([]);
     expect(rowOf(rows, waiting!.code)).toEqual([]);
+  });
+
+  it("lists a hồ sơ 5 sao the Bộ chuyển về and the tỉnh công nhận bổ sung with its Hạng công nhận 4, not its Hạng sao (ADR 0009)", async () => {
+    const [returned] = await sentFiveStars(1);
+    await w.t.app.results.returnFiveStarToProvince(w.province, {
+      dossierId: returned!.id,
+      expectedVersion: (await dossier(returned!.id)).version,
+      fileId: await ministryFile(),
+    });
+    await w.t.app.results.recordSupplementaryDecision(w.province, {
+      dossierIds: [returned!.id],
+      number: "456/QĐ-UBND",
+      signedOn: "2026-10-19",
+      fileId: await decisionFile(),
+    });
+
+    const { rows } = await readBack((await w.t.app.results.exportStarList(w.province, { star: 4 })).bytes);
+
+    expect(rowOf(rows, returned!.code).map((r) => [r["Hạng công nhận"], r["Cơ quan công nhận"], r["Số quyết định"]])).toEqual([
+      [4, "UBND tỉnh", "456/QĐ-UBND"],
+    ]);
   });
 
   it("narrows to the năm cấp and the Hạng công nhận; a Bộ công nhận 5 sao counts in the year of the Bộ's quyết định (story 83)", async () => {
