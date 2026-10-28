@@ -32,5 +32,8 @@ export function fiveStarRepo(db: Db): FiveStarRepo {
       const [row] = await db.select().from(fiveStarClosure).where(eq(fiveStarClosure.dossierId, dossierId));
       return row ?? null;
     },
+    async closures(outcome) {
+      return db.select().from(fiveStarClosure).where(eq(fiveStarClosure.outcome, outcome)).orderBy(fiveStarClosure.decidedOn, fiveStarClosure.dossierId);
+    },
   };
 }

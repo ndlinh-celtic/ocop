@@ -119,6 +119,8 @@ const ROLE_ACTIONS = {
   "results.certificate.upload": ["province_officer"],
   // L16 HD-10 (#85, spec #79 stories 36 to 43): soạn, xem trước and phát hành the Thư kết quả không đạt, the Cán bộ Sở alone.
   "results.result_letter.issue": ["province_officer"],
+  // L22 DC-05 (#91, spec #79 stories 83, 84): Xuất Excel danh sách sản phẩm đạt sao for the cổng thông tin tỉnh.
+  "results.star_list.export": ["province_officer"],
 } as const satisfies Record<string, readonly Role[]>;
 
 /** Actions any signed-in Người dùng may take on their own data, whatever their Vai trò đang dùng. */

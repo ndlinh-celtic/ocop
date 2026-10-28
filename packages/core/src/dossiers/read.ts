@@ -85,7 +85,7 @@ function flagsOf(latest: Submission | null, entity: Entity | null, now: Date): D
   return flags;
 }
 
-async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Date, role: Role | null): Promise<DossierSummary[]> {
+export async function summarize(tx: Tx, scope: DataScope, dossiers: Dossier[], now: Date, role: Role | null): Promise<DossierSummary[]> {
   const versions = new Map((await tx.criteriaVersions.findByIds([...new Set(dossiers.map((d) => d.criteriaVersionId))])).map((v) => [v.id, v]));
   const sets = new Map<string, { id: string; code: string; name: string }>();
   for (const id of new Set(dossiers.map((d) => d.criteriaSetId))) {
