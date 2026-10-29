@@ -40,7 +40,7 @@ import { amendDecision } from "./results/amend-decision";
 import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
 import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
 import { recordSupplementaryDecision, supplementaryDecisionDraft, supplementaryDecisions } from "./results/supplementary-decision";
-import { downloadFiveStarPackage, fiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
+import { downloadFiveStarPackage, fiveStarPackages, removeExpiredFiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -333,6 +333,8 @@ export function createCore(deps: CoreDeps) {
       requestFiveStarPackage: requestFiveStarPackage(deps),
       fiveStarPackages: fiveStarPackages(deps),
       downloadFiveStarPackage: downloadFiveStarPackage(deps),
+      // The hourly worker job that deletes packages past their hạn tải.
+      removeExpiredFiveStarPackages: removeExpiredFiveStarPackages(deps),
       // L22 DC-05 Xuất Excel danh sách sản phẩm đạt sao (#91).
       exportStarList: exportStarList(deps),
     },

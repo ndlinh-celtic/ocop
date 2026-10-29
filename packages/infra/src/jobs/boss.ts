@@ -14,6 +14,7 @@ export const QUEUES = [
   "rounds.close-due",
   "dossiers.due-reminders",
   "results.certificate-expiry-reminders",
+  "results.five-star-packages-expire",
 ] as const;
 export type QueueName = (typeof QUEUES)[number];
 

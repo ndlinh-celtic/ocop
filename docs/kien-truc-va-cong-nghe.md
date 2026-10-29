@@ -187,7 +187,8 @@ Cộng lại khoảng 5 đến 6 GB khi cao điểm, nên chọn **4 vCPU / 8 GB
 
 - DB: snapshot hằng đêm + WAL liên tục (dịch vụ quản lý, hoặc pgBackRest nếu tự chạy) để có PITR, đáp ứng RPO 15 phút.
 - Bucket: versioning bật cho `evidence/` và `certificates/`; Object Lock nếu nhà cung cấp hỗ trợ; sao chép sang vùng hoặc nhà cung cấp thứ hai bằng `rclone` theo lịch.
-- Lifecycle: bucket evidence có quy tắc xóa tiền tố `exports/` sau 7 ngày (Gói đề nghị 5 sao, #89) và hủy multipart dở dang sau 1 ngày; worker tự đặt khi `S3_AUTO_CREATE_BUCKETS=true`, môi trường khác do vận hành đặt.
+- Xóa Gói đề nghị 5 sao (#89): job pg-boss `results.five-star-packages-expire` chạy mỗi giờ (phút 17, giờ Việt Nam), xóa tệp ZIP của các gói đã quá hạn tải (`expires_at`, 7 ngày) khỏi kho tệp và ghi `removed_at` cùng nhật ký kiểm toán. Job này là cơ chế chính thức: S3 trong nước có thể không hỗ trợ lifecycle. Chạy lại không sao, tệp đã mất thì vẫn ghi nhận đã xóa; tải về luôn bị từ chối từ `expires_at` dù tệp còn hay không. Nếu bucket bật versioning, lệnh xóa chỉ tạo delete marker: vận hành cần thêm quy tắc xóa phiên bản cũ của `exports/` nếu nhà cung cấp hỗ trợ.
+- Lifecycle (dự phòng): khi `S3_AUTO_CREATE_BUCKETS=true` worker vẫn đặt quy tắc xóa tiền tố `exports/` sau 7 ngày và hủy multipart dở dang sau 1 ngày. Quy tắc `exports/` chỉ là lớp dự phòng cho job ở trên, môi trường khác không bắt buộc đặt; quy tắc hủy multipart nên đặt nếu nhà cung cấp hỗ trợ.
 - Diễn tập khôi phục mỗi quý trên staging, ghi lại thời gian thực tế so với RTO.
 
 ### 6.4 Bảo mật và tuân thủ

@@ -1,7 +1,8 @@
 /*
  * Gói đề nghị 5 sao (L17 SO-04, #89, spec #79 "Đề xuất 5 sao và Gói đề nghị 5 sao"): one export the Cán bộ Sở asked for,
- * built by a job into a ZIP under `exports/` in object storage, downloadable until `expiresAt` (the bucket's lifecycle
- * removes the object after 7 days). Exporting never changes a hồ sơ; it may be repeated at will (story 52).
+ * built by a job into a ZIP under `exports/` in object storage, downloadable until `expiresAt`. After that the job
+ * `results.five-star-packages-expire` deletes the object and sets `removedAt`; a bucket lifecycle rule, where the
+ * provider has one, is only a backup. Exporting never changes a hồ sơ; it may be repeated at will (story 52).
  */
 
 export const FIVE_STAR_PACKAGE_STATES = ["pending", "ready", "failed"] as const;
@@ -23,6 +24,8 @@ export interface FiveStarPackage {
   completedAt: Date | null;
   /** Why the job failed, for the Sở to read. */
   failure: string | null;
+  /** When the expiry job deleted the ZIP of a `ready` package past `expiresAt`. */
+  removedAt: Date | null;
 }
 
 export interface FiveStarPackageRepo {
@@ -34,4 +37,8 @@ export interface FiveStarPackageRepo {
   markReady(id: string, r: { storageKey: string; size: number; expiresAt: Date; completedAt: Date }): Promise<boolean>;
   /** Moves a `pending` package to `failed`; false when it was not pending. */
   markFailed(id: string, f: { failure: string; completedAt: Date }): Promise<boolean>;
+  /** `ready` packages with `expiresAt` at or before `now` whose ZIP is not removed yet, oldest hạn tải first. */
+  dueForRemoval(now: Date, limit: number): Promise<FiveStarPackage[]>;
+  /** Records the ZIP of a `ready` package removed; false when it already was. */
+  markRemoved(id: string, removedAt: Date): Promise<boolean>;
 }

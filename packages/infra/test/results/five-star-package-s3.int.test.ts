@@ -1,6 +1,7 @@
 /**
  * S3 compatibility of what the Gói đề nghị 5 sao needs (#89): a server-side multipart upload of a stream of unknown
- * length, and the lifecycle rule that deletes `exports/` after 7 days. Runs against the local S3 container, or a
+ * length, and the backup lifecycle rule that deletes `exports/` after 7 days (the job `results.five-star-packages-expire`
+ * is what removes a package; see five-star-package-expiry.int.test.ts). Runs against the local S3 container, or a
  * provider with the S3_COMPAT_* variables (see test/files/s3-compat.int.test.ts).
  */
 import { GetBucketLifecycleConfigurationCommand, S3Client } from "@aws-sdk/client-s3";

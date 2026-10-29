@@ -48,6 +48,12 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
   await boss.work("results.certificate-expiry-reminders", async () => {
     await core.results.sendCertificateExpiryReminders(systemActor("results.certificate-expiry-reminders"));
   });
+  // L17 SO-04 (#89): delete the Gói đề nghị 5 sao past their hạn tải, hourly. This job, not a bucket lifecycle rule
+  // (domestic S3 may lack one), is what removes them; downloads are refused from `expiresAt` either way.
+  await boss.schedule("results.five-star-packages-expire", "17 * * * *", null, { tz });
+  await boss.work("results.five-star-packages-expire", async () => {
+    while ((await core.results.removeExpiredFiveStarPackages(systemActor("results.five-star-packages-expire"))).removed > 0);
+  });
 
   let running = true;
   let timer: NodeJS.Timeout | undefined;

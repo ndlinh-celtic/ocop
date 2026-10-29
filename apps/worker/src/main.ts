@@ -11,7 +11,8 @@ const core = createApp(pool, config);
 const s3 = s3SettingsFrom(config);
 if (process.env.S3_AUTO_CREATE_BUCKETS === "true" && s3) {
   const origins = config.S3_CORS_ORIGINS.split(",").map((o) => o.trim());
-  // Exports (Gói đề nghị 5 sao, #89) are deleted 7 days after they are written; ops set the same rule elsewhere.
+  // Exports (Gói đề nghị 5 sao, #89) are deleted by the job `results.five-star-packages-expire` once past their hạn
+  // tải; this lifecycle rule is only a backup, and ops need not set it where the provider lacks lifecycle support.
   await ensureBucket(s3, config.S3_BUCKET_EVIDENCE, { corsOrigins: origins, expiringPrefixes: [{ prefix: "exports/", days: 7 }] });
   // Browsers never touch the anchor bucket: no CORS.
   await ensureBucket(s3, config.S3_BUCKET_AUDIT_ANCHOR, { corsOrigins: [] });

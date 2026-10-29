@@ -854,7 +854,7 @@ export const resultLetter = resultsSchema.table("result_letter", {
   issuedAt: ts("issued_at").notNull(),
 });
 
-/** Gói đề nghị 5 sao (0053_five_star_package.sql, #89): pending → ready | failed, once. */
+/** Gói đề nghị 5 sao (0053_five_star_package.sql, 0054, #89): pending → ready | failed, once; a ready one removed once. */
 export const fiveStarPackage = resultsSchema.table("five_star_package", {
   id: uuid("id").primaryKey(),
   requestedBy: uuid("requested_by").notNull(),
@@ -866,4 +866,5 @@ export const fiveStarPackage = resultsSchema.table("five_star_package", {
   expiresAt: ts("expires_at"),
   completedAt: ts("completed_at"),
   failure: text("failure"),
+  removedAt: ts("removed_at"),
 });

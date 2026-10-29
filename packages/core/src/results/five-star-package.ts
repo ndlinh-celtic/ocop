@@ -5,7 +5,7 @@ import { dataScopeOf } from "../identity/scope";
 import type { ConsumerContext } from "../platform/consumer-context";
 import { emit } from "../platform/emit";
 import { vnDateOf } from "../rounds/model";
-import type { Actor } from "../shared/context";
+import type { Actor, SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
 import { assertIdShape } from "../shared/ids";
@@ -19,11 +19,16 @@ import type { FiveStarPackage, FiveStarPackageState } from "./five-star-package-
  * ZIP to `exports/` and tells the Sở in the app. Nothing of a hồ sơ changes, so the export can be repeated (story 52).
  */
 
-/** How long a ready package can be downloaded; the bucket's lifecycle rule on `exports/` deletes it after that. */
+/**
+ * How long a ready package can be downloaded; after that the job `results.five-star-packages-expire`
+ * (`removeExpiredFiveStarPackages`) deletes its ZIP. A bucket lifecycle rule on `exports/` is only a backup.
+ */
 export const FIVE_STAR_PACKAGE_DAYS = 7;
 const DAY_MS = 86_400_000;
 const MAX_DOSSIERS = 50;
 const LIST_LIMIT = 30;
+/** Packages removed per run; a backlog drains over the following runs. */
+const REMOVE_BATCH = 100;
 
 const notCandidate = () => new DomainError("not_five_star_candidate", "Chỉ xuất gói cho hồ sơ trong danh sách Đề xuất 5 sao");
 
@@ -57,6 +62,7 @@ export function requestFiveStarPackage(deps: CoreDeps) {
         expiresAt: null,
         completedAt: null,
         failure: null,
+        removedAt: null,
       };
       await tx.fiveStarPackages.insert(pkg);
       await tx.audit.append(
@@ -155,6 +161,35 @@ export function downloadFiveStarPackage(deps: CoreDeps) {
       );
       return { url: get.url, expiresAt: get.expiresAt, fileName };
     });
+  };
+}
+
+/**
+ * Job `results.five-star-packages-expire` (#89): deletes the ZIP of each ready package past its hạn tải and records it
+ * removed, with an audit row; one transaction per package. The object goes first: a run that fails after it leaves the
+ * row to the next run, and deleting an object already gone (by a lifecycle rule, or that run) is not an error.
+ */
+export function removeExpiredFiveStarPackages(deps: CoreDeps) {
+  return async (actor: SystemActor): Promise<{ removed: number }> => {
+    const due = await deps.uow.run((tx) => tx.fiveStarPackages.dueForRemoval(deps.clock.now(), REMOVE_BATCH));
+    let removed = 0;
+    for (const p of due) {
+      await deps.uow.run(async (tx) => {
+        await deps.files.delete(p.storageKey!);
+        const now = deps.clock.now();
+        if (!(await tx.fiveStarPackages.markRemoved(p.id, now))) return;
+        await tx.audit.append(
+          auditEntry(actor, deps.ids.next(), now, {
+            action: "results.package.removed",
+            targetType: "five_star_package",
+            targetId: p.id,
+            metadata: { storageKey: p.storageKey, expiresAt: p.expiresAt },
+          }),
+        );
+        removed++;
+      });
+    }
+    return { removed };
   };
 }
 
