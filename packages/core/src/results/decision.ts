@@ -8,7 +8,7 @@ import type { FileStatus } from "../files/model";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
 import { endOfVnDay, vnDateOf } from "../rounds/model";
-import { chotResultOf, meetingNotFound } from "../scoring/meetings";
+import { decisionDossiersOf, meetingNotFound } from "../scoring/meetings";
 import type { Meeting, MeetingState } from "../scoring/meeting-model";
 import type { Actor, UserActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
@@ -30,7 +30,8 @@ import {
  * signed quyết định of a closed Phiên họp whose every hồ sơ has its kết quả chốt hiện hành. In one transaction, holding
  * the Phiên họp FOR UPDATE: the decision and its hồ sơ by mục, then for each hồ sơ named (by id, so concurrent callers
  * lock in the same order) Công bố kết quả: 3 and 4 sao → Công nhận 3/4 sao, 5 sao stays Đã chốt điểm. Hồ sơ dưới 3 sao
- * are not named and do not change. No Xác thực lại (spec #79), and nothing undoes it (story 19).
+ * are not named and do not change. No Xác thực lại (spec #79), and nothing undoes it (story 19). A hồ sơ Mở khóa and
+ * chốt again in another Phiên họp is not part of this one's quyết định but of that one's (`decisionDossiersOf`).
  */
 
 const MAX_NUMBER = 100;
@@ -85,14 +86,12 @@ export function signedOnOf(value: unknown, today: string): string {
   return text;
 }
 
-/** The hồ sơ of a Phiên họp with the kết quả chốt hiện hành each was chốt with there (null once a Mở khóa superseded it). */
+/**
+ * The hồ sơ of a Phiên họp with the kết quả chốt hiện hành each was chốt with there (null once a Mở khóa superseded it);
+ * a hồ sơ chốt again in another Phiên họp is left out, it follows that one's quyết định (`decisionDossiersOf`).
+ */
 async function meetingResults(tx: Tx, meetingId: string) {
-  const out: { dossierId: string; star: number | null }[] = [];
-  for (const row of await tx.meetings.dossiers(meetingId)) {
-    const result = await chotResultOf(tx, row);
-    out.push({ dossierId: row.dossierId, star: result?.star ?? null });
-  }
-  return out;
+  return (await decisionDossiersOf(tx, meetingId)).map(({ row, result }) => ({ dossierId: row.dossierId, star: result?.star ?? null }));
 }
 
 /** Stories 9 to 16: ghi nhận the Quyết định công nhận of a Phiên họp and Công bố kết quả of every hồ sơ it names. */
@@ -262,7 +261,7 @@ export function meetingsForDecision(deps: CoreDeps) {
             state: m.state,
             council: { id: council.id, name: council.name },
             round: { id: m.roundId, name: round?.name ?? "" },
-            dossierCount: (await tx.meetings.dossiers(m.id)).length,
+            dossierCount: (await decisionDossiersOf(tx, m.id)).length,
             decision: decision && { id: decision.id, number: decision.number, signedOn: decision.signedOn },
           });
         }
@@ -286,10 +285,9 @@ export function meetingDecision(deps: CoreDeps) {
       const sections = new Map(decision ? (await tx.recognitionDecisions.dossiers(decision.id)).map((r) => [r.dossierId, r.section]) : []);
       const scope = dataScopeOf(actor);
       const dossiers: MeetingDecisionDossier[] = [];
-      for (const row of await tx.meetings.dossiers(meeting.id)) {
+      for (const { row, result: r } of await decisionDossiersOf(tx, meeting.id)) {
         const d = await tx.dossiers.findById(scope, row.dossierId);
         if (!d) continue;
-        const r = await chotResultOf(tx, row);
         dossiers.push({
           dossierId: d.id,
           code: d.code,

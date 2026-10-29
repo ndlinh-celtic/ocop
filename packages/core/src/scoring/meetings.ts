@@ -44,9 +44,28 @@ export async function ownMeeting(tx: Tx, actor: UserActor, meetingId: unknown, l
  * waits, and once a Mở khóa sau chốt superseded it (ADR 0008).
  */
 export async function chotResultOf(tx: Tx, row: MeetingDossier): Promise<AggregateResult | null> {
-  if (!row.resultId) return null;
+  return (await standingOf(tx, row)).result;
+}
+
+/**
+ * Where a hồ sơ of this Phiên họp stands: `result` as in `chotResultOf`; `moved` once, after a Mở khóa sau chốt, its
+ * kết quả hiện hành was chốt in another Phiên họp. A hồ sơ moved follows that Phiên họp's Quyết định công nhận and is
+ * not part of this one's (#83, product owner 2026-10-29); one Mở khóa and not chốt again is neither, so still waits.
+ */
+export async function standingOf(tx: Tx, row: MeetingDossier): Promise<{ result: AggregateResult | null; moved: boolean }> {
+  if (!row.resultId) return { result: null, moved: false };
   const current = await tx.aggregateResults.current(row.dossierId);
-  return current?.id === row.resultId ? current : null;
+  return { result: current?.id === row.resultId ? current : null, moved: current !== null && current.meetingId !== row.meetingId };
+}
+
+/** The hồ sơ of a Phiên họp its Quyết định công nhận covers: all but those moved to another Phiên họp, each with its kết quả chốt here. */
+export async function decisionDossiersOf(tx: Tx, meetingId: string): Promise<{ row: MeetingDossier; result: AggregateResult | null }[]> {
+  const out: { row: MeetingDossier; result: AggregateResult | null }[] = [];
+  for (const row of await tx.meetings.dossiers(meetingId)) {
+    const { result, moved } = await standingOf(tx, row);
+    if (!moved) out.push({ row, result });
+  }
+  return out;
 }
 
 const open = (meeting: Meeting) => {

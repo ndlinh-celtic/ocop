@@ -14,7 +14,7 @@ import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
-import { chotResultOf, ownMeeting } from "./meetings";
+import { decisionDossiersOf, ownMeeting } from "./meetings";
 import { DECISION_SECTION_LABEL, decisionDraftSections, sectionOf, starOutcome } from "../results/decision-model";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
@@ -62,12 +62,12 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
   const scope = dataScopeOf(actor);
   const rows: Row[] = [];
   let pending = 0;
-  for (const md of await tx.meetings.dossiers(meeting.id)) {
+  // A hồ sơ chốt again in another Phiên họp is printed in that one's văn bản, not here (#83).
+  for (const { row: md, result } of await decisionDossiersOf(tx, meeting.id)) {
     const d = await tx.dossiers.findById(scope, md.dossierId);
     if (!d) throw dossierNotFound();
     const submission = await tx.dossiers.latestSubmission(d.id);
     const versions = await tx.advisoryReports.versions(d.id);
-    const result = await chotResultOf(tx, md);
     let graders: { fullName: string; state: ScoreSheetState | null; total: number | null }[];
     let aggregate: AggregateScores;
     let absent: string;

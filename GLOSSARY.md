@@ -334,6 +334,6 @@ _Avoid_: Template, biểu mẫu (khi nói về hồ sơ Chủ thể nộp)
 - Giấy chứng nhận hết hiệu lực sau 36 tháng kể từ ngày ký quyết định (cấu hình); Sở và Chủ thể được nhắc một lần trước 6 tháng (cấu hình).
 - Xuất **Gói đề nghị 5 sao** không đổi trạng thái; Sở đánh dấu đã gửi (số công văn, ngày gửi) thì hồ sơ thành Đã gửi đề nghị 5 sao. Bộ trả về: Sở chuyển về công nhận cấp tỉnh, hồ sơ chờ một **Quyết định công nhận bổ sung** rồi mới thành Công nhận 3/4 sao. Bộ công nhận 5 sao hoặc kết quả khác: Sở đóng hồ sơ kèm văn bản của Bộ.
 - **Chủ thể** thấy điểm tổng hợp, điểm theo Phần, Hạng sao, Nhận xét chung từ khi **Công bố kết quả**; trước đó chỉ thấy trạng thái.
-- Quyết định công nhận chỉ ghi nhận được khi Phiên họp đã đóng và mọi hồ sơ trong đó đã chốt điểm; mỗi Phiên họp có tối đa một Quyết định công nhận.
+- Quyết định công nhận chỉ ghi nhận được khi Phiên họp đã đóng và mọi hồ sơ trong đó đã chốt điểm; mỗi Phiên họp có tối đa một Quyết định công nhận. Hồ sơ đã **Mở khóa sau chốt** rồi chốt lại ở Phiên họp khác thì thuộc Quyết định công nhận của Phiên họp đó, không còn tính trong Phiên họp cũ; hồ sơ mở khóa mà chưa chốt lại ở đâu thì vẫn chặn Phiên họp cũ.
 - Sửa **Thư kết quả không đạt** đã phát hành là phát hành thư đính chính (phiên bản tiếp theo) có lý do; Chủ thể thấy phiên bản mới nhất. Tải lại bản đã ký của **Giấy chứng nhận** phải có lý do, bản cũ được giữ.
 - Cán bộ Sở ghi nhận quyết định, phát hành thư, xử lý Gói đề nghị 5 sao và giấy chứng nhận; Chủ tịch và Thư ký viết **Nhận xét chung**; Quản trị quản lý **Mẫu văn bản**.
