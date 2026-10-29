@@ -28,7 +28,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ meetin
   const meeting = await app().core.scoring.getMeeting(actor, { meetingId }).catch(orNotFound);
   if (!meeting) notFound();
   const open = meeting.state === "open";
-  const waiting = meeting.dossiers.filter((d) => d.result === null).length;
+  const waiting = meeting.dossierCount - meeting.finalizedCount - meeting.movedCount;
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,11 +86,20 @@ export default async function MeetingPage({ params }: { params: Promise<{ meetin
                         </span>
                       )}
                     </span>
+                  ) : d.movedTo ? (
+                    <span className="text-text-2" data-testid="moved-to">
+                      Đã chốt lại tại phiên khác:{" "}
+                      <Link href={`/hoi-dong/van-ban/${d.movedTo.id}`} className="text-brand">
+                        {d.movedTo.title}
+                      </Link>
+                    </span>
                   ) : (
                     <span className="text-text-3">Chưa chốt</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right">{open && !d.result && <RemoveDossierButton meetingId={meeting.id} dossierId={d.dossierId} />}</td>
+                <td className="px-3 py-2 text-right">
+                  {open && !d.result && !d.movedTo && <RemoveDossierButton meetingId={meeting.id} dossierId={d.dossierId} />}
+                </td>
               </tr>
             ))}
           </tbody>

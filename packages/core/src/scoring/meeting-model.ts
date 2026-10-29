@@ -28,7 +28,7 @@ export interface Meeting {
 
 /**
  * A hồ sơ of a Phiên họp: pending until chốt sets `resultId`. A `resultId` a Mở khóa superseded is not chốt any more
- * (`chotResultOf`); adding the hồ sơ again sets it back to null.
+ * (`standingOf`); adding the hồ sơ again sets it back to null.
  */
 export interface MeetingDossier {
   meetingId: string;

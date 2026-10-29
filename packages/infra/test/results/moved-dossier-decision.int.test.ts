@@ -73,6 +73,35 @@ describe("L16 a hồ sơ chốt again in another Phiên họp leaves the first o
     expect(doc).toContain("Số liệu đã chốt của toàn bộ hồ sơ trong Phiên họp.");
   });
 
+  it("keeps the moved hồ sơ in A's bảng tổng hợp and dự thảo biên bản, with its kết quả chốt at A and a ghi chú naming B (#94)", async () => {
+    const { a, four } = await moved();
+    const { code } = await w.t.app.dossiers.get(w.province, { dossierId: four });
+
+    for (const kind of ["score_table", "minutes"] as const) {
+      const doc = docxText((await w.t.app.scoring.generateMeetingDocument(w.A.secretary, { meetingId: a, kind })).bytes);
+      expect(doc).toContain(code);
+      expect(doc).toContain('Đã Mở khóa, chốt lại tại Phiên họp "Phiên họp B"');
+      expect(doc).toContain("4 sao");
+      expect(doc).toContain("Số liệu đã chốt của toàn bộ hồ sơ trong Phiên họp.");
+    }
+    // Its thành viên and điểm are printed, so each văn bản records a personal data access on it (CODING_STANDARDS.md).
+    const viewed = (await w.t.app.audit.search(admin, { action: ["personal_data.viewed"] }))
+      .filter((v) => v.metadata.view === "meeting_document" && v.metadata.meetingId === a && v.targetId === four)
+      .map((v) => v.metadata.kind);
+    expect(viewed.sort()).toEqual(["minutes", "score_table"]);
+  });
+
+  it("shows the moved hồ sơ on A's S44 as chốt lại tại B, not as chưa chốt (#94)", async () => {
+    const { a, b, four } = await moved();
+
+    const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId: a });
+    expect(view).toMatchObject({ dossierCount: 2, finalizedCount: 1, movedCount: 1 });
+    expect(view.dossiers.find((d) => d.dossierId === four)).toMatchObject({ result: null, movedTo: { id: b, title: "Phiên họp B" } });
+    const summary = (await w.t.app.scoring.listMeetings(w.A.secretary, { roundId: w.roundId })).find((m) => m.id === a)!;
+    expect(summary).toMatchObject({ dossierCount: 2, finalizedCount: 1, movedCount: 1 });
+    expect((await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId: b })).dossiers).toMatchObject([{ dossierId: four, movedTo: null }]);
+  });
+
   it("still blocks A while the hồ sơ Mở khóa is not chốt again anywhere, even once added to Phiên họp B (story 11)", async () => {
     const { meetingId: a, dossiers } = await closedMeeting([THREE, FOUR]);
     const four = dossiers[1]!.dossierId;
@@ -82,6 +111,9 @@ describe("L16 a hồ sơ chốt again in another Phiên họp leaves the first o
     await meetingWith("Phiên họp B", [four]);
     await expect(record(a)).rejects.toMatchObject({ code: "meeting_has_pending_dossiers", dossiers: [{ dossierId: four }] });
     expect((await w.t.app.results.meetingDecision(w.province, { meetingId: a })).dossiers).toHaveLength(2);
+    const view = await w.t.app.scoring.getMeeting(w.A.secretary, { meetingId: a });
+    expect(view).toMatchObject({ finalizedCount: 1, movedCount: 0 });
+    expect(view.dossiers.find((d) => d.dossierId === four)).toMatchObject({ result: null, movedTo: null });
   });
 });
 
@@ -92,5 +124,6 @@ function docxText(bytes: Uint8Array) {
     .replace(/<\/w:tr>/g, "\n")
     .replace(/<\/w:p>/g, "\n")
     .replace(/<[^>]+>/g, "")
+    .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&");
 }

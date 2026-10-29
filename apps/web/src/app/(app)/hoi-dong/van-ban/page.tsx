@@ -68,6 +68,7 @@ export default async function MeetingsPage() {
                   <td className="px-3 py-2">{m.round.name}</td>
                   <td className="px-3 py-2">
                     {m.finalizedCount} / {m.dossierCount}
+                    {m.movedCount > 0 && <span className="block text-xs text-text-3">{m.movedCount} chốt lại tại phiên khác</span>}
                   </td>
                   <td className="px-3 py-2">{m.state === "open" ? "Đang mở" : "Đã kết thúc"}</td>
                 </tr>
