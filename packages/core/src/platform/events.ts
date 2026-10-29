@@ -5,6 +5,9 @@ import type { ReminderPayload } from "../dossiers/reminder-model";
 import type { DossierEventType } from "../dossiers/transitions";
 import type { ExtendableDeadline, GradingMode } from "../rounds/model";
 
+/** Công bố kết quả (#83, spec #79): what a hồ sơ's kết quả became for its Chủ thể. */
+export type ResultOutcome = "recognized" | "five_star_proposal" | "not_passed";
+
 /** Domain events written to the outbox in the same transaction as the change (ADR 0001). */
 export type DomainEventBody =
   | { type: "identity.user.created"; payload: { userId: string } }
@@ -52,10 +55,22 @@ export type DomainEventBody =
   | { type: "entity.legal_document.added" | "entity.legal_document.replaced"; payload: { entityId: string; documentId: string; replacesId: string | null } }
   | { type: "system.setting_changed"; payload: { key: string } }
   | { type: "dossier.reminder_due"; payload: ReminderPayload }
+  // L17 SO-04 Gói đề nghị 5 sao (#89): the build job, then the notice to the Cán bộ Sở who asked.
+  | { type: "five_star_package.requested"; payload: { packageId: string } }
+  | { type: "five_star_package.ready" | "five_star_package.failed"; payload: { packageId: string; requestedBy: string } }
   // L15 HD-05 (story 103): who got a phiếu back and why, for their notice; the hồ sơ event names neither.
   | {
       type: "scoring.score_sheet_returned";
       payload: { dossierId: string; entityId: string; scoreSheetId: string; newScoreSheetId: string; userId: string; reason: string };
+    }
+  // L16 HD-11 (#84): a Giấy chứng nhận issued, or whose ngày cấp changed with its quyết định (its bản nháp is generated
+  // again while Chờ ký), or whose signed PDF was uploaded (`n` = 1, 2, …).
+  | { type: "certificate.issued" | "certificate.amended"; payload: { certificateId: string; dossierId: string; entityId: string; decisionId: string } }
+  | { type: "certificate.signed"; payload: { certificateId: string; dossierId: string; entityId: string; n: number } }
+  // L16 (#86): a Giấy chứng nhận reached its one mốc nhắc before the ngày hết hiệu lực (YYYY-MM-DD).
+  | {
+      type: "certificate.expiry_due";
+      payload: { certificateId: string; dossierId: string; entityId: string; expiresOn: string; daysLeft: number };
     }
   | {
       type: DossierEventType;
@@ -63,8 +78,19 @@ export type DomainEventBody =
        * `actorUserId`: who made the move; absent on events recorded before it was added. `recipientUserIds`: who
        * its notices go to, when only the use case knows them (sao chép, L12).
        */
-      payload: { dossierId: string; entityId: string; from: DossierState | null; to: DossierState; actorUserId?: string; recipientUserIds?: string[] };
-    };
+      payload: {
+        dossierId: string;
+        entityId: string;
+        from: DossierState | null;
+        to: DossierState;
+        actorUserId?: string;
+        recipientUserIds?: string[];
+        /** dossier.result_published only. */
+        outcome?: ResultOutcome;
+      };
+    }
+  // L16 HD-10 (#85): a Thư kết quả không đạt, `n` > 1 for a thư đính chính; the Chủ thể is told of each.
+  | { type: "result_letter.issued"; payload: { dossierId: string; entityId: string; letterId: string; n: number } };
 
 export type EventType = DomainEventBody["type"];
 

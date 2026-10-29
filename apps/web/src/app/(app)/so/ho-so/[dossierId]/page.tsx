@@ -8,6 +8,7 @@ import { ReturnRequests } from "@/components/dossiers/return-requests";
 import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { SupplementRequests } from "@/components/dossiers/supplement-requests";
+import { ProvinceResult } from "@/components/results/province-result";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
 import { app } from "@/server/app";
@@ -40,7 +41,11 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
     app().core.dossiers.checklist(actor, { dossierId }).catch(orNotFound),
   ]);
   if (!dossier || !timeline || !submissions || !supplements || !returnRequests || !advisoryReturns || !checklist) notFound();
-  const wardReport = await app().core.dossiers.wardReport(actor, { dossierId });
+  const [wardReport, scores] = await Promise.all([
+    app().core.dossiers.wardReport(actor, { dossierId }),
+    // L16 (#80, story 68): from chốt, the kết quả without any phiếu.
+    app().core.scoring.readDossierScores(actor, { dossierId }),
+  ]);
   const latest = submissions.at(-1);
   const snapshot = latest?.snapshot;
   const mayReturn = can(actor, "dossier.province_return", dossier);
@@ -64,6 +69,14 @@ export default async function ProvinceDossierPage({ params }: { params: Promise<
           {dossier.criteriaSet.name}, căn cứ {dossier.criteriaVersion.legalBasis}
         </p>
       </div>
+
+      {scores.kind === "aggregate_only" && <ProvinceResult view={scores} generalComment={dossier.generalComment} />}
+      {/* L16 HD-10 (#85): the Thư kết quả không đạt of a hồ sơ dưới 3 sao, and its thư đính chính. */}
+      {scores.kind === "aggregate_only" && scores.aggregate.star < 3 && (dossier.state === "score_finalized" || dossier.state === "not_passed") && (
+        <Link href={`/so/ho-so/${dossier.id}/thu-ket-qua`} className="w-fit rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+          {dossier.state === "not_passed" ? "Thư kết quả, đính chính" : "Soạn Thư kết quả không đạt"}
+        </Link>
+      )}
 
       <section className="flex flex-col gap-2 rounded-lg border bg-surface p-4 text-sm shadow-card">
         <h2 className="font-semibold">Kiểm tra nhanh</h2>

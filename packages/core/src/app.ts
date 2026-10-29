@@ -1,3 +1,4 @@
+import { exportStarList } from "./results/star-list";
 import { anchorAuditChain, sealAuditBatch, verifyAuditChain, verifyAuditChainAsAdmin } from "./audit/chain";
 import { searchAudit } from "./audit/search";
 import { editDraft } from "./criteria/edit";
@@ -29,7 +30,17 @@ import { createRound, deleteRound, openRound, updateRound } from "./rounds/manag
 import { currentOpenRound, getRound, listRounds } from "./rounds/read";
 import type { CoreDeps } from "./shared/deps";
 import { recordStartup } from "./system/startup";
-import { reminderMilestones, setReminderMilestones } from "./system/settings";
+import { reminderMilestones, setReminderMilestones, setUnderperformingRatio, underperformingRatio } from "./system/settings";
+import { certificateSettings, setCertificateSettings } from "./system/settings";
+import { editGeneralComment } from "./results/general-comment";
+import { downloadDecision, meetingDecision, meetingsForDecision, recordMeetingDecision } from "./results/decision";
+import { closeFiveStar, downloadMinistryDocument, fiveStarList, markFiveStarSent, returnFiveStarToProvince } from "./results/five-star";
+import { certificateDrafts, downloadCertificate, listCertificates, uploadSignedCertificate } from "./results/certificate";
+import { amendDecision } from "./results/amend-decision";
+import { downloadResultLetter, issueResultLetter, previewResultLetter, resultLetterDraft } from "./results/result-letter";
+import { sendCertificateExpiryReminders } from "./results/certificate-expiry";
+import { recordSupplementaryDecision, supplementaryDecisionDraft, supplementaryDecisions } from "./results/supplementary-decision";
+import { downloadFiveStarPackage, fiveStarPackages, removeExpiredFiveStarPackages, requestFiveStarPackage } from "./results/five-star-package";
 import { sendDueReminders } from "./dossiers/reminders";
 import { getEntity, listEntities } from "./entities/read";
 import { registerEntity } from "./entities/register";
@@ -39,6 +50,7 @@ import { copyDossier, createDossier, creationOptions } from "./dossiers/create";
 import { downloadSubmissionDocument } from "./dossiers/documents";
 import { addEvidenceFile, deleteDossier, updateProduct } from "./dossiers/edit";
 import { dossierTimeline, getDossier, listDossiers, provinceOverview } from "./dossiers/read";
+import { exportDossiers } from "./dossiers/export";
 import { listSubmissions, submissionCheck, submitDossier, withdrawDossier } from "./dossiers/submit";
 import { changeHandler, listHandlers, receiveDossier } from "./dossiers/ward";
 import { listAdvisoryReturnRequests, listReturnRequests, requestAdvisoryReturn, requestReturn } from "./dossiers/return-request";
@@ -71,6 +83,7 @@ import { attachMeetingMinutes, downloadMeetingMinutes, generateMeetingDocument }
 import { returnScoreSheet, scoreSheetHistory } from "./scoring/return-sheet";
 import { finalizedResults, unlockFinalized, unlockTarget } from "./scoring/unlock";
 import { advisoryCopyBoard, copyAdvisory, previewAdvisoryCopy } from "./scoring/advisory-copy";
+import { activateTemplate, downloadTemplate, listTemplates, previewTemplate, uploadTemplate } from "./documents/templates";
 
 /** The use cases of the core, bound to their dependencies. UI and worker only call these. */
 export function createCore(deps: CoreDeps) {
@@ -177,6 +190,8 @@ export function createCore(deps: CoreDeps) {
       copy: copyDossier(deps),
       get: getDossier(deps),
       list: listDossiers(deps),
+      // L22 DC-05 Xuất Excel danh sách hồ sơ (#90).
+      exportDossiers: exportDossiers(deps),
       timeline: dossierTimeline(deps),
       updateProduct: updateProduct(deps),
       addEvidenceFile: addEvidenceFile(deps),
@@ -275,6 +290,60 @@ export function createCore(deps: CoreDeps) {
       recordStartup: recordStartup(deps),
       reminderMilestones: reminderMilestones(deps),
       setReminderMilestones: setReminderMilestones(deps),
+      // L16 Tiêu chí dưới mức (#80).
+      underperformingRatio: underperformingRatio(deps),
+      setUnderperformingRatio: setUnderperformingRatio(deps),
+      // L16 HD-11 Giấy chứng nhận (#84).
+      certificateSettings: certificateSettings(deps),
+      setCertificateSettings: setCertificateSettings(deps),
+    },
+    // Bước 5 Kết quả (spec #79).
+    results: {
+      // L16 Nhận xét chung (#80).
+      editGeneralComment: editGeneralComment(deps),
+      // L16 HD-11 Quyết định công nhận theo Phiên họp and Công bố kết quả (#83).
+      recordMeetingDecision: recordMeetingDecision(deps),
+      meetingsForDecision: meetingsForDecision(deps),
+      meetingDecision: meetingDecision(deps),
+      downloadDecision: downloadDecision(deps),
+      // L17 SO-04 Đề xuất 5 sao: đánh dấu đã gửi, chuyển về, đóng hồ sơ (#87).
+      fiveStarList: fiveStarList(deps),
+      markFiveStarSent: markFiveStarSent(deps),
+      returnFiveStarToProvince: returnFiveStarToProvince(deps),
+      closeFiveStar: closeFiveStar(deps),
+      downloadMinistryDocument: downloadMinistryDocument(deps),
+      // L16 HD-11 Giấy chứng nhận, sửa số hoặc ngày ký quyết định (#84).
+      amendDecision: amendDecision(deps),
+      listCertificates: listCertificates(deps),
+      uploadSignedCertificate: uploadSignedCertificate(deps),
+      downloadCertificate: downloadCertificate(deps),
+      certificateDrafts: certificateDrafts(deps),
+      // L16 HD-10, CT-13 Thư kết quả không đạt (#85).
+      resultLetterDraft: resultLetterDraft(deps),
+      previewResultLetter: previewResultLetter(deps),
+      issueResultLetter: issueResultLetter(deps),
+      downloadResultLetter: downloadResultLetter(deps),
+      // L16 nhắc Giấy chứng nhận sắp hết hiệu lực, the daily worker job (#86).
+      sendCertificateExpiryReminders: sendCertificateExpiryReminders(deps),
+      // L17 Quyết định công nhận bổ sung (#88).
+      recordSupplementaryDecision: recordSupplementaryDecision(deps),
+      supplementaryDecisionDraft: supplementaryDecisionDraft(deps),
+      supplementaryDecisions: supplementaryDecisions(deps),
+      // L17 SO-04 Gói đề nghị 5 sao (#89).
+      requestFiveStarPackage: requestFiveStarPackage(deps),
+      fiveStarPackages: fiveStarPackages(deps),
+      downloadFiveStarPackage: downloadFiveStarPackage(deps),
+      // The hourly worker job that deletes packages past their hạn tải.
+      removeExpiredFiveStarPackages: removeExpiredFiveStarPackages(deps),
+      // L22 DC-05 Xuất Excel danh sách sản phẩm đạt sao (#91).
+      exportStarList: exportStarList(deps),
+    },
+    documents: {
+      listTemplates: listTemplates(deps),
+      downloadTemplate: downloadTemplate(deps),
+      uploadTemplate: uploadTemplate(deps),
+      activateTemplate: activateTemplate(deps),
+      previewTemplate: previewTemplate(deps),
     },
   };
 }

@@ -24,6 +24,15 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.advisory_report.reissue": "Tổ tư vấn phát hành báo cáo phiên bản mới",
   // L15 HD-08 (story 137): chốt điểm, without the points.
   "dossier.finalize": "Hội đồng chốt điểm",
+  // L16 HD-11 (#83, story 67): Công bố kết quả by a Quyết định công nhận.
+  "dossier.recognize": "Công bố kết quả: được công nhận theo Quyết định công nhận",
+  "dossier.result_publish": "Công bố kết quả: đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao",
+  // L17 SO-04 (#87, story 67): the đề nghị 5 sao and the Bộ's answer.
+  "dossier.five_star.mark_sent": "Sở đã gửi đề nghị Trung ương đánh giá 5 sao",
+  "dossier.five_star.return_to_province": "Trung ương chuyển về, chờ tỉnh công nhận 4 sao",
+  "dossier.five_star.close": "Đóng hồ sơ theo kết quả của Bộ",
+  // L17 (#88, story 57): Quyết định công nhận bổ sung.
+  "dossier.recognize_supplementary": "Được công nhận 4 sao theo Quyết định công nhận bổ sung",
   "dossier.round_transfer": "Chuyển đợt",
   // Steps of the bản làm việc, on the timeline only when a Cán bộ xã Nhập hộ them (story 74).
   "dossier.edit": "Sửa thông tin sản phẩm",
@@ -33,6 +42,9 @@ const ACTION_LABEL: Record<string, string> = {
   "dossier.self_score": "Tự chấm thử",
   "dossier.explain": "Viết giải trình",
   "dossier.supplement.respond": "Trả lời yêu cầu bổ sung",
+  // L16 HD-10 (#85): Công bố kết quả không đạt by the Thư kết quả, then each thư đính chính.
+  "dossier.result_letter.issue": "Công bố kết quả: Sở phát hành Thư kết quả không đạt",
+  "dossier.result_letter.correct": "Sở phát hành thư đính chính Thư kết quả",
 };
 
 const ON_BEHALF = "_on_behalf";

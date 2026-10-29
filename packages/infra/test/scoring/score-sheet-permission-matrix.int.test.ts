@@ -25,7 +25,8 @@ type Who =
   | "Quản trị";
 type State = "Thành viên xem xét" | "Sẵn sàng chốt" | "Tổ tư vấn thẩm định";
 type Action = "lưu phiếu" | "xác nhận phiếu" | "xem điểm";
-type Outcome = "allowed" | "not_found" | "forbidden" | "invalid_state" | "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "none";
+type Outcome =
+  "allowed" | "not_found" | "forbidden" | "invalid_state" | "confirmed_sheets" | "own_sheet" | "full" | "aggregate_only" | "published_result" | "none";
 
 function matrix(w: ScoringWorld, states: State[], rows: [Who, Action, State, Outcome][]) {
   const actors = {} as Record<Exclude<Who, "Chủ thể">, UserActor>;

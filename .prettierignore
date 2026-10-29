@@ -19,3 +19,6 @@ docs/tieu-chi/
 
 # Prose: Prettier re-pads a whole Markdown table when one cell changes, so doc diffs would hide the edit.
 *.md
+
+# Agent worktrees are separate checkouts; formatting from the root must not reach into them.
+.claude/

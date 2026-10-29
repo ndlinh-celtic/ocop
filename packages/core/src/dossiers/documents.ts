@@ -1,5 +1,6 @@
 import { auditEntry } from "../audit/audit";
 import type { RegistrationFormData, SelfAssessmentReportData } from "../documents/renderer";
+import { renderDocument, type RenderedDocument } from "../documents/templates";
 import { storeGeneratedDocument } from "../documents/store";
 import { ENTITY_KIND_LABEL } from "../entities/model";
 import { authorize } from "../identity/policy";
@@ -94,14 +95,14 @@ export async function generateSubmissionDocuments(
   snapshot: SubmissionSnapshot,
   c: SubmissionContext & { dossierId: string },
 ): Promise<SubmissionSnapshot["documents"]> {
-  const store = (document: SubmissionDocument, bytes: Uint8Array) =>
+  const store = (document: SubmissionDocument, { bytes, templateVersionId }: RenderedDocument) =>
     storeGeneratedDocument(deps, tx, actor, {
       fileName: fileNameOf(document, c.number),
       bytes,
-      metadata: { dossierId: c.dossierId, submissionNumber: c.number, document },
+      metadata: { dossierId: c.dossierId, submissionNumber: c.number, document, templateVersionId },
     });
-  const registration = await deps.documents.render("registration_form", registrationForm(snapshot, c));
-  const report = await deps.documents.render("self_assessment_report", selfAssessmentReport(snapshot, c));
+  const registration = await renderDocument(deps, tx, "registration_form", registrationForm(snapshot, c));
+  const report = await renderDocument(deps, tx, "self_assessment_report", selfAssessmentReport(snapshot, c));
   return {
     registrationForm: await store("registration_form", registration),
     selfAssessmentReport: await store("self_assessment_report", report),

@@ -86,7 +86,11 @@ describe("L03 CT-09 Phiếu đăng ký and Báo cáo tự đánh giá generated 
   });
 
   it("generates within the nộp: when a văn bản cannot be rendered, the hồ sơ is not submitted", async () => {
-    const failing = createTestApp(db, { totpRequired: false, clock: t.clock, documents: { render: async () => Promise.reject(new Error("template broken")) } });
+    const failing = createTestApp(db, {
+      totpRequired: false,
+      clock: t.clock,
+      documents: { ...docxRenderer(), render: async () => Promise.reject(new Error("template broken")) },
+    });
     try {
       const a = await f.verifiedOwner();
       const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });

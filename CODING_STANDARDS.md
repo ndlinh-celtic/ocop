@@ -47,3 +47,7 @@ Lỗi đã lọt: PR #65 lỗi 10 (`unlockAction`).
 Test lấy `version` và các giá trị sinh ra từ kết quả trả về hoặc đọc lại, không tự suy ra (`dossierVersion + 1`, đếm audit bằng outbox). Một test tự suy ra tác dụng phụ sẽ khóa chặt hành vi cũ, và đỏ khi tác dụng phụ đó được sửa đúng.
 
 Lỗi đã lọt: fixture ma trận phân quyền Báo cáo Tổ tư vấn và assertion audit/outbox của E2E L08–L15, cả hai đỏ sau khi sửa lỗi 1.
+
+Assertion phủ định (`not.toMatch`, `not.toContain`) chỉ áp lên văn bản đã bỏ các giá trị sinh ngẫu nhiên (UUID, mã, link chứa id). Văn bản còn id ngẫu nhiên thì thỉnh thoảng chứa chuỗi bị cấm và test đỏ không theo quy luật.
+
+Lỗi đã lọt: #85 `result-letter.int.test.ts` kiểm email không chứa "45" trong khi link hồ sơ có UUID.

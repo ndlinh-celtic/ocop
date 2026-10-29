@@ -77,6 +77,10 @@ export const NOTICE_EVENTS = [
   "council.assignment.added",
   "dossier.advisory_return_requested",
   "dossier.unlocked",
+  "dossier.result_published",
+  "dossier.five_star_closed",
+  "result_letter.issued",
+  "dossier.recognized_supplementary",
 ] as const;
 
 async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]> {
@@ -462,13 +466,84 @@ async function noticesOf({ deps, tx, event }: ConsumerContext): Promise<Notice[]
         },
       ];
     }
+    // L16 CT-13 (#83, spec #79 story 63): Công bố kết quả, to the Chủ thể; what the kết quả is shows only in the app.
+    case "dossier.result_published": {
+      const outcome = event.payload.outcome;
+      // Không đạt is Công bố by the Thư kết quả không đạt: its result_letter.issued notice tells the Chủ thể, once (#85).
+      if (outcome === "not_passed") return [];
+      const body =
+        outcome === "recognized"
+          ? `Hồ sơ ${dossier.code} đã được công nhận sản phẩm OCOP. Xem điểm, hạng và nhận xét của Hội đồng trong hồ sơ.`
+          : outcome === "five_star_proposal"
+            ? `Hồ sơ ${dossier.code} đạt điểm, tỉnh đề nghị Trung ương đánh giá 5 sao. Xem điểm và nhận xét của Hội đồng trong hồ sơ.`
+            : `Hồ sơ ${dossier.code} đã có kết quả đánh giá. Xem kết quả trong hồ sơ.`;
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_result_published",
+          title: `Hồ sơ đã có kết quả: ${product}`,
+          body,
+          emailSubject: "Hồ sơ OCOP đã có kết quả",
+          emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng. Đăng nhập để xem kết quả.",
+          link: ownerLink,
+        },
+      ];
+    }
+    // L17 SO-04 (#87, spec #79 story 58): đóng hồ sơ with Bộ công nhận 5 sao, to the Chủ thể; kết quả khác tells no one.
+    case "dossier.five_star_closed": {
+      if ((await tx.fiveStar.closureOf(dossier.id))?.outcome !== "ministry_recognized_5_star") return [];
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_five_star_recognized",
+          title: `Sản phẩm được Bộ công nhận 5 sao: ${product}`,
+          body: `Hồ sơ ${dossier.code} đã được Bộ Nông nghiệp và Môi trường công nhận sản phẩm OCOP 5 sao.`,
+          emailSubject: "Hồ sơ OCOP được Bộ công nhận 5 sao",
+          emailLine: "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá 5 sao của Trung ương. Đăng nhập để xem chi tiết.",
+          link: ownerLink,
+        },
+      ];
+    }
+    // L16 HD-10, CT-13 (#85, spec #79 stories 40, 44): the Thư kết quả không đạt and each thư đính chính, to the Chủ thể;
+    // the letter itself is read and downloaded in the app.
+    case "result_letter.issued": {
+      const correction = event.payload.n > 1;
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: correction ? "result_letter_corrected" : "result_letter_issued",
+          title: correction ? `Thư kết quả đính chính: ${product}` : `Hồ sơ đã có kết quả: ${product}`,
+          body: correction
+            ? `Sở phát hành thư đính chính Thư kết quả của hồ sơ ${dossier.code}. Xem và tải thư mới nhất trong hồ sơ.`
+            : `Hồ sơ ${dossier.code} chưa đạt hạng 3 sao. Xem và tải Thư kết quả, gồm các tiêu chí cần cải thiện, trong hồ sơ.`,
+          emailSubject: correction ? "Hồ sơ OCOP có Thư kết quả đính chính" : "Hồ sơ OCOP có Thư kết quả đánh giá",
+          emailLine: correction
+            ? "Sở Nông nghiệp và Môi trường vừa phát hành thư đính chính Thư kết quả của hồ sơ OCOP của anh/chị. Đăng nhập để xem."
+            : "Hồ sơ OCOP của anh/chị đã có kết quả đánh giá, phân hạng và Thư kết quả của Sở. Đăng nhập để xem.",
+          link: ownerLink,
+        },
+      ];
+    }
+    // L17 (#88, spec #79 stories 57, 60; ADR 0009): Quyết định công nhận bổ sung, to the Chủ thể: Hạng công nhận 4.
+    case "dossier.recognized_supplementary":
+      return [
+        {
+          recipients: await entityUsers(tx, dossier.entityId, now),
+          kind: "dossier_recognized_supplementary",
+          title: `Sản phẩm được công nhận 4 sao: ${product}`,
+          body: `Hồ sơ ${dossier.code} được tỉnh công nhận sản phẩm OCOP 4 sao theo Quyết định công nhận bổ sung. Xem kết quả trong hồ sơ.`,
+          emailSubject: "Hồ sơ OCOP đã được công nhận",
+          emailLine: "Hồ sơ OCOP của anh/chị đã được tỉnh công nhận theo Quyết định công nhận bổ sung. Đăng nhập để xem kết quả.",
+          link: ownerLink,
+        },
+      ];
     default:
       return [];
   }
 }
 
 /** The Người dùng holding an active Phân vai Cán bộ Sở (Phạm vi tỉnh). */
-function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
+export function provinceOfficers(tx: Tx, now: Date): Promise<User[]> {
   return activeHolders(tx, "province_officer", "province", null, now);
 }
 

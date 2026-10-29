@@ -17,6 +17,12 @@ import { reminderRepo, systemSettingRepo } from "./reminders";
 import { assignmentRepo, councilRepo, scoreSheetRepo } from "./councils";
 import { advisoryReportRepo } from "./advisory-reports";
 import { aggregateResultRepo, meetingRepo } from "./meetings";
+import { templateVersionRepo } from "./template-versions";
+import { recognitionDecisionRepo } from "./recognition-decisions";
+import { fiveStarRepo } from "./five-star";
+import { certificateRepo } from "./certificates";
+import { resultLetterRepo } from "./result-letters";
+import { fiveStarPackageRepo } from "./five-star-packages";
 
 export function buildRepos(db: Db): Repos {
   return {
@@ -47,5 +53,11 @@ export function buildRepos(db: Db): Repos {
     advisoryReports: advisoryReportRepo(db),
     meetings: meetingRepo(db),
     aggregateResults: aggregateResultRepo(db),
+    templateVersions: templateVersionRepo(db),
+    recognitionDecisions: recognitionDecisionRepo(db),
+    fiveStar: fiveStarRepo(db),
+    certificates: certificateRepo(db),
+    resultLetters: resultLetterRepo(db),
+    fiveStarPackages: fiveStarPackageRepo(db),
   };
 }

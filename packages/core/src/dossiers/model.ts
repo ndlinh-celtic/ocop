@@ -104,6 +104,21 @@ export interface Dossier extends ProductInfo {
   supplementDeadline: Date | null;
   copiedFrom: string | null;
   deletedAt: Date | null;
+  /**
+   * L16 Công bố kết quả (spec #79): set once, when a Quyết định công nhận naming the hồ sơ is recorded or its first Thư kết
+   * quả không đạt is issued; never reset (the DB refuses it). Mở khóa sau chốt and Nhận xét chung stop there.
+   */
+  resultPublishedAt: Date | null;
+  /** L16 CT-13, HD-10 (#80): the Nhận xét chung of the Chủ tịch or Thư ký, outside the snapshot chốt; null until written. */
+  generalComment: string | null;
+  generalCommentUpdatedAt: Date | null;
+  generalCommentUpdatedBy: string | null;
+  /**
+   * L17 (#87, ADR 0009): the Sở chuyển về công nhận cấp tỉnh a hồ sơ Đã gửi đề nghị 5 sao on the Bộ's văn bản
+   * (`ministryReturnFileId`); it then waits, still Đã gửi đề nghị 5 sao, for a Quyết định công nhận bổ sung.
+   */
+  awaitingSupplementaryDecision: boolean;
+  ministryReturnFileId: string | null;
   /** Optimistic lock: every change goes through transition() and bumps it by one. */
   version: number;
   createdAt: Date;
@@ -160,7 +175,7 @@ export const isAwaitingNextRound = (d: Pick<Dossier, "state">, round: { forwardi
   d.state === "submitted_to_ward" && round !== null && now > round.forwardingDeadline;
 
 /** What the narrow lookup of DossierRepo.stateRow loads: the mã and state, and what a transition records. */
-export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId">;
+export type DossierStateRow = Pick<Dossier, "id" | "code" | "state" | "version" | "entityId" | "resultPublishedAt">;
 
 /**
  * Every read takes the reader's DataScope and filters in SQL (#14); a deleted Nháp is never returned.

@@ -40,13 +40,41 @@ export async function ownMeeting(tx: Tx, actor: UserActor, meetingId: unknown, l
 }
 
 /**
- * The kết quả a hồ sơ was chốt with in this Phiên họp, while it is still the kết quả hiện hành; null while the hồ sơ
- * waits, and once a Mở khóa sau chốt superseded it (ADR 0008).
+ * Where a hồ sơ of a Phiên họp stands:
+ * - `chot`: chốt here, `result` still the kết quả hiện hành;
+ * - `moved`: chốt here, then Mở khóa sau chốt and chốt again in Phiên họp `to`, the one of its kết quả hiện hành. `result` is the kết quả chốt here, now
+ *   superseded: the biên bản of this Phiên họp still records it (#94), but the hồ sơ follows `to`'s Quyết định công nhận,
+ *   not this one's (#83, product owner 2026-10-29);
+ * - `pending`: waits for chốt, never chốt yet or Mở khóa and not chốt again anywhere (`unlocked`, ADR 0008).
  */
-export async function chotResultOf(tx: Tx, row: MeetingDossier): Promise<AggregateResult | null> {
-  if (!row.resultId) return null;
+export type Standing =
+  | { kind: "chot"; result: AggregateResult }
+  | { kind: "moved"; result: AggregateResult; to: Pick<Meeting, "id" | "title"> }
+  | { kind: "pending"; unlocked: boolean };
+
+async function standingOf(tx: Tx, row: MeetingDossier): Promise<Standing> {
+  if (!row.resultId) return { kind: "pending", unlocked: false };
   const current = await tx.aggregateResults.current(row.dossierId);
-  return current?.id === row.resultId ? current : null;
+  if (current?.id === row.resultId) return { kind: "chot", result: current };
+  if (!current || current.meetingId === row.meetingId) return { kind: "pending", unlocked: true };
+  const result = (await tx.aggregateResults.list(row.dossierId)).find((r) => r.id === row.resultId);
+  const to = await tx.meetings.findById(current.meetingId);
+  if (!result || !to) throw new Error(`Kết quả chốt ${row.resultId} or Phiên họp ${current.meetingId} missing`);
+  return { kind: "moved", result, to: { id: to.id, title: to.title } };
+}
+
+/** Every hồ sơ of a Phiên họp with where it stands. */
+export async function standingsOf(tx: Tx, meetingId: string): Promise<{ row: MeetingDossier; standing: Standing }[]> {
+  const out: { row: MeetingDossier; standing: Standing }[] = [];
+  for (const row of await tx.meetings.dossiers(meetingId)) out.push({ row, standing: await standingOf(tx, row) });
+  return out;
+}
+
+/** The hồ sơ of a Phiên họp its Quyết định công nhận covers: all but those moved to another Phiên họp, each with its kết quả chốt here. */
+export async function decisionDossiersOf(tx: Tx, meetingId: string): Promise<{ row: MeetingDossier; result: AggregateResult | null }[]> {
+  return (await standingsOf(tx, meetingId)).flatMap(({ row, standing: s }) =>
+    s.kind === "moved" ? [] : [{ row, result: s.kind === "chot" ? s.result : null }],
+  );
 }
 
 const open = (meeting: Meeting) => {
@@ -188,7 +216,10 @@ export interface MeetingSummary {
   location: string;
   state: MeetingState;
   dossierCount: number;
+  /** Hồ sơ whose kết quả chốt here is the kết quả hiện hành. */
   finalizedCount: number;
+  /** Hồ sơ chốt here, then chốt lại tại another Phiên họp (#94): neither chốt here nor waiting. */
+  movedCount: number;
 }
 
 export interface MeetingDossierView {
@@ -198,6 +229,8 @@ export interface MeetingDossierView {
   state: DossierState;
   /** Set once chốt in this Phiên họp; null again once a Mở khóa sau chốt superseded it. */
   result: { n: number; total: number; star: number; flagged: boolean; finalizedAt: Date } | null;
+  /** The Phiên họp where the hồ sơ was chốt lại after a Mở khóa (#94); null otherwise. */
+  movedTo: { id: string; title: string } | null;
 }
 
 export interface MeetingView extends MeetingSummary {
@@ -248,7 +281,8 @@ export function listMeetings(deps: CoreDeps) {
 }
 
 async function summaryOf(tx: Tx, m: Meeting): Promise<MeetingSummary> {
-  const rows = await tx.meetings.dossiers(m.id);
+  const rows = await standingsOf(tx, m.id);
+  const count = (kind: Standing["kind"]) => rows.filter((r) => r.standing.kind === kind).length;
   const round = await tx.rounds.findById(m.roundId);
   return {
     id: m.id,
@@ -258,7 +292,8 @@ async function summaryOf(tx: Tx, m: Meeting): Promise<MeetingSummary> {
     location: m.location,
     state: m.state,
     dossierCount: rows.length,
-    finalizedCount: (await Promise.all(rows.map((r) => chotResultOf(tx, r)))).filter((r) => r !== null).length,
+    finalizedCount: count("chot"),
+    movedCount: count("moved"),
   };
 }
 
@@ -285,16 +320,17 @@ export function getMeeting(deps: CoreDeps) {
       const meeting = await ownMeeting(tx, actor, input.meetingId, false);
       const scope = dataScopeOf(actor);
       const dossiers: MeetingDossierView[] = [];
-      for (const row of await tx.meetings.dossiers(meeting.id)) {
+      for (const { row, standing: s } of await standingsOf(tx, meeting.id)) {
         const d = await tx.dossiers.findById(scope, row.dossierId);
         if (!d) throw dossierNotFound();
-        const r = await chotResultOf(tx, row);
+        const r = s.kind === "chot" ? s.result : null;
         dossiers.push({
           dossierId: d.id,
           code: d.code,
           productName: d.productName,
           state: d.state,
           result: r ? { n: r.n, total: r.total, star: r.star, flagged: r.flagged, finalizedAt: r.finalizedAt } : null,
+          movedTo: s.kind === "moved" ? s.to : null,
         });
       }
       const candidates: MeetingView["candidates"] = [];

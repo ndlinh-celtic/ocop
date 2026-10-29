@@ -29,8 +29,30 @@ export {
   type SelfAssessmentReportData,
   type WardReportData,
   type MeetingDocumentData,
+  type ResultLetterData,
+  type RecognitionDecisionData,
+  type DecisionDraftSection,
+  type FiveStarPackageDossierRow,
+  type FiveStarPackageIndexData,
+  type FiveStarProposalLetterData,
   type MeetingDocumentRow,
+  type TemplateInspection,
+  type TemplateTag,
 } from "./documents/renderer";
+export {
+  checkTemplateTags,
+  isTemplateKind,
+  TEMPLATE_KINDS,
+  TEMPLATE_LABEL,
+  TEMPLATE_SAMPLES,
+  TEMPLATE_VARIABLES,
+  type TemplateProblem,
+  type TemplateVariable,
+} from "./documents/template-variables";
+export { renderDocument, type RenderedDocument, type TemplateKindView, type TemplateVersionView } from "./documents/templates";
+export type { TemplateVersion, TemplateVersionRepo } from "./documents/template-version-model";
+export { PDF_TYPE, PdfConversionError, type PdfConverter } from "./documents/pdf";
+export { XLSX_TYPE, type SpreadsheetCell, type SpreadsheetColumn, type SpreadsheetSheet, type SpreadsheetWriter } from "./documents/spreadsheet";
 export type { UploadInstructions } from "./files/uploads";
 export { typeMatches, type FileInspection, type FileInspector } from "./files/inspection";
 export { chainHash, GENESIS_HASH, SEAL_DELAY_MS, type ChainVerification } from "./audit/chain";
@@ -204,6 +226,7 @@ export { DOSSIER_ACTIONS, TRANSITIONS, type DossierAction, type DossierEventType
 export type { CreationOptions } from "./dossiers/create";
 export type { UpdateProductInput } from "./dossiers/edit";
 export { ENTITY_FIELDS, type DossierFlag, type DossierListInput, type DossierSummary, type DossierView, type EntityField } from "./dossiers/read";
+export type { ExportedFile } from "./dossiers/export";
 export type { CriterionAssessment, SelfAssessment } from "./dossiers/self-assessment";
 export { SubmissionBlockedError, type SubmissionBlocker } from "./dossiers/submit";
 export type { ChecklistItemView, ChecklistResultInput, ChecklistSuggestion, DossierChecklist } from "./dossiers/checklist";
@@ -278,7 +301,8 @@ export {
   type VisibilityFacts,
 } from "./scoring/read";
 export { aggregateScores, type AggregateScores } from "./scoring/aggregate";
-export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView } from "./scoring/read";
+export type { AggregateOnlyView, AggregateSummaryRow, FinalizedResultView, PublishedLetter, PublishedResultView } from "./scoring/read";
+export { FIVE_STAR_STANDING } from "./scoring/read";
 export {
   MEETING_STATES,
   type AggregateResult,
@@ -297,3 +321,71 @@ export { snapshotHash, type FinalizeResult } from "./scoring/finalize";
 export { MEETING_DOCUMENT_KINDS, MEETING_DOCUMENT_LABEL, type MeetingDocumentKind } from "./scoring/meeting-documents";
 export { type ReturnScoreSheetInput, type SupersededSheet } from "./scoring/return-sheet";
 export { type FinalizedResultSummary, type UnlockInput, type UnlockTarget, type UnlockView } from "./scoring/unlock";
+export { MAX_GENERAL_COMMENT, type EditGeneralCommentInput } from "./results/general-comment";
+export { generalCommentVisible } from "./results/visibility";
+export { DEFAULT_UNDERPERFORMING_RATIO, underperformingCriteria, type UnderperformingCriterion, type UnderperformingReason } from "./results/underperforming";
+export {
+  DECISION_KINDS,
+  DECISION_SECTIONS,
+  DECISION_SECTION_LABEL,
+  recognizedStar,
+  sectionOf,
+  type DecisionKind,
+  type DecisionSection,
+  type RecognitionDecision,
+  type RecognitionDecisionDossier,
+  type RecognitionDecisionRepo,
+} from "./results/decision-model";
+export {
+  MeetingPendingDossiersError,
+  type DecisionView,
+  type MeetingDecisionDossier,
+  type MeetingDecisionView,
+  type MeetingForDecision,
+  type RecordedDecision,
+  type RecordMeetingDecisionInput,
+} from "./results/decision";
+export type { SupplementaryDecisionInput, SupplementaryDecisionView } from "./results/supplementary-decision";
+export type { ResultOutcome } from "./platform/events";
+export {
+  FIVE_STAR_CLOSURE_LABEL,
+  FIVE_STAR_CLOSURE_OUTCOMES,
+  type FiveStarCandidate,
+  type FiveStarClosure,
+  type FiveStarClosureOutcome,
+  type FiveStarDispatch,
+  type FiveStarRepo,
+} from "./results/five-star-model";
+export type { CloseFiveStarInput, FiveStarListInput, FiveStarRow, MarkFiveStarSentInput, ReturnFiveStarInput } from "./results/five-star";
+export {
+  CERTIFICATE_STATES,
+  CERTIFICATE_STATE_LABEL,
+  DEFAULT_CERTIFICATE_CODE_SUFFIX,
+  DEFAULT_CERTIFICATE_EXPIRY_REMINDER_MONTHS,
+  DEFAULT_CERTIFICATE_VALIDITY_MONTHS,
+  certificateExpiry,
+  formatCertificateCode,
+  orderForNumbering,
+  type Certificate,
+  type CertificateFilter,
+  type CertificateRepo,
+  type CertificateSignedFile,
+  type CertificateState,
+} from "./results/certificate-model";
+export { type CertificateView, type ListCertificatesInput, type UploadSignedCertificateInput } from "./results/certificate";
+export { type AmendDecisionInput } from "./results/amend-decision";
+export { type StarListInput } from "./results/star-list";
+export { type CertificateSettings } from "./system/settings";
+export { type LetterCriterion, type ResultLetter, type ResultLetterRepo } from "./results/result-letter-model";
+export {
+  LETTER_REASON_LABEL,
+  MAX_ADVICE,
+  MAX_CORRECTION_REASON,
+  type IssuedLetter,
+  type LetterView,
+  type ResultLetterDraftView,
+  type ResultLetterInput,
+} from "./results/result-letter";
+export { FIVE_STAR_PACKAGE_STATES, type FiveStarPackage, type FiveStarPackageRepo, type FiveStarPackageState } from "./results/five-star-package-model";
+export { FIVE_STAR_PACKAGE_DAYS, type FiveStarPackageView, type RequestFiveStarPackageInput } from "./results/five-star-package";
+export { ZIP_TYPE, type ArchiveEntry, type ArchiveSource, type ZipWriter } from "./documents/archive";
