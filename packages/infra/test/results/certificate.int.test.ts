@@ -200,12 +200,12 @@ describe("L16 Giấy chứng nhận (#84)", () => {
   it("keeps each giấy's thời hạn hiệu lực when the quyết định is corrected after Quản trị changes the setting", async () => {
     const admin = await w.f.admin();
     const { decisionId } = await recorded("2026-01-31"); // 36 tháng → 31/01/2029
-    await w.t.app.system.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 24, expiryReminderMonths: 6 });
+    await w.t.app.results.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 24, expiryReminderMonths: 6 });
     try {
       await w.t.app.results.amendDecision(w.province, { decisionId, number: "123/QĐ-UBND", signedOn: "2026-02-28", reason: "Sửa ngày ký" });
       for (const c of await certificatesOf(decisionId)) expect(c).toMatchObject({ issuedOn: "2026-02-28", expiresOn: "2029-02-28" });
     } finally {
-      await w.t.app.system.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
+      await w.t.app.results.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
     }
   });
 
@@ -233,9 +233,9 @@ describe("L16 Giấy chứng nhận (#84)", () => {
 
   it("uses the đuôi Quản trị sets, and keeps the số hiệu already issued (story 35)", async () => {
     const admin = await w.f.admin();
-    expect(await w.t.app.system.certificateSettings(admin)).toEqual({ codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
+    expect(await w.t.app.results.certificateSettings(admin)).toEqual({ codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
     const before = await recorded();
-    await w.t.app.system.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP-T", validityMonths: 24, expiryReminderMonths: 3 });
+    await w.t.app.results.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP-T", validityMonths: 24, expiryReminderMonths: 3 });
     try {
       const after = await recorded();
       expect(after.certificates.every((c) => c.code.endsWith("/2026/GCN-OCOP-T") && c.expiresOn === "2028-10-19")).toBe(true);
@@ -243,7 +243,7 @@ describe("L16 Giấy chứng nhận (#84)", () => {
       const [entry] = await w.t.app.audit.search(admin, { action: ["system.certificate_settings_changed"] });
       expect(entry).toMatchObject({ after: { codeSuffix: "GCN-OCOP-T", validityMonths: 24, expiryReminderMonths: 3 } });
     } finally {
-      await w.t.app.system.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
+      await w.t.app.results.setCertificateSettings(admin, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
     }
   });
 
@@ -255,7 +255,7 @@ describe("L16 Giấy chứng nhận (#84)", () => {
     [{ codeSuffix: "GCN-OCOP", validityMonths: 36.5, expiryReminderMonths: 6 }],
   ])("refuses the settings %j", async (input) => {
     const admin = await w.f.admin();
-    await expect(w.t.app.system.setCertificateSettings(admin, input)).rejects.toMatchObject({ code: "invalid_certificate_settings" });
+    await expect(w.t.app.results.setCertificateSettings(admin, input)).rejects.toMatchObject({ code: "invalid_certificate_settings" });
   });
 
   it("restarts the số thứ tự at 1 in a new year (story 23)", async () => {

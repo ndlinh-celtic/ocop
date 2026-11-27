@@ -236,3 +236,11 @@ export async function notifyFiveStarPackage(c: ConsumerContext): Promise<void> {
     readAt: null,
   });
 }
+
+/** The job `results.five-star-packages-expire`: removes every package due, a batch at a time. */
+export function removeAllExpiredFiveStarPackages(deps: CoreDeps) {
+  const remove = removeExpiredFiveStarPackages(deps);
+  return async (system: SystemActor) => {
+    while ((await remove(system)).removed > 0);
+  };
+}

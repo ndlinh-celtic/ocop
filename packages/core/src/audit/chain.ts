@@ -124,3 +124,11 @@ export function verifyAuditChainAsAdmin(deps: CoreDeps) {
     return verify(systemActor("audit.verify", actor.ctx));
   };
 }
+
+/** The job `audit.seal`: drains the backlog in batches, since each call of sealAuditBatch seals at most one. */
+export function sealAuditBacklog(deps: CoreDeps) {
+  const seal = sealAuditBatch(deps);
+  return async (system: SystemActor) => {
+    while ((await seal(system)).sealed > 0);
+  };
+}

@@ -19,7 +19,7 @@ import { aggregateScores, type AggregateScores } from "./aggregate";
 import { ownSheet, setRowsOf, sheetOrder } from "./sheets";
 import type { AggregateResult, FinalizedSnapshot } from "./meeting-model";
 import { underperformingCriteria, type UnderperformingCriterion } from "../results/underperforming";
-import { underperformingRatioIn } from "../system/settings";
+import { UNDERPERFORMING_RATIO } from "../results/underperforming-ratio";
 import type { ResultOutcome } from "../platform/events";
 
 /*
@@ -267,7 +267,8 @@ export function readDossierScores(deps: CoreDeps) {
             criteria: full.criteria,
             aggregate: full.aggregate,
             result: { n: result!.n, finalizedAt: result!.finalizedAt, sha256: result!.sha256 },
-            underperforming: actor.activeRole === "province_officer" ? underperformingCriteria(result!, full.set, await underperformingRatioIn(tx)) : null,
+            underperforming:
+              actor.activeRole === "province_officer" ? underperformingCriteria(result!, full.set, (await UNDERPERFORMING_RATIO.readIn(tx)).ratio) : null,
           };
         }
         case "published_result":

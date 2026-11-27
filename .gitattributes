@@ -1,2 +1,8 @@
 *.xlsx binary
 *.html linguist-generated=true
+# #95: tables that every feature appends to, one line per entry. When two branches append at the same place, keep both
+# sides instead of a conflict; typecheck and the registry's duplicate check catch a bad merge. Union also keeps a line one
+# side deleted next to the other's addition, so permissions.ts is NOT listed: a revoked permission must never come back
+# silently. The matrix is regenerated from the code, so union there is harmless.
+packages/core/src/*/module.ts merge=union
+docs/policy-matrix.md merge=union

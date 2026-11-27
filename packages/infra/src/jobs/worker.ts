@@ -1,10 +1,10 @@
-import { CONSUMER_NAMES, systemActor, type Core } from "@ocop/core";
+import { CONSUMER_NAMES, JOB_NAMES, JOBS, systemActor, type Core } from "@ocop/core";
 import type { Pool } from "pg";
 import type { PgBoss } from "pg-boss";
 import { QUEUES } from "./boss";
 import { relayOutbox, type EventJob } from "./relay";
 
-/** Starts the outbox relay loop and one pg-boss worker per consumer. Returns a stop function. */
+/** Starts the outbox relay loop, one pg-boss worker per consumer and one per recurring job. Returns a stop function. */
 export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: { relayIntervalMs?: number } = {}) {
   // A queue this code needs but the database lacks would stall the relay for every event: refuse to start.
   const missing = [];
@@ -16,44 +16,14 @@ export async function startWorkers(core: Core, pool: Pool, boss: PgBoss, opts: {
       if (job) await core.platform.handleEvent(systemActor(consumer, { requestId: `job:${job.id}` }), { consumer, eventId: job.data.eventId });
     });
   }
-  // ADR 0002: seal every minute, verify nightly, anchor the day that ended just after midnight (Vietnam time).
+  // The recurring jobs the core declares (audit, nhắc hạn, đóng nhận nộp…), each on its cron in Vietnam time.
   const tz = "Asia/Ho_Chi_Minh";
-  await boss.schedule("audit.seal", "* * * * *", null, { tz });
-  await boss.schedule("audit.verify", "0 2 * * *", null, { tz });
-  await boss.schedule("audit.anchor", "5 0 * * *", null, { tz });
-  await boss.work("audit.seal", async () => {
-    // Drain the backlog in batches; each call seals at most one batch.
-    while ((await core.audit.seal(systemActor("audit.seal"))).sealed > 0);
-  });
-  await boss.work("audit.verify", async () => {
-    await core.audit.verify(systemActor("audit.verify"));
-  });
-  await boss.work("audit.anchor", async () => {
-    await core.audit.anchor(systemActor("audit.anchor"));
-  });
-  // L07: a round Đang nhận nộp closes within a minute after Hạn nộp xã (23:59:59 Vietnam time).
-  await boss.schedule("rounds.close-due", "* * * * *", null, { tz });
-  await boss.work("rounds.close-due", async () => {
-    await core.rounds.closeDueSubmissions(systemActor("rounds.close-due"));
-  });
-  // L03 CT-12: nhắc hạn by calendar day in Vietnam. Hourly in office hours so a missed run catches up the
-  // same day; each mốc goes out once however often it runs.
-  await boss.schedule("dossiers.due-reminders", "0 8-20 * * *", null, { tz });
-  await boss.work("dossiers.due-reminders", async () => {
-    await core.dossiers.sendDueReminders(systemActor("dossiers.due-reminders"));
-  });
-  // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, daily; a giấy whose day has passed unreminded goes out on the
-  // next run, and the ledger keeps it to one reminder per ngày hết hiệu lực.
-  await boss.schedule("results.certificate-expiry-reminders", "0 8 * * *", null, { tz });
-  await boss.work("results.certificate-expiry-reminders", async () => {
-    await core.results.sendCertificateExpiryReminders(systemActor("results.certificate-expiry-reminders"));
-  });
-  // L17 SO-04 (#89): delete the Gói đề nghị 5 sao past their hạn tải, hourly. This job, not a bucket lifecycle rule
-  // (domestic S3 may lack one), is what removes them; downloads are refused from `expiresAt` either way.
-  await boss.schedule("results.five-star-packages-expire", "17 * * * *", null, { tz });
-  await boss.work("results.five-star-packages-expire", async () => {
-    while ((await core.results.removeExpiredFiveStarPackages(systemActor("results.five-star-packages-expire"))).removed > 0);
-  });
+  for (const job of JOB_NAMES) {
+    await boss.schedule(job, JOBS[job].cron, null, { tz });
+    await boss.work(job, async () => {
+      await core.platform.runJob(systemActor(job), { job });
+    });
+  }
 
   let running = true;
   let timer: NodeJS.Timeout | undefined;

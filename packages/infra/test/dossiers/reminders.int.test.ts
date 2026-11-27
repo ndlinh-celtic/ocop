@@ -98,13 +98,13 @@ describe("CT-12 nhắc Hạn nộp xã (stories 36, 38)", () => {
   it("uses the mốc Quản trị sets", async () => {
     const a = await f.verifiedOwner();
     await t.app.dossiers.create(a, { criteriaSetId: sets["Rau củ quả"] });
-    await t.app.system.setReminderMilestones(admin, { days: [40] });
+    await t.app.dossiers.setReminderMilestones(admin, { days: [40] });
     try {
       t.clock.set(vnMorning("2026-10-21")); // 40 days ahead
       await t.app.dossiers.sendDueReminders(JOB);
       expect(await remindersOf(a)).toHaveLength(1);
     } finally {
-      await t.app.system.setReminderMilestones(admin, { days: [30, 14, 7, 1] });
+      await t.app.dossiers.setReminderMilestones(admin, { days: [30, 14, 7, 1] });
     }
   });
 });
@@ -159,26 +159,26 @@ describe("CT-12 nhắc Hạn gửi tỉnh (story 71)", () => {
 
 describe("CT-12 mốc nhắc hạn (story 37)", () => {
   it("starts at 30, 14, 7 and 1 ngày, and Quản trị changes them for the whole system, audited", async () => {
-    expect(await t.app.system.reminderMilestones(admin)).toEqual({ days: [30, 14, 7, 1] });
+    expect(await t.app.dossiers.reminderMilestones(admin)).toEqual({ days: [30, 14, 7, 1] });
 
     t.clock.set(new Date("2026-10-19T03:00:00Z"));
-    await t.app.system.setReminderMilestones(admin, { days: [3, 10, 21] });
+    await t.app.dossiers.setReminderMilestones(admin, { days: [3, 10, 21] });
 
-    expect(await t.app.system.reminderMilestones(admin)).toEqual({ days: [21, 10, 3] });
+    expect(await t.app.dossiers.reminderMilestones(admin)).toEqual({ days: [21, 10, 3] });
     const at = new Date("2026-10-19T03:00:00Z");
     const [entry] = await t.app.audit.search(admin, { action: ["system.reminder_milestones_changed"], from: at, to: new Date(at.getTime() + 1000) });
     expect(entry).toMatchObject({ actorUserId: admin.userId, before: { days: [30, 14, 7, 1] }, after: { days: [21, 10, 3] } });
     t.clock.set(START);
-    await t.app.system.setReminderMilestones(admin, { days: [30, 14, 7, 1] });
+    await t.app.dossiers.setReminderMilestones(admin, { days: [30, 14, 7, 1] });
   });
 
   it.each([[[]], [[0]], [[7, 7]], [[1.5]], [[400]], [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]])("refuses %j", async (days) => {
-    await expect(t.app.system.setReminderMilestones(admin, { days })).rejects.toMatchObject({ code: "invalid_reminder_milestones" });
+    await expect(t.app.dossiers.setReminderMilestones(admin, { days })).rejects.toMatchObject({ code: "invalid_reminder_milestones" });
   });
 
   it("is for Quản trị only", async () => {
     const officer = await f.staff("ward_officer", wardX);
-    await expect(t.app.system.reminderMilestones(officer)).rejects.toMatchObject({ code: "forbidden" });
-    await expect(t.app.system.setReminderMilestones(officer, { days: [5] })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.dossiers.reminderMilestones(officer)).rejects.toMatchObject({ code: "forbidden" });
+    await expect(t.app.dossiers.setReminderMilestones(officer, { days: [5] })).rejects.toMatchObject({ code: "forbidden" });
   });
 });

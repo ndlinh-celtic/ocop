@@ -7,7 +7,7 @@ import { vnDateOf } from "../rounds/model";
 import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import type { Tx } from "../shared/uow";
-import { reminderMilestonesIn } from "../system/settings";
+import { REMINDER_MILESTONES } from "./reminder-milestones";
 import { entityUsers } from "./notices";
 import type { ReminderKind, ReminderTarget, SentReminder } from "./reminder-model";
 import { wardOfficersOf } from "./ward";
@@ -85,7 +85,7 @@ export function sendDueReminders(deps: CoreDeps) {
   return (actor: SystemActor): Promise<{ sent: number }> =>
     deps.uow.run(async (tx) => {
       const now = deps.clock.now();
-      const milestones = await reminderMilestonesIn(tx);
+      const milestones = (await REMINDER_MILESTONES.readIn(tx)).days;
       let sent = 0;
       for (const c of await candidates(tx, now)) {
         const daysLeft = vnDaysUntil(c.deadline, now);

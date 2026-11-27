@@ -77,7 +77,7 @@ describe("Permission matrix: Giấy chứng nhận (#84)", () => {
       case "sửa số, ngày ký quyết định":
         return w.t.app.results.amendDecision(actor, { decisionId, number: `9/QĐ-UBND-${who.length}`, signedOn: "2026-10-18", reason: "Sửa số" });
       case "cấu hình giấy chứng nhận":
-        return w.t.app.system.setCertificateSettings(actor, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
+        return w.t.app.results.setCertificateSettings(actor, { codeSuffix: "GCN-OCOP", validityMonths: 36, expiryReminderMonths: 6 });
     }
   }
 

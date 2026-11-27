@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /** L03 CT-12 (story 37): the mốc nhắc hạn, chung cho toàn hệ thống. */
 export default async function ReminderMilestonesPage() {
   const actor = await requireActor();
-  const { days } = await app().core.system.reminderMilestones(actor);
+  const { days } = await app().core.dossiers.reminderMilestones(actor);
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="text-xl font-semibold">Mốc nhắc hạn</h1>
