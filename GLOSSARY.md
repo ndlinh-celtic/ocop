@@ -272,6 +272,22 @@ _Avoid_: Chứng chỉ, GCN (trong giao diện)
 Mã dạng số thứ tự/năm/đuôi cấu hình (ví dụ `012/2026/GCN-OCOP`), số thứ tự đánh lại từ 1 mỗi năm theo năm của ngày ký quyết định; không trùng, không đổi sau khi cấp.
 _Avoid_: Số giấy, mã chứng nhận
 
+**Mã xác thực**:
+Chuỗi ngẫu nhiên riêng của một Giấy chứng nhận, có từ lúc cấp và không đổi; mã QR in trên giấy (và trên bao bì) là đường dẫn chứa mã này tới Trang xác thực. Không suy ra được từ Số hiệu giấy chứng nhận.
+_Avoid_: Mã QR (khi nói về chuỗi định danh), checksum, token
+
+**Trang xác thực**:
+Trang công khai, không cần đăng nhập, mở từ mã QR; cho biết một Giấy chứng nhận Hợp lệ, Hết hiệu lực, hoặc Không xác thực được, cùng sản phẩm, Chủ thể, xã/phường, Hạng công nhận, Số hiệu, ngày cấp và ngày hết hiệu lực. Không có điểm và không có thông tin cá nhân; không tra cứu được danh sách.
+_Avoid_: Cổng tra cứu, trang tra cứu
+
+**Thời gian xử lý**:
+Số ngày của từng chặng hồ sơ đi qua: nộp đến Tiếp nhận tại xã, đến gửi tỉnh, đến Tiếp nhận tại tỉnh, đến chốt điểm, đến Công bố kết quả; trên bảng thống kê là trung vị của các hồ sơ đã qua chặng đó.
+_Avoid_: Thời gian chờ, SLA
+
+**Tỷ lệ đạt**:
+Số hồ sơ được Công nhận 3/4 sao hoặc đề nghị 5 sao chia cho số hồ sơ đã Công bố kết quả (gồm cả Không đạt) trong cùng bộ lọc; hồ sơ chưa Công bố kết quả không tính.
+_Avoid_: Tỷ lệ thành công, tỷ lệ đỗ
+
 **Gói đề nghị 5 sao**:
 Tệp ZIP Sở xuất cho một hoặc nhiều hồ sơ đề xuất 5 sao, mỗi hồ sơ một thư mục văn bản và minh chứng, kèm dự thảo văn bản đề nghị của UBND tỉnh và mục lục; gửi Bộ ngoài hệ thống.
 _Avoid_: Gói hồ sơ 5 sao (khi lẫn với Phiên bản nộp), hồ sơ gửi Bộ
@@ -336,4 +352,8 @@ _Avoid_: Template, biểu mẫu (khi nói về hồ sơ Chủ thể nộp)
 - **Chủ thể** thấy điểm tổng hợp, điểm theo Phần, Hạng sao, Nhận xét chung từ khi **Công bố kết quả**; trước đó chỉ thấy trạng thái.
 - Quyết định công nhận chỉ ghi nhận được khi Phiên họp đã đóng và mọi hồ sơ trong đó đã chốt điểm; mỗi Phiên họp có tối đa một Quyết định công nhận. Hồ sơ đã **Mở khóa sau chốt** rồi chốt lại ở Phiên họp khác thì thuộc Quyết định công nhận của Phiên họp đó, không còn tính trong Phiên họp cũ; hồ sơ mở khóa mà chưa chốt lại ở đâu thì vẫn chặn Phiên họp cũ.
 - Sửa **Thư kết quả không đạt** đã phát hành là phát hành thư đính chính (phiên bản tiếp theo) có lý do; Chủ thể thấy phiên bản mới nhất. Tải lại bản đã ký của **Giấy chứng nhận** phải có lý do, bản cũ được giữ.
+- Trang xác thực chỉ báo Hợp lệ khi Giấy chứng nhận Đã ký và còn hiệu lực, tức tới hết ngày hết hiệu lực theo giờ Việt Nam (từ 0 giờ hôm sau là Hết hiệu lực); Giấy chứng nhận Chờ ký, mã sai hay mã không tồn tại đều là Không xác thực được, cùng một thông báo. Ngày hiển thị là ngày hiện hành, kể cả khi quyết định được sửa sau khi giấy đã ký.
+- Mã QR chỉ in lên Giấy chứng nhận khi đã có tên miền chính thức; giấy đã ký khi chưa có thì giữ nguyên, giấy Chờ ký thì bản nháp được sinh lại có QR. Khi đã có tên miền, Mẫu văn bản Giấy chứng nhận thiếu vị trí mã QR thì không sinh được giấy, không có giấy thiếu QR.
+- Chủ thể tải Giấy chứng nhận (bản đã ký mới nhất) và ảnh mã QR từ khi giấy Đã ký.
+- Bảng thống kê: Cán bộ Sở xem toàn tỉnh, Cán bộ xã chỉ xem số liệu của xã mình; đếm theo Hạng công nhận và theo xã/phường của hồ sơ. Tỷ lệ đạt và phân bố điểm A/B/C chỉ tính hồ sơ đã Công bố kết quả, để số liệu không lộ điểm trước kết quả chính thức. Cán bộ xã chỉ thấy số tổng hợp, không thấy bảng từng hồ sơ; nhóm dưới 5 hồ sơ thì tỷ lệ và Thời gian xử lý ghi "Chưa đủ dữ liệu".
 - Cán bộ Sở ghi nhận quyết định, phát hành thư, xử lý Gói đề nghị 5 sao và giấy chứng nhận; Chủ tịch và Thư ký viết **Nhận xét chung**; Quản trị quản lý **Mẫu văn bản**.
