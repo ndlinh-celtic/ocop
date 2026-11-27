@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 /** L16 HD-11 (#84, story 35): cấu hình giấy chứng nhận, chung cho toàn hệ thống. */
 export default async function CertificateSettingsPage() {
   const actor = await requireActor();
-  const settings = await app().core.system.certificateSettings(actor);
-  const { ratio } = await app().core.system.underperformingRatio(actor);
+  const settings = await app().core.results.certificateSettings(actor);
+  const { ratio } = await app().core.results.underperformingRatio(actor);
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="text-xl font-semibold">Cấu hình giấy chứng nhận</h1>

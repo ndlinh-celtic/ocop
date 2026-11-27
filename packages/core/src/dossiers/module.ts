@@ -1,4 +1,5 @@
 import { defineModule } from "../shared/module";
+import { REMINDER_MILESTONES } from "./reminder-milestones";
 import { assessChecklist, dossierChecklist } from "./checklist";
 import { copyDossier, createDossier, creationOptions } from "./create";
 import { downloadSubmissionDocument } from "./documents";
@@ -19,6 +20,9 @@ import { attachSignedWardReport, downloadSignedWardReport, forwardToProvince, ge
 
 export const dossiersModule = defineModule({
   useCases: {
+    // Story 37: mốc nhắc hạn, a Cấu hình chung of Quản trị.
+    reminderMilestones: REMINDER_MILESTONES.read,
+    setReminderMilestones: REMINDER_MILESTONES.write,
     creationOptions,
     create: createDossier,
     copy: copyDossier,

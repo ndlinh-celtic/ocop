@@ -180,27 +180,27 @@ describe("L16 Nhận xét chung and the Sở's view of the kết quả chốt (#
       if (view.kind !== "aggregate_only") throw new Error(view.kind);
       return view.underperforming?.map((c) => c.code);
     };
-    expect(await w.t.app.system.underperformingRatio(admin)).toEqual({ ratio: 0.5 });
+    expect(await w.t.app.results.underperformingRatio(admin)).toEqual({ ratio: 0.5 });
     expect(await codes()).toEqual(["2.1"]);
 
-    await w.t.app.system.setUnderperformingRatio(admin, { ratio: 0.6 });
+    await w.t.app.results.setUnderperformingRatio(admin, { ratio: 0.6 });
     try {
-      expect(await w.t.app.system.underperformingRatio(admin)).toEqual({ ratio: 0.6 });
+      expect(await w.t.app.results.underperformingRatio(admin)).toEqual({ ratio: 0.6 });
       expect(await codes()).toEqual(["1.1", "2.1"]);
       const [entry] = await w.t.app.audit.search(admin, { action: ["system.underperforming_ratio_changed"] });
       expect(entry).toMatchObject({ actorUserId: admin.userId, before: { ratio: 0.5 }, after: { ratio: 0.6 } });
     } finally {
-      await w.t.app.system.setUnderperformingRatio(admin, { ratio: 0.5 });
+      await w.t.app.results.setUnderperformingRatio(admin, { ratio: 0.5 });
     }
   });
 
   it.each([[0], [1.5], [-0.1], ["0.5"], [Number.NaN]])("refuses the ratio %j", async (ratio) => {
     const admin = await w.f.admin();
-    await expect(w.t.app.system.setUnderperformingRatio(admin, { ratio })).rejects.toMatchObject({ code: "invalid_underperforming_ratio" });
+    await expect(w.t.app.results.setUnderperformingRatio(admin, { ratio })).rejects.toMatchObject({ code: "invalid_underperforming_ratio" });
   });
 
   it("leaves the ratio to Quản trị", async () => {
-    await expect(w.t.app.system.setUnderperformingRatio(w.province, { ratio: 0.4 })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(w.t.app.results.setUnderperformingRatio(w.province, { ratio: 0.4 })).rejects.toMatchObject({ code: "forbidden" });
   });
 });
 

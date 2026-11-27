@@ -10,7 +10,7 @@ import { vnDateOf } from "../rounds/model";
 import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
 import { formatDayVn } from "../shared/format";
-import { certificateSettingsIn } from "../system/settings";
+import { CERTIFICATE_SETTINGS } from "./certificate-settings";
 import { certificateExpiry } from "./certificate-model";
 
 /*
@@ -32,7 +32,7 @@ export function sendCertificateExpiryReminders(deps: CoreDeps) {
     deps.uow.run(async (tx) => {
       const now = deps.clock.now();
       const today = vnDateOf(now);
-      const { expiryReminderMonths } = await certificateSettingsIn(tx);
+      const { expiryReminderMonths } = await CERTIFICATE_SETTINGS.readIn(tx);
       let sent = 0;
       for (const c of await tx.reminders.unremindedCertificates(today)) {
         const remindOn = expiryReminderDay(c.expiresOn, expiryReminderMonths);

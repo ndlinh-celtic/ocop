@@ -21,7 +21,7 @@ const parseDays = (raw: FormDataEntryValue | null) =>
 export async function setMilestonesAction(_prev: MilestonesFormState, form: FormData): Promise<MilestonesFormState> {
   const actor = await requireActor();
   try {
-    await app().core.system.setReminderMilestones(actor, { days: parseDays(form.get("days")) });
+    await app().core.dossiers.setReminderMilestones(actor, { days: parseDays(form.get("days")) });
   } catch (err) {
     return { error: domainMessage(err) };
   }

@@ -252,7 +252,7 @@ export { FINISHED_STATES, type ReturnRequest } from "./dossiers/model";
 export { ADVISORY_RETURNABLE_STATES, type ReturnRequestView } from "./dossiers/return-request";
 export type { DossierOverviewRow } from "./dossiers/read";
 export { REMINDER_KINDS, type ReminderKind, type ReminderPayload, type ReminderRepo, type SentReminder } from "./dossiers/reminder-model";
-export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./system/settings";
+export { DEFAULT_REMINDER_MILESTONES, MAX_REMINDER_DAYS, MAX_REMINDER_MILESTONES } from "./dossiers/reminder-milestones";
 export type { SystemSettingRepo } from "./system/settings-model";
 export type { Council, CouncilRepo } from "./councils/model";
 export type { CouncilInput } from "./councils/manage";
@@ -379,7 +379,7 @@ export {
 export { type CertificateView, type ListCertificatesInput, type UploadSignedCertificateInput } from "./results/certificate";
 export { type AmendDecisionInput } from "./results/amend-decision";
 export { type StarListInput } from "./results/star-list";
-export { type CertificateSettings } from "./system/settings";
+export { type CertificateSettings } from "./results/certificate-settings";
 export { type LetterCriterion, type ResultLetter, type ResultLetterRepo } from "./results/result-letter-model";
 export {
   LETTER_REASON_LABEL,

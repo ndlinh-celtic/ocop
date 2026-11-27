@@ -26,7 +26,7 @@ export async function setCertificateSettingsAction(_prev: CertificateSettingsSta
   const parsed = certificateSettingsInput.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Nhập đuôi số hiệu và số tháng là số nguyên" };
   try {
-    await app().core.system.setCertificateSettings(actor, parsed.data);
+    await app().core.results.setCertificateSettings(actor, parsed.data);
   } catch (err) {
     return { error: domainMessage(err) };
   }
@@ -50,7 +50,7 @@ export async function setUnderperformingRatioAction(_prev: CertificateSettingsSt
   const parsed = ratioInput.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Nhập tỷ lệ là một số, ví dụ 50" };
   try {
-    await app().core.system.setUnderperformingRatio(actor, { ratio: parsed.data.percent / 100 });
+    await app().core.results.setUnderperformingRatio(actor, { ratio: parsed.data.percent / 100 });
   } catch (err) {
     return { error: domainMessage(err) };
   }

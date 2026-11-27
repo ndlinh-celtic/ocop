@@ -23,7 +23,7 @@ import { DomainError, forbidden } from "../shared/errors";
 import { formatDayVn, formatDecimalVn } from "../shared/format";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
-import { underperformingRatioIn } from "../system/settings";
+import { UNDERPERFORMING_RATIO } from "./underperforming-ratio";
 import type { LetterCriterion, ResultLetter } from "./result-letter-model";
 import { underperformingCriteria, type UnderperformingCriterion, type UnderperformingReason } from "./underperforming";
 
@@ -81,7 +81,7 @@ async function letterResult(tx: Tx, actor: UserActor, d: Dossier): Promise<Aggre
 async function criteriaFacts(tx: Tx, d: Dossier, result: AggregateResult) {
   const set = assembleSet(await setRowsOf(tx, d));
   const all = set.parts.flatMap(criteriaOf);
-  const suggested = underperformingCriteria(result, set, await underperformingRatioIn(tx));
+  const suggested = underperformingCriteria(result, set, (await UNDERPERFORMING_RATIO.readIn(tx)).ratio);
   return { all, suggested };
 }
 

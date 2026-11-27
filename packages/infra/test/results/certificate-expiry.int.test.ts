@@ -89,21 +89,21 @@ describe("L16 nhắc Giấy chứng nhận sắp hết hiệu lực (#86)", () =
 
   it("uses the number of months Quản trị sets, and a later change does not remind the same giấy again (story 35)", async () => {
     const admin = await w.f.admin();
-    const settings = await w.t.app.system.certificateSettings(admin);
+    const settings = await w.t.app.results.certificateSettings(admin);
     const { dossiers } = await recognized("2026-10-02"); // hết hiệu lực 02/10/2029
     const [x] = dossiers;
     try {
-      await w.t.app.system.setCertificateSettings(admin, { ...settings, expiryReminderMonths: 3 });
+      await w.t.app.results.setCertificateSettings(admin, { ...settings, expiryReminderMonths: 3 });
       await run("2029-04-02");
       expect(await remindersOf(x.a, x.dossierId)).toEqual([]);
       await run("2029-07-02");
       expect(await remindersOf(x.a, x.dossierId)).toHaveLength(1);
 
-      await w.t.app.system.setCertificateSettings(admin, { ...settings, expiryReminderMonths: 2 });
+      await w.t.app.results.setCertificateSettings(admin, { ...settings, expiryReminderMonths: 2 });
       await run("2029-08-02");
       expect(await remindersOf(x.a, x.dossierId)).toHaveLength(1);
     } finally {
-      await w.t.app.system.setCertificateSettings(admin, settings);
+      await w.t.app.results.setCertificateSettings(admin, settings);
     }
   });
 });

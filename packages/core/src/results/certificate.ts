@@ -16,7 +16,7 @@ import { DomainError } from "../shared/errors";
 import { formatDayVn } from "../shared/format";
 import { assertIdShape } from "../shared/ids";
 import type { Tx } from "../shared/uow";
-import { certificateSettingsIn } from "../system/settings";
+import { CERTIFICATE_SETTINGS } from "./certificate-settings";
 import {
   CERTIFICATE_STATES,
   certificateExpiry,
@@ -54,7 +54,7 @@ export async function issueCertificates(
   recognized: readonly { dossierId: string; recognizedStar: number }[],
 ): Promise<Certificate[]> {
   if (recognized.length === 0) return [];
-  const settings = await certificateSettingsIn(tx);
+  const settings = await CERTIFICATE_SETTINGS.readIn(tx);
   const scope = dataScopeOf(actor);
   const rows: { dossierId: string; recognizedStar: number; code: string; entityId: string }[] = [];
   for (const r of recognized) {

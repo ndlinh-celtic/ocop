@@ -1,4 +1,6 @@
 import { defineModule } from "../shared/module";
+import { CERTIFICATE_SETTINGS } from "./certificate-settings";
+import { UNDERPERFORMING_RATIO } from "./underperforming-ratio";
 import { amendDecision } from "./amend-decision";
 import { certificateDrafts, downloadCertificate, draftCertificate, listCertificates, uploadSignedCertificate } from "./certificate";
 import { emailCertificateExpiry, notifyCertificateExpiry, sendCertificateExpiryReminders } from "./certificate-expiry";
@@ -59,6 +61,11 @@ export const resultsModule = defineModule({
     removeExpiredFiveStarPackages,
     // L22 DC-05 Xuất Excel danh sách sản phẩm đạt sao (#91).
     exportStarList,
+    // Cấu hình chung of Quản trị: Tiêu chí dưới mức (#80) and Giấy chứng nhận (#84).
+    underperformingRatio: UNDERPERFORMING_RATIO.read,
+    setUnderperformingRatio: UNDERPERFORMING_RATIO.write,
+    certificateSettings: CERTIFICATE_SETTINGS.read,
+    setCertificateSettings: CERTIFICATE_SETTINGS.write,
   },
   jobs: {
     // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, daily; a giấy whose day has passed unreminded goes out on the next
