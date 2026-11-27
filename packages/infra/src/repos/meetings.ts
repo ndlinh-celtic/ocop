@@ -1,5 +1,5 @@
 import type { AggregateResult, AggregateResultRepo, MeetingRepo } from "@ocop/core";
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql, type SQLWrapper } from "drizzle-orm";
 import type { Db } from "../db/types";
 import { aggregateResult, meeting, meetingDossier, meetingMinutes, unlockRequest } from "../db/schema";
 
@@ -77,6 +77,9 @@ export function meetingRepo(db: Db): MeetingRepo {
   };
 }
 
+/** The kết quả chốt hiện hành of a hồ sơ (CODING_STANDARDS "Bản ghi hiện hành"): one not superseded by a Mở khóa. */
+export const currentResultOf = (dossierId: string | SQLWrapper) => and(eq(aggregateResult.dossierId, dossierId), isNull(aggregateResult.supersededAt));
+
 /** Kết quả chốt (#60): insert only; the DB refuses any change but superseding it once. */
 export function aggregateResultRepo(db: Db): AggregateResultRepo {
   return {
@@ -84,10 +87,7 @@ export function aggregateResultRepo(db: Db): AggregateResultRepo {
       await db.insert(aggregateResult).values(r);
     },
     async current(dossierId) {
-      const [row] = await db
-        .select()
-        .from(aggregateResult)
-        .where(and(eq(aggregateResult.dossierId, dossierId), isNull(aggregateResult.supersededAt)));
+      const [row] = await db.select().from(aggregateResult).where(currentResultOf(dossierId));
       return row ?? null;
     },
     async list(dossierId) {

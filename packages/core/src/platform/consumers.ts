@@ -1,8 +1,11 @@
 import type { SystemActor } from "../shared/context";
 import { emailDossierEvent, NOTICE_EVENTS, notifyDossierEvent } from "../dossiers/notices";
 import { emailReminder, notifyReminder } from "../dossiers/reminders";
+import { draftCertificate } from "../results/certificate";
+import { emailCertificateExpiry, notifyCertificateExpiry } from "../results/certificate-expiry";
 import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
 import { issueActivationLink } from "../identity/activation-email";
+import { buildFiveStarPackage, notifyFiveStarPackage } from "../results/five-star-package";
 import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
 import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
 import type { CoreDeps } from "../shared/deps";
@@ -62,6 +65,29 @@ export const CONSUMERS = {
   "dossiers.reminder-email": {
     events: ["dossier.reminder_due"],
     handle: emailReminder,
+  },
+  // L16 HD-11 (#84): the bản nháp PDF of a Giấy chứng nhận, outside the transaction that issued it.
+  "results.certificate-draft": {
+    events: ["certificate.issued", "certificate.amended"],
+    handle: draftCertificate,
+  },
+  // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, in the app and by email.
+  "notifications.certificate-expiry": {
+    events: ["certificate.expiry_due"],
+    handle: notifyCertificateExpiry,
+  },
+  "results.certificate-expiry-email": {
+    events: ["certificate.expiry_due"],
+    handle: emailCertificateExpiry,
+  },
+  // L17 SO-04 Gói đề nghị 5 sao (#89): the build job, then the notice in the app.
+  "results.five-star-package": {
+    events: ["five_star_package.requested"],
+    handle: buildFiveStarPackage,
+  },
+  "notifications.five-star-package": {
+    events: ["five_star_package.ready", "five_star_package.failed"],
+    handle: notifyFiveStarPackage,
   },
 } as const satisfies Record<string, Consumer>;
 

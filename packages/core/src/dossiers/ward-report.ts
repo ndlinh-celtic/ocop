@@ -1,5 +1,6 @@
 import { auditEntry } from "../audit/audit";
 import type { WardReportData } from "../documents/renderer";
+import { renderDocument } from "../documents/templates";
 import { ENTITY_KIND_LABEL } from "../entities/model";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
@@ -61,7 +62,7 @@ export function generateWardReport(deps: CoreDeps) {
         suggestion: SUGGESTION_LABEL[eligible ? "eligible" : "not_eligible"],
         generatedOn: formatDayVn(vnDateOf(now)),
       });
-      const bytes = await deps.documents.render("ward_report", data);
+      const { bytes } = await renderDocument(deps, tx, "ward_report", data);
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
           action: "dossier.ward_report.generate",

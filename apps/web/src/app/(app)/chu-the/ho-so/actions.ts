@@ -226,3 +226,13 @@ async function save(dossierId: string, onBehalf: string | undefined, write: () =
     return { error: domainMessage(err), conflict: err instanceof DomainError && err.code === "version_conflict" };
   }
 }
+
+/** L16 CT-13 (#85, story 66): a short-lived link to the newest Thư kết quả không đạt of the Chủ thể's hồ sơ. */
+export async function downloadResultLetterAction(dossierId: string): Promise<{ url?: string; error?: string }> {
+  const actor = await requireActor();
+  try {
+    return { url: (await app().core.results.downloadResultLetter(actor, { dossierId })).url };
+  } catch (err) {
+    return { error: domainMessage(err) };
+  }
+}

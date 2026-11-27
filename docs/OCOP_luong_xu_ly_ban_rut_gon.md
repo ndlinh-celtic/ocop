@@ -78,7 +78,7 @@ stateDiagram-v2
     TVXacNhan --> ChotDiem: Hội đồng chốt
     ChotDiem --> CN34
     ChotDiem --> KhongDat
-    ChotDiem --> GuiBo: Từ 90 điểm, Sở xuất gói hồ sơ
+    ChotDiem --> GuiBo: Hạng 5 sao, Sở đánh dấu đã gửi
     GuiBo --> CN34: Bộ trả về, Sở chuyển về công nhận cấp tỉnh
     GuiBo --> DaDong: Sở đóng hồ sơ
 ```
@@ -464,17 +464,17 @@ Bộ NN&MT không dùng hệ thống. Hệ thống chỉ cung cấp công cụ x
 **Luồng chính**
 1. Hồ sơ từ 90 điểm (ngưỡng cấu hình) xuất hiện trong danh sách "Đề xuất 5 sao".
 2. Sở bấm "Xuất gói hồ sơ": hệ thống đóng gói hồ sơ sản phẩm, minh chứng, báo cáo đánh giá của Tổ tư vấn, báo cáo đánh giá của Hội đồng, quyết định phê duyệt kết quả của Chủ tịch UBND tỉnh, bảng điểm và bản nháp văn bản đề nghị của UBND tỉnh thành một tệp (ZIP hoặc PDF) (SO-04).
-3. Sở hoàn thiện và gửi hồ sơ theo kênh văn bản hiện hành. Sở có thể ghi số công văn và ngày gửi (tùy chọn); hồ sơ được đánh dấu "Đã gửi đề nghị 5 sao".
+3. Sở hoàn thiện và gửi hồ sơ theo kênh văn bản hiện hành, rồi đánh dấu đã gửi từng hồ sơ với số công văn và ngày gửi (bắt buộc, ngày gửi không sau ngày hiện tại); hồ sơ chuyển "Đã gửi đề nghị 5 sao".
 4. Khi có kết quả ngoài hệ thống, Sở chọn một trong hai thao tác:
-   - **Chuyển về công nhận cấp tỉnh** (khi Bộ trả về để tỉnh công nhận 4 sao): hồ sơ đi tiếp theo L16.
-   - **Đóng hồ sơ** (công nhận 5 sao hoặc kết quả khác): hồ sơ chuyển "Đã đóng, xử lý ngoài hệ thống"; có thể đính kèm văn bản kết quả như tệp thường.
+   - **Chuyển về công nhận cấp tỉnh** (khi Bộ trả về để tỉnh công nhận 4 sao), kèm tệp văn bản của Bộ: hồ sơ vẫn ở "Đã gửi đề nghị 5 sao" với cờ chờ Quyết định công nhận bổ sung, rồi được công nhận 4 sao theo L16 (ADR 0009).
+   - **Đóng hồ sơ**: Bộ công nhận 5 sao (số, ngày quyết định của Bộ và tệp, đều bắt buộc; hệ thống thông báo cho Chủ thể) hoặc kết quả khác (tệp bắt buộc). Hồ sơ chuyển "Đã đóng, xử lý ngoài hệ thống". Hồ sơ đang chờ Quyết định công nhận bổ sung không đóng được.
 
 **Ngoại lệ:** Bộ trả về với hạng thấp hơn: tỉnh xử lý theo hạng tương ứng ở L16. Thủ tục hậu kiểm khi điểm của Bộ khác điểm của tỉnh cần xác nhận.
 
 **Ghi chú**
 - Theo mô tả công khai về hồ sơ đề nghị 5 sao, ngoài các văn bản trên còn có văn bản kiểm tra, kiểm nghiệm bổ sung của tỉnh (nếu có) và sản phẩm mẫu (5 sản phẩm, trừ nhóm du lịch cộng đồng, du lịch sinh thái và điểm du lịch). Sản phẩm mẫu và việc gửi hồ sơ do UBND tỉnh thực hiện ngoài hệ thống; cần đối chiếu văn bản gốc.
-- Hệ thống không nhập kết quả chi tiết của Bộ (số quyết định, giấy chứng nhận do Bộ cấp). Nếu cần quản lý các kết quả này trong hệ thống thì bổ sung sau.
-- Thông báo kết quả cho chủ thể sau khi đóng hồ sơ do Sở thực hiện ngoài hệ thống (cần xác nhận).
+- Hệ thống chỉ ghi số và ngày quyết định của Bộ khi Bộ công nhận 5 sao; không nhập điểm chi tiết hay giấy chứng nhận do Bộ cấp.
+- Khi Sở đóng hồ sơ với kết quả Bộ công nhận 5 sao, hệ thống gửi email và thông báo trong app cho Chủ thể.
 
 ---
 

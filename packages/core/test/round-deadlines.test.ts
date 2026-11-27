@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { endOfVnDay, vnDateOf } from "../src/rounds/model";
+import { endOfVnDay, vnDateOf, vnTimeOf } from "../src/rounds/model";
 
 describe("L07 SO-01 a deadline date means the end of that day in Vietnam", () => {
   it.each([
@@ -20,5 +20,12 @@ describe("L07 SO-01 a deadline date means the end of that day in Vietnam", () =>
     ["2026-06-29T17:00:00Z", "2026-06-30"],
   ])("the Vietnam calendar date of %s is %s", (at, day) => {
     expect(vnDateOf(new Date(at))).toBe(day);
+  });
+});
+
+describe("vnTimeOf", () => {
+  it("is the time of day in Vietnam, HH:mm, crossing midnight like vnDateOf", () => {
+    expect(vnTimeOf(new Date("2026-10-28T02:05:00Z"))).toBe("09:05");
+    expect(vnTimeOf(new Date("2026-10-28T17:30:59Z"))).toBe("00:30");
   });
 });

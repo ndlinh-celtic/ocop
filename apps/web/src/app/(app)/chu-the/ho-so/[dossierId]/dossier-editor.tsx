@@ -1,4 +1,4 @@
-import { can, type UserActor } from "@ocop/core";
+import { can, type DossierState, type UserActor } from "@ocop/core";
 import { Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +10,7 @@ import { RejectionNotice } from "@/components/dossiers/rejection-notice";
 import { SignedWardReport } from "@/components/dossiers/signed-ward-report";
 import { SubmissionDocuments } from "@/components/dossiers/submission-documents";
 import { SupplementRequests } from "@/components/dossiers/supplement-requests";
+import { EntityResult } from "@/components/results/entity-result";
 import { dossierHome } from "@/lib/dossier-paths";
 import { formatVnDateTime } from "@/lib/format";
 import { orNotFound } from "@/lib/not-found";
@@ -20,6 +21,9 @@ import { ProductForm } from "./product-form";
 import { SubmitPanel, WithdrawForm } from "./submit-panel";
 import { SupplementAnswerForm } from "./supplement-answer";
 import { Workbench } from "./workbench";
+
+/** The states from chốt điểm on, where the hồ sơ has or awaits a kết quả. */
+const RESULT_STATES: readonly DossierState[] = ["score_finalized", "recognized", "not_passed", "five_star_proposed", "closed_offline"];
 
 /**
  * S14 Trình soạn hồ sơ (L02 CT-03, CT-05, CT-06): thông tin sản phẩm, kho minh chứng gắn theo tiêu chí,
@@ -57,6 +61,8 @@ export async function DossierEditor({
   const withdrawable = can(actor, "dossier.withdraw", dossier) && dossier.receivedAt === null;
   // Story 35: the Báo cáo đánh giá cấp xã once signed, never the nhận xét of the Checklist sơ bộ.
   const { signed } = dossier.receivedAt ? await app().core.dossiers.wardReport(actor, { dossierId }) : { signed: null };
+  // L16 CT-13 (#83): the Chủ thể's kết quả from chốt điểm on; the Cán bộ xã under Nhập hộ never sees điểm.
+  const scores = !onBehalf && RESULT_STATES.includes(dossier.state) ? await app().core.scoring.readDossierScores(actor, { dossierId }) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -101,6 +107,7 @@ export async function DossierEditor({
         </section>
       )}
       {dossier.rejection && <RejectionNotice rejection={dossier.rejection} />}
+      {scores && <EntityResult view={scores.kind === "published_result" ? scores : null} />}
 
       <SupplementRequests
         requests={supplements}

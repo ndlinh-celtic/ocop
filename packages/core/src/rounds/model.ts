@@ -160,6 +160,11 @@ export function vnDateOf(at: Date): string {
   return new Date(at.getTime() + VN_OFFSET_HOURS * 3_600_000).toISOString().slice(0, 10);
 }
 
+/** The time of day in Vietnam of an instant, as HH:mm. */
+export function vnTimeOf(at: Date): string {
+  return new Date(at.getTime() + VN_OFFSET_HOURS * 3_600_000).toISOString().slice(11, 16);
+}
+
 /** Hạn nộp xã ≤ Hạn gửi tỉnh ≤ Hạn đánh giá tỉnh; extensions (#26) keep this order too. */
 export function assertDeadlineOrder(d: RoundDeadlines): void {
   if (d.submissionDeadline > d.forwardingDeadline || d.forwardingDeadline > d.evaluationDeadline) {

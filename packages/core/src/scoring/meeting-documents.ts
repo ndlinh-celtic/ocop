@@ -1,6 +1,7 @@
 import { ownUpload } from "../files/attach";
 import { auditEntry } from "../audit/audit";
-import type { DocumentTemplate, MeetingDocumentData, MeetingDocumentRow } from "../documents/renderer";
+import type { DocumentTemplate, MeetingDocumentRow, RecognitionDecisionData } from "../documents/renderer";
+import { renderDocument } from "../documents/templates";
 import { dossierNotFound } from "../dossiers/model";
 import { authorize } from "../identity/policy";
 import { dataScopeOf } from "../identity/scope";
@@ -13,7 +14,8 @@ import { formatDayVn, formatDecimalVn } from "../shared/format";
 import type { Tx } from "../shared/uow";
 import type { AggregateScores } from "./aggregate";
 import type { Meeting } from "./meeting-model";
-import { chotResultOf, ownMeeting } from "./meetings";
+import { ownMeeting, type Standing, standingsOf } from "./meetings";
+import { DECISION_SECTION_LABEL, decisionDraftSections, sectionOf, starOutcome } from "../results/decision-model";
 import { aggregateOf } from "./read";
 import type { ScoreSheetState } from "./score-sheet-model";
 
@@ -49,6 +51,8 @@ function pointsLabel(state: ScoreSheetState | null, total: number | null): strin
 interface Row extends MeetingDocumentRow {
   starValue: number;
   dossierId: string;
+  /** Chốt lại tại another Phiên họp: out of the dự thảo quyết định (#83). */
+  moved: boolean;
   /** Whether the row prints a thành viên's points by name (a phiếu đã xác nhận). */
   showsPoints: boolean;
 }
@@ -56,16 +60,25 @@ interface Row extends MeetingDocumentRow {
 /** The văn bản that print each thành viên chấm with their points; the dự thảo quyết định prints the tổng hợp alone. */
 const NAMES_GRADERS: readonly MeetingDocumentKind[] = ["score_table", "minutes"];
 
+function statusOf(s: Standing): string {
+  if (s.kind === "chot") return "Đã chốt";
+  if (s.kind === "moved") return `Đã Mở khóa, chốt lại tại Phiên họp "${s.to.title}"`;
+  // A kết quả a Mở khóa superseded is not printed: the hồ sơ is tạm tính until chốt again (ADR 0008).
+  return s.unlocked ? "Đã mở khóa, chờ chốt lại" : "Tạm tính";
+}
+
 async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ rows: Row[]; pending: number }> {
   const scope = dataScopeOf(actor);
   const rows: Row[] = [];
   let pending = 0;
-  for (const md of await tx.meetings.dossiers(meeting.id)) {
+  // A hồ sơ chốt again in another Phiên họp stays in this one's văn bản with its kết quả chốt here (#94); the dự thảo
+  // quyết định leaves it out, it follows that Phiên họp's (#83).
+  for (const { row: md, standing } of await standingsOf(tx, meeting.id)) {
+    const result = standing.kind === "pending" ? null : standing.result;
     const d = await tx.dossiers.findById(scope, md.dossierId);
     if (!d) throw dossierNotFound();
     const submission = await tx.dossiers.latestSubmission(d.id);
     const versions = await tx.advisoryReports.versions(d.id);
-    const result = await chotResultOf(tx, md);
     let graders: { fullName: string; state: ScoreSheetState | null; total: number | null }[];
     let aggregate: AggregateScores;
     let absent: string;
@@ -96,12 +109,14 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
       unmet: aggregate.unmet.map((u) => `${u.code} (${u.star} sao cần ${formatDecimalVn(u.required)}, đạt ${formatDecimalVn(u.actual)})`).join("; ") || "Không",
       absent,
       advisorySummary: advisory ? `${advisory.snapshot.summary} (Báo cáo Tổ tư vấn phiên bản ${advisory.number})` : "Không có Báo cáo Tổ tư vấn",
-      // A kết quả a Mở khóa superseded is not printed: the hồ sơ is tạm tính until chốt again (ADR 0008).
-      status: result ? "Đã chốt" : md.resultId ? "Đã mở khóa, chờ chốt lại" : "Tạm tính",
+      status: statusOf(standing),
       // By Hạng sao, not điểm: a hồ sơ from 90 điểm whose Sao tối thiểu of 5 sao is unmet is 4 sao (CLAUDE.md "Hạng sao").
-      note: aggregate.star === 5 ? "Đề nghị xét 5 sao" : "",
+      // Mục (3) of the quyết định (#83, spec #79): it approves the kết quả, it recognizes nothing.
+      note: starOutcome(aggregate.star) === "five_star_proposal" ? DECISION_SECTION_LABEL.five_star_proposal : "",
+      generalComment: d.generalComment ?? "",
       starValue: aggregate.star,
       dossierId: d.id,
+      moved: standing.kind === "moved",
       showsPoints: graders.some((g) => g.state === "confirmed" && g.total !== null),
     });
   }
@@ -110,7 +125,7 @@ async function rowsOf(tx: Tx, actor: UserActor, meeting: Meeting): Promise<{ row
 }
 
 const reindex = (rows: Row[]): MeetingDocumentRow[] =>
-  rows.map(({ starValue: _s, dossierId: _d, showsPoints: _p, ...r }, i) => ({ ...r, index: String(i + 1) }));
+  rows.map(({ starValue: _s, dossierId: _d, moved: _m, showsPoints: _p, ...r }, i) => ({ ...r, index: String(i + 1) }));
 
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|]+/g, " ").trim();
 
@@ -125,8 +140,15 @@ export function generateMeetingDocument(deps: CoreDeps) {
       const council = await tx.councils.findById(meeting.councilId);
       const round = await tx.rounds.findById(meeting.roundId);
       const now = deps.clock.now();
-      const listed = input.kind === "decision" ? rows.filter((r) => r.starValue >= 3) : rows;
-      const data: MeetingDocumentData = {
+      const listed = input.kind === "decision" ? rows.filter((r) => !r.moved && sectionOf(r.starValue) !== null) : rows;
+      // The dự thảo quyết định công nhận only mục 3 and 4 sao; a hồ sơ 5 sao goes in its own mục (#79 review S3).
+      const { sections, recognized } = decisionDraftSections(
+        listed.flatMap((r) => {
+          const section = sectionOf(r.starValue);
+          return section ? [{ section, row: reindex([r])[0]! }] : [];
+        }),
+      );
+      const data: RecognitionDecisionData = {
         councilName: council?.name ?? "",
         roundName: round?.name ?? "",
         meetingTitle: meeting.title,
@@ -136,11 +158,14 @@ export function generateMeetingDocument(deps: CoreDeps) {
           pending === 0
             ? "Số liệu đã chốt của toàn bộ hồ sơ trong Phiên họp."
             : `Bản nháp: còn ${pending} hồ sơ chưa chốt điểm, số liệu của các hồ sơ này là tạm tính.`,
-        count: String(listed.length),
-        dossiers: reindex(listed),
+        count: String(input.kind === "decision" ? recognized.length : listed.length),
+        dossiers: input.kind === "decision" ? recognized : reindex(listed),
         generatedOn: formatDayVn(vnDateOf(now)),
+        // The dự thảo theo Phiên họp, not bổ sung (#88); the other văn bản họp ignore it.
+        supplementary: false,
+        sections,
       };
-      const bytes = await deps.documents.render(TEMPLATE[input.kind], data);
+      const { bytes } = await renderDocument(deps, tx, TEMPLATE[input.kind], data);
       await tx.audit.append(
         auditEntry(actor, deps.ids.next(), now, {
           action: "scoring.meeting.document_generated",

@@ -2,6 +2,7 @@ import { DOSSIER_STATE_LABEL, DOSSIER_STATES, type DossierListInput, type Dossie
 import { FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { DossierStateTag } from "@/components/dossiers/dossier-state-tag";
+import { ExportExcelLink } from "@/components/dossiers/export-excel-link";
 import { EmptyState } from "@/components/empty-state";
 import { formatVnDateTime } from "@/lib/format";
 import { app } from "@/server/app";
@@ -68,9 +69,13 @@ export default async function ProvinceDossiersPage({ searchParams }: { searchPar
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Hồ sơ toàn tỉnh</h1>
-        <p className="text-sm text-text-2">Hồ sơ UBND xã/phường đã gửi lên tỉnh, kể cả hồ sơ Sở đã trả về.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Hồ sơ toàn tỉnh</h1>
+          <p className="text-sm text-text-2">Hồ sơ UBND xã/phường đã gửi lên tỉnh, kể cả hồ sơ Sở đã trả về.</p>
+        </div>
+        {/* #90: the list as filtered below, with điểm tổng hợp and Hạng sao of the hồ sơ đã chốt. */}
+        <ExportExcelLink input={input} />
       </div>
 
       <div className="flex flex-col gap-3">

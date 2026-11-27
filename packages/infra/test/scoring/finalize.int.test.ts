@@ -112,7 +112,7 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect((await full(w.A.chair, d.dossierId)).result).toMatchObject({ reauthMethod: "password", finalizedBy: { userId: w.A.chair.userId } });
   });
 
-  it("after chốt shows every thành viên chấm the kết quả, tells them, and gives the Chủ thể a timeline row and the Sở the state only (stories 121, 122, 124, 125, 137)", async () => {
+  it("after chốt shows every thành viên chấm the kết quả, tells them, and gives the Chủ thể a timeline row and the Sở the kết quả without phiếu (stories 121, 122, 124, 125, 137; #80)", async () => {
     const d = await ready();
     await meetingWith(w.A.secretary, [d.dossierId]);
     await w.t.app.scoring.finalize(w.A.secretary, { dossierId: d.dossierId, expectedVersion: (await full(w.A.secretary, d.dossierId)).dossierVersion });
@@ -122,8 +122,9 @@ describe("L15 Phiên họp and chốt điểm (#60)", () => {
     expect((await full(m(0), d.dossierId)).aggregate.total).toBe(72.5);
     expect((await w.t.app.scoring.readDossierScores(m(2), { dossierId: d.dossierId, ownSheet: true })).kind).toBe("own_sheet");
     await expect(w.t.app.scoring.readDossierScores(m(3), { dossierId: d.dossierId })).rejects.toMatchObject({ code: "not_found" });
-    for (const reader of [w.province, w.ward, d.a])
-      expect(await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId })).toEqual({ kind: "none" });
+    for (const reader of [w.ward, d.a]) expect(await w.t.app.scoring.readDossierScores(reader, { dossierId: d.dossierId })).toEqual({ kind: "none" });
+    // L16 (#80): the Sở sees the kết quả chốt without any phiếu.
+    expect((await w.t.app.scoring.readDossierScores(w.province, { dossierId: d.dossierId })).kind).toBe("aggregate_only");
     expect(await w.t.app.dossiers.get(w.province, { dossierId: d.dossierId })).toMatchObject({ state: "score_finalized" });
 
     const timeline = await w.t.app.dossiers.timeline(d.a, { dossierId: d.dossierId });

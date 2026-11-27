@@ -95,8 +95,10 @@ export interface MeetingDocumentRow {
   advisorySummary: string;
   /** "Đã chốt" or "Tạm tính". */
   status: string;
-  /** Dự thảo quyết định: "Đề nghị xét 5 sao" from the 5-sao Ngưỡng hạng up. */
+  /** Dự thảo quyết định: mục (3) "Đạt điểm đề nghị Trung ương đánh giá, phân hạng 5 sao" for a hồ sơ 5 sao (#83). */
   note: string;
+  /** L16 (#80, story 8): the Nhận xét chung of the Chủ tịch or Thư ký, empty until written. */
+  generalComment: string;
 }
 
 /**
@@ -116,20 +118,137 @@ export interface MeetingDocumentData {
   generatedOn: string;
 }
 
+/** One mục of the dự thảo Quyết định công nhận: 3 sao, 4 sao, or đạt điểm đề nghị Trung ương đánh giá 5 sao. */
+export interface DecisionDraftSection {
+  /** Số thứ tự of the mục among those printed. */
+  index: string;
+  heading: string;
+  count: string;
+  dossiers: MeetingDocumentRow[];
+}
+
+/**
+ * The dự thảo Quyết định công nhận: theo Phiên họp (#62, #83), or bổ sung (#88, ADR 0009) with `supplementary` set, no
+ * Phiên họp and only mục 4 sao. A template tells them apart with {#supplementary}…{/supplementary} and {^supplementary}.
+ * `count` and `dossiers` are the hồ sơ công nhận (3 and 4 sao) only; `sections` adds the mục 5 sao, which công nhận nothing.
+ */
+export interface RecognitionDecisionData extends MeetingDocumentData {
+  supplementary: boolean;
+  sections: DecisionDraftSection[];
+}
+
+/** L16 HD-11 (#84, story 26): the bản nháp of a Giấy chứng nhận, đem đi ký số. */
+export interface CertificateData {
+  /** Số hiệu giấy chứng nhận, e.g. 012/2026/GCN-OCOP. */
+  code: string;
+  productName: string;
+  entityName: string;
+  address: string;
+  /** Hạng công nhận, e.g. "4 sao". */
+  star: string;
+  issuedOn: string;
+  expiresOn: string;
+  decisionNumber: string;
+  decisionSignedOn: string;
+}
+
+/** L16 HD-10 Thư kết quả không đạt (#85, spec #79 stories 36 to 43); values formatted for reading. */
+export interface ResultLetterData {
+  /** "1" for the letter, "2"… for a thư đính chính. */
+  letterNumber: string;
+  /** Empty for the first letter; for a thư đính chính, which letter it corrects and why. */
+  correctionNote: string;
+  dossierCode: string;
+  entityName: string;
+  address: string;
+  representativeName: string;
+  productName: string;
+  criteriaSetCode: string;
+  criteriaSetName: string;
+  roundName: string;
+  /** Điểm tổng hợp of the kết quả chốt. */
+  total: string;
+  /** Điểm theo Phần A, B, C. */
+  parts: { code: string; total: string }[];
+  /** "2 sao (không đạt)". */
+  star: string;
+  generalComment: string;
+  /** Tiêu chí dưới mức, as the Sở settled them. */
+  criteria: { index: string; code: string; name: string; average: string; maxPoints: string; reason: string }[];
+  advice: string;
+  issuedOn: string;
+}
+
+/** One hồ sơ of the Gói đề nghị 5 sao in its văn bản (L17 SO-04, #89); values formatted for reading. */
+export interface FiveStarPackageDossierRow {
+  index: string;
+  code: string;
+  productName: string;
+  entityName: string;
+  address: string;
+  wardName: string;
+  /** "<mã> - <tên>" of the Bộ tiêu chí. */
+  criteriaSet: string;
+  total: string;
+  star: string;
+  /** "Số <số>, ngày <dd/mm/yyyy>" of the Quyết định công nhận naming the hồ sơ. */
+  decision: string;
+}
+
+/** Dự thảo văn bản đề nghị of the UBND tỉnh (#89, story 49): every hồ sơ of the package. */
+export interface FiveStarProposalLetterData {
+  count: string;
+  dossiers: FiveStarPackageDossierRow[];
+  generatedOn: string;
+}
+
+/** Mục lục of the Gói đề nghị 5 sao (#89, story 50): each file by folder, as named in the ZIP. */
+export interface FiveStarPackageIndexData {
+  count: string;
+  /** The files at the root of the ZIP. */
+  rootFiles: { name: string }[];
+  dossiers: (Pick<FiveStarPackageDossierRow, "index" | "code" | "productName" | "entityName"> & {
+    folder: string;
+    files: { index: string; path: string }[];
+  })[];
+  generatedOn: string;
+}
+
 export interface DocumentTemplates {
   registration_form: RegistrationFormData;
   self_assessment_report: SelfAssessmentReportData;
   ward_report: WardReportData;
   meeting_score_table: MeetingDocumentData;
   meeting_minutes_draft: MeetingDocumentData;
-  recognition_decision_draft: MeetingDocumentData;
+  recognition_decision_draft: RecognitionDecisionData;
+  certificate: CertificateData;
+  result_letter: ResultLetterData;
+  five_star_proposal_letter: FiveStarProposalLetterData;
+  five_star_package_index: FiveStarPackageIndexData;
 }
 
 export type DocumentTemplate = keyof DocumentTemplates;
 
+/**
+ * A tag read from a template: a plain {name}, or a section {#name}…{/name} (also {^name}) with the tags inside it.
+ * A section on a loop repeats per row; a section on any other variable shows its content when the value is not empty.
+ */
+export type TemplateTag = string | { name: string; children: readonly TemplateTag[] };
+
+/** What reading a template's tags found: its tags, or why it cannot be a template (#82 story 75). */
+export type TemplateInspection = { ok: true; tags: TemplateTag[] } | { ok: false; error: "not_docx" } | { ok: false; error: "syntax"; details: string[] };
+
 /** Fills a Word template (docxtemplater in @ocop/infra) and returns the DOCX bytes. */
 export interface DocumentRenderer {
-  render<K extends DocumentTemplate>(template: K, data: DocumentTemplates[K]): Promise<Uint8Array>;
+  /**
+   * Fills `source`, the bytes of a Mẫu văn bản uploaded as a phiên bản (#82), or else the mẫu mặc định shipped with
+   * the app. Use cases go through renderDocument (templates.ts), which picks the mẫu đang dùng.
+   */
+  render<K extends DocumentTemplate>(template: K, data: DocumentTemplates[K], source?: Uint8Array): Promise<Uint8Array>;
+  /** Reads the tags of a template without filling it. */
+  inspect(source: Uint8Array): TemplateInspection;
+  /** The mẫu mặc định of a loại, as shipped. */
+  builtIn(template: DocumentTemplate): Uint8Array;
 }
 
 export const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";

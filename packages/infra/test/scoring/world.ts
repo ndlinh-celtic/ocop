@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach } from "vitest";
 import type { GradingMode, UserActor } from "@ocop/core";
 import { seedWards } from "../../src/seed/wards";
 import { createTestApp, createTestDatabase, systemActor, type TestApp, type TestDatabase } from "../support";
-import { ADMIN, fixtures } from "../dossiers/fixtures";
+import { ADMIN, fixtures, type DraftExtras } from "../dossiers/fixtures";
 
 export const START = new Date("2026-10-19T02:00:00Z");
 
@@ -45,7 +45,7 @@ export interface ScoringWorld {
   level: (key: string) => string;
   criterionId: (code: string) => string;
   /** A hồ sơ Giao chấm in the world's đợt to these thành viên chấm of Hội đồng A. */
-  graded: (members: UserActor[], advisors?: UserActor[]) => Promise<{ a: UserActor; dossierId: string; version: number; state: string }>;
+  graded: (members: UserActor[], advisors?: UserActor[], draft?: DraftExtras) => Promise<{ a: UserActor; dossierId: string; version: number; state: string }>;
 }
 
 /**
@@ -95,7 +95,7 @@ export function scoringWorld(
     w.B = await w.f.staffedCouncil(w.province, { members: 2, advisors: 1 });
     w.roundId = await w.f.openRound(versionId, { gradingMode: opts.gradingMode ?? "direct", minGraders: opts.minGraders ?? 2 });
     await w.t.app.rounds.assignCouncil(w.province, { roundId: w.roundId, councilId: w.A.councilId });
-    w.graded = (members, advisors = []) => w.f.gradingStarted(w.ward, w.province, w.setId, w.A.secretary, { members, advisors });
+    w.graded = (members, advisors = [], draft = {}) => w.f.gradingStarted(w.ward, w.province, w.setId, w.A.secretary, { members, advisors }, undefined, draft);
   });
   beforeEach(() => {
     w.t.clock.set(START);

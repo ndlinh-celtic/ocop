@@ -8,9 +8,17 @@ cd "$(dirname "$0")/.."
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ocop-e2e}"
 
 docker info >/dev/null 2>&1 || { echo "Docker is not running" >&2; exit 1; }
-if command -v lsof >/dev/null && lsof -iTCP:8080 -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Port 8080 is taken (the dev stack?): stop it with 'docker compose down' first" >&2
-  exit 1
+if command -v lsof >/dev/null; then
+  if lsof -iTCP:8080 -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Port 8080 is taken (the dev stack?): stop it with 'docker compose down' first" >&2
+    exit 1
+  fi
+  for port in "${S3_HOST_PORT:-9000}" "${S3_CONSOLE_HOST_PORT:-9001}"; do
+    if lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "Port $port is taken (php-fpm, the dev stack?): free it or rerun with S3_HOST_PORT=9010 S3_CONSOLE_HOST_PORT=9011" >&2
+      exit 1
+    fi
+  done
 fi
 
 finish() {

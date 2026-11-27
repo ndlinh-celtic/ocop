@@ -8,13 +8,15 @@ import {
   HeadObjectCommand,
   NotFound,
   PutBucketCorsCommand,
+  PutBucketLifecycleConfigurationCommand,
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
 import type { FileStore } from "@ocop/core";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 
 export interface S3Settings {
   /** Endpoint the app reaches (inside Docker: http://s3:9000). */
@@ -96,6 +98,27 @@ export function createS3FileStore(s: S3Settings, bucket: string): FileStore {
     async put(key, body, contentType) {
       await internal.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
     },
+    async putStream(key, body, contentType) {
+      let size = 0;
+      const counted = Readable.from(
+        (async function* () {
+          for await (const chunk of body) {
+            size += chunk.byteLength;
+            yield chunk;
+          }
+        })(),
+      );
+      // Multipart in parts of 8 MiB, two at a time; a failure aborts the upload (leavePartsOnError false).
+      const upload = new Upload({
+        client: internal,
+        params: { Bucket: bucket, Key: key, Body: counted, ContentType: contentType },
+        partSize: 8 * 1024 * 1024,
+        queueSize: 2,
+        leavePartsOnError: false,
+      });
+      await upload.done();
+      return { size };
+    },
     async delete(key) {
       await internal.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
     },
@@ -106,12 +129,33 @@ export function createS3FileStore(s: S3Settings, bucket: string): FileStore {
  * Creates the bucket if missing and sets the CORS rules browsers need for direct upload.
  * Used locally and by the compatibility suite; in staging/prod buckets are provisioned by ops.
  */
-export async function ensureBucket(s: S3Settings, bucket: string, opts: { corsOrigins: string[] }): Promise<void> {
+export async function ensureBucket(
+  s: S3Settings,
+  bucket: string,
+  opts: { corsOrigins: string[]; expiringPrefixes?: { prefix: string; days: number }[] },
+): Promise<void> {
   const c = client(s, s.endpoint);
   try {
     await c.send(new HeadBucketCommand({ Bucket: bucket }));
   } catch {
     await c.send(new CreateBucketCommand({ Bucket: bucket }));
+  }
+  // Exports such as the Gói đề nghị 5 sao (#89) live under a prefix the bucket deletes after some days.
+  if (opts.expiringPrefixes?.length) {
+    await c.send(
+      new PutBucketLifecycleConfigurationCommand({
+        Bucket: bucket,
+        LifecycleConfiguration: {
+          Rules: opts.expiringPrefixes.map((r) => ({
+            ID: `expire-${r.prefix.replace(/[^a-z0-9]+/gi, "-")}${r.days}d`,
+            Status: "Enabled",
+            Filter: { Prefix: r.prefix },
+            Expiration: { Days: r.days },
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 },
+          })),
+        },
+      }),
+    );
   }
   if (opts.corsOrigins.length === 0) return;
   await c.send(

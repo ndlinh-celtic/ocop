@@ -7,6 +7,8 @@ import {
   type Core,
   type DocumentRenderer,
   type FileStore,
+  PdfConversionError,
+  type PdfConverter,
   type RequestContext,
   type RoundActivity,
   type UserActor,
@@ -70,6 +72,45 @@ export class FakeScanner implements VirusScanner {
   }
 }
 
+/** The smallest valid PDF: one empty A4 page, cross-reference offsets exact. */
+export const MINIMAL_PDF = (() => {
+  const objects = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>", "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>"];
+  let out = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  objects.forEach((o, i) => {
+    offsets.push(out.length);
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const off of offsets) out += `${String(off).padStart(10, "0")} 00000 n \n`;
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new Uint8Array(Buffer.from(out, "latin1"));
+})();
+
+/**
+ * Stands in for Gotenberg (#81): returns MINIMAL_PDF, keeps every DOCX it was given (`calls`), and can be told
+ * to fail the next N conversions with the PdfConversionError the real adapter throws.
+ */
+export class FakePdfConverter implements PdfConverter {
+  readonly calls: Uint8Array[] = [];
+  private failures = 0;
+  failNext(n: number) {
+    this.failures = n;
+  }
+  get count() {
+    return this.calls.length;
+  }
+  async toPdf(docx: Uint8Array): Promise<Uint8Array> {
+    this.calls.push(docx);
+    if (this.failures > 0) {
+      this.failures--;
+      throw new PdfConversionError("Gotenberg unreachable (simulated)");
+    }
+    return new Uint8Array(MINIMAL_PDF);
+  }
+}
+
 /** A clock tests move by hand: expiry, lockouts and sealing windows without sleeping. */
 export class FakeClock implements Clock {
   constructor(private current = new Date("2026-10-19T02:00:00Z")) {}
@@ -107,6 +148,8 @@ export interface TestApp {
   clock: FakeClock;
   mailbox: Mailbox;
   scanner: FakeScanner;
+  /** The PdfConverter the app uses: the fake unless `opts.pdf` replaced it. */
+  pdf: FakePdfConverter;
   /** Reads an object from the audit anchor bucket. */
   readAnchor(key: string): Promise<string>;
   /**
@@ -129,11 +172,13 @@ export function createTestApp(
     documents?: DocumentRenderer;
     /** Wraps the evidence bucket's FileStore, e.g. to make one call fail. */
     files?: (real: FileStore) => FileStore;
+    pdf?: FakePdfConverter;
   } = {},
 ): TestApp {
   const clock = opts.clock ?? new FakeClock();
   const mailbox = new Mailbox();
   const scanner = new FakeScanner();
+  const pdf = opts.pdf ?? new FakePdfConverter();
   const anchorStore = createS3FileStore(s3TestSettings(), "ocop-audit-anchor-test");
   const app = createApp(
     db.app,
@@ -152,6 +197,7 @@ export function createTestApp(
       scanner,
       roundActivity: opts.roundActivity,
       documents: opts.documents,
+      pdf,
     },
   );
   let boss: PgBoss | undefined;
@@ -167,6 +213,7 @@ export function createTestApp(
     clock,
     mailbox,
     scanner,
+    pdf,
     async readAnchor(key) {
       const chunks: Buffer[] = [];
       for await (const c of await anchorStore.read(key)) chunks.push(Buffer.from(c));

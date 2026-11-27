@@ -143,7 +143,7 @@ export function fixtures(t: TestApp, wardId: () => string) {
    * Makes a Nháp ready for submission through the editor's own use cases: the thông tin sản phẩm of
    * PRODUCT, and every Tiêu chí tự chấm at its lowest Mức điểm (a 0-point level is a valid pick).
    */
-  async function completeDraft(a: UserActor, dossierId: string) {
+  async function completeDraft(a: UserActor, dossierId: string, draft: DraftExtras = {}) {
     let { version } = await t.app.dossiers.updateProduct(a, { dossierId, expectedVersion: (await t.app.dossiers.get(a, { dossierId })).version, ...PRODUCT });
     const { set } = await t.app.dossiers.selfAssessment(a, { dossierId });
     const criteria = set.parts.flatMap((p) => p.sections.flatMap((s) => s.items.flatMap((i) => (i.kind === "criterion" ? [i] : i.criteria))));
@@ -151,21 +151,28 @@ export function fixtures(t: TestApp, wardId: () => string) {
       const lowest = [...c.levels].sort((x, y) => x.points - y.points)[0]!;
       ({ version } = await t.app.dossiers.selfScore(a, { dossierId, expectedVersion: version, criterionId: c.id, levelId: lowest.id }));
     }
+    for (const e of draft.evidence ?? []) {
+      const fileId = await uploadPdf(a, "evidence", e.fileName);
+      ({ version } = await t.app.dossiers.addEvidenceFile(a, { dossierId, expectedVersion: version, fileId }));
+      if (e.criteria.length === 0) continue;
+      const criterionIds = e.criteria.map((code) => criteria.find((c) => c.code === code)!.id);
+      ({ version } = await t.app.dossiers.linkEvidence(a, { dossierId, expectedVersion: version, fileId, criterionIds }));
+    }
     return version;
   }
 
   /** A Chủ thể Đã xác thực of `ward` with a complete Nháp on `criteriaSetId`, submitted into the đợt Đang nhận nộp. */
-  async function submitted(criteriaSetId: string, ward = wardId()) {
+  async function submitted(criteriaSetId: string, ward = wardId(), draft: DraftExtras = {}) {
     const a = await verifiedOwner(ward);
     const { dossierId } = await t.app.dossiers.create(a, { criteriaSetId });
-    const expectedVersion = await completeDraft(a, dossierId);
+    const expectedVersion = await completeDraft(a, dossierId, draft);
     const { version } = await t.app.dossiers.submit(a, { dossierId, expectedVersion });
     return { a, dossierId, version };
   }
 
   /** A hồ sơ submitted to `ward` and Tiếp nhận there by `officer`, a Cán bộ xã of that xã. */
-  async function received(officer: UserActor, criteriaSetId: string, ward = wardId()) {
-    const s = await submitted(criteriaSetId, ward);
+  async function received(officer: UserActor, criteriaSetId: string, ward = wardId(), draft: DraftExtras = {}) {
+    const s = await submitted(criteriaSetId, ward, draft);
     const { version } = await t.app.dossiers.receive(officer, { dossierId: s.dossierId, expectedVersion: s.version });
     return { ...s, version };
   }
@@ -174,8 +181,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
    * L06: a hồ sơ submitted, Tiếp nhận by `officer` (a Cán bộ xã of its xã), with its Checklist sơ bộ all
    * Đạt and a signed Báo cáo đánh giá cấp xã, then gửi tỉnh: Đã chuyển tỉnh.
    */
-  async function forwarded(officer: UserActor, criteriaSetId: string, ward = wardId()) {
-    const s = await received(officer, criteriaSetId, ward);
+  async function forwarded(officer: UserActor, criteriaSetId: string, ward = wardId(), draft: DraftExtras = {}) {
+    const s = await received(officer, criteriaSetId, ward, draft);
     let { version } = s;
     const { items } = await t.app.dossiers.checklist(officer, { dossierId: s.dossierId });
     ({ version } = await t.app.dossiers.assessChecklist(officer, {
@@ -212,8 +219,8 @@ export function fixtures(t: TestApp, wardId: () => string) {
   }
 
   /** A hồ sơ Đã chuyển tỉnh and Tiếp nhận tại tỉnh by `province` (a Cán bộ Sở); its đợt must have a Hội đồng. */
-  async function provinceReceived(officer: UserActor, province: UserActor, criteriaSetId: string, ward = wardId()) {
-    const s = await forwarded(officer, criteriaSetId, ward);
+  async function provinceReceived(officer: UserActor, province: UserActor, criteriaSetId: string, ward = wardId(), draft: DraftExtras = {}) {
+    const s = await forwarded(officer, criteriaSetId, ward, draft);
     const { version } = await t.app.dossiers.receiveAtProvince(province, { dossierId: s.dossierId, expectedVersion: s.version });
     return { ...s, version };
   }
@@ -231,8 +238,9 @@ export function fixtures(t: TestApp, wardId: () => string) {
     secretary: UserActor,
     people: { members: UserActor[]; advisors?: UserActor[] },
     ward = wardId(),
+    draft: DraftExtras = {},
   ) {
-    const s = await provinceReceived(officer, province, criteriaSetId, ward);
+    const s = await provinceReceived(officer, province, criteriaSetId, ward, draft);
     const [drafted] = (
       await t.app.councils.editAssignments(secretary, {
         dossiers: [{ dossierId: s.dossierId, expectedVersion: s.version }],
@@ -330,6 +338,11 @@ export function fixtures(t: TestApp, wardId: () => string) {
 }
 
 export const entityIdOf = (actor: UserActor) => actor.activeScope!.id!;
+
+/** What a Nháp gets beyond the thông tin sản phẩm and tự chấm: minh chứng (PDF) tied to Tiêu chí by mã (none: kho only). */
+export interface DraftExtras {
+  evidence?: { fileName: string; criteria: string[] }[];
+}
 
 export const PRODUCT = {
   productName: "Bưởi da xanh An Phú",

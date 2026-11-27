@@ -26,6 +26,9 @@ const schema = z.object({
   S3_PUBLIC_ENDPOINT: z.string().url().optional(),
   CLAMD_HOST: z.string().default("clamd"),
   CLAMD_PORT: z.coerce.number().default(3310),
+  /** DOCX → PDF inside the deployment (#81). */
+  GOTENBERG_URL: z.string().url().default("http://gotenberg:3000"),
+  GOTENBERG_TIMEOUT_SECONDS: z.coerce.number().positive().default(60),
   // L20 defaults from spec #1; minutes unless noted.
   LOCKOUT_MAX_FAILURES: z.coerce.number().int().positive().default(5),
   LOCKOUT_WINDOW_MINUTES: z.coerce.number().positive().default(15),

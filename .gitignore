@@ -12,3 +12,6 @@ playwright-report/
 test-results/
 .env.local
 *.tsbuildinfo
+
+# Written by scripts/e2e.sh when a run fails.
+compose.log

@@ -120,7 +120,14 @@ export function dossierRepo(db: Db): DossierRepo {
     },
     async stateRow(by, lock = false) {
       const q = db
-        .select({ id: dossier.id, code: dossier.code, state: dossier.state, version: dossier.version, entityId: dossier.entityId })
+        .select({
+          id: dossier.id,
+          code: dossier.code,
+          state: dossier.state,
+          version: dossier.version,
+          entityId: dossier.entityId,
+          resultPublishedAt: dossier.resultPublishedAt,
+        })
         .from(dossier)
         .where(and(isNull(dossier.deletedAt), "id" in by ? eq(dossier.id, by.id) : eq(dossier.code, by.code)));
       const [row] = lock ? await q.for("update") : await q;
