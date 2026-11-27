@@ -20,6 +20,8 @@ import { authenticate, signIn, signOut } from "./identity/session";
 import { activateAccount, createStaffUser, describeActivation, listUsers, getUser, resendActivation } from "./identity/staff";
 import { confirmTotpEnrollment, pendingSignIn, startTotpEnrollment, verifySignInTotp } from "./identity/totp";
 import { handleEvent } from "./platform/consumers";
+import { runJob } from "./platform/jobs";
+import { JOBS } from "./registry";
 import { listDeliveries } from "./platform/deliveries";
 import { configureChecklist } from "./rounds/checklist";
 import { assignCouncil } from "./rounds/council";
@@ -126,6 +128,7 @@ export function createCore(deps: CoreDeps) {
     },
     platform: {
       handleEvent: handleEvent(deps),
+      runJob: runJob(deps, JOBS),
     },
     audit: {
       search: searchAudit(deps),
