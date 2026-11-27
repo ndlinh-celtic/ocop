@@ -1,2 +1,7 @@
 *.xlsx binary
 *.html linguist-generated=true
+# #95: tables that every feature appends to, one entry per feature. When two branches append at the same place, keep
+# both sides instead of a conflict: typecheck, the registry's duplicate check and the policy matrix test catch a bad merge.
+packages/core/src/*/module.ts merge=union
+packages/core/src/*/permissions.ts merge=union
+docs/policy-matrix.md merge=union

@@ -9,7 +9,9 @@ export type { AuthMethod, RoleAssignment, Session, SessionStage, User, UserStatu
 export type { RoleAssignmentRepo, SessionRepo, UserRepo } from "./identity/repos";
 export { ROLES, ROLE_LABEL, SCOPE_OF_ROLE, SCOPE_TYPES, TOTP_OPTIONAL_ROLES, type Role, type ScopeType } from "./identity/roles";
 export { MIN_PASSWORD_LENGTH } from "./identity/password";
-export { CONSUMER_NAMES, CONSUMERS, consumersFor, type ConsumerName } from "./platform/consumers";
+export { CONSUMER_NAMES, CONSUMERS, consumersFor, type ConsumerName } from "./registry";
+export type { Consumer, ConsumerContext } from "./platform/consumer-context";
+export { defineModule, type ModuleManifest } from "./shared/module";
 export { JOB_NAMES, JOBS, type JobName } from "./registry";
 export type { ScheduledJob } from "./platform/jobs";
 export type { DomainEvent, EventType, Outbox, ProcessedEvents } from "./platform/events";

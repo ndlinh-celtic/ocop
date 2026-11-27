@@ -1,111 +1,20 @@
 import type { SystemActor } from "../shared/context";
-import { emailDossierEvent, NOTICE_EVENTS, notifyDossierEvent } from "../dossiers/notices";
-import { emailReminder, notifyReminder } from "../dossiers/reminders";
-import { draftCertificate } from "../results/certificate";
-import { emailCertificateExpiry, notifyCertificateExpiry } from "../results/certificate-expiry";
-import { notifyFileBlocked, scanUploadedFile } from "../files/scan";
-import { issueActivationLink } from "../identity/activation-email";
-import { buildFiveStarPackage, notifyFiveStarPackage } from "../results/five-star-package";
-import { emailAccountLocked, emailPasswordReset } from "../identity/passwords";
-import { emailRoleGranted, notifyRoleGranted } from "../identity/role-granted";
 import type { CoreDeps } from "../shared/deps";
 import { DomainError } from "../shared/errors";
-import type { ConsumerContext } from "./consumer-context";
-import type { EventType } from "./events";
+import type { Consumer } from "./consumer-context";
 
-interface Consumer {
-  events: readonly EventType[];
-  handle(c: ConsumerContext): Promise<void>;
-}
-
-/** Each consumer is one job queue; the relay enqueues one job per (event, subscribed consumer). */
-export const CONSUMERS = {
-  "identity.activation-email": {
-    events: ["identity.user.created", "identity.activation.requested"],
-    handle: issueActivationLink,
-  },
-  "identity.role-granted-email": {
-    events: ["identity.role.granted"],
-    handle: emailRoleGranted,
-  },
-  "notifications.role-granted": {
-    events: ["identity.role.granted"],
-    handle: notifyRoleGranted,
-  },
-  "identity.lockout-email": {
-    events: ["identity.user.locked"],
-    handle: emailAccountLocked,
-  },
-  "identity.password-reset-email": {
-    events: ["identity.password_reset.requested"],
-    handle: emailPasswordReset,
-  },
-  "files.scan": {
-    events: ["files.uploaded"],
-    handle: scanUploadedFile,
-  },
-  "notifications.file-blocked": {
-    events: ["files.blocked"],
-    handle: notifyFileBlocked,
-  },
-  // Story 86: who hears of what happens to a hồ sơ (dossiers/notices.ts).
-  "notifications.dossier": {
-    events: NOTICE_EVENTS,
-    handle: notifyDossierEvent,
-  },
-  "dossiers.notice-email": {
-    events: NOTICE_EVENTS,
-    handle: emailDossierEvent,
-  },
-  // L03 CT-12 (dossiers/reminders.ts): nhắc hạn, in the app and by email.
-  "notifications.dossier-reminder": {
-    events: ["dossier.reminder_due"],
-    handle: notifyReminder,
-  },
-  "dossiers.reminder-email": {
-    events: ["dossier.reminder_due"],
-    handle: emailReminder,
-  },
-  // L16 HD-11 (#84): the bản nháp PDF of a Giấy chứng nhận, outside the transaction that issued it.
-  "results.certificate-draft": {
-    events: ["certificate.issued", "certificate.amended"],
-    handle: draftCertificate,
-  },
-  // L16 (#86): nhắc Giấy chứng nhận sắp hết hiệu lực, in the app and by email.
-  "notifications.certificate-expiry": {
-    events: ["certificate.expiry_due"],
-    handle: notifyCertificateExpiry,
-  },
-  "results.certificate-expiry-email": {
-    events: ["certificate.expiry_due"],
-    handle: emailCertificateExpiry,
-  },
-  // L17 SO-04 Gói đề nghị 5 sao (#89): the build job, then the notice in the app.
-  "results.five-star-package": {
-    events: ["five_star_package.requested"],
-    handle: buildFiveStarPackage,
-  },
-  "notifications.five-star-package": {
-    events: ["five_star_package.ready", "five_star_package.failed"],
-    handle: notifyFiveStarPackage,
-  },
-} as const satisfies Record<string, Consumer>;
-
-export type ConsumerName = keyof typeof CONSUMERS;
-export const CONSUMER_NAMES = Object.keys(CONSUMERS) as ConsumerName[];
-
-export const consumersFor = (type: EventType): ConsumerName[] =>
-  CONSUMER_NAMES.filter((name) => (CONSUMERS[name].events as readonly EventType[]).includes(type));
-
-/** Runs one consumer for one event, at most once per committed transaction. */
-export function handleEvent(deps: CoreDeps) {
-  return (_system: SystemActor, input: { consumer: ConsumerName; eventId: string }) =>
+/**
+ * Runs one consumer for one event, at most once per committed transaction. The consumers are the ones every module
+ * declares in its `module.ts`, merged by the registry (each one is its own job queue).
+ */
+export function handleEvent<N extends string>(deps: CoreDeps, consumers: Record<N, Consumer>) {
+  return (_system: SystemActor, input: { consumer: N; eventId: string }) =>
     deps.uow.run(async (tx) => {
       const { consumer, eventId } = input;
       const event = await tx.outbox.get(eventId);
       if (!event) throw new DomainError("event_not_found", `Event ${eventId} not in outbox`);
       if (!(await tx.processedEvents.markIfNew(eventId, consumer, deps.clock.now()))) return "skipped" as const;
-      await CONSUMERS[consumer].handle({ deps, tx, event, consumer });
+      await consumers[consumer].handle({ deps, tx, event, consumer });
       return "handled" as const;
     });
 }

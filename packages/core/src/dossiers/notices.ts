@@ -53,7 +53,7 @@ export function entityUsers(tx: Tx, entityId: string, now: Date): Promise<User[]
   return activeHolders(tx, "entity_owner", "entity", entityId, now);
 }
 
-/** The events of a hồ sơ someone hears about; the consumers of platform/consumers.ts subscribe to these. */
+/** The events of a hồ sơ someone hears about; the consumers of dossiers/module.ts subscribe to these. */
 export const NOTICE_EVENTS = [
   "dossier.submitted",
   "dossier.received",

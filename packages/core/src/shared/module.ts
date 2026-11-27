@@ -17,3 +17,10 @@ export interface ModuleManifest {
 }
 
 export const defineModule = <const M extends ModuleManifest>(manifest: M): M => manifest;
+
+/** The use cases of a module, each bound to the core's dependencies. */
+export type BoundUseCases<U> = { [K in keyof U]: U[K] extends UseCaseFactory ? ReturnType<U[K]> : never };
+
+export function bindUseCases<U extends Record<string, UseCaseFactory>>(deps: CoreDeps, useCases: U): BoundUseCases<U> {
+  return Object.fromEntries(Object.entries(useCases).map(([name, factory]) => [name, factory(deps)])) as BoundUseCases<U>;
+}
