@@ -33,7 +33,7 @@ Khi tài liệu mâu thuẫn nhau: luồng xử lý > mô tả màn hình > prot
 
 - Monorepo **pnpm workspaces + Turborepo**: `apps/web` (Next.js App Router), `apps/worker` (Node, pg-boss), `packages/core` (domain + use case), `packages/infra` (Drizzle repo, adapter S3/SMTP/PDF/queue), `packages/ui` (shadcn/ui).
 - Phân lớp: UI/route handler chỉ xác thực, parse Zod, gọi use case. Use case `(actor, input) => result` mở transaction, kiểm policy, gọi domain, ghi audit + outbox **trong cùng transaction**. Domain là TS thuần, không import framework. Lint chặn import Drizzle từ `apps/web`.
-- Mỗi module tự khai báo use case, consumer, job ở `<module>/module.ts` và quyền ở `<module>/permissions.ts`, mỗi entry một dòng (file gộp bằng `merge=union`); `registry.ts` gộp lại. Đổi quyền thì cập nhật `docs/policy-matrix.md` bằng `pnpm --filter @ocop/core test -u`. Xem kiến trúc mục 3.3.
+- Mỗi module tự khai báo use case, consumer, job ở `<module>/module.ts` và quyền ở `<module>/permissions.ts`, mỗi entry một dòng (`module.ts` gộp bằng `merge=union`; `permissions.ts` thì không, xung đột quyền gộp tay); `registry.ts` gộp lại. Đổi quyền thì cập nhật `docs/policy-matrix.md` bằng `pnpm --filter @ocop/core test -u`. Xem kiến trúc mục 3.3.
 - **PostgreSQL 16/17** là nguồn sự thật duy nhất, kể cả hàng đợi job (**pg-boss**); extension `unaccent`, `pg_trgm`, `citext`. Không Redis ở bản này.
 - **Drizzle ORM** + drizzle-kit migration (file SQL được review), SQL thô khi cần `FOR UPDATE`, trigger.
 - Tệp: **S3-compatible** (`@aws-sdk/client-s3` v3), upload thẳng bằng pre-signed URL, bucket `quarantine/` → quét **ClamAV** → `evidence/`.

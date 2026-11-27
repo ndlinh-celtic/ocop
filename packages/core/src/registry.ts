@@ -56,3 +56,6 @@ export const consumersFor = (type: EventType): ConsumerName[] =>
 export const JOBS = mergeTables("job", tablesOf("jobs")) as Flat<UnionToIntersection<Of<"jobs">>>;
 export type JobName = keyof typeof JOBS;
 export const JOB_NAMES = Object.keys(JOBS) as JobName[];
+
+/** Consumers and jobs each get a pg-boss queue of their own name, so no job may share a consumer's name. */
+export const QUEUE_NAMES = Object.keys(mergeTables("queue", [CONSUMERS, JOBS])) as (ConsumerName | JobName)[];

@@ -93,7 +93,7 @@ Mỗi module trong `packages/core/src/<module>/` tự khai báo những gì nó 
 - `permissions.ts`: action không gắn tài nguyên theo tiền tố tên (`results.*` ở `results/permissions.ts`, `dossier.*` ở `dossiers/permissions.ts`). File chỉ import kiểu `Role`, để `identity/policy.ts` gộp được mà không tạo vòng import. Quyền trên một hồ sơ vẫn là bảng chuyển trạng thái `dossiers/transitions.ts`.
 - `docs/policy-matrix.md` là toàn bộ ma trận Vai trò × action, sinh bởi `packages/core/test/policy-matrix.test.ts`; PR đổi quyền phải cập nhật file này (`pnpm --filter @ocop/core test -u`), nên quyền vẫn được review ở một chỗ.
 - `public.ts`: những gì `apps/web`, `apps/worker` và `packages/infra` được dùng của module; `src/index.ts` chỉ `export *` từng file này, nên thêm một export không chạm file chung. Hai module export trùng tên thì `tsc` báo lỗi.
-- `.gitattributes` gộp `module.ts`, `permissions.ts` và ma trận bằng `merge=union`: hai nhánh cùng thêm entry thì giữ cả hai thay vì xung đột. Union chỉ đúng khi **mỗi entry nằm trên một dòng**; `registry.test.ts` chặn entry nhiều dòng. Logic dài (vòng lặp của một job…) đặt ở file tính năng, entry chỉ trỏ tới nó.
+- `.gitattributes` gộp `module.ts` và ma trận bằng `merge=union`: hai nhánh cùng thêm entry thì giữ cả hai thay vì xung đột. Union chỉ đúng khi **mỗi entry nằm trên một dòng**; `registry.test.ts` chặn entry nhiều dòng. Logic dài (vòng lặp của một job, danh sách event dài…) đặt ở file tính năng, entry chỉ trỏ tới nó. `permissions.ts` **không** dùng union: union giữ lại cả dòng mà một nhánh đã xóa, nên một quyền đã thu hồi có thể âm thầm quay lại; xung đột ở đây phải gộp tay.
 
 ## 4. Lựa chọn công nghệ
 

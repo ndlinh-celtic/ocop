@@ -1,13 +1,14 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CONSUMER_NAMES, JOB_NAMES, JOBS, MODULES } from "../src/registry";
+import { CONSUMER_NAMES, JOB_NAMES, JOBS, MODULES, QUEUE_NAMES } from "../src/registry";
 import { mergeTables } from "../src/shared/tables";
 
 const SRC = join(import.meta.dirname, "../src");
 const UNION_FILES = readdirSync(SRC, { withFileTypes: true })
   .filter((d) => d.isDirectory() && d.name !== "shared")
-  .flatMap((d) => ["module.ts", "permissions.ts"].filter((f) => readdirSync(join(SRC, d.name)).includes(f)).map((f) => `${d.name}/${f}`));
+  .filter((d) => readdirSync(join(SRC, d.name)).includes("module.ts"))
+  .map((d) => `${d.name}/module.ts`);
 
 describe("registry", () => {
   it("refuses two modules declaring the same key", () => {
@@ -31,13 +32,18 @@ describe("registry", () => {
     expect(CONSUMER_NAMES.length).toBeGreaterThan(0);
   });
 
-  // .gitattributes merges these files with merge=union, which is only correct when an entry is one line: two branches
+  it("gives consumers and jobs distinct queue names", () => {
+    expect(QUEUE_NAMES).toHaveLength(CONSUMER_NAMES.length + JOB_NAMES.length);
+  });
+
+  // .gitattributes merges module.ts with merge=union, which is only correct when an entry is one line: two branches
   // appending multi-line entries at one place share their closing lines, and union keeps one copy (the #95 missing `},`).
+  // An entry too long for one line points at a constant or function in its feature file (as NOTICE_EVENTS does).
   it.each(UNION_FILES)("keeps one line per entry in %s", (file) => {
     const deep = readFileSync(join(SRC, file), "utf8")
       .split("\n")
       .filter((line) => !line.startsWith("import") && !/^\s*(\/\/|\*|\/\*)/.test(line))
-      .filter((line) => /^\s+/.test(line) && line.search(/\S/) > (file.endsWith("permissions.ts") ? 2 : 4));
+      .filter((line) => /^\s+/.test(line) && line.search(/\S/) > 4);
     expect(deep).toEqual([]);
   });
 });

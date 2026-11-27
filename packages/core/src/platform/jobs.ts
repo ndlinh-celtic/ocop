@@ -1,5 +1,6 @@
 import type { SystemActor } from "../shared/context";
 import type { CoreDeps } from "../shared/deps";
+import { DomainError } from "../shared/errors";
 
 /**
  * A recurring job, declared by the module that owns it: the worker schedules it on `cron` (Vietnam time) in its own
@@ -16,7 +17,7 @@ export function runJob<N extends string>(deps: CoreDeps, jobs: Record<N, Schedul
   for (const [name, job] of Object.entries<ScheduledJob>(jobs)) bound.set(name, job.run(deps));
   return async (system: SystemActor, input: { job: N }): Promise<void> => {
     const run = bound.get(input.job);
-    if (!run) throw new Error(`Unknown job ${input.job}`);
+    if (!run) throw new DomainError("unknown_job", `No job ${input.job}`);
     await run(system);
   };
 }

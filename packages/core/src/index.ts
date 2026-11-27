@@ -1,7 +1,7 @@
 /** @ocop/core: each module's public interface (`<module>/public.ts`) and the core assembled from the modules. */
 export { createCore, type Core } from "./app";
 export { CONSUMER_NAMES, CONSUMERS, consumersFor, type ConsumerName } from "./registry";
-export { JOB_NAMES, JOBS, type JobName } from "./registry";
+export { JOB_NAMES, JOBS, QUEUE_NAMES, type JobName } from "./registry";
 export * from "./audit/public";
 export * from "./councils/public";
 export * from "./criteria/public";

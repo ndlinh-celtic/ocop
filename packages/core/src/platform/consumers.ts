@@ -8,8 +8,10 @@ import type { Consumer } from "./consumer-context";
  * declares in its `module.ts`, merged by the registry (each one is its own job queue).
  */
 export function handleEvent<N extends string>(deps: CoreDeps, consumers: Record<N, Consumer>) {
-  return (_system: SystemActor, input: { consumer: N; eventId: string }) =>
-    deps.uow.run(async (tx) => {
+  return (_system: SystemActor, input: { consumer: N; eventId: string }) => {
+    // A job left in the queue of a consumer since renamed or removed: say so rather than fail on `undefined.handle`.
+    if (!Object.hasOwn(consumers, input.consumer)) throw new DomainError("unknown_consumer", `No consumer ${input.consumer}`);
+    return deps.uow.run(async (tx) => {
       const { consumer, eventId } = input;
       const event = await tx.outbox.get(eventId);
       if (!event) throw new DomainError("event_not_found", `Event ${eventId} not in outbox`);
@@ -17,4 +19,5 @@ export function handleEvent<N extends string>(deps: CoreDeps, consumers: Record<
       await consumers[consumer].handle({ deps, tx, event, consumer });
       return "handled" as const;
     });
+  };
 }
